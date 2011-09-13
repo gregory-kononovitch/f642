@@ -47,8 +47,21 @@ static struct v4l2_buffer buf;
 static v4l2_buffer_t *buffer;
 static int loop;
 
-static uint32_t nb_frames = 10;
-static int show_config = 0;
+static int capture         = 1;
+static uint32_t nb_frames  = 0;
+static int verbose         = 0;
+static int quiet           = 0;
+static int debug           = 0;
+static int show_all        = 0;
+static int show_caps       = 0;
+static int show_inputs     = 0;
+static int show_controls   = 0;
+static int show_formats    = 0;
+static int show_framsize   = 0;
+static int show_framints   = 0;
+static int show_vidstds    = 0;
+
+
 /*
  *
  */
@@ -59,24 +72,26 @@ static int f640_get_capabilities()
         return -1;
     }
 
-    printf("%s information:\n", dev);
-    printf("cap.driver: \"%s\"\n", cap.driver);
-    printf("cap.card: \"%s\"\n", cap.card);
-    printf("cap.bus_info: \"%s\"\n", cap.bus_info);
-    printf("cap.capabilities=0x%08X\n", cap.capabilities);
-    if(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) printf("- VIDEO_CAPTURE\n");
-    if(cap.capabilities & V4L2_CAP_VIDEO_OUTPUT)  printf("- VIDEO_OUTPUT\n");
-    if(cap.capabilities & V4L2_CAP_VIDEO_OVERLAY) printf("- VIDEO_OVERLAY\n");
-    if(cap.capabilities & V4L2_CAP_VBI_CAPTURE)   printf("- VBI_CAPTURE\n");
-    if(cap.capabilities & V4L2_CAP_VBI_OUTPUT)    printf("- VBI_OUTPUT\n");
-    if(cap.capabilities & V4L2_CAP_RDS_CAPTURE)   printf("- RDS_CAPTURE\n");
-    if(cap.capabilities & V4L2_CAP_TUNER)         printf("- TUNER\n");
-    if(cap.capabilities & V4L2_CAP_AUDIO)         printf("- AUDIO\n");
-    if(cap.capabilities & V4L2_CAP_RADIO)         printf("- RADIO\n");
-    if(cap.capabilities & V4L2_CAP_READWRITE)     printf("- READWRITE\n");
-    if(cap.capabilities & V4L2_CAP_ASYNCIO)       printf("- ASYNCIO\n");
-    if(cap.capabilities & V4L2_CAP_STREAMING)     printf("- STREAMING\n");
-    if(cap.capabilities & V4L2_CAP_TIMEPERFRAME)  printf("- TIMEPERFRAME\n");
+    if ( show_all || show_caps ) {
+        printf("%s information:\n", dev);
+        printf("cap.driver: \"%s\"\n", cap.driver);
+        printf("cap.card: \"%s\"\n", cap.card);
+        printf("cap.bus_info: \"%s\"\n", cap.bus_info);
+        printf("cap.capabilities=0x%08X\n", cap.capabilities);
+        if(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) printf("- VIDEO_CAPTURE\n");
+        if(cap.capabilities & V4L2_CAP_VIDEO_OUTPUT)  printf("- VIDEO_OUTPUT\n");
+        if(cap.capabilities & V4L2_CAP_VIDEO_OVERLAY) printf("- VIDEO_OVERLAY\n");
+        if(cap.capabilities & V4L2_CAP_VBI_CAPTURE)   printf("- VBI_CAPTURE\n");
+        if(cap.capabilities & V4L2_CAP_VBI_OUTPUT)    printf("- VBI_OUTPUT\n");
+        if(cap.capabilities & V4L2_CAP_RDS_CAPTURE)   printf("- RDS_CAPTURE\n");
+        if(cap.capabilities & V4L2_CAP_TUNER)         printf("- TUNER\n");
+        if(cap.capabilities & V4L2_CAP_AUDIO)         printf("- AUDIO\n");
+        if(cap.capabilities & V4L2_CAP_RADIO)         printf("- RADIO\n");
+        if(cap.capabilities & V4L2_CAP_READWRITE)     printf("- READWRITE\n");
+        if(cap.capabilities & V4L2_CAP_ASYNCIO)       printf("- ASYNCIO\n");
+        if(cap.capabilities & V4L2_CAP_STREAMING)     printf("- STREAMING\n");
+        if(cap.capabilities & V4L2_CAP_TIMEPERFRAME)  printf("- TIMEPERFRAME\n");
+    }
 
     if(!cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
         printf("Device does not support capturing.\n");
@@ -94,43 +109,20 @@ int f640_set_input()
 
     memset(&inpt, 0, sizeof(inpt));
 
-    printf("--- Available inputs :\n");
-
-    inpt.index = count;
-    while(!ioctl(fd, VIDIOC_ENUMINPUT, &inpt)) {
-        printf("%i: \"%s\" : std-0x%X : type %u : status 0x%X\n", count, inpt.name, inpt.std, inpt.type, inpt.status);
-        inpt.index = ++count;
-    }
-
-
-    /* If no input was specified, use input 0. */
-    if(!input) {
-        printf("No input was specified, using the first.\n");
-        count = 1;
-        i = 0;
-    }
-
-    /* Check if the input is specified by name. */
-    if(i == -1) {
+    if ( show_all || show_inputs ) {
+        printf("--- Available inputs :\n");
         inpt.index = count;
-        while(!ioctl(fd, VIDIOC_ENUMINPUT, &inpt))
-        {
-            if(!strncasecmp((char *) inpt.name, input, 32)) i = count;
+        while(!ioctl(fd, VIDIOC_ENUMINPUT, &inpt)) {
+            printf("%i: \"%s\" : std-0x%X : type %u : status 0x%X\n", count, inpt.name, inpt.std, inpt.type, inpt.status);
             inpt.index = ++count;
         }
     }
 
-    if(i == -1) {
-        char *endptr;
-        /* Is the input specified by number? */
-        i = strtol(input, &endptr, 10);
-        if(endptr == input) i = -1;
-    }
-
-    if(i == -1 || i >= count) {
-        /* The specified input wasn't found! */
-        printf("Unrecognised input \"%s\"\n", input);
-        return -1;
+    /* If no input was specified, use input 0. */
+    if(!input) {
+        if ( verbose ) printf("No input was specified, using the first.\n");
+        count = 1;
+        i = 0;
     }
 
     /* Set the input. */
@@ -141,42 +133,46 @@ int f640_set_input()
         return -1;
     }
 
-    printf("%s: Input %i information :\n", source, i);
-    printf("name = \"%s\"\n", inpt.name);
-    printf("type = %08X\n", inpt.type);
-    if(inpt.type & V4L2_INPUT_TYPE_TUNER) printf("- TUNER\n");
-    if(inpt.type & V4L2_INPUT_TYPE_CAMERA) printf("- CAMERA\n");
-    printf("audioset = %08X\n", inpt.audioset);
-    printf("tuner = %08X\n", inpt.tuner);
-    printf("status = %08X\n", inpt.status);
-    if(inpt.status & V4L2_IN_ST_NO_POWER) printf("- NO_POWER\n");
-    if(inpt.status & V4L2_IN_ST_NO_SIGNAL) printf("- NO_SIGNAL\n");
-    if(inpt.status & V4L2_IN_ST_NO_COLOR) printf("- NO_COLOR\n");
-    if(inpt.status & V4L2_IN_ST_NO_H_LOCK) printf("- NO_H_LOCK\n");
-    if(inpt.status & V4L2_IN_ST_COLOR_KILL) printf("- COLOR_KILL\n");
-    if(inpt.status & V4L2_IN_ST_NO_SYNC) printf("- NO_SYNC\n");
-    if(inpt.status & V4L2_IN_ST_NO_EQU) printf("- NO_EQU\n");
-    if(inpt.status & V4L2_IN_ST_NO_CARRIER) printf("- NO_CARRIER\n");
-    if(inpt.status & V4L2_IN_ST_MACROVISION) printf("- MACROVISION\n");
-    if(inpt.status & V4L2_IN_ST_NO_ACCESS) printf("- NO_ACCESS\n");
-    if(inpt.status & V4L2_IN_ST_VTR) printf("- VTR\n");
+    if ( show_all || show_inputs ) {
+        printf("%s: Input %i information :\n", source, i);
+        printf("name = \"%s\"\n", inpt.name);
+        printf("type = %08X\n", inpt.type);
+        if(inpt.type & V4L2_INPUT_TYPE_TUNER) printf("- TUNER\n");
+        if(inpt.type & V4L2_INPUT_TYPE_CAMERA) printf("- CAMERA\n");
+        printf("audioset = %08X\n", inpt.audioset);
+        printf("tuner = %08X\n", inpt.tuner);
+        printf("status = %08X\n", inpt.status);
+        if(inpt.status & V4L2_IN_ST_NO_POWER) printf("- NO_POWER\n");
+        if(inpt.status & V4L2_IN_ST_NO_SIGNAL) printf("- NO_SIGNAL\n");
+        if(inpt.status & V4L2_IN_ST_NO_COLOR) printf("- NO_COLOR\n");
+        if(inpt.status & V4L2_IN_ST_NO_H_LOCK) printf("- NO_H_LOCK\n");
+        if(inpt.status & V4L2_IN_ST_COLOR_KILL) printf("- COLOR_KILL\n");
+        if(inpt.status & V4L2_IN_ST_NO_SYNC) printf("- NO_SYNC\n");
+        if(inpt.status & V4L2_IN_ST_NO_EQU) printf("- NO_EQU\n");
+        if(inpt.status & V4L2_IN_ST_NO_CARRIER) printf("- NO_CARRIER\n");
+        if(inpt.status & V4L2_IN_ST_MACROVISION) printf("- MACROVISION\n");
+        if(inpt.status & V4L2_IN_ST_NO_ACCESS) printf("- NO_ACCESS\n");
+        if(inpt.status & V4L2_IN_ST_VTR) printf("- VTR\n");
+    }
 
     if(ioctl(fd, VIDIOC_S_INPUT, &i) == -1) {
         printf("Error selecting input %i\n", i);
         printf("VIDIOC_S_INPUT: %s\n", strerror(errno));
         return -1;
     } else {
-        printf("Video standard :\n");
-        struct v4l2_standard std;
-        memset(&std, 0, sizeof(std));
-        std.index = count = 0;
-        while(!ioctl(fd, VIDIOC_ENUMSTD, &std)) {
-            printf("\t-standard %d :\n", count);
+        if ( show_all || show_vidstds ) {
+            printf("Video standard :\n");
+            struct v4l2_standard std;
             memset(&std, 0, sizeof(std));
-            std.index = ++count;
+            std.index = count = 0;
+            while(!ioctl(fd, VIDIOC_ENUMSTD, &std)) {
+                printf("\t-standard %d :\n", count);
+                memset(&std, 0, sizeof(std));
+                std.index = ++count;
+            }
         }
     }
-    printf("Selecting input %i\n", i);
+    if ( verbose ) printf("Selecting input %i\n", i);
 
     return 0;
 }
@@ -191,7 +187,11 @@ static int f640_show_control(struct v4l2_queryctrl *queryctrl)
     char *t;
     int m;
 
-    if(queryctrl->flags & V4L2_CTRL_FLAG_DISABLED) return 0;
+    if ( !show_all && !show_controls ) return 0;
+    if(queryctrl->flags & V4L2_CTRL_FLAG_DISABLED) {
+        printf("Control \"%s\" disabled.\n", queryctrl->name);
+        return 0;
+    }
 
     memset(&querymenu, 0, sizeof(querymenu));
     memset(&control, 0, sizeof(control));
@@ -212,16 +212,18 @@ static int f640_show_control(struct v4l2_queryctrl *queryctrl)
             if(!t) {printf("Out of memory."); return -1; }
 
             if(queryctrl->maximum - queryctrl->minimum <= 10) {
-                snprintf(t, 63, "%i : ", control.value);
+                snprintf(t, 63, "%4i", control.value);
             } else {
-                snprintf(t, 63, "%i (%i%%) : ", control.value, SCALE(0, 100, queryctrl->minimum, queryctrl->maximum, control.value));
+                snprintf(t, 63, "%4i (%i%%)", control.value, SCALE(0, 100, queryctrl->minimum, queryctrl->maximum, control.value));
             }
-            printf("%-25s %-15s %i - %i\n", queryctrl->name, t, queryctrl->minimum, queryctrl->maximum);
+            printf(F640_BOLD "%-32s " F640_RESET F640_FG_RED "%-15s" F640_RESET " ( %4i - %4i )\n"
+                    , queryctrl->name, t, queryctrl->minimum, queryctrl->maximum);
 
             free(t);
             break;
         case V4L2_CTRL_TYPE_BOOLEAN:
-            printf("%-25s %-15s True | False\n", queryctrl->name, (control.value ? "True" : "False"));
+            printf(F640_BOLD "%-32s" F640_RESET F640_FG_RED " %-15s" F640_RESET " ( True | False )\n"
+                    , queryctrl->name, (control.value ? "True" : "False"));
             break;
         case V4L2_CTRL_TYPE_MENU:
             querymenu.id = queryctrl->id;
@@ -242,14 +244,17 @@ static int f640_show_control(struct v4l2_queryctrl *queryctrl)
                 printf("VIDIOC_QUERYMENU: %s\n", strerror(errno));
                 return 0;
             }
-            printf("%-25s %-15s %s\n", queryctrl->name, querymenu.name, t);
+            printf(F640_BOLD "%-32s" F640_RESET F640_FG_RED " %-15s" F640_RESET " ( %s)\n"
+                    , queryctrl->name, querymenu.name, t);
             free(t);
             break;
         case V4L2_CTRL_TYPE_BUTTON:
-            printf("%-25s %-15s %s\n", queryctrl->name, "-\n", "[Button]");
+            printf(F640_BOLD "%-32s" F640_RESET F640_FG_RED " %-15s" F640_RESET " ( %s )\n"
+                    , queryctrl->name, "-\n", "[Button]");
             break;
         default:
-            printf("%-25s %-15s %s\n", queryctrl->name, "N/A\n", "[Unknown Control Type]");
+            printf(F640_BOLD "%-32s" F640_RESET F640_FG_RED " %-15s " F640_RESET " ( %s)\n"
+                    , queryctrl->name, "N/A\n", "[Unknown Control Type]");
             break;
     }
 
@@ -266,7 +271,10 @@ static int f640_set_control(struct v4l2_queryctrl *queryctrl)
     char *sv;
     int iv;
 
-    if(queryctrl->flags & V4L2_CTRL_FLAG_DISABLED) {printf("Ctrl disabled;\n"); return 0; }
+    if(queryctrl->flags & V4L2_CTRL_FLAG_DISABLED) {
+        if (!quiet) printf("Control \"%s\" disabled, don't update it.\n", queryctrl->name);
+        return 0;
+    }
 
     memset(&querymenu, 0, sizeof(querymenu));
     memset(&control, 0, sizeof(control));
@@ -284,9 +292,11 @@ static int f640_set_control(struct v4l2_queryctrl *queryctrl)
                 /* Adjust the precentage to fit the controls range. */
                 iv = SCALE(queryctrl->minimum, queryctrl->maximum, 0, 100, iv);
             }
-            printf("Setting %s to %i (%i%%).\n", queryctrl->name, iv, SCALE(0, 100, queryctrl->minimum, queryctrl->maximum, iv));
+            if (!quiet) printf("Setting %s to %i (%i%%).\n"
+                    , queryctrl->name, iv, SCALE(0, 100, queryctrl->minimum, queryctrl->maximum, iv));
 
-            if(iv < queryctrl->minimum || iv > queryctrl->maximum) printf("Value is out of range. Setting anyway.\n");
+            if(iv < queryctrl->minimum || iv > queryctrl->maximum)
+                if (!quiet) printf("Value is out of range. Setting anyway.\n");
 
             control.value = iv;
             ioctl(fd, VIDIOC_S_CTRL, &control);
@@ -298,10 +308,10 @@ static int f640_set_control(struct v4l2_queryctrl *queryctrl)
             if(!strcasecmp(sv, "0") || !strcasecmp(sv, "false")) iv = 0;
 
             if(iv == -1) {
-                printf("Unknown boolean value '%s' for %s.\n", sv, queryctrl->name);
+                if (!quiet) printf("Unknown boolean value '%s' for %s.\n", sv, queryctrl->name);
                 return -1;
             }
-            printf("Setting %s to %s (%i).\n", queryctrl->name, sv, iv);
+            if (!quiet) printf("Setting %s to %s (%i).\n", queryctrl->name, sv, iv);
             control.value = iv;
             ioctl(fd, VIDIOC_S_CTRL, &control);
             break;
@@ -318,19 +328,19 @@ static int f640_set_control(struct v4l2_queryctrl *queryctrl)
                 if(!strncasecmp((char *) querymenu.name, sv, 32)) break;
             }
             if(iv > queryctrl->maximum) {
-                printf("Unknown value '%s' for %s.\n", sv, queryctrl->name);
+                if (!quiet) printf("Unknown value '%s' for %s.\n", sv, queryctrl->name);
                 return -1;
             }
-            printf("Setting %s to %s (%i).\n", queryctrl->name, querymenu.name, iv);
+            if (!quiet) printf("Setting %s to %s (%i).\n", queryctrl->name, querymenu.name, iv);
             control.value = iv;
             ioctl(fd, VIDIOC_S_CTRL, &control);
             break;
         case V4L2_CTRL_TYPE_BUTTON:
-            printf("Triggering %s control.\n", queryctrl->name);
+            if (!quiet) printf("Triggering %s control.\n", queryctrl->name);
             ioctl(fd, VIDIOC_S_CTRL, &control);
             break;
         default:
-            printf("Not setting unknown control type %i (%s).\n", queryctrl->name);
+            if (!quiet) printf("Not setting unknown control type %i (%s).\n", queryctrl->name);
             break;
     }
 
@@ -345,8 +355,11 @@ static int f640_list_controls()
 {
     struct v4l2_queryctrl queryctrl;
     int c;
+
+    if (!show_all && !show_controls) return 0;
+
     // Display normal controls.
-    printf("User controls :\n");
+    printf(F640_UNDER "User controls :\n" F640_RESET);
     for(c = V4L2_CID_BASE; c < V4L2_CID_LASTP1; c++) {
         memset(&queryctrl, 0, sizeof(queryctrl));
         queryctrl.id = c;
@@ -354,7 +367,7 @@ static int f640_list_controls()
         f640_show_control(&queryctrl);
     }
     // Display device-specific controls.
-    printf("Device-specific controls :\n");
+    printf(F640_UNDER "Device-specific controls :\n" F640_RESET);
     for(c = V4L2_CID_PRIVATE_BASE; ; c++) {
         memset(&queryctrl, 0, sizeof(queryctrl));
         queryctrl.id = c;
@@ -372,7 +385,7 @@ static int f640_list_controls()
 //    }
 
     // Camera-class controls
-    printf("Camera-class controls :\n");
+    printf(F640_UNDER "Camera-class controls :\n" F640_RESET);
     for(c = V4L2_CID_EXPOSURE_AUTO; c < V4L2_CID_PRIVACY ; c++ ) {
         memset(&queryctrl, 0, sizeof(queryctrl));
         queryctrl.id = c;
@@ -396,7 +409,8 @@ static int f640_set_pix_format()
     int v4l2_pal;
 
     /* Dump a list of formats the device supports. */
-    printf("Device offers the following V4L2 pixel formats :\n");
+    if ( show_all || show_formats )
+        printf("Device offers the following V4L2 pixel formats :\n");
 
     v4l2_pal = 0;
     memset(&fmt, 0, sizeof(fmt));
@@ -405,7 +419,8 @@ static int f640_set_pix_format()
 
     while(ioctl(fd, VIDIOC_ENUM_FMT, &fmt) != -1)
     {
-        printf("%i: [0x%08X] => '%c%c%c%c' : \"%s\" : %d / 0x%X\n"
+        if ( show_all || show_formats )
+            printf("%i: [0x%08X] => '%c%c%c%c' : \"%s\" : %d / 0x%X\n"
                 , v4l2_pal
                 , fmt.pixelformat
                 , fmt.pixelformat >> 0
@@ -432,9 +447,10 @@ static int f640_set_pix_format()
     format.fmt.pix.pixelformat = format_desc.pixelformat;
     format.fmt.pix.field       = V4L2_FIELD_ANY;//V4L2_FIELD_NONE;//V4L2_FIELD_ANY;
 
-    printf("Try the palette :\n");
+    if ( show_all || show_formats ) printf("Try the palette :\n");
     if(ioctl(fd, VIDIOC_TRY_FMT, &format) != -1 ) {
-        printf("Using palette 0x%X : field = %d, colorspace = %d, bytes/line = %u, size=%u\n"
+        if ( show_all || show_formats )
+            printf("Using palette 0x%X : field = %d, colorspace = %d, bytes/line = %u, size=%u\n"
                 , format_desc.pixelformat
                 , format.fmt.pix.field
                 , format.fmt.pix.colorspace
@@ -443,7 +459,8 @@ static int f640_set_pix_format()
         );
 
         if(format.fmt.pix.width != cwidth || format.fmt.pix.height != cheight) {
-            printf("Adjusting resolution from %ix%i to %ix%i.\n",
+            if ( show_all || show_formats )
+                printf("Adjusting resolution from %ix%i to %ix%i.\n",
                     cwidth, cheight, format.fmt.pix.width, format.fmt.pix.height);
             cwidth = format.fmt.pix.width;
             cheight = format.fmt.pix.height;
@@ -454,11 +471,13 @@ static int f640_set_pix_format()
             printf("VIDIOC_S_FMT: %s\n", strerror(errno));
             return -1;
         }
-        printf("Setting pixel format ok.\n");
+        if ( verbose )
+            printf("Setting pixel format ok.\n");
 
         return 0;
     }
-    printf("Setting pixel format ko : %s\n", strerror(errno));
+    if ( verbose )
+        printf("Setting pixel format ko : %s\n", strerror(errno));
     return -1;
 }
 
@@ -472,10 +491,12 @@ int f640_set_parm()
     memset (&parm, 0, sizeof (parm));
     parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (ioctl (fd, VIDIOC_G_PARM, &parm) == -1) {
-        perror ("VIDIOC_G_INPUT");
+        perror("VIDIOC_G_INPUT");
         return -1;
     }
-    printf ("GetParm : cap = 0x%X, mode = 0x%X, emode = 0x%X, buf = %u, fps = %u / %u\n"
+
+    if ( show_all || show_framints )
+        printf ("GetParm : cap = 0x%X, mode = 0x%X, emode = 0x%X, buf = %u, fps = %u / %u\n"
             , parm.parm.capture.capability
             , parm.parm.capture.capturemode
             , parm.parm.capture.extendedmode
@@ -484,15 +505,20 @@ int f640_set_parm()
     );
 
     if ( parm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME ) {
-        parm.parm.capture.timeperframe.denominator = 15;
+        parm.parm.capture.timeperframe.denominator = 10;
         if (ioctl (fd, VIDIOC_S_PARM, &parm) == -1) {
             perror ("VIDIOC_S_INPUT");
-            printf("SetStreamParm ko.\n");
+            if ( verbose )
+                printf("SetStreamParm to %ufrm / %us : ko.\n"
+                    , parm.parm.capture.timeperframe.denominator, parm.parm.capture.timeperframe.numerator);
         } else {
-            printf("SetStreamParm ok.\n");
+            if ( verbose )
+                printf("SetStreamParm to %ufrm / %us : ok.\n"
+                    , parm.parm.capture.timeperframe.denominator, parm.parm.capture.timeperframe.numerator);
         }
     } else {
-        printf("No StreamParm to set.\n");
+        if ( verbose )
+            printf("No StreamParm to set.\n");
     }
 
     /*
@@ -506,7 +532,8 @@ int f640_set_parm()
     sizn.index = 0;
     sizn.pixel_format = format.fmt.pix.pixelformat;
     while ( ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &sizn) != -1 ) {
-        printf("SizeFormat %d : type = %d - %s :\n"
+        if ( show_all || show_framsize )
+            printf("SizeFormat %d : type = %d - %s :\n"
                 , sizn.index
                 , sizn.type
                 , sizn.type == V4L2_FRMSIZE_TYPE_DISCRETE ? "Discrete"
@@ -514,7 +541,8 @@ int f640_set_parm()
                 : "Continuous"
         );
         if ( sizn.type == V4L2_FRMSIZE_TYPE_DISCRETE ) {
-            printf("\t%ux%u : ", sizn.discrete.width, sizn.discrete.height);
+            if ( show_all || show_framsize )
+                printf("\t%ux%u : ", sizn.discrete.width, sizn.discrete.height);
             memset(&fps, 0, sizeof(fps));
             fps.index = indf = 0;
             fps.pixel_format = format.fmt.pix.pixelformat;
@@ -522,9 +550,11 @@ int f640_set_parm()
             fps.height = sizn.discrete.height;
             while ( ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &fps) != -1 ) {
                 if( fps.type == V4L2_FRMIVAL_TYPE_DISCRETE) {
-                    printf("| %u/%u |", fps.discrete.numerator, fps.discrete.denominator);
+                    if ( show_all || show_framsize )
+                        printf("| %u/%u |", fps.discrete.numerator, fps.discrete.denominator);
                 } else {
-                    printf("%u < %u < %u (stepwise)", fps.stepwise.min, fps.stepwise.step, fps.stepwise.max);
+                    if ( show_all || show_framsize )
+                        printf("%u < %u < %u (stepwise)", fps.stepwise.min, fps.stepwise.step, fps.stepwise.max);
                 }
                 memset(&fps, 0, sizeof(fps));
                 fps.index = ++indf;
@@ -532,9 +562,10 @@ int f640_set_parm()
                 fps.width = sizn.discrete.width;
                 fps.height = sizn.discrete.height;
             }
-            printf("\n");
+            if ( show_all || show_framsize ) printf("\n");
         } else {
-            printf("\t(%u , %u)x(%u , %u) : (%u , %u)\n"
+            if ( show_all || show_framsize )
+                printf("\t(%u , %u)x(%u , %u) : (%u , %u)\n"
                     , sizn.stepwise.min_width, sizn.stepwise.max_width
                     , sizn.stepwise.min_height, sizn.stepwise.max_height
                     , sizn.stepwise.step_width, sizn.stepwise.step_height
@@ -557,7 +588,10 @@ int f640_set_mmap()
     uint32_t i, b;
 
     /* Does the device support streaming? */
-    if(~cap.capabilities & V4L2_CAP_STREAMING) {printf("No streaming cap, returning.\n"); return -1;}
+    if(~cap.capabilities & V4L2_CAP_STREAMING) {
+        if (!quiet) printf("No streaming cap, returning.\n");
+        return -1;
+    }
 
     memset(&req, 0, sizeof(req));
 
@@ -566,24 +600,27 @@ int f640_set_mmap()
     req.memory = V4L2_MEMORY_MMAP;
 
     if(ioctl(fd, VIDIOC_REQBUFS, &req) == -1) {
-        printf("Error requesting buffers for memory map.\n");
-        if (errno == EINVAL) printf ("Video capturing or mmap-streaming is not supported: %s\n", strerror(errno));
-        else printf("VIDIOC_REQBUFS: %s\n", strerror(errno));
+        if (!quiet) printf("Error requesting buffers for memory map.\n");
+        if (errno == EINVAL)
+            if (!quiet)
+                printf ("Video capturing or mmap-streaming is not supported: %s\n", strerror(errno));
+        else if (!quiet)
+            printf("VIDIOC_REQBUFS: %s\n", strerror(errno));
 
         return -1;
     }
 
-    printf("mmap information :\n");
-    printf("frames = %d\n", req.count);
+    if (!quiet) printf("mmap information :\n");
+    if (!quiet) printf("frames = %d\n", req.count);
 
     if(req.count < 2) {
-        printf("Insufficient buffer memory.\n");
+        if (!quiet) printf("Insufficient buffer memory.\n");
         return -1;
     }
 
     buffer = calloc(req.count, sizeof(v4l2_buffer_t));
     if(!buffer) {
-        printf("Out of memory.\n");
+        if (!quiet) printf("Out of memory.\n");
         return -1;
     }
 
@@ -615,7 +652,7 @@ int f640_set_mmap()
             return -1;
         }
 
-        printf("%i length=%d\n", b, buf.length);
+        if ( verbose ) printf("%i length=%d\n", b, buf.length);
     }
     map = -1;
 
@@ -643,7 +680,7 @@ int f640_set_mmap()
         free(buffer);
         return -1;
     }
-    printf("Stream ON with %u buffers.\n", req.count);
+    if ( verbose ) printf("Stream ON with %u buffers.\n", req.count);
     return 0;
 }
 
@@ -660,7 +697,7 @@ int f640_free_mmap()
         printf("Error stoping stream.\n");
         printf("VIDIOC_STREAMOFF: %s\n", strerror(errno));
     } else {
-        printf("STREAMOFF succed.\n");
+        if ( verbose ) printf("STREAMOFF succed.\n");
     }
 
     for(i = 0; i < req.count; i++)
@@ -684,12 +721,13 @@ void f640_signal_term_handler(int signum)
         default:      signame = "Unknown"; break;
     }
 
-    printf(F640_FG_RED "Caught signal %s, processing it\n" F640_RESET, signame);
+    if ( verbose ) printf(F640_FG_RED "Caught signal %s, processing it\n" F640_RESET, signame);
     loop = 0;
-    f640_free_mmap();
-    close(fd);
-    f051_end_env(log_env);
-    printf(F640_BOLD "Exiting TERM handler.\n" F640_RESET);
+    usleep(200*1000);
+    //f640_free_mmap();
+    //close(fd);
+    //f051_end_env(log_env);
+    if ( verbose ) printf(F640_BOLD "Exiting TERM handler.\n" F640_RESET);
 }
 
 /*
@@ -721,7 +759,8 @@ int f640_processing()
             printf("VIDIOC_DQBUF: %s\n", strerror(errno));
             return -1;
         }
-        //printf("DeQueue ok : index = %u\n", buf.index);
+        if (debug) printf("DeQueue ok : index = %u, seq = %u, frames = %u\n"
+                , buf.index, buf.sequence, buf.timecode.frames);
 
         // Processing
         if ( frame ) {
@@ -736,10 +775,11 @@ int f640_processing()
                 i++; im++; pix += 2;
             }
             rms = sqrt(rms);
-            printf("Frame " F640_BOLD "%4d" F640_RESET
-                    "  |  " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5u" F640_RESET
+            if (!quiet)
+                printf("Frame " F640_BOLD "%4d" F640_RESET
+                    "  |  " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
                     "  |  ABS = %5.2f  | "// %u %u %u %u %u %u %u %u %u %u %u\n"
-                    , frame, rms, 1.*moy/size
+                    , frame, 1.*rms/sqrt(size), 1.*moy/size
                     //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
             );
         } else {
@@ -751,6 +791,15 @@ int f640_processing()
         }
         f051_send_data(log_env, dif ? dif : im0, size);
 
+        // Data
+        gettimeofday(&tv2, NULL);
+        d1 = (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0);
+        if (!quiet)
+            printf(" d = %3.0fms  | freq = " F640_FG_RED "%4.1fHz" F640_RESET "  | seq %4u | %3u | %2u | %2u |\n"
+                    , frame, 1000 * d1, 1/d1
+                    , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames);
+        gettimeofday(&tv1, NULL);
+
         // EnQueue
         if(ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
             printf("VIDIOC_QBUF: %s\n", strerror(errno));
@@ -759,13 +808,9 @@ int f640_processing()
         //printf("EnQueue ok : index = %u\n", buf.index);
 
         // Loop
-        gettimeofday(&tv2, NULL);
-        d1 = (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0);
-        printf(" d = %5.1fms  | freq = " F640_FG_RED "%5.2fHz" F640_RESET "  |\n", frame, 1000 * d1, 1/d1);
-        gettimeofday(&tv1, NULL);
         frame++;
     }
-    printf("Exited from processing loop.\n");
+    if ( verbose ) printf("Exited from processing loop.\n");
 
     return 0;
 }
@@ -779,45 +824,75 @@ int f640_getopts(int argc, char *argv[])
     int index = 0;
     static struct option long_opts[] =
     {
-        {"help",            no_argument,       0, 'h'},
-        {"config",          required_argument, 0, 'c'},
-        {"quiet",           no_argument,       0, 'q'},
-        {"verbose",         no_argument,       0, 'v'},
-        {"version",         no_argument,       0, 'V'},
-        {"frames",          required_argument, 0, 'f'},
-        {0, 0, 0, 0}
+        {"help",            no_argument,       NULL, 'h'},
+        {"quiet",           no_argument,       NULL, 'q'},
+        {"verbose",         no_argument,       NULL, 'v'},
+        {"version",         no_argument,       NULL, 'i'},
+        {"no-capture",      no_argument,       NULL, '0'},
+        {"frames",          required_argument, NULL, 'f'},
+        {"show-all",        no_argument,       NULL, 'A'},
+        {"show-caps",       no_argument,       NULL, 'W'},
+        {"show-inputs",     no_argument,       NULL, 'I'},
+        {"show-controls",   no_argument,       NULL, 'C'},
+        {"show-formats",    no_argument,       NULL, 'F'},
+        {"show-frame-size", no_argument,       NULL, 'S'},
+        {"show-frame-rate", no_argument,       NULL, 'R'},
+        {"show-video-std",  no_argument,       NULL, 'V'},
+        {NULL, 0, NULL, 0}
     };
-    char *opts = "-h:c:q:v:V:f";
+    char *opts = "hqvi:f:AWICFSRV";
 
-    while( (c = getopt_long(argc, argv, opts, long_opts, &index) ) != -1)
+    while(1)
     {
+        if ( ( c = getopt_long(argc, argv, opts, long_opts, NULL) ) < 0 ) break;
         switch(c)
         {
             case 'h':
                 printf("Help\n");
                 break;
-            case 'c':
-                show_config = atoi(optarg);
-                printf("Show config selected.\n");
-                break;
             case 'q':
-
+                quiet = 1;
                 break;
             case 'v':
-
+                verbose = 1;
                 break;
-            case 'V':
+            case 'i':
                 printf("Version 0.1\n");
                 break;
-            case 'l':
-
+            case '0':
+                capture = 0;
                 break;
             case 'f':
                 nb_frames = atoi(optarg);
-                printf("Will get %u frames\n", nb_frames);
+                break;
+            case 'A':
+                show_all = 1;
+                break;
+            case 'W':
+                show_caps = 1;
+                break;
+            case 'I':
+                show_inputs = 1;
+                break;
+            case 'C':
+                show_controls = 1;
+                break;
+            case 'F':
+                show_formats = 1;
+                break;
+            case 'S':
+                show_framsize = 1;
+                break;
+            case 'R':
+                show_framints = 1;
+                break;
+            case 'V':
+                show_vidstds = 1;
                 break;
         }
     }
+    //
+    if (!nb_frames) capture = 0;
     return 0;
 }
 /*
@@ -843,7 +918,7 @@ int main(int argc, char *argv[])
     }
 
     //
-    if ( !show_config ) {
+    if ( capture ) {
         log_env = f051_init_data_env("bird", "stream", 900);
         if (!log_env) {
             printf(F640_FG_RED "No proc environment, exiting.\n" F640_RESET);
@@ -862,40 +937,36 @@ int main(int argc, char *argv[])
     if ( f640_get_capabilities() < 0 ) goto end;
 
     // Input
-    if ( !show_config ) {
-        err = f640_set_input();
-    }
+    err = f640_set_input();
 
     // Controls
     err = f640_list_controls();
 
     // Format
-    if ( !show_config ) {
-        err = f640_set_pix_format();
-    }
+    err = f640_set_pix_format();
 
     // Parm
-    if ( !show_config ) {
-        err = f640_set_parm();
-    }
+    err = f640_set_parm();
 
     // Map
-    if ( !show_config ) {
+    if ( capture ) {
         err = f640_set_mmap();
     }
 
-    // Grab
-    if ( !show_config ) {
+    // Capture
+    if ( capture ) {
         err = f640_processing();
     }
 
     // UnMap
-    if ( !show_config ) {
+    if ( capture ) {
         err = f640_free_mmap();
     }
 
     //
 end:
     if( fd >= 0 ) close(fd);
+    f051_end_env(log_env);
+    printf(F640_BOLD "Exiting app.\n" F640_RESET);
     return 0;
 }

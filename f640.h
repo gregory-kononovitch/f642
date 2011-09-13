@@ -10,6 +10,7 @@
 #define F640_H_
 
 #define F640_RESET       "\033[0m"//(0)
+#define F640_UNDER       "\033[4m"//(0)
 #define F640_ERASE_LINE  "\033[2J"
 #define F640_BOLD        "\033[1m"//(1)
 #define F640_FG_BLACK    "\033[30m"//(30)
