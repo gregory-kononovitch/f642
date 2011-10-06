@@ -22,7 +22,7 @@ install: all
 	install -m 644 f640.1.gz ${DESTDIR}${mandir}/man1
 
 f640: $(OBJS) f640.h
-	$(CC) ${CFLAGS} -o f640 $(OBJS) $(LDFLAGS)
+	$(CC) ${CFLAGS} -o f640.ox $(OBJS) $(LDFLAGS)
 
 .c.o:
 	${CC} ${CFLAGS} -c $< -o $@
