@@ -7,7 +7,7 @@ mandir      = ${datarootdir}/man
 datarootdir = ${prefix}/share
 
 CC      = gcc
-CFLAGS  = -g -O2
+CFLAGS  = -g -pg -O0
 LDFLAGS = -lf051-0.1 -lm
 
 OBJS  = f640_main.c
@@ -22,7 +22,7 @@ install: all
 	install -m 644 f640.1.gz ${DESTDIR}${mandir}/man1
 
 f640: $(OBJS) f640.h
-	$(CC) -o f640 $(OBJS) $(LDFLAGS)
+	$(CC) ${CFLAGS} -o f640 $(OBJS) $(LDFLAGS)
 
 .c.o:
 	${CC} ${CFLAGS} -c $< -o $@

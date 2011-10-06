@@ -29,7 +29,7 @@
 
 
 /*
- *
+ * 
  */
 static struct f051_log_env *log_env;
 static char *dev = "/dev/video0";
@@ -47,19 +47,20 @@ static struct v4l2_buffer buf;
 static v4l2_buffer_t *buffer;
 static int loop;
 
-static int capture         = 1;
-static uint32_t nb_frames  = 0;
-static int verbose         = 0;
-static int quiet           = 0;
-static int debug           = 0;
-static int show_all        = 0;
-static int show_caps       = 0;
-static int show_inputs     = 0;
-static int show_controls   = 0;
-static int show_formats    = 0;
-static int show_framsize   = 0;
-static int show_framints   = 0;
-static int show_vidstds    = 0;
+static int capture          = 1;
+static uint32_t nb_frames   = 0;
+static uint32_t frames_pers = 10;
+static int verbose          = 0;
+static int quiet            = 0;
+static int debug            = 0;
+static int show_all         = 0;
+static int show_caps        = 0;
+static int show_inputs      = 0;
+static int show_controls    = 0;
+static int show_formats     = 0;
+static int show_framsize    = 0;
+static int show_framints    = 0;
+static int show_vidstds     = 0;
 
 
 /*
@@ -97,6 +98,9 @@ static int f640_get_capabilities()
         printf("Device does not support capturing.\n");
         return -1;
     }
+
+    printf("Device capabilities ok.\n");
+    return 0;
 }
 
 /*
@@ -505,7 +509,7 @@ int f640_set_parm()
     );
 
     if ( parm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME ) {
-        parm.parm.capture.timeperframe.denominator = 10;
+        parm.parm.capture.timeperframe.denominator = frames_pers;
         if (ioctl (fd, VIDIOC_S_PARM, &parm) == -1) {
             perror ("VIDIOC_S_INPUT");
             if ( verbose )
@@ -830,6 +834,7 @@ int f640_getopts(int argc, char *argv[])
         {"version",         no_argument,       NULL, 'i'},
         {"no-capture",      no_argument,       NULL, '0'},
         {"frames",          required_argument, NULL, 'f'},
+        {"fps",             required_argument, NULL, 'z'},
         {"show-all",        no_argument,       NULL, 'A'},
         {"show-caps",       no_argument,       NULL, 'W'},
         {"show-inputs",     no_argument,       NULL, 'I'},
@@ -840,7 +845,7 @@ int f640_getopts(int argc, char *argv[])
         {"show-video-std",  no_argument,       NULL, 'V'},
         {NULL, 0, NULL, 0}
     };
-    char *opts = "hqvi:f:AWICFSRV";
+    char *opts = "hqvi0:f:z:AWICFSRV";
 
     while(1)
     {
@@ -864,6 +869,9 @@ int f640_getopts(int argc, char *argv[])
                 break;
             case 'f':
                 nb_frames = atoi(optarg);
+                break;
+            case 'z':
+                frames_pers = atoi(optarg);
                 break;
             case 'A':
                 show_all = 1;
@@ -904,10 +912,12 @@ int main(int argc, char *argv[])
 
     // Options
     f640_getopts(argc, argv);
+    printf("Options ok : frames %u  |  freq %u\n", nb_frames, frames_pers);
 
     // Signals
     signal(SIGTERM, f640_signal_term_handler);
     signal(SIGINT , f640_signal_term_handler);
+    printf("Signals ok\n");
 
     // Open
     fd = open(dev, O_RDWR );//| O_NONBLOCK);
@@ -916,6 +926,7 @@ int main(int argc, char *argv[])
         printf("open: %s\n", strerror(errno));
         return -1;
     }
+    printf("Open video ok\n");
 
     //
     if ( capture ) {
@@ -925,6 +936,7 @@ int main(int argc, char *argv[])
             return -1;
         }
     }
+    printf("Init env ok\n");
 
     // Debug
     if ( ioctl(fd, VIDIOC_LOG_STATUS) == -1) {
@@ -935,6 +947,7 @@ int main(int argc, char *argv[])
 
     // Capabilities
     if ( f640_get_capabilities() < 0 ) goto end;
+    printf("Capabilities ok\n");
 
     // Input
     err = f640_set_input();
