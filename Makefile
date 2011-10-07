@@ -22,7 +22,7 @@ install: all
 	install -m 644 f640.1.gz ${DESTDIR}${mandir}/man1
 
 f640: $(OBJS) f640.h
-	$(CC) ${CFLAGS} -o f640.ox $(OBJS) $(LDFLAGS)
+	$(CC) ${CFLAGS} -o f640.xo $(OBJS) $(LDFLAGS)
 
 .c.o:
 	${CC} ${CFLAGS} -c $< -o $@
@@ -31,7 +31,7 @@ f640.1.gz: f640.1
 	gzip -c --best f640.1 > f640.1.gz
 
 clean:
-	rm -f core* *.o f640 f640.1.gz
+	rm -f core* *.o f640.xo f640.1.gz
 
 #distclean: clean
 #	rm -rf config.h *.cache config.log config.status Makefile *.jp*g *.png
