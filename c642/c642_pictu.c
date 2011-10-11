@@ -24,6 +24,7 @@ typedef struct tmp1 cpoint;
 struct c642_pict {
     long    width;
     long    height;
+    int     size;
 
     int     num_at;
     cpoint  P[C642_NUM_AT][3];
@@ -144,6 +145,7 @@ struct c642_pict *c642_create(int width, int height)
         printk("Memo alloc ko\n");
         return NULL;
     }
+    pict->size   = 3 * width * height;
     pict->width  = width;
     pict->height = height;
     pict->num_at = C642_NUM_AT;
@@ -158,7 +160,7 @@ struct c642_pict *c642_create(int width, int height)
     }
 
     //
-    pict->env = a051_proc_env_alloc("bird", "brodge", 3 * 3 * width * height / 1024);
+    pict->env = a051_proc_env_alloc("bird", "brodge3", 3 * width * height / 1024);
     if (!pict->env) {
         printk("Memo env alloc ko\n");
         kfree(pict->picture);
@@ -172,7 +174,7 @@ struct c642_pict *c642_create(int width, int height)
 
 void c642_destroy(struct c642_pict *pict)
 {
-    //a051_proc_env_free(&pict->env);
+    a051_proc_env_free(pict->env);
     kfree(pict->picture);
     kfree(pict);
 }
@@ -251,4 +253,8 @@ void brodge(struct c642_pict *pict)
     }
 
     // Sig
+
+    // Export
+    d = a051_data_write(pict->env, pict->picture, pict->size);
+    printk("Brodge  ' %lX '  send %ld bytes\n", 0x7F1FFFFFFF & (1L * pict->sig.tv_sec * 1000L + pict->sig.tv_nsec / 1000000L), d);
 }

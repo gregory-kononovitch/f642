@@ -20,23 +20,25 @@ struct a051_log_env *a051_log = NULL;
 /*
  *
  */
+struct c642_pict *pict;
 int c642_init(void)
 {
-    struct c642_pict *pict;
     //ainit("bird", "c642", 32, A051_LOG_MEM, "C642", 4, 25);
 
     //
+    pict = NULL;
     pict = c642_create(1024, 600);
+    if (!pict) {
+        printk("Unable to create pict, exiting.\n");
+        return -ENOMEM;
+    }
 
     //
     brodge(pict);
 
     //
-    c642_destroy(pict);
-
-    //
     //areturn(-EBUSY, "ok");
-    return -EBUSY;
+    return 0;
 }
 
 /*
@@ -45,7 +47,7 @@ int c642_init(void)
 void c642_exit(void)
 {
     //astart(1, " ");
-
+    c642_destroy(pict);
     //aquitv("QUIT");
 }
 
