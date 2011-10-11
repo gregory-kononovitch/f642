@@ -22,10 +22,21 @@ struct a051_log_env *a051_log = NULL;
  */
 int c642_init(void)
 {
-    int r;
-    ainit("bird", "pict", 32, A051_LOG_MEM, "C642", 4, 25);
+    struct c642_pict *pict;
+    //ainit("bird", "c642", 32, A051_LOG_MEM, "C642", 4, 25);
 
-    areturn(0, "ok");
+    //
+    pict = c642_create(1024, 600);
+
+    //
+    brodge(pict);
+
+    //
+    c642_destroy(pict);
+
+    //
+    //areturn(-EBUSY, "ok");
+    return -EBUSY;
 }
 
 /*
@@ -33,9 +44,9 @@ int c642_init(void)
  */
 void c642_exit(void)
 {
-    astart(1, " ");
+    //astart(1, " ");
 
-    aquitv("QUIT");
+    //aquitv("QUIT");
 }
 
 module_init(c642_init);

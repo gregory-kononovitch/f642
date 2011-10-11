@@ -31,6 +31,11 @@ extern struct a051_log_env  *a051_log;
 #include "../../a051/src/a051_profile.h"
 
 
+// Brodge
+struct c642_pict;
+extern struct c642_pict *c642_create(int width, int height);
+extern void brodge(struct c642_pict *pict);
+extern void c642_destroy(struct c642_pict *pict);
 
 
 #endif /* C642_INTERNAL_H_ */
