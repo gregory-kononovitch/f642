@@ -75,32 +75,37 @@ int c642_init(void)
     int r;
 
     // Trigo
-    r = request_firmware(&fm, "c642-trig.bin", NULL);
-    if (r) {
-        cosinus = NULL;
-        printk("Loading trigonom numbers failed, miss something.\n");
-    } else {
-        cosinus = kmalloc(fm->size, GFP_KERNEL);
-        if (!cosinus) {
-            printk("Unabled to kmalloc.\n");
-            release_firmware(fm);
-        }
-        memcpy(cosinus, fm->data, fm->size);
-        printk("Trigonom numbers loaded.\n");
-
-        release_firmware(fm);
-    }
+//    r = request_firmware(&fm, "c642-trig.bin", NULL);
+//    if (r) {
+//        cosinus = NULL;
+//        printk("Loading trigonom numbers failed, miss something.\n");
+//    } else {
+//        cosinus = kmalloc(fm->size, GFP_KERNEL);
+//        if (!cosinus) {
+//            printk("Unabled to kmalloc.\n");
+//            release_firmware(fm);
+//        }
+//        memcpy(cosinus, fm->data, fm->size);
+//        printk("Trigonom numbers loaded.\n");
+//
+//        release_firmware(fm);
+//    }
 
     //
     pict = NULL;
-    pict = c642_create(1024, 600);
+    //pict = c642_create(1024, 600);    // 24 marge
+    pict = c642_create(512, 288);
     if (!pict) {
         printk("Unable to create pict, exiting.\n");
         return -ENOMEM;
     }
 
     //
-    brodge(pict);
+    r = 600;
+    while (r>0) {
+        brodge(pict);
+        r--;
+    }
 
     //
     //areturn(-EBUSY, "ok");
