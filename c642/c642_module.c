@@ -24,6 +24,52 @@ struct a051_log_env *a051_log = NULL;
 const struct firmware *fm;
 signed short *cosinus = NULL;
 struct c642_pict *pict;
+
+
+
+/*
+ * 512 for a loop
+ */
+int c642_cos(_frac_ *res, long num, u64 den)
+{
+    int i;
+
+    if (cosinus == NULL || den == 0) {
+        return -EFAULT;
+    }
+    //
+    num = num < 0 ? -num % den : num % den;
+    i = (int) ( 512L * num / den );
+    res->num = cosinus[i];
+    res->den = 0x7FFF;
+
+    return 0;
+}
+
+int c642_sin(_frac_ *res, long num, u64 den)
+{
+    int i;
+
+    if (cosinus == NULL || den == 0) {
+        return -EFAULT;
+    }
+    //
+    num = num < 0 ? -num % den : num % den;
+    i = (int) ( 512L * num / den );
+    i = ( i + 128 ) % 512;
+    res->num = cosinus[i];
+    res->den = 0x7FFF;
+
+    return 0;
+}
+
+
+
+
+
+
+
+
 int c642_init(void)
 {
     int r;

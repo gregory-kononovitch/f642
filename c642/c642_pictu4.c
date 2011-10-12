@@ -16,12 +16,6 @@
 
 
 
-struct __frac__ {
-    u64 num;
-    u64 den;
-};
-typedef struct __frac__ _frac_;
-
 struct tmp1 {
     long x;
     long y;

@@ -37,5 +37,11 @@ extern struct c642_pict *c642_create(int width, int height);
 extern void brodge(struct c642_pict *pict);
 extern void c642_destroy(struct c642_pict *pict);
 
+struct __frac__ {
+    u64 num;
+    u64 den;
+};
+typedef struct __frac__ _frac_;
+
 
 #endif /* C642_INTERNAL_H_ */
