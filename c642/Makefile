@@ -8,7 +8,7 @@ ccflags-m := -Wall -g	#
 obj-m           += c642-brodge.o
 
 c642-brodge-y     := c642_module.o
-c642-brodge-y     += c642_pictu.o
+c642-brodge-y     += c642_pictu4.o
 
 
 all:

@@ -14,6 +14,23 @@
 #include "../../a051/src/a051_proc.h"
 #include "c642_internal.h"
 
+//
+struct _numb_tmp_ {
+    u32 frac;
+    u32 plin;
+};
+typedef struct _numb_tmp_ _num_;
+//extern void _add_(_num_ *d1, _num_ *d2, _num_ *r);
+//extern void _sub_(_num_ *d1, _num_ *d2, _num_ *r);
+//extern void _mul_(_num_ *d1, _num_ *d2, _num_ *r);
+//extern void _div_(_num_ *d1, _num_ *d2, _num_ *r);
+
+struct tmp1 {
+    _num_ x;
+    _num_ y;
+};
+typedef struct tmp1 cpoint;
+//extern void _dist_(cpoint *p1, cpoint *p2, _num_ *r);
 
 
 void _add_(_num_ *d1, _num_ *d2, _num_ *r) {
@@ -345,3 +362,58 @@ _num_ *_random3_(_num_ *d1, _num_ *d2, _num_ *d3) {
 //    d = a051_data_write(pict->env, pict->picture, pict->size);
 //    printk("Brodge  ' %lX '  send %ld bytes\n", 0x7F1FFFFFFF & (1L * pict->sig.tv_sec * 1000L + pict->sig.tv_nsec / 1000000L), d);
 //}
+
+
+
+
+
+
+
+
+//_num_ d1, d2, d3, d4, r;
+//u32 rnd = random32();
+//cpoint p1, p2;
+//printk("r = %u / %lu\n", rnd, __fls(rnd));
+//
+////
+//d1.plin = 123;  d1.frac = 0x80000000;
+//d2.plin = 121;  d2.frac = 0xC0000000;
+//
+//// ADD1
+//_add_(&d1, &d2, &r);
+//printk("123.8 + 121.C = %X.%X\n", r.plin, r.frac);
+//
+//// SUB1
+//_sub_(&d1, &d2, &r);
+//printk("123.8 - 121.C = %X.%X\n", r.plin, r.frac);
+//
+//// SUB2
+//d1.plin = 1;  d1.frac = 0xAAAAAAAA;
+//d2.plin = 0;  d2.frac = 0x55555555;
+//_sub_(&d1, &d2, &r);
+//printk("1.66 - 0.33 = %X.%X\n", r.plin, r.frac);
+//
+//// MUL1
+//d1.plin = 1;  d1.frac = 0x7FFFFFFF;
+//d2.plin = 2;  d2.frac = 0x55555555;
+//_mul_(&d1, &d2, &r);
+//printk("1.5 x 2.3 = %X.%X\n", r.plin, r.frac);
+//
+//// DIV1
+//d1.plin = 1;  d1.frac = 0x55555555;
+//d2.plin = 2;  d2.frac = 0x7FFFFFFF;
+//_div_(&d1, &d2, &r);
+//printk("1.5 / 0.5 = %X.%X\n", r.plin, r.frac);
+//
+//
+//// Dist
+////
+//p1.x.plin = 1;  p1.x.frac = 0x80000000;
+//p1.y.plin = 1;  p1.y.frac = 0xC0000000;
+//p2.x.plin = 5;  p2.x.frac = 0x50000000;
+//p2.y.plin = 6;  p2.y.frac = 0xF0000000;
+//
+//_dist_(&p1, &p2, &r);
+//printk("dist = %X.%X\n", r.plin, r.frac);
+//
+//return -EAGAIN;
