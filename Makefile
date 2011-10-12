@@ -4,7 +4,7 @@ all:
 	make -C f640
 	mv f640/f640.xo .
 	make -C c642
-	mv c642/c642-pictu.ko .
+	mv c642/c642-brodge.ko .
 
 
 clean:

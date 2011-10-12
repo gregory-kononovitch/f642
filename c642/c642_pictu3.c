@@ -100,6 +100,11 @@ void _random_(_num_ *d) {
     d->frac = random32();
 }
 
+struct tmp1 {
+    _num_ x;
+    _num_ y;
+};
+typedef struct tmp1 cpoint;
 
 #define C642_NUM_AT 5
 struct c642_pict {
@@ -122,7 +127,7 @@ struct c642_pict {
 ///*
 // *             //////////////////////////////////////
 // */
-void _dist_(cpoint *p1, cpoint *p2, _num_ *r) {
+void _dist_(const cpoint *p1, const cpoint *p2, _num_ *r) {
     long res;
     _num_ r1, r2, r3;
     _sub_(&p2->x, &p1->x, &r1);
@@ -130,7 +135,7 @@ void _dist_(cpoint *p1, cpoint *p2, _num_ *r) {
     _sub_(&p2->y, &p1->y, &r1);
     _mul_(&r1, &r1, &r3);
     _add_(&r2, &r3, &r1);
-    res = int_sqrt( ((0L + r1.plin) << 32) + r1.frac );
+    res = int_sqrt( (r1.plin << 32) + r1.frac );
     r->plin = res >> 16;
     r->frac = 0;
 }
@@ -138,16 +143,16 @@ void _dist_(cpoint *p1, cpoint *p2, _num_ *r) {
 //long _abs_(long d) {
 //    return d > 0 ? d : -d;
 //}
-
-_num_ *_random2_(_num_ *d1, _num_ *d2) {
-    return random32() < 0x7FFFFFFF ? d1 : d2;
-}
-
-_num_ *_random3_(_num_ *d1, _num_ *d2, _num_ *d3) {
-    u32 r = random32();
-    return  r < 0x55555555 ? d1 : r < 0xAAAAAAAA ? d2 : d3;
-}
-
+//
+//long _random2_(long d1, long d2) {
+//    return random32() < 0x7FFFFFFF ? d1 : d2;
+//}
+//
+//long _random3_(long d1, long d2, long d3) {
+//    u32 r = random32();
+//    return  r < 0x55555555 ? d1 : r < 0xAAAAAAAA ? d2 : d3;
+//}
+//
 //long _random3m_(long d1, long d2, long d3, int m1, int m2, int m3) {
 //    u64 r = random32();
 //    return  r < 0xFFFFFFFF * m1 / (m1+m2+m3) ? d1 : r < 0xFFFFFFFF * (m1+m2)/(m1+m2+m3) ? d2 : d3;

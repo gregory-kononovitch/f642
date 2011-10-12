@@ -5,10 +5,10 @@ include /lib/modules/$(shell uname -r)/build/.config
 ####	Modules
 ccflags-m := -Wall -g	#
 
-obj-m           += c642-pictu3.o
+obj-m           += c642-brodge.o
 
-c642-pictu3-y     := c642_module.o
-c642-pictu3-y     += c642_pictu.o
+c642-brodge-y     := c642_module.o
+c642-brodge-y     += c642_pictu.o
 
 
 all:

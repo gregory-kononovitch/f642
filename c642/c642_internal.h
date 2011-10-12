@@ -30,6 +30,23 @@ extern struct a051_proc_env *a051_env;
 extern struct a051_log_env  *a051_log;
 #include "../../a051/src/a051_profile.h"
 
+//
+struct _numb_tmp_ {
+    u32 frac;
+    u32 plin;
+};
+typedef struct _numb_tmp_ _num_;
+extern void _add_(_num_ *d1, _num_ *d2, _num_ *r);
+extern void _sub_(_num_ *d1, _num_ *d2, _num_ *r);
+extern void _mul_(_num_ *d1, _num_ *d2, _num_ *r);
+extern void _div_(_num_ *d1, _num_ *d2, _num_ *r);
+
+struct tmp1 {
+    _num_ x;
+    _num_ y;
+};
+typedef struct tmp1 cpoint;
+extern void _dist_(cpoint *p1, cpoint *p2, _num_ *r);
 
 // Brodge
 struct c642_pict;
