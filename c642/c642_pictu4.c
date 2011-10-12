@@ -48,8 +48,8 @@ struct c642_pict {
 
 //
 void _random_(_frac_ *f) {
-    f->den = 0xFFFFFFFF;
     f->num = random32();
+    f->den = 0xFFFFFFFF;
     if (f->num == 0xFFFFFFFF ) f->num = 0xFFFFFFFE;
 }
 
@@ -133,8 +133,8 @@ int _imax_(int *c) {
 ////    return d > 0 ? d : -d;
 ////}
 void osc2(_frac_ *res, cpoint *p0, cpoint *p, long pas) {
-    res->den = pas;
     res->num = _dist_(p0, p) % pas;
+    res->den = pas;
 }
 ////long osc3(cpoint p0, cpoint p, long pas) {
 ////    long dx = (p.x - p0.x); if (dx<0) dx = -dx;

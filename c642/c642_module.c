@@ -17,13 +17,33 @@ struct a051_log_env *a051_log = NULL;
 
 #include <asm/bitops.h>
 #include <linux/random.h>
-
+#include <linux/firmware.h>
 /*
  *
  */
+const struct firmware *fm;
+signed short *cosinus = NULL;
 struct c642_pict *pict;
 int c642_init(void)
 {
+    int r;
+
+    // Trigo
+    r = request_firmware(&fm, "c642-trig.bin", NULL);
+    if (r) {
+        cosinus = NULL;
+        printk("Loading trigonom numbers failed, miss something.\n");
+    } else {
+        cosinus = kmalloc(fm->size, GFP_KERNEL);
+        if (!cosinus) {
+            printk("Unabled to kmalloc.\n");
+            release_firmware(fm);
+        }
+        memcpy(cosinus, fm->data, fm->size);
+        printk("Trigonom numbers loaded.\n");
+
+        release_firmware(fm);
+    }
 
     //
     pict = NULL;
