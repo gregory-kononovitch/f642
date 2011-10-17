@@ -90,7 +90,6 @@ void Brodger::brodge() {
       for(o = 0 ; o < numOsc ; o++) {
 	if (oscs[o].mas > 0)
 	  pix[oscs[o].col] += oscs[o].mas * oscs[o].coln1(&p);
-	  //oscs[o].coln3(&p, pix);
       }
       for(o = 0 ; o < 3 ; o++) {
 	pix[o] /= mtot[o];

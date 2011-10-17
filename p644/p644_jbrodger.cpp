@@ -47,12 +47,37 @@ JNIEXPORT jlong JNICALL Java_u640_CWrap_init(JNIEnv *env, jobject obj, jint widt
 
 /*
  * Class:     u640_CWrap
- * Method:    alloc
+ * Method:    allocArray
+ * Signature: (J)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_u640_CWrap_allocArray(JNIEnv *env, jobject obj, jlong peer) {
+  Brodger *brodger = toBrodger(peer);
+  jboolean isCopy;
+  jbyteArray ret = env->NewByteArray((jsize)(3*brodger->width*brodger->height) );
+  if (!ret) {
+    printf("Can't create byte array\n");
+    return NULL;
+  }
+  brodger->img = (uint8_t*)env->GetByteArrayElements(ret, &isCopy);
+  printf("CPPBrodger alloc with a byte array (copy %u)\n", isCopy);
+  return ret;
+}
+
+/*
+ * Class:     u640_CWrap
+ * Method:    allocBuffer
  * Signature: (J)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_u640_CWrap_alloc(JNIEnv *env, jobject obj, jlong peer) {
+JNIEXPORT jobject JNICALL Java_u640_CWrap_allocBuffer(JNIEnv *env, jobject obj, jlong peer) {
   Brodger *brodger = toBrodger(peer);
-  if (!peer) return NULL;
+  if (!brodger) return NULL;
+  if (!brodger->img) {
+    brodger->img = (uint8_t*) malloc(3*brodger->width*brodger->height);
+    if (!brodger->img) {
+      printf("Memory pb, no image.\n");
+      return NULL;
+    }
+  }
   printf("CPPAlloc: brodger %p | oscs %p | img %p | width %d\n", brodger, brodger->oscs, brodger->img, brodger->width);
   return env->NewDirectByteBuffer((void*)brodger->img, (jlong)(3*brodger->width*brodger->height));
 }
@@ -77,16 +102,20 @@ JNIEXPORT void JNICALL Java_u640_CWrap_free(JNIEnv *env, jobject obj, jlong peer
  */
 JNIEXPORT void JNICALL Java_u640_CWrap_brodger(JNIEnv *env, jobject obj, jlong peer, jbyteArray im, jint width, jint height) {
   uint8_t  *img;
-  jboolean isCopy;
+  jboolean isCopy = 0;
   Brodger brodger = Brodger(width, height);
 
-  isCopy = 0;
   img = (uint8_t*) env->GetByteArrayElements(im, &isCopy);
   brodger.brodge(img);
+  img[ 0] = 1;    img[ 1] = 1;    img[10] = 1;
+  env->ReleaseByteArrayElements(im, (jbyte *) img, JNI_COMMIT);
   printf("JNIBrodger done with isCopy = \"%u\"\n", isCopy);
-  img[ 0] = 1;
-  img[ 1] = 1;
-  img[10] = 1;
+/*
+  env->GetByteArrayRegion(im, (jsize)0, (jsize)(3*width*height), (jbyte*)img);
+  brodger.brodge(img);
+  img[ 0] = 3;    img[ 1] = 3;    img[10] = 3;
+  printf("JNIBrodger done with region\n");
+*/  
 }
 
 
@@ -95,12 +124,24 @@ JNIEXPORT void JNICALL Java_u640_CWrap_brodger(JNIEnv *env, jobject obj, jlong p
  * Method:    process
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_u640_CWrap_process(JNIEnv *env, jobject obj, jlong peer) {
+JNIEXPORT void JNICALL Java_u640_CWrap_process__J(JNIEnv *env, jobject obj, jlong peer) {
     Brodger *brodger = toBrodger(peer);
     printf("CPPProcess: brodger %p | oscs %p | img %p | width %d\n", brodger, brodger->oscs, brodger->img, brodger->width);
     
     brodger->brodge();
-    brodger->img[ 0] = 2;
-    brodger->img[ 1] = 2;
-    brodger->img[10] = 2;
+    brodger->img[ 0] = 2;    brodger->img[ 1] = 2;    brodger->img[10] = 2;
+}
+
+/*
+ * Class:     u640_CWrap
+ * Method:    process
+ * Signature: (JLjava/nio/ByteBuffer;)V
+ */
+JNIEXPORT void JNICALL Java_u640_CWrap_process__JLjava_nio_ByteBuffer_2(JNIEnv * env, jobject obj, jlong peer, jobject buf) {
+  uint8_t *img;
+  Brodger *brodger = toBrodger(peer);
+  
+  img = (uint8_t*) env->GetDirectBufferAddress(buf);
+  brodger->brodge(img);
+  img[ 0] = 4;    img[ 1] = 4;    img[10] = 4;
 }

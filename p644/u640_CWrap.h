@@ -17,10 +17,18 @@ JNIEXPORT jlong JNICALL Java_u640_CWrap_init
 
 /*
  * Class:     u640_CWrap
- * Method:    alloc
+ * Method:    allocArray
+ * Signature: (J)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_u640_CWrap_allocArray
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     u640_CWrap
+ * Method:    allocBuffer
  * Signature: (J)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_u640_CWrap_alloc
+JNIEXPORT jobject JNICALL Java_u640_CWrap_allocBuffer
   (JNIEnv *, jobject, jlong);
 
 /*
@@ -44,8 +52,16 @@ JNIEXPORT void JNICALL Java_u640_CWrap_brodger
  * Method:    process
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_u640_CWrap_process
+JNIEXPORT void JNICALL Java_u640_CWrap_process__J
   (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     u640_CWrap
+ * Method:    process
+ * Signature: (JLjava/nio/ByteBuffer;)V
+ */
+JNIEXPORT void JNICALL Java_u640_CWrap_process__JLjava_nio_ByteBuffer_2
+  (JNIEnv *, jobject, jlong, jobject);
 
 #ifdef __cplusplus
 }

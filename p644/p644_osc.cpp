@@ -34,6 +34,7 @@ Osc::~Osc() {
 
 int Osc::coln1(Point *p) {
   int d = atr.dist(p);
+  
   switch(decTyp) {
   case NONE:
     d = 256 * (d % pas) / pas;
