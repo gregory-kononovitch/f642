@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "p644_brodger.h"
 
@@ -67,10 +69,12 @@ Brodger::~Brodger() {
 }
 
 void Brodger::brodge() {
+  struct timeval tv1, tv2;
   int x, y, o, pix[3], mtot[3];
   Point p;
   uint8_t *im = img;
 
+  gettimeofday(&tv1, NULL);
   for(o = 0 ; o < 3 ; o++) mtot[o] = 0;
   for(o = 0 ; o < numOsc ; o++) {
     mtot[oscs[o].col] += oscs[o].mas;
@@ -95,6 +99,11 @@ void Brodger::brodge() {
       }
     }
   }
+  gettimeofday(&tv2, NULL);
+  if (tv2.tv_usec - tv1.tv_usec < 0)
+      printf("CPPBrodger done in %ld.%ld\n", tv2.tv_sec - tv1.tv_sec - 1, (1000000 + tv2.tv_usec - tv1.tv_usec)/1000);
+  else
+      printf("CPPBrodger done in %ld.%ld\n", tv2.tv_sec - tv1.tv_sec, (tv2.tv_usec - tv1.tv_usec)/1000);
 }
 
 void Brodger::brodge(uint8_t *im) {

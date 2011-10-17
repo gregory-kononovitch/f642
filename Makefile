@@ -7,6 +7,8 @@ all:
 	mv c642/c642-brodge.ko .
 	make -C p643
 	mv p643/p643-brdg.xo .
+	make -C p644
+
 
 
 clean:

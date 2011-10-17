@@ -24,16 +24,20 @@ int main(int argc, char *argv[]) {
   int r = 0, i, fd;
   char file_name[256];
   struct timeval tv1, tv2;
+  //
+  uint8_t *img;
+  img = (uint8_t*) malloc(3 * 800 * 450);
 
   //
   gettimeofday(&tv1, NULL);
   srand(tv1.tv_sec);
   //
-  for(i = 0 ; i < 20 ; i++) {
-    Brodger brodge = Brodger(800, 450, 3);
+  Brodger brodge = Brodger(800, 450);
+  for(i = 0 ; i < 10 ; i++) {
+    //Brodger brodge = Brodger(800, 450, 3);
 
     gettimeofday(&tv1, NULL);
-    brodge.brodge();
+    brodge.brodge(img);
     gettimeofday(&tv2, NULL);
 
     if (tv2.tv_usec - tv1.tv_usec < 0)
@@ -49,7 +53,7 @@ int main(int argc, char *argv[]) {
       return fd;
     }
 
-    write(fd, brodge.img, 3 * brodge.width * brodge.height);
+    write(fd, img, 3 * brodge.width * brodge.height);
     printf("Image copied.\n");
     r = close(fd);
   }

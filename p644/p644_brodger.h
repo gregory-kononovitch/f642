@@ -24,8 +24,8 @@ class Brodger
   int      height;
   uint8_t  *img;
 
-  int numOsc;
-  Osc *oscs;
+  int      numOsc;
+  Osc      *oscs;
 
   Brodger(int width, int height);
   Brodger(int width, int height, int numOsc);

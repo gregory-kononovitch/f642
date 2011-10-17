@@ -9,11 +9,43 @@ extern "C" {
 #endif
 /*
  * Class:     u640_CWrap
+ * Method:    init
+ * Signature: (III)J
+ */
+JNIEXPORT jlong JNICALL Java_u640_CWrap_init
+  (JNIEnv *, jobject, jint, jint, jint);
+
+/*
+ * Class:     u640_CWrap
+ * Method:    alloc
+ * Signature: (J)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_u640_CWrap_alloc
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     u640_CWrap
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_u640_CWrap_free
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     u640_CWrap
  * Method:    brodger
- * Signature: ([BII)V
+ * Signature: (J[BII)V
  */
 JNIEXPORT void JNICALL Java_u640_CWrap_brodger
-  (JNIEnv *, jobject, jbyteArray, jint, jint);
+  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint);
+
+/*
+ * Class:     u640_CWrap
+ * Method:    process
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_u640_CWrap_process
+  (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }
