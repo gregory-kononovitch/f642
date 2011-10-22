@@ -1,5 +1,10 @@
 SHELL = /bin/sh
 
+p644:
+	make -C p644
+	mv p644/p644-brodger.xo .
+
+
 all:
 	make -C f640
 	mv f640/f640.xo .
@@ -8,11 +13,12 @@ all:
 	make -C p643
 	mv p643/p643-brdg.xo .
 	make -C p644
-
+	mv p644/p644-brodger.xo .
 
 
 clean:
 	make -C f640 clean
 	make -C c642 clean
 	make -C p643 clean
-	rm -f core* *.o f640.xo f640.1.gz c642-pictu.ko p643-brdg.xo
+	make -C p644 clean
+	rm -f core* *.o f640.xo f640.1.gz c642-pictu.ko p643-brdg.xo p644-brodger.xo

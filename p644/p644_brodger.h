@@ -16,25 +16,24 @@
 
 namespace p644
 {
- 
-class Brodger
-{
- public:
-  int      width;
-  int      height;
-  uint8_t  *img;
 
-  int      numOsc;
-  Osc      *oscs;
+    class Brodger
+    {
+    public:
+        int width;
+        int height;
+        uint8_t *img;
 
-  Brodger(int width, int height);
-  Brodger(int width, int height, int numOsc);
-  ~Brodger();
-  void brodge();
-  void brodge(uint8_t *im);
-};
+        int numOsc;
+        Osc *oscs;
+
+        Brodger(int width, int height);
+        Brodger(int width, int height, int numOsc);
+        ~Brodger();
+        void brodge();
+        void brodge(uint8_t *im);
+    };
 
 }
-
 
 #endif
