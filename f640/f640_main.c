@@ -37,8 +37,9 @@ static int fd;
 static struct v4l2_capability cap;
 static char *source = "/dev/video0";
 static char *input = NULL;
-static int cwidth = 320;
-static int cheight = 240;
+static int cwidth = 752;
+static int cheight = 416;
+static uint32_t palette = 0x56595559;   // 0x47504A4D
 static struct v4l2_format format;
 static struct v4l2_fmtdesc format_desc;
 static char map;
@@ -435,7 +436,7 @@ static int f640_set_pix_format()
                 , fmt.type
                 , fmt.flags
         );
-        memcpy(&format_desc, &fmt, sizeof(fmt));
+        if (fmt.pixelformat == palette) memcpy(&format_desc, &fmt, sizeof(fmt));
 
         memset(&fmt, 0, sizeof(fmt));
         fmt.index = ++v4l2_pal;
@@ -605,7 +606,7 @@ int f640_set_mmap()
 
     if(ioctl(fd, VIDIOC_REQBUFS, &req) == -1) {
         if (!quiet) printf("Error requesting buffers for memory map.\n");
-        if (errno == EINVAL)
+        if (errno == -EINVAL)
             if (!quiet)
                 printf ("Video capturing or mmap-streaming is not supported: %s\n", strerror(errno));
         else if (!quiet)
