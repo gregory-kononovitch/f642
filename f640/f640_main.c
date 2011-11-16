@@ -39,7 +39,7 @@ static char *source = "/dev/video0";
 static char *input = NULL;
 static int cwidth = 752;
 static int cheight = 416;
-static uint32_t palette = 0x56595559;   // 0x47504A4D
+static uint32_t palette = 0x47504A4D;//0x56595559;   // 0x47504A4D
 static struct v4l2_format format;
 static struct v4l2_fmtdesc format_desc;
 static char map;
@@ -98,6 +98,15 @@ static int f640_get_capabilities()
     if(!cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
         printf("Device does not support capturing.\n");
         return -1;
+    }
+
+    struct v4l2_audio audio_cap;
+    memset(&audio_cap, 0, sizeof(struct v4l2_audio));
+    if(ioctl(fd, VIDIOC_G_AUDIO, &audio_cap) < 0) {
+        printf("%s: Not a V4L2 audio device?\n", dev);
+        return 0;
+    } else if ( show_all || show_inputs ) {
+        printf("Audio %u (%s) : cap = %X  ,  mode = %X\n", audio_cap.index, audio_cap.name, audio_cap.capability, audio_cap.mode);
     }
 
     printf("Device capabilities ok.\n");
