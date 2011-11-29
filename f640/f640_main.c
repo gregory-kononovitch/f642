@@ -32,14 +32,15 @@
  * 
  */
 static struct f051_log_env *log_env;
+static char device[32];
 static char *dev = "/dev/video0";
 static int fd;
 static struct v4l2_capability cap;
 static char *source = "/dev/video0";
 static char *input = NULL;
-static int cwidth = 752;
-static int cheight = 416;
-static uint32_t palette = 0x47504A4D;//0x56595559;   // 0x47504A4D
+static int cwidth = 320;
+static int cheight = 240;
+static uint32_t palette = 0x56595559;   // 0x47504A4D
 static struct v4l2_format format;
 static struct v4l2_fmtdesc format_desc;
 static char map;
@@ -417,10 +418,9 @@ static int f640_list_controls()
 /*
  *
  */
-static int f640_set_pix_format()
-{
+static int f640_set_pix_format() {
     struct v4l2_fmtdesc fmt;
-    int v4l2_pal;
+    int r, v4l2_pal;
 
     /* Dump a list of formats the device supports. */
     if ( show_all || show_formats )
@@ -461,8 +461,8 @@ static int f640_set_pix_format()
     format.fmt.pix.pixelformat = format_desc.pixelformat;
     format.fmt.pix.field       = V4L2_FIELD_ANY;//V4L2_FIELD_NONE;//V4L2_FIELD_ANY;
 
-    if ( show_all || show_formats ) printf("Try the palette :\n");
-    if(ioctl(fd, VIDIOC_TRY_FMT, &format) != -1 ) {
+    if ( show_all || show_formats ) printf("Try the palette 0x%X (%u, %u):\n", format_desc.pixelformat, format.fmt.pix.width, format.fmt.pix.height);
+    if( ( r = ioctl(fd, VIDIOC_TRY_FMT, &format) ) != -1 ) {
         if ( show_all || show_formats )
             printf("Using palette 0x%X : field = %d, colorspace = %d, bytes/line = %u, size=%u\n"
                 , format_desc.pixelformat
@@ -485,13 +485,11 @@ static int f640_set_pix_format()
             printf("VIDIOC_S_FMT: %s\n", strerror(errno));
             return -1;
         }
-        if ( verbose )
-            printf("Setting pixel format ok.\n");
+        if ( verbose ) printf("Setting pixel format ok.\n");
 
         return 0;
     }
-    if ( verbose )
-        printf("Setting pixel format ko : %s\n", strerror(errno));
+    if ( verbose ) printf("Setting pixel format ko (%d) : %s\n", r, strerror(errno));
     return -1;
 }
 
@@ -792,29 +790,34 @@ int f640_processing()
             if (!quiet)
                 printf("Frame " F640_BOLD "%4d" F640_RESET
                     "  |  " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
-                    "  |  ABS = %5.2f  | "// %u %u %u %u %u %u %u %u %u %u %u\n"
+                    "  |  ABS = %5.1f  | "// %u %u %u %u %u %u %u %u %u %u %u\n"
                     , frame, 1.*rms/sqrt(size), 1.*moy/size
                     //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
             );
         } else {
-            i = 0; im = im0; pix = buffer[buf.index].start;;
+            i = 0; im = im0; pix = buffer[buf.index].start;
             while( i < size ) {
                 *im = *pix;
                 i++; im++; pix += 2;
             }
         }
         f051_send_data(log_env, dif ? dif : im0, size);
+//        char fn[32];
+//        sprintf(fn, "im%u.mjpg", frame);
+//        FILE *filp = fopen(fn, "wb");
+//        fwrite(buffer[buf.index].start, 1, buf.bytesused, filp);
+//        fclose(filp);
 
         // Data
         gettimeofday(&tv2, NULL);
         d1 = (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0);
         if (!quiet)
-            printf(" d = %3.0fms  | freq = " F640_FG_RED "%4.1fHz" F640_RESET "  | seq %4u | %3u | %2u | %2u |\n"
+            printf(" d = %3.0fms  | freq = " F640_FG_RED "%4.1fHz" F640_RESET "  | seq %4u | %3u | %2u | %2u | %6u | %6u\n"
                     , frame, 1000 * d1, 1/d1
-                    , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames);
+                    , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames, buf.bytesused, buf.length);
         gettimeofday(&tv1, NULL);
 
-        // EnQueue
+//        // EnQueue
         if(ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
             printf("VIDIOC_QBUF: %s\n", strerror(errno));
             return -1;
@@ -845,8 +848,12 @@ int f640_getopts(int argc, char *argv[])
         {"no-capture",      no_argument,       NULL, '0'},
         {"frames",          required_argument, NULL, 'f'},
         {"fps",             required_argument, NULL, 'z'},
+        {"device",          required_argument, NULL, 'd'},
+        {"palette",         required_argument, NULL, 'y'},
+        {"width",           required_argument, NULL, 'W'},
+        {"height",          required_argument, NULL, 'H'},
         {"show-all",        no_argument,       NULL, 'A'},
-        {"show-caps",       no_argument,       NULL, 'W'},
+        {"show-caps",       no_argument,       NULL, 'P'},
         {"show-inputs",     no_argument,       NULL, 'I'},
         {"show-controls",   no_argument,       NULL, 'C'},
         {"show-formats",    no_argument,       NULL, 'F'},
@@ -855,7 +862,7 @@ int f640_getopts(int argc, char *argv[])
         {"show-video-std",  no_argument,       NULL, 'V'},
         {NULL, 0, NULL, 0}
     };
-    char *opts = "hqvi0:f:z:AWICFSRV";
+    char *opts = "hqvi0:f:z:d:y:W:H:APICFSRV";
 
     while(1)
     {
@@ -883,10 +890,27 @@ int f640_getopts(int argc, char *argv[])
             case 'z':
                 frames_pers = atoi(optarg);
                 break;
+            case 'd':
+                snprintf(device, sizeof(device), "/dev/video%s", optarg);
+                dev = device;
+                source = device;
+                break;
+            case 'y':
+                switch(atoi(optarg)) {
+                    case 0 : palette = 0x56595559; break;
+                    case 1 : palette = 0x47504A4D; break;
+                }
+                break;
+            case 'W':
+                cwidth = atoi(optarg);
+                break;
+            case 'H':
+                cheight = atoi(optarg);
+                break;
             case 'A':
                 show_all = 1;
                 break;
-            case 'W':
+            case 'P':
                 show_caps = 1;
                 break;
             case 'I':

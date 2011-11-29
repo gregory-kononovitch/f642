@@ -179,7 +179,7 @@ struct c642_pict *c642_create(int width, int height)
     }
 
     //
-    pict->env = a051_proc_env_alloc("bird", "brodge", 3 * width * height / 1024);
+    pict->env = a051_proc_env_alloc("anim", "brodge2", 3 * width * height / 1024);
     if (!pict->env) {
         printk("Memo env alloc ko\n");
         kfree(pict->picture);
@@ -255,8 +255,8 @@ void brodge(struct c642_pict *pict)
     c642_esqu(pict);
 
     //°\\ 0: osc1 , 1: osc2 , 2: osc3
-    at[0] = random32() & 0x100;
-    at[1] = random32() & 0x100;
+    at[0] = random32() & 0x01;
+    at[1] = random32() & 0x01;
 
     m[0]  = random32() >> 29;
     m[1]  = random32() >> 29;

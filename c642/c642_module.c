@@ -18,6 +18,8 @@ struct a051_log_env *a051_log = NULL;
 #include <asm/bitops.h>
 #include <linux/random.h>
 #include <linux/firmware.h>
+#include <linux/delay.h>
+
 /*
  *
  */
@@ -101,15 +103,16 @@ int c642_init(void)
     }
 
     //
-    r = 600;
-    while (r>0) {
+    r = 30;
+    while (r > 0) {
         brodge(pict);
+        msleep(2 * 1000);
         r--;
     }
 
     //
     //areturn(-EBUSY, "ok");
-    return 0;
+    return -EBUSY;
 }
 
 /*

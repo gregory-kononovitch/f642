@@ -43,8 +43,7 @@ int main(int argc, char *argv[])
     //
     val = cosinus;
     for(i = 0 ; i < nb_val ; i++) {
-        v = cos(2. * M_PI * i / 512);
-        v = v * 0x7FFF;
+        v = 0x7FFF * cos(2. * M_PI * i / nb_val);
         cosinus[i] = (signed short) v;
 
         //
