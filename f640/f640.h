@@ -37,4 +37,6 @@ typedef struct {
 } v4l2_buffer_t;
 
 
+#include "../../f610-equa/f611/f611_common.h"
+
 #endif /* F640_H_ */

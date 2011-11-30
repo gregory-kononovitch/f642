@@ -757,8 +757,32 @@ int f640_processing()
     // init
     size = cwidth * cheight;
     im0 = calloc(size, sizeof(uint8_t));
-    dif = calloc(size, sizeof(uint8_t));
+    dif = calloc(2*size, sizeof(uint8_t));
     tab = calloc(size / (carx * cary), sizeof(double));
+
+    //
+    //
+    FILE *filp = fopen("tst.mpg", "wb");
+    avcodec_register_all();
+    av_register_all();
+    avdevice_register_all();
+
+    struct output_stream *stream = f611_init_output("tst.mpeg");
+    AVFrame *picture = avcodec_alloc_frame();
+    AVFrame *pict = avcodec_alloc_frame();
+    uint8_t *mpg = calloc(1, 5 * 240 * 320);
+
+    avcodec_get_frame_defaults(picture);
+    avpicture_alloc((AVPicture *)picture, PIX_FMT_YUYV422, 240, 320);
+    picture->width = 240;
+    picture->height = 320;
+    picture->format = PIX_FMT_YUYV422;
+
+    avcodec_get_frame_defaults(pict);
+    avpicture_alloc((AVPicture *)pict, PIX_FMT_YUV420P, 240, 320);
+    pict->width = 240;
+    pict->height = 320;
+    pict->format = PIX_FMT_YUV420P;
 
     //
     char fname[32];
@@ -804,17 +828,20 @@ int f640_processing()
                     j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
 
                     if (*pix < *im - th) {
-                        dif[j] = 0;
+                        dif[2*j] = 0;
                         nth++;
                     }
                     else if (*pix > *im + th) {
-                        dif[j] = 0;
+                        dif[2*j] = 0;
                         nth++;
                     }
-                    else dif[j] = *pix;
+                    else dif[2*j] = *pix;
 
-                    if (dif[j] < 0) dif[j] = 0;
-                    if (dif[j] > 255) dif[j] = 255;
+                    dif[2*j + 0]  = *(pix+0);
+                    dif[2*j + 1]  = *(pix+1);
+
+//                    if (dif[j] < 0) dif[j] = 0;
+//                    if (dif[j] > 255) dif[j] = 255;
                 }
                 *im = *pix;
                 i++; im++; pix += 2;
@@ -837,17 +864,24 @@ int f640_processing()
 //                    if (i % carx == 0 || (i / cwidth) % cary == 0) dif[j] = 0;
 //                }
 //            }
-            if (frame > 100 && tab_max > 150) {
-                sprintf(fname, "im%07u.pgm", num_im++);
-                FILE *filp = fopen(fname, "wb");
-                fwrite(header, 1, 54, filp);
-                fwrite(dif, 1, size, filp);
-                fclose(filp);
+            if (frame > 100 && tab_max > 15) {
+                picture->data[0] = dif;
+                //picture->data[0] = buffer[buf.index].start;
+                r = sws_scale(stream->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, 320, pict->data, pict->linesize);
+                r = avcodec_encode_video(stream->encoderCtxt, mpg, 5 * 240 * 320, pict);
+                printf("Encode %dbytes\n", r);
+                fwrite(mpg, 1, r, filp);
 
-//                sprintf(fname, "im%07u.yuv", num_im++);
+//                sprintf(fname, "im%07u.pgm", num_im++);
 //                FILE *filp = fopen(fname, "wb");
-//                fwrite(buffer[buf.index].start, 2, size, filp);
+//                fwrite(header, 1, 54, filp);
+//                fwrite(dif, 1, size, filp);
 //                fclose(filp);
+//
+////                sprintf(fname, "im%07u.yuv", num_im++);
+////                FILE *filp = fopen(fname, "wb");
+////                fwrite(buffer[buf.index].start, 2, size, filp);
+////                fclose(filp);
             }
             if (!quiet)
                 printf("Frame " F640_BOLD "%4d" F640_RESET
@@ -863,12 +897,9 @@ int f640_processing()
                 i++; im++; pix += 2;
             }
         }
-        f051_send_data(log_env, dif ? dif : im0, size);
-//        char fn[32];
-//        sprintf(fn, "im%u.mjpg", frame);
-//        FILE *filp = fopen(fn, "wb");
-//        fwrite(buffer[buf.index].start, 1, buf.bytesused, filp);
-//        fclose(filp);
+        //f051_send_data(log_env, dif ? dif : im0, size);
+        //f611_add_frame(stream, dif, 2*size);
+
 
         // Data
         gettimeofday(&tv2, NULL);
@@ -891,6 +922,7 @@ int f640_processing()
     }
     if ( verbose ) printf("Exited from processing loop.\n");
 
+    fclose(filp);
     return 0;
 }
 
