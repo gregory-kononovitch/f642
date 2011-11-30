@@ -749,15 +749,27 @@ int f640_processing()
 {
     uint32_t frame = 0;
     struct timeval tv1, tv2, tv3;
-    double d1, d2, d3;
+    double d1, d2, d3, rms, *tab, r, tab_min, tab_max, nth;
     static uint8_t *im0;
-    uint32_t i, size, rms = 0, moy = 0, y[256];
+    uint32_t i, j, k, size, moy = 0, y[256], carx = 40, cary = 40;
     uint8_t *dif, *im, *pix;
 
     // init
     size = cwidth * cheight;
     im0 = calloc(size, sizeof(uint8_t));
-    dif = NULL;//calloc(size, sizeof(uint8_t));
+    dif = calloc(size, sizeof(uint8_t));
+    tab = calloc(size / (carx * cary), sizeof(double));
+
+    //
+    char fname[32];
+    //char *header = "P5?greg?240 320?255?";
+    //char header[] = {'P','5',0x0A,'g','r','e','g',0x0A,'2','4','0',' ','3','2','0',0x0A,'2','5','5',0x0A};
+    char *header = "P5\012# CREATOR: 12345678 Filter Version 1.1\012240 320\012255\012";
+    int num_im = 0;
+//    header[ 2] = 0x0A;
+//    header[41] = 0x0A;
+//    header[49] = 0x0A;
+//    header[53] = 0x0A;
 
     // Loop
     gettimeofday(&tv1, NULL);
@@ -775,23 +787,73 @@ int f640_processing()
                 , buf.index, buf.sequence, buf.timecode.frames);
 
         // Processing
+        int th = 15;
+        nth = 0;
         if ( frame ) {
             i = 0; im = im0; pix = buffer[buf.index].start; rms = 0; moy = 0;
             memset(y, 0, sizeof(y));
+            memset(tab, 0, size * sizeof(double) / (carx * cary) );
             while( i < size ) {
-                rms += (*pix - *im) * (*pix - *im);
+                r = (*pix - *im) * (*pix - *im);
+                rms += r;
                 moy += abs(*pix - *im);
                 y[*pix / 10]++;
-                if ( dif ) dif[i] = 127 + (*pix -*im) / 2;
+                k = (i % cwidth) / carx + ( i / (cwidth * cary) ) * cwidth / cary; // @@@ buggy
+                tab[k] += r;
+                if ( dif ) {
+                    j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
+
+                    if (*pix < *im - th) {
+                        dif[j] = 0;
+                        nth++;
+                    }
+                    else if (*pix > *im + th) {
+                        dif[j] = 0;
+                        nth++;
+                    }
+                    else dif[j] = *pix;
+
+                    if (dif[j] < 0) dif[j] = 0;
+                    if (dif[j] > 255) dif[j] = 255;
+                }
                 *im = *pix;
                 i++; im++; pix += 2;
             }
-            rms = sqrt(rms);
+            //rms = sqrt(rms) / sqrt(size);
+            rms /= size;
+            tab_min = 5000000;
+            tab_max = 0;
+            for(i = 0 ; i < size / (carx * cary) ; i++) {
+                tab[i] /= carx * cary;
+                if (tab[i] < tab_min) tab_min = tab[i];
+                if (tab[i] > tab_max) tab_max = tab[i];
+
+                //
+            }
+//            for(i = 0 ; i < size ; i++) {
+//                k = (i % cwidth) / carx + ( i / (cwidth * cary) ) * cwidth / cary; // @@@ buggy
+//                j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
+//                if (tab[k] > 15) {
+//                    if (i % carx == 0 || (i / cwidth) % cary == 0) dif[j] = 0;
+//                }
+//            }
+            if (frame > 100 && tab_max > 150) {
+                sprintf(fname, "im%07u.pgm", num_im++);
+                FILE *filp = fopen(fname, "wb");
+                fwrite(header, 1, 54, filp);
+                fwrite(dif, 1, size, filp);
+                fclose(filp);
+
+//                sprintf(fname, "im%07u.yuv", num_im++);
+//                FILE *filp = fopen(fname, "wb");
+//                fwrite(buffer[buf.index].start, 2, size, filp);
+//                fclose(filp);
+            }
             if (!quiet)
                 printf("Frame " F640_BOLD "%4d" F640_RESET
-                    "  |  " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
-                    "  |  ABS = %5.1f  | "// %u %u %u %u %u %u %u %u %u %u %u\n"
-                    , frame, 1.*rms/sqrt(size), 1.*moy/size
+                    " | " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
+                    " | ABS = %5.2f | min %4.1f | MAX %5.0f | N %5.0f |"// %u %u %u %u %u %u %u %u %u %u %u\n"
+                    , frame, rms, 1.*moy/size, tab_min, tab_max, nth
                     //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
             );
         } else {
@@ -812,7 +874,7 @@ int f640_processing()
         gettimeofday(&tv2, NULL);
         d1 = (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0);
         if (!quiet)
-            printf(" d = %3.0fms  | freq = " F640_FG_RED "%4.1fHz" F640_RESET "  | seq %4u | %3u | %2u | %2u | %6u | %6u\n"
+            printf(" %3.0fms | " F640_FG_RED "%4.1fHz" F640_RESET " | seq %4u | %3u | %2u | %2u | %6u | %6u\n"
                     , frame, 1000 * d1, 1/d1
                     , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames, buf.bytesused, buf.length);
         gettimeofday(&tv1, NULL);
