@@ -761,31 +761,7 @@ int f640_processing()
     tab = calloc(size / (carx * cary), sizeof(double));
 
     //
-    //
-//    FILE *filp = fopen("tst.mpg", "wb");
-//    avcodec_register_all();
-//    av_register_all();
-//    avdevice_register_all();
-
-    struct output_stream *stream = f611_init_output("tst", PIX_FMT_YUYV422, 240, 320, 15);
-//    AVFrame *picture = avcodec_alloc_frame();
-//    AVFrame *pict = avcodec_alloc_frame();
-//    AVPacket mpg;// = calloc(1, 5 * 240 * 320);
-//
-//    avcodec_get_frame_defaults(picture);
-//    avpicture_alloc((AVPicture *)picture, PIX_FMT_YUYV422, 240, 320);
-//    picture->width = 240;
-//    picture->height = 320;
-//    picture->format = PIX_FMT_YUYV422;
-//
-//    avcodec_get_frame_defaults(pict);
-//    avpicture_alloc((AVPicture *)pict, PIX_FMT_YUV420P, 240, 320);
-//    pict->width = 240;
-//    pict->height = 320;
-//    pict->format = PIX_FMT_YUV420P;
-//
-//    av_init_packet(&mpg);
-//    av_new_packet(&mpg, 2 * 240 * 320);
+    struct output_stream *stream = f611_init_output("tst", PIX_FMT_YUYV422, cheight, cwidth, 15);
 
     //
     char fname[32];
