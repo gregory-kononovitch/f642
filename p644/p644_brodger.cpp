@@ -73,6 +73,18 @@ void Brodger::brodge()
     Point p;
     uint8_t *im = img;
 
+    //
+    for (o = 0; o < numOsc; o++) {
+        oscs[o].col     = o % 3;
+        oscs[o].atr.x   = 1L * width  - 1L * width  * rand() / RAND_MAX;
+        oscs[o].atr.y   = 1L * height - 1L * height * rand() / RAND_MAX;
+        oscs[o].pas     = 20L+ 1L*width * rand() / RAND_MAX;
+//        oscs[o].mas     = 1;
+//        oscs[o].dec     = 5;
+//        oscs[o].decTyp  = NONE;
+    }
+
+
     gettimeofday(&tv1, NULL);
     for (o = 0; o < 3; o++)
         mtot[o] = 0;

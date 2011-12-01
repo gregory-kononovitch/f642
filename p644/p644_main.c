@@ -18,7 +18,12 @@
 #include "p644_osc.h"
 #include "p644_point.h"
 
+extern "C" {
+#include "../../f610-equa/f611/f611_include.h"
+}
+
 using namespace p644;
+
 
 int main(int argc, char *argv[]) {
   int r = 0, i, fd;
@@ -27,13 +32,15 @@ int main(int argc, char *argv[]) {
   //
   uint8_t *img;
   img = (uint8_t*) malloc(3 * 800 * 450);
+  //
+  struct output_stream *stream = f611_init_output("cbrodger", 3, 800, 450, 2);
 
   //
   gettimeofday(&tv1, NULL);
   srand(tv1.tv_sec);
   //
   Brodger brodge = Brodger(800, 450);
-  for(i = 0 ; i < 10 ; i++) {
+  for(i = 0 ; i < 45 ; i++) {
     //Brodger brodge = Brodger(800, 450, 3);
 
     gettimeofday(&tv1, NULL);
@@ -46,16 +53,19 @@ int main(int argc, char *argv[]) {
       printf("Brodger done in %ld.%ld\n", tv2.tv_sec - tv1.tv_sec, (tv2.tv_usec - tv1.tv_usec)/1000);
 
     //
-    sprintf(file_name, "/work/test/brodger-%d.raw", i);
-    fd = open(file_name, O_RDWR | O_CREAT);
-    if (fd < 0) {
-      printf("Pb opening file, exiting");
-      return fd;
-    }
+    f611_add_frame(stream, img);
 
-    write(fd, img, 3 * brodge.width * brodge.height);
-    printf("Image copied.\n");
-    r = close(fd);
+    //
+//    sprintf(file_name, "/work/test/brodger-%d.raw", i);
+//    fd = open(file_name, O_RDWR | O_CREAT);
+//    if (fd < 0) {
+//      printf("Pb opening file, exiting");
+//      return fd;
+//    }
+//
+//    write(fd, img, 3 * brodge.width * brodge.height);
+//    printf("Image copied.\n");
+//    r = close(fd);
   }
 
   return r;

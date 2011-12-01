@@ -913,7 +913,7 @@ int f640_processing()
     }
     if ( verbose ) printf("Exited from processing loop.\n");
 
-    fclose(stream->filp);
+    if (stream->filp) fclose(stream->filp);
     return 0;
 }
 

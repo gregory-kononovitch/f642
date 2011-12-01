@@ -10,5 +10,9 @@
 #ifndef P643_BRDG_H_
 #define P643_BRDG_H_
 
+#include "../../f610-equa/f611/f611_common.h"
+
+extern struct output_stream *stream;
+
 
 #endif /* P643_BRDG_H_ */

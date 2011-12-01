@@ -324,24 +324,27 @@ void brodge(struct c642_pict *pict)
     // Sig
 
     // Export
-    d = f051_send_data(pict->a051_env, pict->picture, pict->size);
+    //d = f051_send_data(pict->a051_env, pict->picture, pict->size);
+    f611_add_frame(stream, pict->picture);
     printf("Brodge  ' %lX '  send %ld bytes\n", 0x7F1FFFFFFF & (1L * pict->sig.tv_sec * 1000L + pict->sig.tv_usec / 1000L), d);
 }
 
-
+struct output_stream *stream;
 int main( int argc , char *argv[] )
 {
     struct c642_pict *pict;
+    //
+    stream = f611_init_output("brdg", PIX_FMT_BGR24, 1360, 768, 1);
 
     //
-    pict = c642_create(700, 350);
+    pict = c642_create(1360, 768);
     if (!pict) {
         printf("Pict not created, exiting");
         return -1;
     }
 
     //
-    int n = 1;
+    int n = 45;
     while( n-- ) {
         brodge(pict);
         //usleep(1000 * 1000);
