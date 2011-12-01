@@ -762,27 +762,30 @@ int f640_processing()
 
     //
     //
-    FILE *filp = fopen("tst.mpg", "wb");
-    avcodec_register_all();
-    av_register_all();
-    avdevice_register_all();
+//    FILE *filp = fopen("tst.mpg", "wb");
+//    avcodec_register_all();
+//    av_register_all();
+//    avdevice_register_all();
 
-    struct output_stream *stream = f611_init_output("tst.mpeg");
-    AVFrame *picture = avcodec_alloc_frame();
-    AVFrame *pict = avcodec_alloc_frame();
-    uint8_t *mpg = calloc(1, 5 * 240 * 320);
-
-    avcodec_get_frame_defaults(picture);
-    avpicture_alloc((AVPicture *)picture, PIX_FMT_YUYV422, 240, 320);
-    picture->width = 240;
-    picture->height = 320;
-    picture->format = PIX_FMT_YUYV422;
-
-    avcodec_get_frame_defaults(pict);
-    avpicture_alloc((AVPicture *)pict, PIX_FMT_YUV420P, 240, 320);
-    pict->width = 240;
-    pict->height = 320;
-    pict->format = PIX_FMT_YUV420P;
+    struct output_stream *stream = f611_init_output("tst", PIX_FMT_YUYV422, 240, 320, 15);
+//    AVFrame *picture = avcodec_alloc_frame();
+//    AVFrame *pict = avcodec_alloc_frame();
+//    AVPacket mpg;// = calloc(1, 5 * 240 * 320);
+//
+//    avcodec_get_frame_defaults(picture);
+//    avpicture_alloc((AVPicture *)picture, PIX_FMT_YUYV422, 240, 320);
+//    picture->width = 240;
+//    picture->height = 320;
+//    picture->format = PIX_FMT_YUYV422;
+//
+//    avcodec_get_frame_defaults(pict);
+//    avpicture_alloc((AVPicture *)pict, PIX_FMT_YUV420P, 240, 320);
+//    pict->width = 240;
+//    pict->height = 320;
+//    pict->format = PIX_FMT_YUV420P;
+//
+//    av_init_packet(&mpg);
+//    av_new_packet(&mpg, 2 * 240 * 320);
 
     //
     char fname[32];
@@ -864,13 +867,25 @@ int f640_processing()
 //                    if (i % carx == 0 || (i / cwidth) % cary == 0) dif[j] = 0;
 //                }
 //            }
-            if (frame > 100 && tab_max > 15) {
-                picture->data[0] = dif;
-                //picture->data[0] = buffer[buf.index].start;
-                r = sws_scale(stream->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, 320, pict->data, pict->linesize);
-                r = avcodec_encode_video(stream->encoderCtxt, mpg, 5 * 240 * 320, pict);
-                printf("Encode %dbytes\n", r);
-                fwrite(mpg, 1, r, filp);
+            if (frame > 35 && tab_max > 15) {
+                f611_add_frame(stream, dif);
+//                picture->data[0] = dif;
+//                //picture->data[0] = buffer[buf.index].start;
+//                r = sws_scale(stream->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, 320, pict->data, pict->linesize);
+//                r = avcodec_encode_video(stream->encoderCtxt, mpg.data, 2 * 240 * 320, pict);
+//
+//                if (r > 0) {
+//                    printf("Encode %dbytes\n", r);
+//                    fwrite(mpg.data, 1, r, filp);
+//
+////                    mpg.size = r;
+////                    mpg.pts  = num_im++;
+////                    mpg.dts = AV_NOPTS_VALUE;
+////                    mpg.stream_index = 0;
+////                    r = av_write_frame(stream->outputFile, &mpg);
+////                    printf("Write frame return %d\n", r);
+////                    avio_flush(stream->outputFile->pb);
+//                }
 
 //                sprintf(fname, "im%07u.pgm", num_im++);
 //                FILE *filp = fopen(fname, "wb");
@@ -922,7 +937,7 @@ int f640_processing()
     }
     if ( verbose ) printf("Exited from processing loop.\n");
 
-    fclose(filp);
+    fclose(stream->filp);
     return 0;
 }
 
