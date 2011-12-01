@@ -745,23 +745,121 @@ void f640_signal_term_handler(int signum)
 /*
  *
  */
+static int wc = 9, hc = 12;
+static inline int f640_get_index(int x, int y, int width) {
+    return x + width * y;
+}
+/*
+ * dir : 1 -> left - right | up - down
+ */
+static int f640_draw_hline(uint8_t *yuv, int width, int index, int dist, int dir) {
+    int i;
+    for( ; dist ; index += dir, dist-- ) yuv[2*index] = 0;
+    return index;
+}
+static int f640_draw_vline(uint8_t *yuv, int width, int index, int dist, int dir) {
+    int i;
+    for( ; dist ; index += dir * width, dist-- ) yuv[2*index] = 0;
+    return index;
+}
+
+
+static int f640_draw(uint8_t *yuv, int width, int x, int y, int value) {
+    x = f640_get_index(x, y, width);
+    switch(value) {
+        case 0 :
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc, -1);
+            x = f640_draw_hline(yuv, width, x, wc, -1);
+            x = f640_draw_vline(yuv, width, x, hc,  1);
+            break;
+        case 1 :
+            x += wc/2;
+            x = f640_draw_vline(yuv, width, x, hc, -1);
+            break;
+        case 2 :
+                f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc, -1);
+            break;
+        case 3 :
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+                f640_draw_hline(yuv, width, x, wc,  -1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc, -1);
+            break;
+        case 4 :
+            x += wc/2;
+            x = f640_draw_vline(yuv, width, x, hc/3, -1);
+                f640_draw_hline(yuv, width, x, wc/2,  1);
+                f640_draw_vline(yuv, width, x, hc/3, -1);
+            x = f640_draw_hline(yuv, width, x, wc/2, -1);
+                f640_draw_vline(yuv, width, x, 2*hc/3, -1);
+            break;
+        case 5 :
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc, -1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            break;
+        case 6 :
+                f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc,  -1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc,   1);
+            break;
+        case 7 :
+            x += wc;
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+                f640_draw_hline(yuv, width, x, wc/2, -1);
+            x = f640_draw_vline(yuv, width, x, hc/2, -1);
+            x = f640_draw_hline(yuv, width, x, wc, -1);
+            break;
+        case 8 :
+                f640_draw_vline(yuv, width, x, hc, -1);
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc, -1);
+            x = f640_draw_hline(yuv, width, x, wc, -1);
+            x = f640_draw_vline(yuv, width, x, hc/2,1);
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            break;
+        case 9 :
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            x = f640_draw_vline(yuv, width, x, hc, -1);
+            x = f640_draw_hline(yuv, width, x, wc, -1);
+            x = f640_draw_vline(yuv, width, x, hc/2,1);
+            x = f640_draw_hline(yuv, width, x, wc,  1);
+            break;
+    }
+    return 0;
+}
+/*
+ *
+ */
 int f640_processing()
 {
     uint32_t frame = 0;
     struct timeval tv1, tv2, tv3;
     double d1, d2, d3, rms, *tab, r, tab_min, tab_max, nth;
     static uint8_t *im0;
-    uint32_t i, j, k, size, moy = 0, y[256], carx = 40, cary = 40;
-    uint8_t *dif, *im, *pix;
+    uint32_t i, j, k, size, moy = 0, y[256], carx = 40, cary = 40, nbx = 20, nby = 20;
+    uint8_t *dif = NULL, *im = NULL, *pix = NULL;
 
     // init
     size = cwidth * cheight;
     im0 = calloc(size, sizeof(uint8_t));
-    dif = calloc(2*size, sizeof(uint8_t));
+//    dif = calloc(2*size, sizeof(uint8_t));
     tab = calloc(size / (carx * cary), sizeof(double));
 
     //
-    struct output_stream *stream = f611_init_output("tst", PIX_FMT_YUYV422, cheight, cwidth, 15);
+    //struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cheight, cwidth, frames_pers);
+    struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
 
     //
     char fname[32];
@@ -801,10 +899,11 @@ int f640_processing()
                 rms += r;
                 moy += abs(*pix - *im);
                 y[*pix / 10]++;
-                k = (i % cwidth) / carx + ( i / (cwidth * cary) ) * cwidth / cary; // @@@ buggy
+                k = (i % cwidth) / carx + ( i / (cwidth * cary) ) * cwidth / carx; // @@@ buggy
                 tab[k] += r;
                 if ( dif ) {
-                    j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
+                    //j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
+                    j = i;
 
                     if (*pix < *im - th) {
                         dif[2*j] = 0;
@@ -816,7 +915,7 @@ int f640_processing()
                     }
                     else dif[2*j] = *pix;
 
-                    dif[2*j + 0]  = *(pix+0);
+                    //dif[2*j + 0]  = *(pix+0);
                     dif[2*j + 1]  = *(pix+1);
 
 //                    if (dif[j] < 0) dif[j] = 0;
@@ -833,8 +932,6 @@ int f640_processing()
                 tab[i] /= carx * cary;
                 if (tab[i] < tab_min) tab_min = tab[i];
                 if (tab[i] > tab_max) tab_max = tab[i];
-
-                //
             }
 //            for(i = 0 ; i < size ; i++) {
 //                k = (i % cwidth) / carx + ( i / (cwidth * cary) ) * cwidth / cary; // @@@ buggy
@@ -843,8 +940,28 @@ int f640_processing()
 //                    if (i % carx == 0 || (i / cwidth) % cary == 0) dif[j] = 0;
 //                }
 //            }
-            if (frame > 35 && tab_max > 15) {
-                f611_add_frame(stream, dif);
+            quiet = 1;
+            if (frame > 35 && tab_max > 280) {
+                quiet = 0;
+                int f = frame, nf = 0;
+                if (dif) {
+                    while (f > 0) {
+                        f640_draw(dif, cheight, cheight - 3*wc/2 - nf, cwidth - hc/2, f % 10);
+                        f /= 10;
+                        nf += wc + 2;
+                    }
+                    f611_add_frame(stream, dif);
+                    //f051_send_data(log_env, im, size);
+                } else {
+                    while (f > 0) {
+                        f640_draw(buffer[buf.index].start, cwidth, cwidth - 3*wc/2 - nf, cheight - hc/2, f % 10);
+                        f /= 10;
+                        nf += wc + 2;
+                    }
+                    f611_add_frame(stream, buffer[buf.index].start);
+                    //f051_send_data(log_env, im, size);
+                }
+                //quiet = 0;
 //                picture->data[0] = dif;
 //                //picture->data[0] = buffer[buf.index].start;
 //                r = sws_scale(stream->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, 320, pict->data, pict->linesize);
