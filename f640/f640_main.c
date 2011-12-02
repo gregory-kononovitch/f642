@@ -907,7 +907,7 @@ int f640_processing()
 //    dif = calloc(2*size, sizeof(uint8_t));
 
     // Tab
-    int carx = 40, cary = 40, nbr, nbc, nb;
+    int carx = 40, cary = 32, nbr, nbc, nb;
     nbc = cwidth  / carx + ((cwidth  % carx) ? 1 : 0);
     nbr = cheight / cary + ((cheight % cary) ? 1 : 0);
     nb = nbr * nbc;
@@ -1002,12 +1002,12 @@ int f640_processing()
                     k = f640_draw_number(dif, size, cwidth, cwidth - 5, cheight - 5, frame);
                     f640_draw_number(dif, size, cwidth, k - 20, cheight - 5, tab_max);
                     f611_add_frame(stream, dif);
-                    //f051_send_data(log_env, im, size);
+                    f051_send_data(log_env, dif, size << 1);
                 } else {
                     k = f640_draw_number(buffer[buf.index].start, size, cwidth, cwidth - 5, cheight - 5, frame);
                     f640_draw_number(buffer[buf.index].start, size, cwidth, k - 20, cheight - 5, tab_max);
                     f611_add_frame(stream, buffer[buf.index].start);
-                    //f051_send_data(log_env, im, size);
+                    f051_send_data(log_env, buffer[buf.index].start, size << 1);
                 }
 
 //                sprintf(fname, "im%07u.pgm", num_im++);
@@ -1201,7 +1201,7 @@ int main(int argc, char *argv[])
 
     //
     if ( capture ) {
-        log_env = f051_init_data_env("bird", "stream", 900);
+        log_env = f051_init_data_env("video", "loulou", 3200);
         if (!log_env) {
             printf(F640_FG_RED "No proc environment, exiting.\n" F640_RESET);
             return -1;
