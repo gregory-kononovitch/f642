@@ -39,4 +39,51 @@ typedef struct {
 
 #include "../../f610-equa/f611/f611_common.h"
 
+#include "f640_graphics.h"
+
+#include <pthread.h>
+
+
+struct f640_grid {
+    int         width;
+    int         height;
+    int         size;
+
+    int         wlen;
+    int         hlen;
+
+    int         cols;
+    int         rows;
+    int         num;
+    uint16_t    *index;
+};
+extern struct f640_grid *f640_make_grid(int width, int height, int factor);
+
+
+struct f640_line {
+    // Data
+    v4l2_buffer_t   *buffers;           // ref (tab)
+    int             last;               // in
+    int             actual;             // in
+
+    // Grid
+    struct f640_grid    *grid;          // ref
+    double              *grid_values;   // alloced
+    double              grid_min;       // out
+    double              grid_max;       // out
+    double              grid_th;        // out
+
+    // Graphics
+    struct f640_image   *gry;           // out
+    struct f640_image   *yuv;           // in ( / out )
+    struct f640_image   *rgb;           // out
+
+    // Store
+    struct output_stream *stream;       // ref
+
+    // Broadcast
+
+};
+
+
 #endif /* F640_H_ */
