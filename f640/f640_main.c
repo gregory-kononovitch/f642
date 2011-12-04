@@ -793,10 +793,12 @@ int f640_processing()
     f640_init_queue(&video_lines.watched, lineup, req.count);
     f640_init_queue(&video_lines.converted, lineup, req.count);
     f640_init_queue(&video_lines.recorded, lineup, req.count);
+    video_lines.fd = fd;
+    pthread_mutex_init(&video_lines.ioc, NULL);
 
     // Threads
-    pthread_t thread_watch1, thread_watch2;
-    pthread_t thread_convert1, thread_convert2;
+    pthread_t thread_watch1, thread_watch2, thread_watch3, thread_watch4;
+    pthread_t thread_convert1, thread_convert2, thread_convert3, thread_convert4;
     pthread_t thread_record;
     pthread_t thread_release;
     pthread_attr_t attr;
@@ -806,8 +808,12 @@ int f640_processing()
 
     pthread_create(&thread_watch1,   &attr, f640_watch,   (void *)(&video_lines));
     pthread_create(&thread_watch2,   &attr, f640_watch,   (void *)(&video_lines));
+    pthread_create(&thread_watch3,   &attr, f640_watch,   (void *)(&video_lines));
+    pthread_create(&thread_watch4,   &attr, f640_watch,   (void *)(&video_lines));
     pthread_create(&thread_convert1, &attr, f640_convert, (void *)(&video_lines));
     pthread_create(&thread_convert2, &attr, f640_convert, (void *)(&video_lines));
+    pthread_create(&thread_convert3, &attr, f640_convert, (void *)(&video_lines));
+    pthread_create(&thread_convert4, &attr, f640_convert, (void *)(&video_lines));
     pthread_create(&thread_record,   &attr, f640_record,  (void *)(&video_lines));
     pthread_create(&thread_release,  &attr, f640_release, (void *)(&video_lines));
 
@@ -834,117 +840,26 @@ int f640_processing()
         memset(&buf, 0, sizeof(buf));
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
+        //pthread_mutex_lock(&video_lines.ioc);
         if(ioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
+            //pthread_mutex_unlock(&video_lines.ioc);
             printf("VIDIOC_DQBUF: %s\n", strerror(errno));
             return -1;
         }
-        if (debug) printf("DeQueue ok : index = %u, seq = %u, frames = %u\n"
-                , buf.index, buf.sequence, buf.timecode.frames);
+        //pthread_mutex_unlock(&video_lines.ioc);
+        if (debug) printf("DeQueue ok : index = %u, seq = %u, frames = %u\n", buf.index, buf.sequence, buf.timecode.frames);
 
         // Processing
         int th = 15;
         nth = 0;
-        if ( frame ) {
-            i = 0; im = im0; pix = buffer[buf.index].start; rms = 0; moy = 0;
-
-            f640_enqueue_buffer(&video_lines.snaped, buf.index);
-
-//            yuv->data = buffer[buf.index].start;
-//            memset(tab, 0, nb * sizeof(double));
-//            while( i < size ) {
-//                r = (*pix - *im) * (*pix - *im);
-//                rms += r;
-////                moy += abs(*pix - *im);
-//                tab[index[i]] += r;
-//                if ( dif ) {
-//                    //j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
-//                    j = i;
-//
-//                    if (*pix < *im - th) {
-//                        dif[2*j] = 0x00;
-//                        nth++;
-//                    } else if (*pix > *im + th) {
-//                        dif[2*j] = 0x00;
-//                        nth++;
-//                    } else {
-//                        dif[2*j] = *pix;
-//                    }
-//
-//                    //dif[2*j + 0]  = *(pix+0);
-//                    dif[2*j + 1]  = *(pix+1);
-//                }
-//                *im = *pix;
-//                //f640_yuv_to_rgb(yuv, i, rgb);
-//                i++; im++; pix += 2;
-//            }
-//
-//            // Totals
-//            rms /= size;
-//            tab_min = 0xFFFFFFFFFFL;
-//            tab_max = 0;
-//            for(k = 0 ; k < nb ; k++) {
-//                tab[k] /= carx * cary;
-//                if (tab[k] < tab_min) tab_min = tab[k];
-//                if (tab[k] > tab_max) tab_max = tab[k];
-//
-//                if (tab[k] > tab_th) {
-//                    //f640_draw_rect(yuv, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
-////                    f640_draw_rect(rgb, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
-//                }
-//            }
-//
-//            // HighLight
-////            i = 0; pix = buffer[buf.index].start;
-////            while( i < size ) {
-////                if ( tab[index[i]] <= tab_th ) {
-////                    pix[2 * i] = 0xFF;
-////                }
-////                i++;
-////            }
-
-//            // Alert
-////            quiet = 1;
-//            if (frame > 35 && tab_max > tab_th) {
-////                quiet = 0;
-//                gettimeofday(&tv3, NULL);
-//                k = f640_draw_number(yuv, cwidth - 5, cheight - 5, frame);
-//                f640_draw_number(yuv, k - 20, cheight - 5, tab_max);
-//
-////                k = f640_draw_number(rgb, cwidth - 5, cheight - 5, frame);
-////                f640_draw_number(rgb, k - 20, cheight - 5, tab_max);
-//
-//                f611_add_frame(stream, buffer[buf.index].start);
-//
-//                //f051_send_data(log_env, buffer[buf.index].start, size << 1);
-//                //f051_send_data(log_env, im0, size);
-////                f640_full_yuv_to_rgb(yuv, i, rgb);
-////                f051_send_data(log_env, rgb->data, rgb->data_size);
-//
-////                sprintf(fname, "im%07u.pgm", num_im++);
-////                FILE *filp = fopen(fname, "wb");
-////                fwrite(header, 1, 54, filp);
-////                fwrite(dif, 1, size, filp);
-////                fclose(filp);
-////
-//////                sprintf(fname, "im%07u.yuv", num_im++);
-//////                FILE *filp = fopen(fname, "wb");
-//////                fwrite(buffer[buf.index].start, 2, size, filp);
-//////                fclose(filp);
-//            }
-            if (!quiet)
-                printf("Frame " F640_BOLD "%4d" F640_RESET
-                    " | " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
-                    " | ABS = %5.2f | min %4.1f | MAX %5.0f | N %5.0f |"// %u %u %u %u %u %u %u %u %u %u %u\n"
-                    , frame, rms, 1.*moy/size, 0, 0, 0
-                    //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
-            );
-        } else {
-            i = 0; im = im0; pix = buffer[buf.index].start;
-            while( i < size ) {
-                *im = *pix;
-                i++; im++; pix += 2;
-            }
-        }
+        f640_enqueue_buffer(&video_lines.snaped, &buf);
+        if (!quiet)
+            printf("Frame " F640_BOLD "%4d" F640_RESET
+                " | " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
+                " | ABS = %5.2f | min %4.1f | MAX %5.0f | N %5.0f |\n"// %u %u %u %u %u %u %u %u %u %u %u\n"
+                , frame, rms, 1.*moy/size, 0, 0, 0
+                //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
+        );
 
         // Data
         gettimeofday(&tv2, NULL);
@@ -954,13 +869,6 @@ int f640_processing()
                     , frame, 1000 * d1, 1/d1
                     , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames, buf.bytesused, buf.length);
         gettimeofday(&tv1, NULL);
-
-//        // EnQueue
-        if(ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
-            printf("VIDIOC_QBUF: %s\n", strerror(errno));
-            return -1;
-        }
-        //printf("EnQueue ok : index = %u\n", buf.index);
 
         // Loop
         frame++;

@@ -32,6 +32,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
+#include <linux/videodev2.h>
 
 /*
  *
@@ -66,6 +67,7 @@ struct f640_grid {
 struct f640_line {
     int             index;
     // Data
+    struct v4l2_buffer buf;
     v4l2_buffer_t   *buffers;           // ref (tab)
     int             last;               // in
     int             actual;             // in
@@ -87,6 +89,7 @@ struct f640_line {
     struct output_stream *stream;       // ref
 
     // Broadcast
+    struct SwsContext   *swsCtxt;
     struct f051_log_env *log_env;       // ref
 
     //
@@ -112,14 +115,37 @@ struct f640_video_lines {
     struct f640_video_queue watched;
     struct f640_video_queue converted;
     struct f640_video_queue recorded;
+
+    int fd;
+    pthread_mutex_t ioc;
 };
 
+struct f640_processing_point {
+    struct f640_video_queue snaped;
+};
+
+struct f640_imaging_point {
+    struct f640_video_queue watched;
+};
+
+struct f640_broadcast_point {
+    struct f640_video_queue converted;
+};
+
+struct f640_release_point {
+    struct f640_video_queue recorded;
+};
+
+struct f640_v4l_point {
+    int fd;
+    pthread_mutex_t ioc;
+};
 
 extern struct f640_grid* f640_make_grid(int width, int height, int factor);
 extern struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, struct output_stream *stream, struct f051_log_env *log_env, double threshold);
 
 extern int f640_init_queue(struct f640_video_queue *queue, struct f640_line *lineup, int count);
-extern int f640_enqueue_buffer(struct f640_video_queue *queue, int v4l2_index);
+extern int f640_enqueue_buffer(struct f640_video_queue *queue, struct v4l2_buffer *v4l2_buf);
 extern int f640_enqueue_line(struct f640_video_queue *queue, int line);
 extern int f640_dequeue_line(struct f640_video_queue *queue);
 extern int f640_free_line(struct f640_video_queue *queue, int line);
