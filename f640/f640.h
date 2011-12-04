@@ -28,6 +28,9 @@
 #define SCALE(df, dr, sf, sr, sv) (((sv - sf) * (dr - df) / (sr - sf)) + df)
 
 
+#include <stddef.h>
+#include <pthread.h>
+
 /*
  *
  */

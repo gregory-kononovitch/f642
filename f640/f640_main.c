@@ -916,7 +916,7 @@ int f640_processing()
     nbr = cheight / cary + ((cheight % cary) ? 1 : 0);
     nb = nbr * nbc;
 
-    double tab_min, tab_max, tab_th = 60, *tab = calloc(nb, sizeof(double));
+    double tab_min, tab_max, tab_th = 300, *tab = calloc(nb, sizeof(double));
     uint16_t *index = calloc(size, sizeof(uint16_t));
     for(i = 0 ; i < size ; i++) index[i] = ( i % cwidth ) / carx + ( ( i / cwidth ) / cary ) * nbc; // @@@ buggy
 
@@ -1002,7 +1002,7 @@ int f640_processing()
                 if (tab[k] > tab_max) tab_max = tab[k];
 
                 if (tab[k] > tab_th) {
-                    f640_draw_rect(yuv, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
+                    //f640_draw_rect(yuv, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
 //                    f640_draw_rect(rgb, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
                 }
             }
@@ -1018,7 +1018,7 @@ int f640_processing()
 
             // Alert
 //            quiet = 1;
-            if (frame > 35 && tab_max > 0) {//tab_th) {
+            if (frame > 35 && tab_max > tab_th) {
 //                quiet = 0;
                 gettimeofday(&tv3, NULL);
                 k = f640_draw_number(yuv, cwidth - 5, cheight - 5, frame);
@@ -1027,12 +1027,12 @@ int f640_processing()
 //                k = f640_draw_number(rgb, cwidth - 5, cheight - 5, frame);
 //                f640_draw_number(rgb, k - 20, cheight - 5, tab_max);
 
-                //f611_add_frame(stream, buffer[buf.index].start);
+                f611_add_frame(stream, buffer[buf.index].start);
 
                 //f051_send_data(log_env, buffer[buf.index].start, size << 1);
                 //f051_send_data(log_env, im0, size);
-                f640_full_yuv_to_rgb(yuv, i, rgb);
-                f051_send_data(log_env, rgb->data, rgb->data_size);
+//                f640_full_yuv_to_rgb(yuv, i, rgb);
+//                f051_send_data(log_env, rgb->data, rgb->data_size);
 
 //                sprintf(fname, "im%07u.pgm", num_im++);
 //                FILE *filp = fopen(fname, "wb");

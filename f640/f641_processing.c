@@ -41,7 +41,7 @@ struct f640_grid *f640_make_grid(int width, int height, int factor) {
         free(grid);
         return NULL;
     }
-    for(i = 0 ; i < grid->size ; i++) index[i] = ( i % grid->width ) / grid->wlen + ( ( i / grid->width ) / grid->hlen ) * grid->cols; // @@@ buggy
+    for(i = 0 ; i < grid->size ; i++) grid->index[i] = ( i % grid->width ) / grid->wlen + ( ( i / grid->width ) / grid->hlen ) * grid->cols; // @@@ buggy
 
     return grid;
 }
@@ -50,11 +50,9 @@ struct f640_grid *f640_make_grid(int width, int height, int factor) {
 /*
  *
  */
-static struct f640_line *f640_lineup;
-
-int f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, struct output_stream *stream) {
+struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, struct output_stream *stream) {
     int i;
-    f640_lineup = calloc(nbuffers, sizeof(struct f640_line));
+    struct f640_line *f640_lineup = calloc(nbuffers, sizeof(struct f640_line));
     if (!f640_lineup) {
         printf("ENOMEM allocating lineup, returning\n");
         return NULL;
@@ -72,7 +70,7 @@ int f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *gri
             }
             free(f640_lineup);
             f640_lineup = NULL;
-            return -ENOMEM;
+            return NULL;
         }
         f640_lineup[i].grid_th = 70;
 
@@ -88,18 +86,61 @@ int f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *gri
             }
             free(f640_lineup);
             f640_lineup = NULL;
-            return -ENOMEM;
+            return NULL;
         }
 
         f640_lineup->stream         = stream;
     }
-    return 0;
+    return f640_lineup;
 }
 
 
 /*
  *
  */
-int f640_enqueue(int v4l2_index) {
-    return -1;
+struct f640_queue {
+    struct f640_line    *lineup;
+    int     *vals;
+    int     size;
+    int     next;
+    int     last;
+
+    pthread_mutex_t mutex;
+    pthread_cond_t  cond;
+};
+
+int f640_enqueue(struct f640_queue *queue, int v4l2_index) {
+    pthread_mutex_lock(&queue->mutex);
+
+    queue->lineup[queue->last].actual = v4l2_index;
+    queue->lineup[queue->last].last   = queue->lineup[ (queue->last-1) % queue->size ].actual;
+
+    queue->vals[queue->last] = v4l2_index;
+    queue->last = (++queue->last) % queue->size;
+    pthread_cond_signal(&queue->cond);
+    pthread_mutex_unlock(&queue->mutex);
+
+
+    return 0;
+}
+
+int f640_dequeue(struct f640_queue *queue) {
+    pthread_mutex_lock(&queue->mutex);
+    while (queue->next == queue->last) {
+        pthread_cond_wait(&queue->cond, &queue->mutex);
+    }
+    int i = queue->vals[queue->next];
+    queue->next = (++queue->next) % queue->size;
+    pthread_mutex_unlock(&queue->mutex);
+    return i;
+}
+
+
+//
+void *f640_watch(void *queue) {
+    struct f640_queue *picture = queue;
+
+    while(1) {
+        int l = f640_dequeue(picture);
+    }
 }
