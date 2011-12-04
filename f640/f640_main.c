@@ -757,138 +757,7 @@ void f640_signal_term_handler(int signum)
     if ( verbose ) printf(F640_BOLD "Exiting TERM handler.\n" F640_RESET);
 }
 
-/*
- *
- */
-//static int wc = 9, hc = 12;
-//static inline int f640_get_index(int x, int y, int width) {
-//    return x + width * y;
-//}
-///*
-// * dir : 1 -> left - right | up - down
-// * @@@ to manage : Checks about 0 <= index < size : only sup < size is checked
-// */
-//static int f640_draw_hline(uint8_t *yuv, int size, int width, int index, int dist, int dir) {
-//    for( ; dist ; --dist) {
-//        yuv[2*index] = 0;
-//        index += dir;
-//    }
-//    return index - dir;
-//}
-//static int f640_draw_vline(uint8_t *yuv, int size, int width, int index, int dist, int dir) {
-//    for( ; dist ; --dist) {
-//        yuv[2*index] = 0;
-//        index += dir * width;
-//    }
-//    return index - dir * width;
-//}
-//
-///*
-// *
-// */
-//static int f640_draw_rect(uint8_t *yuv, int size, int width, int index, int distx, int disty) {
-////    printf("DrawRect : width = %d ; index = %d ; distx = %d ; disty = %d\n", width, index, distx, disty);
-//    index = f640_draw_hline(yuv, size, width, index, distx,  1);
-////    printf("1 : index = %d\n", index);
-//    index = f640_draw_vline(yuv, size, width, index, disty,  1);
-////    printf("2 : index = %d\n", index);
-//    index = f640_draw_hline(yuv, size, width, index, distx, -1);
-////    printf("3 : index = %d\n", index);
-//    index = f640_draw_vline(yuv, size, width, index, disty, -1);
-////    printf("DrawRect return %d\n", index);
-//    return index;
-//}
-//
-//
-//static int f640_draw_digit(uint8_t *yuv, int size, int width, int x, int y, int value) {
-//    x = f640_get_index(x, y, width);
-//    switch(value) {
-//        case 0 :
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc, -1);
-//            x = f640_draw_vline(yuv, size, width, x, hc,  1);
-//            break;
-//        case 1 :
-//            x += wc/2;
-//            x = f640_draw_vline(yuv, size, width, x, hc, -1);
-//            break;
-//        case 2 :
-//                f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc, -1);
-//            break;
-//        case 3 :
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//                f640_draw_hline(yuv, size, width, x, wc,  -1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc, -1);
-//            break;
-//        case 4 :
-//            x += wc/2;
-//            x = f640_draw_vline(yuv, size, width, x, hc/3, -1);
-//                f640_draw_hline(yuv, size, width, x, wc/2,  1);
-//                f640_draw_vline(yuv, size, width, x, hc/3, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc/2, -1);
-//            x = f640_draw_vline(yuv, size, width, x, 2*hc/3, -1);
-//            break;
-//        case 5 :
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc, -1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            break;
-//        case 6 :
-//                f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,  -1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,   1);
-//            break;
-//        case 7 :
-//            x += wc;
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//                f640_draw_hline(yuv, size, width, x, wc/2, -1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc, -1);
-//            break;
-//        case 8 :
-//                f640_draw_vline(yuv, size, width, x, hc, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc, -1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2,1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            break;
-//        case 9 :
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            x = f640_draw_vline(yuv, size, width, x, hc, -1);
-//            x = f640_draw_hline(yuv, size, width, x, wc, -1);
-//            x = f640_draw_vline(yuv, size, width, x, hc/2,1);
-//            x = f640_draw_hline(yuv, size, width, x, wc,  1);
-//            break;
-//    }
-//    return x;
-//}
-//
-//static int f640_draw_number(uint8_t *yuv, int size, int width, int x, int y, uint64_t value) {
-//    if (value) {
-//        while (value) {
-//            x -= wc + 2;
-//            f640_draw_digit(yuv, size, width, x, y, value % 10);
-//            value /= 10;
-//        }
-//    } else {
-//        x -= wc + 2;
-//        f640_draw_digit(yuv, size, width, x, y, 0);
-//    }
-//    return x;
-//}
+
 /*
  *
  */
@@ -906,28 +775,42 @@ int f640_processing()
     im0 = calloc(size, sizeof(uint8_t));
 //    dif = calloc(2*size, sizeof(uint8_t));
 
-    // Tab
-    int carx = 40, cary = 40, nbr, nbc, nb;
+    // Grid
+    struct f640_grid *grid = f640_make_grid(cwidth, cheight, 32);
 
-    for(carx = cwidth  / 32 ; ; carx--) if (cwidth  % carx == 0) break;
-    for(cary = cheight / 32 ; ; cary--) if (cheight % cary == 0) break;
+    // Broadcast
 
-    nbc = cwidth  / carx + ((cwidth  % carx) ? 1 : 0);
-    nbr = cheight / cary + ((cheight % cary) ? 1 : 0);
-    nb = nbr * nbc;
-
-    double tab_min, tab_max, tab_th = 300, *tab = calloc(nb, sizeof(double));
-    uint16_t *index = calloc(size, sizeof(uint16_t));
-    for(i = 0 ; i < size ; i++) index[i] = ( i % cwidth ) / carx + ( ( i / cwidth ) / cary ) * nbc; // @@@ buggy
-
-    // Graphics
-    struct f640_image *yuv = f640_create_yuv_image(cwidth, cheight);
-    free(yuv->data);
-    struct f640_image *rgb = f640_create_rgb_image(cwidth, cheight);
-
-    //
-    //struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cheight, cwidth, frames_pers);
+    // Recording
     struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
+
+    // LineUp
+    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, stream, log_env, 150);
+
+    // Lines
+    struct f640_video_lines video_lines;
+    f640_init_queue(&video_lines.snaped, lineup, req.count);
+    for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
+    f640_init_queue(&video_lines.watched, lineup, req.count);
+    f640_init_queue(&video_lines.converted, lineup, req.count);
+    f640_init_queue(&video_lines.recorded, lineup, req.count);
+
+    // Threads
+    pthread_t thread_watch1, thread_watch2;
+    pthread_t thread_convert1, thread_convert2;
+    pthread_t thread_record;
+    pthread_t thread_release;
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    pthread_create(&thread_watch1,   &attr, f640_watch,   (void *)(&video_lines));
+    pthread_create(&thread_watch2,   &attr, f640_watch,   (void *)(&video_lines));
+    pthread_create(&thread_convert1, &attr, f640_convert, (void *)(&video_lines));
+    pthread_create(&thread_convert2, &attr, f640_convert, (void *)(&video_lines));
+    pthread_create(&thread_record,   &attr, f640_record,  (void *)(&video_lines));
+    pthread_create(&thread_release,  &attr, f640_release, (void *)(&video_lines));
+
 
     // pnm
     char fname[32];
@@ -963,93 +846,96 @@ int f640_processing()
         nth = 0;
         if ( frame ) {
             i = 0; im = im0; pix = buffer[buf.index].start; rms = 0; moy = 0;
-            yuv->data = buffer[buf.index].start;
-            memset(tab, 0, nb * sizeof(double));
-            while( i < size ) {
-                r = (*pix - *im) * (*pix - *im);
-                rms += r;
-//                moy += abs(*pix - *im);
-                tab[index[i]] += r;
-                if ( dif ) {
-                    //j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
-                    j = i;
 
-                    if (*pix < *im - th) {
-                        dif[2*j] = 0x00;
-                        nth++;
-                    } else if (*pix > *im + th) {
-                        dif[2*j] = 0x00;
-                        nth++;
-                    } else {
-                        dif[2*j] = *pix;
-                    }
+            f640_enqueue_buffer(&video_lines.snaped, buf.index);
 
-                    //dif[2*j + 0]  = *(pix+0);
-                    dif[2*j + 1]  = *(pix+1);
-                }
-                *im = *pix;
-                //f640_yuv_to_rgb(yuv, i, rgb);
-                i++; im++; pix += 2;
-            }
-
-            // Totals
-            rms /= size;
-            tab_min = 0xFFFFFFFFFFL;
-            tab_max = 0;
-            for(k = 0 ; k < nb ; k++) {
-                tab[k] /= carx * cary;
-                if (tab[k] < tab_min) tab_min = tab[k];
-                if (tab[k] > tab_max) tab_max = tab[k];
-
-                if (tab[k] > tab_th) {
-                    //f640_draw_rect(yuv, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
-//                    f640_draw_rect(rgb, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
-                }
-            }
-
-            // HighLight
-//            i = 0; pix = buffer[buf.index].start;
+//            yuv->data = buffer[buf.index].start;
+//            memset(tab, 0, nb * sizeof(double));
 //            while( i < size ) {
-//                if ( tab[index[i]] <= tab_th ) {
-//                    pix[2 * i] = 0xFF;
-//                }
-//                i++;
-//            }
-
-            // Alert
-//            quiet = 1;
-            if (frame > 35 && tab_max > tab_th) {
-//                quiet = 0;
-                gettimeofday(&tv3, NULL);
-                k = f640_draw_number(yuv, cwidth - 5, cheight - 5, frame);
-                f640_draw_number(yuv, k - 20, cheight - 5, tab_max);
-
-//                k = f640_draw_number(rgb, cwidth - 5, cheight - 5, frame);
-//                f640_draw_number(rgb, k - 20, cheight - 5, tab_max);
-
-                f611_add_frame(stream, buffer[buf.index].start);
-
-                //f051_send_data(log_env, buffer[buf.index].start, size << 1);
-                //f051_send_data(log_env, im0, size);
-//                f640_full_yuv_to_rgb(yuv, i, rgb);
-//                f051_send_data(log_env, rgb->data, rgb->data_size);
-
-//                sprintf(fname, "im%07u.pgm", num_im++);
-//                FILE *filp = fopen(fname, "wb");
-//                fwrite(header, 1, 54, filp);
-//                fwrite(dif, 1, size, filp);
-//                fclose(filp);
+//                r = (*pix - *im) * (*pix - *im);
+//                rms += r;
+////                moy += abs(*pix - *im);
+//                tab[index[i]] += r;
+//                if ( dif ) {
+//                    //j = ( i % cwidth) * cheight + cheight -1 - ( i / cwidth );
+//                    j = i;
 //
-////                sprintf(fname, "im%07u.yuv", num_im++);
+//                    if (*pix < *im - th) {
+//                        dif[2*j] = 0x00;
+//                        nth++;
+//                    } else if (*pix > *im + th) {
+//                        dif[2*j] = 0x00;
+//                        nth++;
+//                    } else {
+//                        dif[2*j] = *pix;
+//                    }
+//
+//                    //dif[2*j + 0]  = *(pix+0);
+//                    dif[2*j + 1]  = *(pix+1);
+//                }
+//                *im = *pix;
+//                //f640_yuv_to_rgb(yuv, i, rgb);
+//                i++; im++; pix += 2;
+//            }
+//
+//            // Totals
+//            rms /= size;
+//            tab_min = 0xFFFFFFFFFFL;
+//            tab_max = 0;
+//            for(k = 0 ; k < nb ; k++) {
+//                tab[k] /= carx * cary;
+//                if (tab[k] < tab_min) tab_min = tab[k];
+//                if (tab[k] > tab_max) tab_max = tab[k];
+//
+//                if (tab[k] > tab_th) {
+//                    //f640_draw_rect(yuv, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
+////                    f640_draw_rect(rgb, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
+//                }
+//            }
+//
+//            // HighLight
+////            i = 0; pix = buffer[buf.index].start;
+////            while( i < size ) {
+////                if ( tab[index[i]] <= tab_th ) {
+////                    pix[2 * i] = 0xFF;
+////                }
+////                i++;
+////            }
+
+//            // Alert
+////            quiet = 1;
+//            if (frame > 35 && tab_max > tab_th) {
+////                quiet = 0;
+//                gettimeofday(&tv3, NULL);
+//                k = f640_draw_number(yuv, cwidth - 5, cheight - 5, frame);
+//                f640_draw_number(yuv, k - 20, cheight - 5, tab_max);
+//
+////                k = f640_draw_number(rgb, cwidth - 5, cheight - 5, frame);
+////                f640_draw_number(rgb, k - 20, cheight - 5, tab_max);
+//
+//                f611_add_frame(stream, buffer[buf.index].start);
+//
+//                //f051_send_data(log_env, buffer[buf.index].start, size << 1);
+//                //f051_send_data(log_env, im0, size);
+////                f640_full_yuv_to_rgb(yuv, i, rgb);
+////                f051_send_data(log_env, rgb->data, rgb->data_size);
+//
+////                sprintf(fname, "im%07u.pgm", num_im++);
 ////                FILE *filp = fopen(fname, "wb");
-////                fwrite(buffer[buf.index].start, 2, size, filp);
+////                fwrite(header, 1, 54, filp);
+////                fwrite(dif, 1, size, filp);
 ////                fclose(filp);
-            }
+////
+//////                sprintf(fname, "im%07u.yuv", num_im++);
+//////                FILE *filp = fopen(fname, "wb");
+//////                fwrite(buffer[buf.index].start, 2, size, filp);
+//////                fclose(filp);
+//            }
             if (!quiet)
                 printf("Frame " F640_BOLD "%4d" F640_RESET
                     " | " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
                     " | ABS = %5.2f | min %4.1f | MAX %5.0f | N %5.0f |"// %u %u %u %u %u %u %u %u %u %u %u\n"
-                    , frame, rms, 1.*moy/size, tab_min, tab_max, nth
+                    , frame, rms, 1.*moy/size, 0, 0, 0
                     //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
             );
         } else {
@@ -1081,11 +967,7 @@ int f640_processing()
     }
     if ( verbose ) printf("Exited from processing loop.\n");
 
-    free(index);
-    free(tab);
-    if (dif) free(dif);
-    free(im0);
-    if (stream->filp) fclose(stream->filp);
+
     return 0;
 }
 

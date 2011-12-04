@@ -180,7 +180,7 @@ void f640_yuv_to_rgb(struct f640_image *yuv, int index, struct f640_image *rgb) 
 }
 
 
-void f640_full_yuv_to_rgb(struct f640_image *yuv, int index, struct f640_image *rgb) {
+void f640_full_yuv_to_rgb(struct f640_image *yuv, struct f640_image *rgb) {
     int i = 1, r, g, b;
 
     yuv->ptr = yuv->data + 2;

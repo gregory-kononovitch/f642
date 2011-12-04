@@ -85,6 +85,6 @@ extern struct f640_image *f640_create_rgb_image(int width, int height);
  *
  */
 extern void f640_yuv_to_rgb(struct f640_image *yuv, int index, struct f640_image *rgb);
-extern void f640_full_yuv_to_rgb(struct f640_image *yuv, int index, struct f640_image *rgb);
+extern void f640_full_yuv_to_rgb(struct f640_image *yuv, struct f640_image *rgb);
 
 #endif /* F640_GRAPHICS_H_ */
