@@ -606,6 +606,8 @@ int f640_set_mmap()
         return -1;
     }
 
+    printf("SET MMAP : %d\n", nb_buffers);
+
     memset(&req, 0, sizeof(req));
 
     req.count  = nb_buffers;
@@ -702,7 +704,7 @@ int f640_stream_on() {
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
     if(ioctl(fd, VIDIOC_STREAMON, &type) == -1) {
-        printf("Error starting stream.\n");
+        printf("Error starting stream on \"%s\"\n", dev);
         printf("VIDIOC_STREAMON: %s\n", strerror(errno));
         for(i = 0; i < req.count; i++) munmap(buffer[i].start, buffer[i].length);
         free(buffer);
@@ -765,16 +767,8 @@ int f640_processing()
 {
     uint32_t frame = 0;
     struct timeval tv1, tv2, tv3;
-    double d1, d2, d3, rms, r, nth;
-    static uint8_t *im0;
-    uint32_t i, j, k, size, moy = 0;
-    uint8_t *dif = NULL, *im = NULL, *pix = NULL;
-    int io;
-
-    // init
-    size = cwidth * cheight;
-    im0 = calloc(size, sizeof(uint8_t));
-//    dif = calloc(2*size, sizeof(uint8_t));
+    double d;
+    int r, i, io, bs = 0;
 
     // Grid
     struct f640_grid *grid = f640_make_grid(cwidth, cheight, 32);
@@ -785,11 +779,12 @@ int f640_processing()
     struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
 
     // LineUp
-    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, stream, log_env, 150);
+    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, stream, log_env, 60);
 
     // Lines
     struct f640_video_lines video_lines;
     memset(&video_lines, 0, sizeof(struct f640_video_lines));
+    video_lines.grid = grid;
     f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
     f640_init_queue(&video_lines.watched,   lineup, req.count);
@@ -810,13 +805,13 @@ int f640_processing()
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     pthread_create(&thread_watch1,   &attr, f640_watch,   (void *)(&video_lines));
-    pthread_create(&thread_watch2,   &attr, f640_watch,   (void *)(&video_lines));
-    pthread_create(&thread_watch3,   &attr, f640_watch,   (void *)(&video_lines));
-    pthread_create(&thread_watch4,   &attr, f640_watch,   (void *)(&video_lines));
+//    pthread_create(&thread_watch2,   &attr, f640_watch,   (void *)(&video_lines));
+//    pthread_create(&thread_watch3,   &attr, f640_watch,   (void *)(&video_lines));
+//    pthread_create(&thread_watch4,   &attr, f640_watch,   (void *)(&video_lines));
     pthread_create(&thread_convert1, &attr, f640_convert, (void *)(&video_lines));
-    pthread_create(&thread_convert2, &attr, f640_convert, (void *)(&video_lines));
-    pthread_create(&thread_convert3, &attr, f640_convert, (void *)(&video_lines));
-    pthread_create(&thread_convert4, &attr, f640_convert, (void *)(&video_lines));
+//    pthread_create(&thread_convert2, &attr, f640_convert, (void *)(&video_lines));
+//    pthread_create(&thread_convert3, &attr, f640_convert, (void *)(&video_lines));
+//    pthread_create(&thread_convert4, &attr, f640_convert, (void *)(&video_lines));
     pthread_create(&thread_record,   &attr, f640_record,  (void *)(&video_lines));
     pthread_create(&thread_release,  &attr, f640_release, (void *)(&video_lines));
 
@@ -836,6 +831,11 @@ int f640_processing()
     }
 
     // Loop
+    int show = 0;
+    struct v4l2_buffer v4l_buf;
+    uint64_t HZ[100];
+    memset(&HZ, 0, sizeof(HZ));
+
     gettimeofday(&tv1, NULL);
     loop = 1;
     while(loop && frame < nb_frames) {
@@ -843,35 +843,26 @@ int f640_processing()
         memset(&buf, 0, sizeof(buf));
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
-        //pthread_mutex_lock(&video_lines.ioc);
         if(ioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
-            //pthread_mutex_unlock(&video_lines.ioc);
             printf("VIDIOC_DQBUF: %s\n", strerror(errno));
             return -1;
         }
-        //pthread_mutex_unlock(&video_lines.ioc);
-        if (debug) printf("DeQueue ok : index = %u, seq = %u, frames = %u\n", buf.index, buf.sequence, buf.timecode.frames);
+//        usleep(150000);
+//        buf.index = (frame++) % req.count;
+        bs++;
+
+        if (frame % 24 == 0) {
+            gettimeofday(&tv2, NULL);
+            d = ( (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0) ) / 24;
+            if ( 1/d < 100) HZ[(int)(1/d)]++;
+            if (show) printf("DeQueue ok : index = %u, seq = %u, frames = %u, Hz = %3.1f\n", buf.index, buf.sequence, buf.timecode.frames, 1/d);
+            if (frame % 24 == 0) printf("HZ %3.1f | %lu - %lu - %lu - %lu - %lu - %lu - %lu | %lu - %lu | %lu - %lu - %lu\n", 1/d
+                    , HZ[20], HZ[21], HZ[22], HZ[23], HZ[24], HZ[25], HZ[26], HZ[27], HZ[28], HZ[29], HZ[30], HZ[31]);
+            gettimeofday(&tv1, NULL);
+        }
 
         // Processing
-        int th = 15;
-        nth = 0;
         f640_enqueue_buffer(&video_lines.snaped, &buf);
-        if (!quiet)
-            printf("Frame " F640_BOLD "%4d" F640_RESET
-                " | " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
-                " | ABS = %5.2f | min %4.1f | MAX %5.0f | N %5.0f |\n"// %u %u %u %u %u %u %u %u %u %u %u\n"
-                , frame, rms, 1.*moy/size, 0, 0, 0
-                //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
-        );
-
-        // Data
-        gettimeofday(&tv2, NULL);
-        d1 = (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0);
-        if (!quiet)
-            printf(" %3.0fms | " F640_FG_RED "%4.1fHz" F640_RESET " | seq %4u | %3u | %2u | %2u | %6u | %6u\n"
-                    , frame, 1000 * d1, 1/d1
-                    , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames, buf.bytesused, buf.length);
-        gettimeofday(&tv1, NULL);
 
         // Loop
         frame++;
@@ -880,14 +871,27 @@ int f640_processing()
         io = 0;
         while( io != -1) {
             io = f640_dequeue_unblock(&video_lines.released);
-            printf("MAIN    : dequeue %d\n", io);
-            if (io < 0) break;
+            if (show) printf("MAIN    : dequeue %d / %d : (sn %d - wa %d - cv %d - rc %d - rl %d)\n", io, bs
+                    , f640_uns_queue_size(&video_lines.snaped)
+                    , f640_uns_queue_size(&video_lines.watched)
+                    , f640_uns_queue_size(&video_lines.converted)
+                    , f640_uns_queue_size(&video_lines.recorded)
+                    , f640_uns_queue_size(&video_lines.released)
+            );
+            if (io < 0 && bs < req.count - 2) break;
+            if (io < 0 && bs > req.count - 3) {
+                io = f640_dequeue_line(&video_lines.released);
+            }
             if(ioctl(fd, VIDIOC_QBUF, &lineup[io].buf) == -1) {
                 printf("VIDIOC_QBUF: %s\n", strerror(errno));
             }
+            bs--;
             f640_free_line(&video_lines.snaped, io);
-            printf("MAIN    : released %d\n", io);
+            //printf("MAIN    : released %d (%u) / %d\n", io, lineup[io].buf.index, bs);
         }
+//        if(ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
+//            printf("VIDIOC_QBUF: %s\n", strerror(errno));
+//        }
     }
     if ( verbose ) printf("Exited from processing loop.\n");
 
@@ -1032,6 +1036,7 @@ int main(int argc, char *argv[])
     //
     if ( capture ) {
         log_env = f051_init_data_env("video", "loulou", 3200);
+        //log_env = f051_init_data_env("bird", "brodge", 3200);
         if (!log_env) {
             printf(F640_FG_RED "No proc environment, exiting.\n" F640_RESET);
             return -1;

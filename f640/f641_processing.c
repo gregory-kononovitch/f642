@@ -12,7 +12,7 @@
 
 #include "f640.h"
 
-static int DEBUG = 1;
+static int DEBUG = 0;
 
 /*
  *
@@ -77,7 +77,7 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
         f640_lineup[i].index        = i;
         f640_lineup[i].buffers      = buffers;
         f640_lineup[i].grid         = grid;
-        f640_lineup[i].grid_values  = calloc(grid->rows * grid->cols, sizeof(double));
+        f640_lineup[i].grid_values  = calloc(grid->rows * grid->cols, sizeof(long));
         if (!f640_lineup[i].grid_values) {
             printf("ENOMEM allocating grid_values, returning\n");
             for(--i ; i > -1 ; i--) {
@@ -111,7 +111,7 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
         //
         f640_lineup[i].swsCtxt = sws_getCachedContext(f640_lineup[i].swsCtxt,
                 grid->width, grid->height, PIX_FMT_YUYV422,
-                grid->width, grid->height, PIX_FMT_RGB24,
+                grid->width, grid->height, PIX_FMT_BGR24,
                 SWS_BICUBIC, NULL, NULL, NULL
         );
 
@@ -131,7 +131,7 @@ int f640_init_queue(struct f640_video_queue *queue, struct f640_line *lineup, in
     queue->last     = 0;
     queue->next     = 0;
     queue->real     = 0;
-    queue->cpt      = 0;
+    queue->nb_in      = 0;
     queue->oldest   = 0;
     pthread_mutex_init(&queue->mutex, NULL);
     pthread_cond_init (&queue->cond , NULL);
@@ -139,15 +139,14 @@ int f640_init_queue(struct f640_video_queue *queue, struct f640_line *lineup, in
 }
 
 int f640_enqueue_buffer(struct f640_video_queue *queue, struct v4l2_buffer *v4l2_buffer) {
-    queue->cpt++;
+    queue->nb_in++;
     struct f640_line *line = &queue->lineup[queue->lines[queue->last]];
-
+    gettimeofday(&queue->lineup[queue->lines[queue->last]].tv00, NULL);
     memcpy(&line->buf, v4l2_buffer, sizeof(struct v4l2_buffer));
     line->actual = line->buf.index;
     line->last   = queue->lineup[queue->lines[(queue->last-1) % queue->size]].actual;
-    line->frame  = queue->cpt;
+    line->frame  = queue->nb_in;
     line->yuv->data = line->buffers[line->index].start;
-    gettimeofday(&queue->lineup[queue->lines[queue->last]].tv00, NULL);
 
     pthread_mutex_lock(&queue->mutex);
     queue->last = (++queue->last) % queue->size;
@@ -166,8 +165,8 @@ int f640_sync(struct f640_video_queue *queue, uint64_t f) {
         while( f ) {
             f = 0;
             for(i = 0 ; i < F640_MULTI_MAX ; i++) {
-                if (queue->tmp[i] == queue->oldest + 1) {
-                    queue->tmp[i] = 0;
+                if (queue->done[i] == queue->oldest + 1) {
+                    queue->done[i] = 0;
                     queue->oldest++;
                     f = 1;
                     break;
@@ -176,13 +175,13 @@ int f640_sync(struct f640_video_queue *queue, uint64_t f) {
         }
     } else {
         for(i = 0 ; i < F640_MULTI_MAX ; i++) {
-            if (queue->tmp[i] == 0) {
-                queue->tmp[i] = f;
+            if (queue->done[i] == 0) {
+                queue->done[i] = f;
                 break;
             }
         }
     }
-    printf("SYNC (3): oldest  %lu ; frame %lu\n", queue->oldest, f);
+    //printf("SYNC (3): oldest  %lu ; frame %lu\n", queue->oldest, f);
     pthread_cond_signal(&queue->cond);
     pthread_mutex_unlock(&queue->mutex);
     return 0;
@@ -192,7 +191,7 @@ int f640_enqueue_line(struct f640_video_queue *queue, int line) {
     pthread_mutex_lock(&queue->mutex);
     queue->lines[queue->last] = line;
     queue->last = (++queue->last) % queue->size;
-    queue->cpt++;
+    queue->nb_in++;
     pthread_cond_signal(&queue->cond);
     pthread_mutex_unlock(&queue->mutex);
     return 0;
@@ -203,12 +202,12 @@ int f640_dequeue_sync(struct f640_video_queue *queue) {
     pthread_mutex_lock(&queue->mutex);
     loop:
     i = queue->lines[queue->next];
-    printf("SYNC (1): old = %lu ; frame %lu\n", queue->oldest, queue->lineup[i].frame);
+    //printf("SYNC (1): old = %lu ; frame %lu\n", queue->oldest, queue->lineup[i].frame);
     if (queue->next == queue->last || queue->lineup[i].frame - queue->oldest > F640_MULTI_MAX) {
         pthread_cond_wait(&queue->cond, &queue->mutex);
         goto loop;
     }
-    printf("SYNC (2): old = %lu ; frame %lu\n", queue->oldest, queue->lineup[i].frame);
+    //printf("SYNC (2): old = %lu ; frame %lu\n", queue->oldest, queue->lineup[i].frame);
     queue->next = (++queue->next) % queue->size;
     pthread_mutex_unlock(&queue->mutex);
     return i;
@@ -258,18 +257,22 @@ int f640_free_line(struct f640_video_queue *queue, int line) {
 
 int f640_dequeue_unblock(struct f640_video_queue *queue) {
     pthread_mutex_lock(&queue->mutex);
-    printf("DEQ UNBL: next = %d ; last = %d\n", queue->next, queue->last);
+    if (DEBUG) printf("DEQ UNBL: next = %d ; last = %d\n", queue->next, queue->last);
     if (queue->next == queue->last) {
         pthread_mutex_unlock(&queue->mutex);
         return -1;
     }
     int i = queue->lines[queue->next];
-    printf("DEQ UNBL: return = %d\n", i);
+    if (DEBUG) printf("DEQ UNBL: return = %d\n", i);
     queue->next = (++queue->next) % queue->size;
     pthread_mutex_unlock(&queue->mutex);
     return i;
 }
 
+int f640_uns_queue_size(struct f640_video_queue *queue) {
+    if (queue->last < queue->next) return queue->size - (queue->next - queue->last);
+    return queue->last - queue->next;
+}
 
 //
 void *f640_watch(void *video_lines) {
@@ -277,33 +280,32 @@ void *f640_watch(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
 
     uint8_t *im, *pix;
-    double r, rms;
+    long rms;
 
     while(1) {
         int l = f640_dequeue_sync(&lines->snaped);
         struct f640_line *line = &lines->snaped.lineup[l];
         gettimeofday(&line->tv10, NULL);
 
-        if (DEBUG) printf("WATCH   : dequeue %d, frame %lu\n", l, line->frame);
+        if (DEBUG) printf("\t\tWATCH   : dequeue %d, frame %lu\n", l, line->frame);
 
         // Processing
         i = 0;
         im  = line->buffers[line->last].start;
         pix = line->buffers[line->actual].start;
-        rms = 0;
-        //line->yuv->data = line->buffers[line->actual].start;
-        memset(line->grid_values, 0, line->grid->num * sizeof(double));
+        line->rms = 0;
+        memset(line->grid_values, 0, line->grid->num * sizeof(long));
         while( i < line->grid->size ) {
-            r = (*pix - *im) * (*pix - *im);
-            rms += r;
-            line->grid_values[line->grid->index[i]] += r;
+            rms = (*pix - *im) * (*pix - *im);
+            line->rms += rms;
+            line->grid_values[line->grid->index[i]] += rms;
             i++;
             im  += 2;
             pix += 2;
         }
 
         // Totals
-        rms /= line->grid->size;
+        line->rms /= line->grid->size;
         line->grid_min = 0xFFFFFFFFFFL;
         line->grid_max = 0;
         for(k = 0 ; k < line->grid->num ; k++) {
@@ -317,7 +319,7 @@ void *f640_watch(void *video_lines) {
             }
         }
 
-        if (DEBUG) printf("WATCH   : enqueue %d, frame %lu\n", l, line->frame);
+        if (DEBUG) printf("\t\tWATCH   : enqueue %d, frame %lu\n", l, line->frame);
         gettimeofday(&line->tv11, NULL);
         f640_sync(&lines->snaped, line->frame);
         f640_enqueue_line(&lines->watched, l);
@@ -327,21 +329,21 @@ void *f640_watch(void *video_lines) {
 
 //
 void *f640_convert(void *video_lines) {
-    int ix;
+    int ix, k;
     struct f640_video_lines *lines = video_lines;
 
     AVFrame *picture = avcodec_alloc_frame();
     avcodec_get_frame_defaults(picture);
-    avpicture_alloc((AVPicture *)picture, PIX_FMT_YUYV422, 800, 600);
-    picture->width = 800;
-    picture->height = 600;
+    avpicture_alloc((AVPicture *)picture, PIX_FMT_YUYV422, lines->grid->width, lines->grid->height);
+    picture->width = lines->grid->width;
+    picture->height = lines->grid->height;
     picture->format = PIX_FMT_YUYV422;
 
     AVFrame *scaled = avcodec_alloc_frame();
     avcodec_get_frame_defaults(scaled);
-    avpicture_alloc((AVPicture *)scaled, PIX_FMT_RGB24, 800, 600);
-    scaled->width = 800;
-    scaled->height = 600;
+    avpicture_alloc((AVPicture *)scaled, PIX_FMT_RGB24, lines->grid->width, 600);
+    scaled->width = lines->grid->width;
+    scaled->height = lines->grid->height;
     scaled->format = PIX_FMT_RGB24;
 
 
@@ -350,22 +352,27 @@ void *f640_convert(void *video_lines) {
         struct f640_line *line = &lines->watched.lineup[l];
         gettimeofday(&line->tv20, NULL);
 
-        if (DEBUG) printf("CONVERT : dequeue %d, frame %lu\n", l, line->frame);
+        if (DEBUG) printf("\t\t\t\tCONVERT : dequeue %d, frame %lu\n", l, line->frame);
 
         // Alert
 //        if (line->frame > 35 && line->grid_max > 0) {//line->grid_th) {
         if (1) {
-            //f640_full_yuv_to_rgb(line->yuv, line->rgb);
+//            f640_full_yuv_to_rgb(line->yuv, line->rgb);
             picture->data[0] = line->yuv->data;
             scaled->data[0] = line->rgb->data;
             sws_scale(line->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, line->grid->height, scaled->data, scaled->linesize);
 
+//            for(k = 0 ; k < line->grid->num ; k++) {
+//                if (line->grid_values[k] > line->grid_th) {
+//                    f640_draw_rect(line->rgb, (k/line->grid->cols) * line->grid->hlen * line->grid->width + (k % line->grid->cols) * line->grid->wlen, line->grid->wlen, line->grid->hlen);
+//                }
+//            }
+
             ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->frame);
             f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->grid_max);
-
         }
 
-        if (DEBUG) printf("CONVERT : enqueue %d, frame %lu\n", l, line->frame);
+        if (DEBUG) printf("\t\t\t\tCONVERT : enqueue %d, frame %lu\n", l, line->frame);
         gettimeofday(&line->tv21, NULL);
         f640_enqueue_line(&lines->converted, l);
     }
@@ -382,13 +389,13 @@ void *f640_record(void *video_lines) {
         struct f640_line *line = &lines->converted.lineup[l];
         gettimeofday(&line->tv30, NULL);
 
-        if (DEBUG) printf("RECORD  : dequeue %d, frame %lu\n", l, line->frame);
+        if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
         f051_send_data(line->log_env, line->rgb->data, line->rgb->data_size);
         f611_add_frame(line->stream, line->yuv->data);
 
         //
-        if (DEBUG) printf("RECORD  : enqueue %d, frame %lu\n", l, line->frame);
+        if (DEBUG) printf("\t\t\t\t\t\tRECORD  : enqueue %d, frame %lu\n", l, line->frame);
         gettimeofday(&line->tv31, NULL);
         f640_enqueue_line(&lines->recorded, l);
     }
@@ -400,23 +407,43 @@ void *f640_record(void *video_lines) {
 #include <linux/videodev2.h>
 void *f640_release(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
+    double t = 0, t0 = 0, t1 = 0, t2 = 0, t3 = 0, t4 = 0;
 
     while(1) {
         int l = f640_dequeue_line(&lines->recorded);
         struct f640_line *line = &lines->recorded.lineup[l];
         gettimeofday(&line->tv40, NULL);
 
-        if (DEBUG) printf("RELEASE : dequeue %d, frame %lu\n", l, line->frame);
+        t  += f640_duration (line->tv40, line->tv10);
+        t1 += f640_duration (line->tv11, line->tv10);
+        t2 += f640_duration (line->tv21, line->tv20);
+        t3 += f640_duration (line->tv31, line->tv30);
+        t4 += f640_duration (line->tv11, line->tv10) + f640_duration (line->tv21, line->tv20) + f640_duration (line->tv31, line->tv30);
+
+        if (DEBUG) printf("\t\t\t\t\t\t\t\tRELEASE : dequeue %d, frame %lu\n", l, line->frame);
+        if (line->frame % 24 == 0) printf("RELEASE : T = %4.1fs (%3.0f%); W = %4.1f (%2.0f%) ; C = %4.1f (%2.0f%) ; R = %4.1f (%2.0f%)\n"
+                , t, 100*t/t4, t1, 100*t1/t4, t2, 100*t2/t4, t3, 100*t3/t4
+        );
 
         gettimeofday(&line->tv41, NULL);
 
-        if (DEBUG) printf("Frame %lu : - %5.0f - %5.0f - %5.0f = %4.3fms (%5.0f)\n", line->frame
+        if (DEBUG) printf("\t\t\t\t\t\t\t\tFrame %lu : - %5.0f - %5.0f - %5.0f = %4.3fms (%5.0f)\n", line->frame
                 , f640_frequency(line->tv11, line->tv10)
                 , f640_frequency(line->tv21, line->tv20)
                 , f640_frequency(line->tv31, line->tv30)
                 , f640_duration (line->tv41, line->tv00)
                 , f640_frequency(line->tv41, line->tv00)
         );
+//        printf("Frame " F640_BOLD "%4d" F640_RESET
+//            " | " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
+//            " | ABS = %5.2f | min %4.1f | MAX %5.0f | N %5.0f |\n"// %u %u %u %u %u %u %u %u %u %u %u\n"
+//            , frame, rms, 1.*moy/size, 0, 0, 0
+//            //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
+//        );
+//        printf(" %3.0fms | " F640_FG_RED "%4.1fHz" F640_RESET " | seq %4u | %3u | %2u | %2u | %6u | %6u\n"
+//                , frame, 1000 * d1, 1/d1
+//                , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames, buf.bytesused, buf.length);
+
         f640_enqueue_line(&lines->released, l);
 
         // EnQueue
