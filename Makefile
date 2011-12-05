@@ -8,12 +8,12 @@ p644:
 all:
 	make -C f640
 	mv f640/f640.xo .
-	make -C c642
-	mv c642/c642-brodge.ko .
-	make -C p643
-	mv p643/p643-brdg.xo .
-	make -C p644
-	mv p644/p644-brodger.xo .
+#	make -C c642
+#	mv c642/c642-brodge.ko .
+#	make -C p643
+#	mv p643/p643-brdg.xo .
+#	make -C p644
+#	mv p644/p644-brodger.xo .
 
 
 clean:

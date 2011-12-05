@@ -96,6 +96,7 @@ struct f640_line {
     struct timeval tv00, tv01, tv10, tv11, tv20, tv21, tv30, tv31, tv40, tv41;
 };
 
+#define F640_MULTI_MAX 3
 struct f640_video_queue {
     struct f640_line    *lineup;
     int     *lines;
@@ -105,6 +106,8 @@ struct f640_video_queue {
     int     real;
 
     uint64_t    cpt;
+    uint64_t    oldest;
+    uint64_t    tmp[2*F640_MULTI_MAX];
 
     pthread_mutex_t mutex;
     pthread_cond_t  cond;
@@ -115,6 +118,7 @@ struct f640_video_lines {
     struct f640_video_queue watched;
     struct f640_video_queue converted;
     struct f640_video_queue recorded;
+    struct f640_video_queue released;
 
     int fd;
     pthread_mutex_t ioc;

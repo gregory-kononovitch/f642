@@ -769,6 +769,7 @@ int f640_processing()
     static uint8_t *im0;
     uint32_t i, j, k, size, moy = 0;
     uint8_t *dif = NULL, *im = NULL, *pix = NULL;
+    int io;
 
     // init
     size = cwidth * cheight;
@@ -788,11 +789,13 @@ int f640_processing()
 
     // Lines
     struct f640_video_lines video_lines;
-    f640_init_queue(&video_lines.snaped, lineup, req.count);
+    memset(&video_lines, 0, sizeof(struct f640_video_lines));
+    f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
-    f640_init_queue(&video_lines.watched, lineup, req.count);
+    f640_init_queue(&video_lines.watched,   lineup, req.count);
     f640_init_queue(&video_lines.converted, lineup, req.count);
-    f640_init_queue(&video_lines.recorded, lineup, req.count);
+    f640_init_queue(&video_lines.recorded,  lineup, req.count);
+    f640_init_queue(&video_lines.released,  lineup, req.count);
     video_lines.fd = fd;
     pthread_mutex_init(&video_lines.ioc, NULL);
 
@@ -872,6 +875,19 @@ int f640_processing()
 
         // Loop
         frame++;
+
+        // EnQueue
+        io = 0;
+        while( io != -1) {
+            io = f640_dequeue_unblock(&video_lines.released);
+            printf("MAIN    : dequeue %d\n", io);
+            if (io < 0) break;
+            if(ioctl(fd, VIDIOC_QBUF, &lineup[io].buf) == -1) {
+                printf("VIDIOC_QBUF: %s\n", strerror(errno));
+            }
+            f640_free_line(&video_lines.snaped, io);
+            printf("MAIN    : released %d\n", io);
+        }
     }
     if ( verbose ) printf("Exited from processing loop.\n");
 
