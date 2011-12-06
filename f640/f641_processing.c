@@ -45,18 +45,28 @@ struct f640_grid *f640_make_grid(int width, int height, int factor) {
     //
     for(grid->wlen = grid->width  / factor ; grid->wlen > 8 ; grid->wlen--) if (grid->width  % grid->wlen == 0) break;
     for(grid->hlen = grid->height / factor ; grid->hlen > 8 ; grid->hlen--) if (grid->height % grid->hlen == 0) break;
+    grid->gsize    = grid->wlen * grid->hlen;
     //
     grid->cols = grid->width  / grid->wlen + ((grid->width  % grid->wlen) ? 1 : 0);
     grid->rows = grid->height / grid->hlen + ((grid->height % grid->hlen) ? 1 : 0);
     grid->num  = grid->rows * grid->cols;
     //
-    grid->index = calloc(grid->width * grid->height, sizeof(uint16_t));
-    if (!grid->index) {
-        printf("ENOMEM in allocating grid index, returning\n");
+    grid->index_grid = calloc(grid->size, sizeof(uint16_t));
+    if (!grid->index_grid) {
+        printf("ENOMEM in allocating index grid, returning\n");
         free(grid);
         return NULL;
     }
-    for(i = 0 ; i < grid->size ; i++) grid->index[i] = ( i % grid->width ) / grid->wlen + ( ( i / grid->width ) / grid->hlen ) * grid->cols; // @@@ buggy
+    for(i = 0 ; i < grid->size ; i++) grid->index_grid[i] = ( i % grid->width ) / grid->wlen + ( ( i / grid->width ) / grid->hlen ) * grid->cols; // @@@ buggy
+    //
+    grid->grid_index = calloc(grid->num, sizeof(uint32_t));
+    if (!grid->grid_index) {
+        printf("ENOMEM in allocating grid index, returning\n");
+        free(grid->index_grid);
+        free(grid);
+        return NULL;
+    }
+    for(i = 0 ; i < grid->num ; i++) grid->grid_index[i] = (i % grid->cols) * grid->wlen + (i / grid->cols) * grid->hlen * grid->width;
 
     return grid;
 }
@@ -65,7 +75,7 @@ struct f640_grid *f640_make_grid(int width, int height, int factor) {
 /*
  *
  */
-struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, struct output_stream *stream, struct f051_log_env *log_env, double threshold) {
+struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, enum PixelFormat dstFormat, struct output_stream *stream, struct f051_log_env *log_env, long threshold) {
     int i;
     struct f640_line *f640_lineup = calloc(nbuffers, sizeof(struct f640_line));
     if (!f640_lineup) {
@@ -90,9 +100,30 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
         }
         f640_lineup[i].grid_th = threshold;
 
+        //
+        f640_lineup[i].srcFormat    = PIX_FMT_YUYV422;
+        f640_lineup[i].dstFormat    = dstFormat;
         f640_lineup[i].yuv          = f640_create_yuv_image(grid->width, grid->height);
         free(f640_lineup[i].yuv->data);
-        f640_lineup[i].rgb          = f640_create_rgb_image(grid->width, grid->height);
+        switch(dstFormat) {
+            case PIX_FMT_GRAY8 :
+                f640_lineup[i].rgb  = f640_create_gry_image(grid->width, grid->height);
+                break;
+            case PIX_FMT_YUYV422 :
+                f640_lineup[i].rgb  = f640_create_yuv_image(grid->width, grid->height);
+                break;
+            case PIX_FMT_BGR24 :
+            case PIX_FMT_RGB24 :
+                f640_lineup[i].rgb  = f640_create_rgb_image(grid->width, grid->height);
+                break;
+            case PIX_FMT_ABGR :
+            case PIX_FMT_ARGB :
+            case PIX_FMT_BGRA :
+            case PIX_FMT_RGBA :
+                f640_lineup[i].rgb  = f640_create_rgba_image(grid->width, grid->height);
+                break;
+        }
+
         if (!f640_lineup[i].rgb) {
             printf("ENOMEM allocating grid_values, returning\n");
             free(f640_lineup[i].grid_values);
@@ -110,8 +141,8 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
 
         //
         f640_lineup[i].swsCtxt = sws_getCachedContext(f640_lineup[i].swsCtxt,
-                grid->width, grid->height, PIX_FMT_YUYV422,
-                grid->width, grid->height, PIX_FMT_BGR24,
+                grid->width, grid->height, f640_lineup[i].srcFormat,
+                grid->width, grid->height, f640_lineup[i].dstFormat,
                 SWS_BICUBIC, NULL, NULL, NULL
         );
 
@@ -298,7 +329,7 @@ void *f640_watch(void *video_lines) {
         while( i < line->grid->size ) {
             rms = (*pix - *im) * (*pix - *im);
             line->rms += rms;
-            line->grid_values[line->grid->index[i]] += rms;
+            line->grid_values[line->grid->index_grid[i]] += rms;
             i++;
             im  += 2;
             pix += 2;
@@ -309,7 +340,7 @@ void *f640_watch(void *video_lines) {
         line->grid_min = 0xFFFFFFFFFFL;
         line->grid_max = 0;
         for(k = 0 ; k < line->grid->num ; k++) {
-            line->grid_values[k] /= line->grid->wlen * line->grid->hlen;
+            line->grid_values[k] /= line->grid->gsize;
             if (line->grid_values[k] < line->grid_min) line->grid_min = line->grid_values[k];
             if (line->grid_values[k] > line->grid_max) line->grid_max = line->grid_values[k];
 
@@ -341,10 +372,10 @@ void *f640_convert(void *video_lines) {
 
     AVFrame *scaled = avcodec_alloc_frame();
     avcodec_get_frame_defaults(scaled);
-    avpicture_alloc((AVPicture *)scaled, PIX_FMT_RGB24, lines->grid->width, 600);
+    avpicture_alloc((AVPicture *)scaled, PIX_FMT_BGR24, lines->grid->width, lines->grid->height);
     scaled->width = lines->grid->width;
     scaled->height = lines->grid->height;
-    scaled->format = PIX_FMT_RGB24;
+    scaled->format = PIX_FMT_BGR24;
 
 
     while(1) {
@@ -362,11 +393,29 @@ void *f640_convert(void *video_lines) {
             scaled->data[0] = line->rgb->data;
             sws_scale(line->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, line->grid->height, scaled->data, scaled->linesize);
 
-//            for(k = 0 ; k < line->grid->num ; k++) {
-//                if (line->grid_values[k] > line->grid_th) {
-//                    f640_draw_rect(line->rgb, (k/line->grid->cols) * line->grid->hlen * line->grid->width + (k % line->grid->cols) * line->grid->wlen, line->grid->wlen, line->grid->hlen);
-//                }
-//            }
+            if (line->dstFormat == PIX_FMT_ABGR) {
+                for(k = 0 ; k < line->grid->size ; k++) {
+                    //line->rgb->data[k << 2] = line->yuv->data[k << 1];
+                    line->rgb->data[k << 2] = 0x7F;
+                }
+            }
+
+            for(k = 0 ; k < line->grid->num ; k++) {
+                if (line->grid_values[k] > line->grid_th) {
+                    int i, j;
+                    ix = line->grid->grid_index[k];
+                    if (line->dstFormat != PIX_FMT_ABGR) {
+                        f640_draw_rect(line->rgb, ix, line->grid->wlen, line->grid->hlen);
+                    } else {
+                        for(j = 0 ; j < line->grid->hlen ; j++) {
+                            for(i = 0 ; i < line->grid->wlen ; i++) {
+                                line->rgb->data[(ix++) << 2] = 0xFF;
+                            }
+                            ix += line->grid->width - line->grid->wlen;
+                        }
+                    }
+                }
+            }
 
             ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->frame);
             f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->grid_max);

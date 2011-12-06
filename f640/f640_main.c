@@ -771,7 +771,7 @@ int f640_processing()
     int r, i, io, bs = 0;
 
     // Grid
-    struct f640_grid *grid = f640_make_grid(cwidth, cheight, 32);
+    struct f640_grid *grid = f640_make_grid(cwidth, cheight, 15);
 
     // Broadcast
 
@@ -779,7 +779,7 @@ int f640_processing()
     struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
 
     // LineUp
-    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, stream, log_env, 60);
+    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, 60);
 
     // Lines
     struct f640_video_lines video_lines;

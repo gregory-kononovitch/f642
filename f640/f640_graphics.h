@@ -80,6 +80,7 @@ extern int f640_draw_number(struct f640_image *image, int x, int y, uint64_t val
 extern struct f640_image *f640_create_gry_image(int width, int height);
 extern struct f640_image *f640_create_yuv_image(int width, int height);
 extern struct f640_image *f640_create_rgb_image(int width, int height);
+extern struct f640_image *f640_create_rgba_image(int width, int height);
 
 /*
  *

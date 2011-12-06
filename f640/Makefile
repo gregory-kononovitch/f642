@@ -13,7 +13,7 @@ LDFLAGS = -L/usr/lib -L/usr/local/lib -lasound -lfftw3 -lfftw3f -lf051-0.1 -lm
 INCL=-I/usr/local/include/libavformat -I/usr/local/include/libavdevice -I/usr/local/include/libswscale -I/usr/local/include/libavcodec -I/usr/local/include/libavutil
 LIBS=-L/usr/local/lib -lavformat -lavdevice -lswscale -lavutil -lavcodec
 
-OBJS  = f640_main.c ../../f610-equa/f611/f611_ffmpeg.c f640_graphics.c f640_gray.c f640_yuv.c f640_rgb.c f641_processing.c
+OBJS  = f640_main.c ../../f610-equa/f611/f611_ffmpeg.c f640_graphics.c f640_gray.c f640_yuv.c f640_rgb.c f640_rgba.c f641_processing.c
 
 
 all: f640

@@ -57,11 +57,14 @@ struct f640_grid {
 
     int         wlen;
     int         hlen;
+    int         gsize;
 
     int         cols;
     int         rows;
     int         num;
-    uint16_t    *index;
+
+    uint16_t    *index_grid;
+    uint32_t    *grid_index;
 };
 
 struct f640_line {
@@ -82,6 +85,8 @@ struct f640_line {
     long                grid_th;        // in
 
     // Graphics
+    enum PixelFormat    srcFormat;
+    enum PixelFormat    dstFormat;
     struct f640_image   *gry;           // out
     struct f640_image   *yuv;           // in ( / out )
     struct f640_image   *rgb;           // out
@@ -158,7 +163,7 @@ struct f640_v4l_point {
 };
 
 extern struct f640_grid* f640_make_grid(int width, int height, int factor);
-extern struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, struct output_stream *stream, struct f051_log_env *log_env, double threshold);
+extern struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, enum PixelFormat dstFormat, struct output_stream *stream, struct f051_log_env *log_env, long threshold);
 
 extern void* f640_watch(void *video_lines);
 extern void* f640_convert(void *video_lines);
