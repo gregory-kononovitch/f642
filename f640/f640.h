@@ -32,6 +32,8 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
+
+#include <sys/ioctl.h>
 #include <linux/videodev2.h>
 
 /*
@@ -65,6 +67,7 @@ struct f640_grid {
 
     uint16_t    *index_grid;
     uint32_t    *grid_index;
+    int64_t     *grid_coefs;
 };
 
 struct f640_line {
@@ -139,6 +142,12 @@ struct f640_video_lines {
 
     int fd;
     pthread_mutex_t ioc;
+
+    int  fps;
+    long rms;
+    long grid_min_value;
+    long grid_max_value;
+    long recorded_frames;
 };
 
 struct f640_processing_point {

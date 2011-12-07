@@ -771,7 +771,7 @@ int f640_processing()
     int r, i, io, bs = 0;
 
     // Grid
-    struct f640_grid *grid = f640_make_grid(cwidth, cheight, 15);
+    struct f640_grid *grid = f640_make_grid(cwidth, cheight, 32);
 
     // Broadcast
 
@@ -779,12 +779,13 @@ int f640_processing()
     struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
 
     // LineUp
-    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, 60);
+    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, 220);
 
     // Lines
     struct f640_video_lines video_lines;
     memset(&video_lines, 0, sizeof(struct f640_video_lines));
     video_lines.grid = grid;
+    video_lines.fps  = frames_pers;
     f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
     f640_init_queue(&video_lines.watched,   lineup, req.count);
@@ -831,7 +832,7 @@ int f640_processing()
     }
 
     // Loop
-    int show = 0;
+    int show = 0, show_freq = 2 * frames_pers;
     struct v4l2_buffer v4l_buf;
     uint64_t HZ[100];
     memset(&HZ, 0, sizeof(HZ));
@@ -851,14 +852,21 @@ int f640_processing()
 //        buf.index = (frame++) % req.count;
         bs++;
 
-        if (frame % 24 == 0) {
-            gettimeofday(&tv2, NULL);
-            d = ( (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0) ) / 24;
-            if ( 1/d < 100) HZ[(int)(1/d)]++;
-            if (show) printf("DeQueue ok : index = %u, seq = %u, frames = %u, Hz = %3.1f\n", buf.index, buf.sequence, buf.timecode.frames, 1/d);
-            if (frame % 24 == 0) printf("HZ %3.1f | %lu - %lu - %lu - %lu - %lu - %lu - %lu | %lu - %lu | %lu - %lu - %lu\n", 1/d
-                    , HZ[20], HZ[21], HZ[22], HZ[23], HZ[24], HZ[25], HZ[26], HZ[27], HZ[28], HZ[29], HZ[30], HZ[31]);
-            gettimeofday(&tv1, NULL);
+        if (0) {
+            if (frame % show_freq == 0) {
+                gettimeofday(&tv2, NULL);
+                d = ( (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0) ) / show_freq;
+                if ( 1/d < 100) HZ[(int)(1/d)]++;
+                if (show) printf("DeQueue ok : index = %u, seq = %u, frames = %u, Hz = %3.1f\n", buf.index, buf.sequence, buf.timecode.frames, 1/d);
+                if (frame % show_freq == 0) printf("HZ %3.1f (bs = %d) | %lu | %lu - %lu - %lu - %lu | %lu | %lu - %lu - %lu - %lu | "
+                        "%lu | %lu - %lu - %lu | %lu | %lu - %lu - %lu - %lu - %lu | "
+                        "%lu | %lu\n", 1/d, bs
+                        , HZ[10], HZ[11], HZ[12], HZ[13], HZ[14], HZ[15], HZ[16], HZ[17], HZ[18], HZ[19]
+                        , HZ[20], HZ[21], HZ[22], HZ[23], HZ[24], HZ[25], HZ[26], HZ[27], HZ[28], HZ[29]
+                        , HZ[30], HZ[31]
+                );
+                gettimeofday(&tv1, NULL);
+            }
         }
 
         // Processing

@@ -67,6 +67,15 @@ struct f640_grid *f640_make_grid(int width, int height, int factor) {
         return NULL;
     }
     for(i = 0 ; i < grid->num ; i++) grid->grid_index[i] = (i % grid->cols) * grid->wlen + (i / grid->cols) * grid->hlen * grid->width;
+    //
+    grid->grid_coefs = calloc(grid->num, sizeof(int64_t));
+    if (!grid->grid_coefs) {
+        printf("ENOMEM in allocating grid coefs, returning\n");
+        free(grid->grid_index);
+        free(grid->index_grid);
+        free(grid);
+        return NULL;
+    }
 
     return grid;
 }
@@ -104,7 +113,7 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
         f640_lineup[i].srcFormat    = PIX_FMT_YUYV422;
         f640_lineup[i].dstFormat    = dstFormat;
         f640_lineup[i].yuv          = f640_create_yuv_image(grid->width, grid->height);
-        free(f640_lineup[i].yuv->data);
+        //free(f640_lineup[i].yuv->data);
         switch(dstFormat) {
             case PIX_FMT_GRAY8 :
                 f640_lineup[i].rgb  = f640_create_gry_image(grid->width, grid->height);
@@ -177,7 +186,7 @@ int f640_enqueue_buffer(struct f640_video_queue *queue, struct v4l2_buffer *v4l2
     line->actual = line->buf.index;
     line->last   = queue->lineup[queue->lines[(queue->last-1) % queue->size]].actual;
     line->frame  = queue->nb_in;
-    line->yuv->data = line->buffers[line->index].start;
+    //line->yuv->data = line->buffers[line->index].start;
 
     pthread_mutex_lock(&queue->mutex);
     queue->last = (++queue->last) % queue->size;
@@ -314,6 +323,7 @@ void *f640_watch(void *video_lines) {
     long rms;
 
     while(1) {
+        // Dequeue
         int l = f640_dequeue_sync(&lines->snaped);
         struct f640_line *line = &lines->snaped.lineup[l];
         gettimeofday(&line->tv10, NULL);
@@ -324,6 +334,7 @@ void *f640_watch(void *video_lines) {
         i = 0;
         im  = line->buffers[line->last].start;
         pix = line->buffers[line->actual].start;
+        memcpy(line->yuv->data, pix, line->buffers[line->actual].length);
         line->rms = 0;
         memset(line->grid_values, 0, line->grid->num * sizeof(long));
         while( i < line->grid->size ) {
@@ -341,15 +352,12 @@ void *f640_watch(void *video_lines) {
         line->grid_max = 0;
         for(k = 0 ; k < line->grid->num ; k++) {
             line->grid_values[k] /= line->grid->gsize;
+            line->grid->grid_coefs[k] += line->grid_values[k];
             if (line->grid_values[k] < line->grid_min) line->grid_min = line->grid_values[k];
             if (line->grid_values[k] > line->grid_max) line->grid_max = line->grid_values[k];
-
-            if (line->grid_values[k] > line->grid_th) {
-                //f640_draw_rect(yuv, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
-//                    f640_draw_rect(rgb, (k/nbc) * cary * cwidth + (k % nbc) * carx, carx, cary);
-            }
         }
 
+        // Enqueue
         if (DEBUG) printf("\t\tWATCH   : enqueue %d, frame %lu\n", l, line->frame);
         gettimeofday(&line->tv11, NULL);
         f640_sync(&lines->snaped, line->frame);
@@ -362,6 +370,9 @@ void *f640_watch(void *video_lines) {
 void *f640_convert(void *video_lines) {
     int ix, k;
     struct f640_video_lines *lines = video_lines;
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
 
     AVFrame *picture = avcodec_alloc_frame();
     avcodec_get_frame_defaults(picture);
@@ -405,6 +416,7 @@ void *f640_convert(void *video_lines) {
                     int i, j;
                     ix = line->grid->grid_index[k];
                     if (line->dstFormat != PIX_FMT_ABGR) {
+                        //f640_draw_rect(line->yuv, ix, line->grid->wlen, line->grid->hlen);
                         f640_draw_rect(line->rgb, ix, line->grid->wlen, line->grid->hlen);
                     } else {
                         for(j = 0 ; j < line->grid->hlen ; j++) {
@@ -417,8 +429,9 @@ void *f640_convert(void *video_lines) {
                 }
             }
 
-            ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->frame);
-            f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->grid_max);
+            ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - tv.tv_sec);
+            ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->frame);
+            ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->grid_max);
         }
 
         if (DEBUG) printf("\t\t\t\tCONVERT : enqueue %d, frame %lu\n", l, line->frame);
@@ -430,9 +443,12 @@ void *f640_convert(void *video_lines) {
 
 //
 void *f640_record(void *video_lines) {
-    int frame = 1;
+    int frame = 1, ix;
     struct f640_video_lines *lines = video_lines;
+    struct timeval tv;
+    struct tm tm1;
 
+    gettimeofday(&tv, NULL);
     while(1) {
         int l = f640_dequeue_line_number(&lines->converted, frame++);
         struct f640_line *line = &lines->converted.lineup[l];
@@ -441,7 +457,25 @@ void *f640_record(void *video_lines) {
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
         f051_send_data(line->log_env, line->rgb->data, line->rgb->data_size);
-        f611_add_frame(line->stream, line->yuv->data);
+
+        if (line->grid_max > line->grid_th && line->frame > 35) {
+            //ix = f640_draw_number(line->yuv, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - tv.tv_sec);
+            localtime_r(&line->tv00.tv_sec, &tm1);
+            ix = f640_draw_number(line->yuv, line->grid->width - 5,          line->grid->height - 5, tm1.tm_sec);
+            ix = f640_draw_number(line->yuv, ix - line->yuv->glyphs.width/2, line->grid->height - 5, tm1.tm_min);
+            ix = f640_draw_number(line->yuv, ix - line->yuv->glyphs.width/2, line->grid->height - 5, tm1.tm_hour);
+
+            ix = f640_draw_number(line->yuv, ix - 20              , line->grid->height - 5, line->frame);
+            ix = f640_draw_number(line->yuv, ix - 20              , line->grid->height - 5, line->grid_max);
+
+            ix = f640_draw_number(line->yuv, line->grid->width - 5,          line->grid->height - 8 - line->yuv->glyphs.height, tm1.tm_mday);
+            ix = f640_draw_number(line->yuv, ix - line->yuv->glyphs.width/2, line->grid->height - 8 - line->yuv->glyphs.height, tm1.tm_mon+1);
+
+
+            f611_add_frame(line->stream, line->yuv->data);
+            lines->recorded_frames++;
+        }
+
 
         //
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : enqueue %d, frame %lu\n", l, line->frame);
@@ -452,16 +486,28 @@ void *f640_record(void *video_lines) {
 }
 
 //
-#include <sys/ioctl.h>
-#include <linux/videodev2.h>
 void *f640_release(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
     double t = 0, t0 = 0, t1 = 0, t2 = 0, t3 = 0, t4 = 0;
+    struct timeval tv1, tv2, tv3;
+    struct timespec ts1;
+    struct tm tm1;
+    time_t time70;
+    clock_t times1, times2;
+    unsigned long jiffs, ms;
+    int show_freq = lines->fps;
+    long recorded_frames = 0;
 
+    gettimeofday(&tv1, NULL);
     while(1) {
         int l = f640_dequeue_line(&lines->recorded);
         struct f640_line *line = &lines->recorded.lineup[l];
         gettimeofday(&line->tv40, NULL);
+
+        // Agreg
+        lines->rms += line->rms;
+        if (lines->grid_min_value > line->grid_min) lines->grid_min_value = line->grid_min;
+        if (lines->grid_max_value < line->grid_max) lines->grid_max_value = line->grid_max;
 
         t  += f640_duration (line->tv40, line->tv10);
         t1 += f640_duration (line->tv11, line->tv10);
@@ -470,9 +516,55 @@ void *f640_release(void *video_lines) {
         t4 += f640_duration (line->tv11, line->tv10) + f640_duration (line->tv21, line->tv20) + f640_duration (line->tv31, line->tv30);
 
         if (DEBUG) printf("\t\t\t\t\t\t\t\tRELEASE : dequeue %d, frame %lu\n", l, line->frame);
-        if (line->frame % 24 == 0) printf("RELEASE : T = %4.1fs (%3.0f%); W = %4.1f (%2.0f%) ; C = %4.1f (%2.0f%) ; R = %4.1f (%2.0f%)\n"
-                , t, 100*t/t4, t1, 100*t1/t4, t2, 100*t2/t4, t3, 100*t3/t4
-        );
+        if (line->frame % show_freq == 0) {
+            gettimeofday(&tv2, NULL);
+            localtime_r(&tv2.tv_sec, &tm1);
+            times2 = clock();// / CLOCKS_PER_SECOND ~ 1 000 000;
+            timersub(&tv2, &tv1, &tv3);
+//            time(&time70);
+//            jiffs = clock_t_to_jiffies(times);
+//            ms = jiffies_to_msecs(jiffs);
+
+            printf("RELEASE: %02d/%02d %02d:%02d:%02d | %3.1fHz - %3lu% || "
+                    , tm1.tm_mon+1, tm1.tm_mday, tm1.tm_hour, tm1.tm_min, tm1.tm_sec
+                    , 1. * (show_freq * 1000000) / (1000000 * tv3.tv_sec + tv3.tv_usec)
+                    , 100 * (times2 - times1) / (1000000 * tv3.tv_sec + tv3.tv_usec)
+            );
+
+            if ( lines->grid_max_value > line->grid_th || (lines->recorded_frames - recorded_frames) ) {
+                printf("%2d |¤ wa %2.0f%, %2ld - %2ld - " F640_RESET F640_BOLD F640_FG_RED "%5ld" F640_RESET
+                        " ¤| %2d |¤ cv %2.0f% ¤| %2d |¤ rc %2.0f%, " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
+                        " ¤| %2d | %2d |¤ %lds - %ldMo"
+                        , f640_uns_queue_size(&lines->snaped) ,   100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
+                        , f640_uns_queue_size(&lines->watched),   100*t2/t4
+                        , f640_uns_queue_size(&lines->converted), 100*t3/t4, lines->recorded_frames - recorded_frames
+                        , f640_uns_queue_size(&lines->recorded)
+                        , f640_uns_queue_size(&lines->released)
+                        , lines->recorded_frames / lines->fps, lines->recorded_frames * lines->grid->size / (1536 * 1024)
+                );
+            } else {
+                printf("%2d |¤ wa %2.0f%, %2ld - %2ld - %5ld ¤| %2d |¤ cv %2.0f% ¤| %2d |¤ rc %2.0f%, +%2ld ¤| %2d | %2d |¤ %lds - %ldMo"
+                        , f640_uns_queue_size(&lines->snaped) ,   100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
+                        , f640_uns_queue_size(&lines->watched),   100*t2/t4
+                        , f640_uns_queue_size(&lines->converted), 100*t3/t4, lines->recorded_frames - recorded_frames
+                        , f640_uns_queue_size(&lines->recorded)
+                        , f640_uns_queue_size(&lines->released)
+                        , lines->recorded_frames / lines->fps, lines->recorded_frames * lines->grid->size / (1536 * 1024)
+                );
+            }
+            printf("\n");
+            t  = 0;
+            t1 = 0;
+            t2 = 0;
+            t3 = 0;
+            t4 = 0;
+            lines->rms = 0;
+            lines->grid_min_value = 0xFFFFFFFFFFL;
+            lines->grid_max_value = 0;
+            recorded_frames = lines->recorded_frames;
+            tv1.tv_sec = tv2.tv_sec; tv1.tv_usec = tv2.tv_usec;
+            times1 = times2;
+        }
 
         gettimeofday(&line->tv41, NULL);
 
