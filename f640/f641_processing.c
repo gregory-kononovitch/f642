@@ -96,8 +96,10 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
         f640_lineup[i].index        = i;
         f640_lineup[i].buffers      = buffers;
         f640_lineup[i].grid         = grid;
-        f640_lineup[i].grid_values  = calloc(grid->rows * grid->cols, sizeof(long));
-        if (!f640_lineup[i].grid_values) {
+
+        // Data Ptrs
+        f640_lineup[i].width  = calloc(6 + grid->rows * grid->cols, sizeof(long));
+        if (!f640_lineup[i].width) {
             printf("ENOMEM allocating grid_values, returning\n");
             for(--i ; i > -1 ; i--) {
                 free(f640_lineup[i].rgb->data);
@@ -107,13 +109,32 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
             f640_lineup = NULL;
             return NULL;
         }
+        f640_lineup[i].height      = f640_lineup[i].width + 1;
+        f640_lineup[i].cell_width  = f640_lineup[i].width + 2;
+        f640_lineup[i].cell_height = f640_lineup[i].width + 3;
+        f640_lineup[i].rows        = f640_lineup[i].width + 4;
+        f640_lineup[i].cols        = f640_lineup[i].width + 5;
+        f640_lineup[i].rms         = (long*) (f640_lineup[i].width + 6);
+        f640_lineup[i].grid_min    = (long*) (f640_lineup[i].width + 8);       // out
+        f640_lineup[i].grid_max    = (long*) (f640_lineup[i].width + 10);       // out
+        f640_lineup[i].grid_values = (long*) (f640_lineup[i].width + 12);
+        // Data
+        *(f640_lineup[i].width       ) = grid->width;
+        *(f640_lineup[i].height      ) = grid->height;
+        *(f640_lineup[i].cell_width  ) = grid->wlen;
+        *(f640_lineup[i].cell_height ) = grid->hlen;
+        *(f640_lineup[i].rows        ) = grid->rows;
+        *(f640_lineup[i].cols        ) = grid->cols;
+
+
+
         f640_lineup[i].grid_th = threshold;
 
         //
         f640_lineup[i].srcFormat    = PIX_FMT_YUYV422;
         f640_lineup[i].dstFormat    = dstFormat;
         f640_lineup[i].yuv          = f640_create_yuv_image(grid->width, grid->height);
-        //free(f640_lineup[i].yuv->data);
+
         switch(dstFormat) {
             case PIX_FMT_GRAY8 :
                 f640_lineup[i].rgb  = f640_create_gry_image(grid->width, grid->height);
@@ -133,12 +154,15 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
                 break;
         }
 
-        if (!f640_lineup[i].rgb) {
+        if (!f640_lineup[i].yuv || !f640_lineup[i].rgb) {
             printf("ENOMEM allocating grid_values, returning\n");
+            if (f640_lineup[i].rgb->data) free(f640_lineup[i].rgb->data);
+            if (f640_lineup[i].yuv->data) free(f640_lineup[i].yuv->data);
             free(f640_lineup[i].grid_values);
             for(--i ; i > -1 ; i--) {
                 free(f640_lineup[i].rgb->data);
-                free(f640_lineup[i].grid_values);
+                free(f640_lineup[i].yuv->data);
+                free(f640_lineup[i].width);
             }
             free(f640_lineup);
             f640_lineup = NULL;
@@ -335,26 +359,29 @@ void *f640_watch(void *video_lines) {
         im  = line->buffers[line->last].start;
         pix = line->buffers[line->actual].start;
         memcpy(line->yuv->data, pix, line->buffers[line->actual].length);
-        line->rms = 0;
+        *(line->rms) = 0;
         memset(line->grid_values, 0, line->grid->num * sizeof(long));
+        if (DEBUG) printf("\t\tWATCH   : image copied\n");
+
         while( i < line->grid->size ) {
             rms = (*pix - *im) * (*pix - *im);
-            line->rms += rms;
+            *(line->rms) += rms;
             line->grid_values[line->grid->index_grid[i]] += rms;
             i++;
             im  += 2;
             pix += 2;
         }
+        if (DEBUG) printf("\t\tWATCH   : rms = %ld\n", *(line->rms) / line->grid->size);
 
         // Totals
-        line->rms /= line->grid->size;
-        line->grid_min = 0xFFFFFFFFFFL;
-        line->grid_max = 0;
+        *(line->rms) /= line->grid->size;
+        *(line->grid_min) = 0xFFFFFFFFFFL;
+        *(line->grid_max) = 0;
         for(k = 0 ; k < line->grid->num ; k++) {
             line->grid_values[k] /= line->grid->gsize;
             line->grid->grid_coefs[k] += line->grid_values[k];
-            if (line->grid_values[k] < line->grid_min) line->grid_min = line->grid_values[k];
-            if (line->grid_values[k] > line->grid_max) line->grid_max = line->grid_values[k];
+            if (line->grid_values[k] < *(line->grid_min)) *(line->grid_min) = line->grid_values[k];
+            if (line->grid_values[k] > *(line->grid_max)) *(line->grid_max) = line->grid_values[k];
         }
 
         // Enqueue
@@ -431,7 +458,7 @@ void *f640_convert(void *video_lines) {
 
             ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - tv.tv_sec);
             ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->frame);
-            ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->grid_max);
+            ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, *(line->grid_max));
         }
 
         if (DEBUG) printf("\t\t\t\tCONVERT : enqueue %d, frame %lu\n", l, line->frame);
@@ -447,6 +474,8 @@ void *f640_record(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
     struct timeval tv;
     struct tm tm1;
+    int fd1 = open("/dev/t030/t030-1", O_WRONLY);
+    int fd2 = open("/dev/t030/t030-2", O_WRONLY);
 
     gettimeofday(&tv, NULL);
     while(1) {
@@ -456,9 +485,11 @@ void *f640_record(void *video_lines) {
 
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
-        f051_send_data(line->log_env, line->rgb->data, line->rgb->data_size);
+        //f051_send_data(line->log_env, line->rgb->data, line->rgb->data_size);
+        write(fd2, line->width, 6 + *(line->rows) * *(line->cols));
+        write(fd1, line->rgb->data, line->rgb->data_size);
 
-        if (line->grid_max > line->grid_th && line->frame > 35) {
+        if (*(line->grid_max) > line->grid_th && line->frame > 35) {
             //ix = f640_draw_number(line->yuv, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - tv.tv_sec);
             localtime_r(&line->tv00.tv_sec, &tm1);
             ix = f640_draw_number(line->yuv, line->grid->width - 5,          line->grid->height - 5, tm1.tm_sec);
@@ -466,7 +497,7 @@ void *f640_record(void *video_lines) {
             ix = f640_draw_number(line->yuv, ix - line->yuv->glyphs.width/2, line->grid->height - 5, tm1.tm_hour);
 
             ix = f640_draw_number(line->yuv, ix - 20              , line->grid->height - 5, line->frame);
-            ix = f640_draw_number(line->yuv, ix - 20              , line->grid->height - 5, line->grid_max);
+            ix = f640_draw_number(line->yuv, ix - 20              , line->grid->height - 5, *(line->grid_max));
 
             ix = f640_draw_number(line->yuv, line->grid->width - 5,          line->grid->height - 8 - line->yuv->glyphs.height, tm1.tm_mday);
             ix = f640_draw_number(line->yuv, ix - line->yuv->glyphs.width/2, line->grid->height - 8 - line->yuv->glyphs.height, tm1.tm_mon+1);
@@ -505,9 +536,9 @@ void *f640_release(void *video_lines) {
         gettimeofday(&line->tv40, NULL);
 
         // Agreg
-        lines->rms += line->rms;
-        if (lines->grid_min_value > line->grid_min) lines->grid_min_value = line->grid_min;
-        if (lines->grid_max_value < line->grid_max) lines->grid_max_value = line->grid_max;
+        lines->rms += *(line->rms);
+        if (lines->grid_min_value > *(line->grid_min)) lines->grid_min_value = *(line->grid_min);
+        if (lines->grid_max_value < *(line->grid_max)) lines->grid_max_value = *(line->grid_max);
 
         t  += f640_duration (line->tv40, line->tv10);
         t1 += f640_duration (line->tv11, line->tv10);

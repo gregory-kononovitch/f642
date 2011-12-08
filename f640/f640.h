@@ -80,11 +80,17 @@ struct f640_line {
     uint64_t        frame;
 
     // Grid
-    long                rms;
     struct f640_grid    *grid;          // ref
+    int                 *width;         // Copies
+    int                 *height;
+    int                 *cell_width;
+    int                 *cell_height;
+    int                 *rows;
+    int                 *cols;
+    long                *rms;
+    long                *grid_min;       // out
+    long                *grid_max;       // out
     long                *grid_values;   // alloced
-    long                grid_min;       // out
-    long                grid_max;       // out
     long                grid_th;        // in
 
     // Graphics
