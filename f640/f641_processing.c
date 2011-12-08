@@ -486,7 +486,7 @@ void *f640_record(void *video_lines) {
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
         //f051_send_data(line->log_env, line->rgb->data, line->rgb->data_size);
-        write(fd2, line->width, 6 + *(line->rows) * *(line->cols));
+        write(fd2, line->width, 8 * (6 + *(line->rows) * *(line->cols)));
         write(fd1, line->rgb->data, line->rgb->data_size);
 
         if (*(line->grid_max) > line->grid_th && line->frame > 35) {
