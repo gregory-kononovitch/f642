@@ -38,6 +38,8 @@ static int fd;
 static struct v4l2_capability cap;
 static char *source = "/dev/video0";
 static char *input = NULL;
+static int stream_no = 1;
+static int grid_no = 2;
 static int cwidth = 320;
 static int cheight = 240;
 static uint32_t palette = 0x56595559;   // 0x47504A4D
@@ -786,6 +788,12 @@ int f640_processing()
     memset(&video_lines, 0, sizeof(struct f640_video_lines));
     video_lines.grid = grid;
     video_lines.fps  = frames_pers;
+    char fname[64];
+    sprintf(fname, "/dev/t030/t030-%d", stream_no);
+    video_lines.fd_stream = open(fname, O_WRONLY);
+    sprintf(fname, "/dev/t030/t030-%d", grid_no);
+    video_lines.fd_grid = open(fname, O_WRONLY);
+
     f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
     f640_init_queue(&video_lines.watched,   lineup, req.count);
@@ -818,7 +826,6 @@ int f640_processing()
 
 
     // pnm
-    char fname[32];
     //char *header = "P5?greg?240 320?255?";
     //char header[] = {'P','5',0x0A,'g','r','e','g',0x0A,'2','4','0',' ','3','2','0',0x0A,'2','5','5',0x0A};
     char *header = "P5\012# CREATOR: 12345678 Filter Version 1.1\012240 320\012255\012";
@@ -921,6 +928,8 @@ int f640_getopts(int argc, char *argv[])
         {"verbose",         no_argument,       NULL, 'v'},
         {"version",         no_argument,       NULL, 'i'},
         {"no-capture",      no_argument,       NULL, '0'},
+        {"stream",          required_argument, NULL, 's'},
+        {"grid",            required_argument, NULL, 'g'},
         {"buffers",         required_argument, NULL, 'b'},
         {"frames",          required_argument, NULL, 'f'},
         {"fps",             required_argument, NULL, 'z'},
@@ -938,7 +947,7 @@ int f640_getopts(int argc, char *argv[])
         {"show-video-std",  no_argument,       NULL, 'V'},
         {NULL, 0, NULL, 0}
     };
-    char *opts = "hqvi0:b:f:z:d:y:W:H:APICFSRV";
+    char *opts = "hqvi0:s:g:b:f:z:d:y:W:H:APICFSRV";
 
     while(1)
     {
@@ -959,6 +968,12 @@ int f640_getopts(int argc, char *argv[])
                 break;
             case '0':
                 capture = 0;
+                break;
+            case 's':
+                stream_no = atoi(optarg);
+                break;
+            case 'g':
+                grid_no = atoi(optarg);
                 break;
             case 'b':
                 nb_buffers = atoi(optarg);

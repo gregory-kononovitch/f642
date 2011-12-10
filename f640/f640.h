@@ -154,6 +154,10 @@ struct f640_video_lines {
     long grid_min_value;
     long grid_max_value;
     long recorded_frames;
+
+    //
+    int fd_stream;
+    int fd_grid;
 };
 
 struct f640_processing_point {

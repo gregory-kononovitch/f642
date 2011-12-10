@@ -474,8 +474,6 @@ void *f640_record(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
     struct timeval tv;
     struct tm tm1;
-    int fd1 = open("/dev/t030/t030-1", O_WRONLY);
-    int fd2 = open("/dev/t030/t030-2", O_WRONLY);
 
     gettimeofday(&tv, NULL);
     while(1) {
@@ -486,8 +484,8 @@ void *f640_record(void *video_lines) {
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
         //f051_send_data(line->log_env, line->rgb->data, line->rgb->data_size);
-        write(fd2, line->width, 8 * (6 + *(line->rows) * *(line->cols)));
-        write(fd1, line->rgb->data, line->rgb->data_size);
+        write(lines->fd_grid, line->width, 8 * (6 + *(line->rows) * *(line->cols)));
+        write(lines->fd_stream, line->rgb->data, line->rgb->data_size);
 
         if (*(line->grid_max) > line->grid_th && line->frame > 35) {
             //ix = f640_draw_number(line->yuv, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - tv.tv_sec);
