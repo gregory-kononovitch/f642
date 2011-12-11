@@ -31,6 +31,8 @@
 /*
  * 
  */
+int DEBUG = 0;
+
 static struct f051_log_env *log_env;
 static char device[32];
 static char *dev = "/dev/video0";
@@ -778,7 +780,8 @@ int f640_processing()
     // Broadcast
 
     // Recording
-    struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
+    //struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
+    struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_BGR24, cwidth, cheight, frames_pers);
 
     // LineUp
     struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, 500);  //220
@@ -796,6 +799,8 @@ int f640_processing()
 
     f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
+    f640_init_queue(&video_lines.buffered,  lineup, req.count);
+    f640_init_queue(&video_lines.decoded,   lineup, req.count);
     f640_init_queue(&video_lines.watched,   lineup, req.count);
     f640_init_queue(&video_lines.converted, lineup, req.count);
     f640_init_queue(&video_lines.recorded,  lineup, req.count);
@@ -804,6 +809,7 @@ int f640_processing()
     pthread_mutex_init(&video_lines.ioc, NULL);
 
     // Threads
+    pthread_t thread_decode1, thread_decode2, thread_decode3, thread_decode4;
     pthread_t thread_watch1, thread_watch2, thread_watch3, thread_watch4;
     pthread_t thread_convert1, thread_convert2, thread_convert3, thread_convert4;
     pthread_t thread_record;
@@ -813,15 +819,29 @@ int f640_processing()
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    pthread_create(&thread_watch1,   &attr, f640_watch,   (void *)(&video_lines));
-//    pthread_create(&thread_watch2,   &attr, f640_watch,   (void *)(&video_lines));
+    // Decode
+    pthread_create(&thread_decode1,   &attr, f640_decode,   (void *)(&video_lines));
+//    usleep(150*1000);
+//    pthread_create(&thread_decode2,   &attr, f640_decode,   (void *)(&video_lines));
+//    usleep(150*1000);
+//    pthread_create(&thread_decode3,   &attr, f640_decode,   (void *)(&video_lines));
+
+    // Watch
+    pthread_create(&thread_watch1,   &attr, f640_watch_mj,   (void *)(&video_lines));
+//    pthread_create(&thread_watch2,   &attr, f640_watch_mj,   (void *)(&video_lines));
 //    pthread_create(&thread_watch3,   &attr, f640_watch,   (void *)(&video_lines));
 //    pthread_create(&thread_watch4,   &attr, f640_watch,   (void *)(&video_lines));
+
+    // Convert
     pthread_create(&thread_convert1, &attr, f640_convert, (void *)(&video_lines));
 //    pthread_create(&thread_convert2, &attr, f640_convert, (void *)(&video_lines));
 //    pthread_create(&thread_convert3, &attr, f640_convert, (void *)(&video_lines));
 //    pthread_create(&thread_convert4, &attr, f640_convert, (void *)(&video_lines));
-    pthread_create(&thread_record,   &attr, f640_record,  (void *)(&video_lines));
+
+    // Record
+    pthread_create(&thread_record,   &attr, f640_record_mj,  (void *)(&video_lines));
+
+    // Release
     pthread_create(&thread_release,  &attr, f640_release, (void *)(&video_lines));
 
 
@@ -846,7 +866,7 @@ int f640_processing()
 
     gettimeofday(&tv1, NULL);
     loop = 1;
-    while(loop && frame < nb_frames) {
+    while(loop && nb_frames && frame < nb_frames) {
         // DeQueue
         memset(&buf, 0, sizeof(buf));
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -928,6 +948,7 @@ int f640_getopts(int argc, char *argv[])
         {"verbose",         no_argument,       NULL, 'v'},
         {"version",         no_argument,       NULL, 'i'},
         {"no-capture",      no_argument,       NULL, '0'},
+        {"debug",           no_argument,       NULL, 'D'},
         {"stream",          required_argument, NULL, 's'},
         {"grid",            required_argument, NULL, 'g'},
         {"buffers",         required_argument, NULL, 'b'},
@@ -947,7 +968,7 @@ int f640_getopts(int argc, char *argv[])
         {"show-video-std",  no_argument,       NULL, 'V'},
         {NULL, 0, NULL, 0}
     };
-    char *opts = "hqvi0:s:g:b:f:z:d:y:W:H:APICFSRV";
+    char *opts = "hqvi0D:s:g:b:f:z:d:y:W:H:APICFSRV";
 
     while(1)
     {
@@ -968,6 +989,9 @@ int f640_getopts(int argc, char *argv[])
                 break;
             case '0':
                 capture = 0;
+                break;
+            case 'D':
+                DEBUG = 1;
                 break;
             case 's':
                 stream_no = atoi(optarg);

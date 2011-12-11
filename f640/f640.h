@@ -75,8 +75,9 @@ struct f640_line {
     // Data
     struct v4l2_buffer buf;
     v4l2_buffer_t   *buffers;           // ref (tab)
-    int             last;               // in
-    int             actual;             // in
+    int             last;               // in (v4l buffer index)
+    int             actual;             // in (v4l buffer index)
+    int             previous_line;
     uint64_t        frame;
 
     // Grid
@@ -99,6 +100,13 @@ struct f640_line {
     struct f640_image   *gry;           // out
     struct f640_image   *yuv;           // in ( / out )
     struct f640_image   *rgb;           // out
+    AVPicture           *yuvp;          // MJPEG
+    uint8_t             *mjpeg;
+
+    // Decode
+//    AVCodecContext      *decoderCtxt;
+//    AVFrame             *picture;
+//    AVPacket            avpkt;
 
     // Store
     struct output_stream *stream;       // ref
@@ -108,8 +116,8 @@ struct f640_line {
     struct f051_log_env *log_env;       // ref
 
     //
-    struct timeval tv00, tv01, tv10, tv11, tv20, tv21, tv30, tv31, tv40, tv41;
-    double t, t0, t1, t2, t3, t4;
+    struct timeval tv00, tv01, tvd0, tvd1, tv10, tv11, tv20, tv21, tv30, tv31, tv40, tv41;
+    double t, t0, td, t1, t2, t3, t4;
 };
 
 #define F640_MULTI_MAX 3
@@ -141,6 +149,8 @@ extern int f640_uns_queue_size(struct f640_video_queue *queue);
 struct f640_video_lines {
     struct f640_grid        *grid;
     struct f640_video_queue snaped;
+    struct f640_video_queue buffered;
+    struct f640_video_queue decoded;
     struct f640_video_queue watched;
     struct f640_video_queue converted;
     struct f640_video_queue recorded;
@@ -184,9 +194,12 @@ struct f640_v4l_point {
 extern struct f640_grid* f640_make_grid(int width, int height, int factor);
 extern struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, enum PixelFormat dstFormat, struct output_stream *stream, struct f051_log_env *log_env, long threshold);
 
+extern void* f640_decode(void *video_lines);
 extern void* f640_watch(void *video_lines);
+extern void* f640_watch_mj(void *video_lines);
 extern void* f640_convert(void *video_lines);
 extern void* f640_record(void *video_lines);
+extern void* f640_record_mj(void *video_lines);
 extern void* f640_release(void *video_lines);
 
 double f640_duration(struct timeval tv1, struct timeval tv0);
