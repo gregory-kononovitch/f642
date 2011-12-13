@@ -168,6 +168,7 @@ struct f640_video_lines {
     //
     int fd_stream;
     int fd_grid;
+    int fd_edge;
 };
 
 struct f640_processing_point {

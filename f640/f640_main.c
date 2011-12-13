@@ -42,6 +42,7 @@ static char *source = "/dev/video0";
 static char *input = NULL;
 static int stream_no = 1;
 static int grid_no = 2;
+static int edge_no = -1;
 static int cwidth = 320;
 static int cheight = 240;
 static uint32_t palette = 0x56595559;   // 0x47504A4D
@@ -796,6 +797,12 @@ int f640_processing()
     video_lines.fd_stream = open(fname, O_WRONLY);
     sprintf(fname, "/dev/t030/t030-%d", grid_no);
     video_lines.fd_grid = open(fname, O_WRONLY);
+    if (edge_no > 0) {
+        sprintf(fname, "/dev/t030/t030-%d", edge_no);
+        video_lines.fd_edge = open(fname, O_WRONLY);
+    } else {
+        video_lines.fd_edge = -1;
+    }
 
     f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
@@ -866,7 +873,7 @@ int f640_processing()
 
     gettimeofday(&tv1, NULL);
     loop = 1;
-    while(loop && nb_frames && frame < nb_frames) {
+    while(loop && (frame < nb_frames || nb_frames == 1)) {
         // DeQueue
         memset(&buf, 0, sizeof(buf));
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -951,6 +958,7 @@ int f640_getopts(int argc, char *argv[])
         {"debug",           no_argument,       NULL, 'D'},
         {"stream",          required_argument, NULL, 's'},
         {"grid",            required_argument, NULL, 'g'},
+        {"edge",            required_argument, NULL, 'e'},
         {"buffers",         required_argument, NULL, 'b'},
         {"frames",          required_argument, NULL, 'f'},
         {"fps",             required_argument, NULL, 'z'},
@@ -968,7 +976,7 @@ int f640_getopts(int argc, char *argv[])
         {"show-video-std",  no_argument,       NULL, 'V'},
         {NULL, 0, NULL, 0}
     };
-    char *opts = "hqvi0D:s:g:b:f:z:d:y:W:H:APICFSRV";
+    char *opts = "hqvi0D:s:g:e:b:f:z:d:y:W:H:APICFSRV";
 
     while(1)
     {
@@ -998,6 +1006,9 @@ int f640_getopts(int argc, char *argv[])
                 break;
             case 'g':
                 grid_no = atoi(optarg);
+                break;
+            case 'e':
+                edge_no = atoi(optarg);
                 break;
             case 'b':
                 nb_buffers = atoi(optarg);

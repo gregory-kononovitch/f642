@@ -134,6 +134,7 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
         f640_lineup[i].srcFormat    = PIX_FMT_YUYV422;
         f640_lineup[i].dstFormat    = dstFormat;
         f640_lineup[i].yuv          = f640_create_yuv_image(grid->width, grid->height);
+        f640_lineup[i].gry          = f640_create_gry_image(grid->width, grid->height);
 
         switch(dstFormat) {
             case PIX_FMT_GRAY8 :
@@ -552,6 +553,42 @@ void *f640_watch_mj(void *video_lines) {
                 pix += k;
                 im  += k;
             }
+
+            im  = line->gry->data + line->grid->width + 1;
+            uint8_t *pixc = line->yuvp->data[0];
+            uint8_t *pixa = line->yuvp->data[0] + 1;
+            uint8_t *pixb = line->yuvp->data[0] + line->yuvp->linesize[0];
+            pix = line->yuvp->data[0] + line->yuvp->linesize[0] + 1;
+
+            k = line->yuvp->linesize[0] - line->grid->width + 2;
+            for(i = line->grid->height - 1; i > 1 ; i--) {
+                for(j = line->grid->width - 1; j > 1 ; j--) {
+                    if (*pixa > *pix) *im = *pixa - *pix;
+                    else *im = *pix - *pixa;
+                    if (*pixb > *pix) {
+                        if (*pixb - *pix > *im) *im = *pixb - *pix;
+                    } else {
+                        if (*pix - *pixb > *im) *im = *pix - *pixb;
+                    }
+                    if (*pixc > *pix) {
+                        if (*pixc - *pix > *im) *im = *pixc - *pix;
+                    } else {
+                        if (*pix - *pixc > *im) *im = *pix - *pixc;
+                    }
+//                    *im = *pix;
+
+                    im++;
+                    pix++;
+                    pixa++;
+                    pixb++;
+                    pixc++;
+                }
+                im   += 2;
+                pix  += k;
+                pixa += k;
+                pixb += k;
+                pixc += k;
+            }
             if (DEBUG) printf("\t\tWATCH_MJ   : rms = %ld\n", *(line->rms) / line->grid->size);
 
             // Totals
@@ -806,9 +843,11 @@ void *f640_record_mj(void *video_lines) {
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
         write(lines->fd_grid, line->width, 8 * (6 + *(line->rows) * *(line->cols)));
+        if (lines->fd_edge > 0) write(lines->fd_edge, line->gry->data, line->gry->data_size);
         write(lines->fd_stream, line->rgb->data, line->rgb->data_size);
 
-        if (*(line->grid_max) > line->grid_th && line->frame > 35) {
+
+        if (*(line->grid_max) > line->grid_th && line->frame > 35 && 0) {
             pkt.data = line->buffers[line->actual].start;
             pkt.size = line->buffers[line->actual].length;
             pkt.pts  = lines->recorded_frames;
