@@ -43,6 +43,7 @@ static char *input = NULL;
 static int stream_no = 1;
 static int grid_no = 2;
 static int edge_no = -1;
+static int get_no  = -1;
 static int cwidth = 320;
 static int cheight = 240;
 static uint32_t palette = 0x56595559;   // 0x47504A4D
@@ -803,12 +804,19 @@ int f640_processing()
     } else {
         video_lines.fd_edge = -1;
     }
+    if (get_no > 0) {
+        sprintf(fname, "/dev/t030/t030-%d", get_no);
+        video_lines.fd_get = open(fname, O_RDONLY);
+    } else {
+        video_lines.fd_get = -1;
+    }
 
     f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
     f640_init_queue(&video_lines.buffered,  lineup, req.count);
     f640_init_queue(&video_lines.decoded,   lineup, req.count);
     f640_init_queue(&video_lines.watched,   lineup, req.count);
+    f640_init_queue(&video_lines.edged,     lineup, req.count);
     f640_init_queue(&video_lines.converted, lineup, req.count);
     f640_init_queue(&video_lines.recorded,  lineup, req.count);
     f640_init_queue(&video_lines.released,  lineup, req.count);
@@ -818,9 +826,11 @@ int f640_processing()
     // Threads
     pthread_t thread_decode1, thread_decode2, thread_decode3, thread_decode4;
     pthread_t thread_watch1, thread_watch2, thread_watch3, thread_watch4;
+    pthread_t thread_gray1, thread_gray2, thread_gray3, thread_gray4;
     pthread_t thread_convert1, thread_convert2, thread_convert3, thread_convert4;
     pthread_t thread_record;
     pthread_t thread_release;
+    pthread_t thread_read;
     pthread_attr_t attr;
 
     pthread_attr_init(&attr);
@@ -839,6 +849,10 @@ int f640_processing()
 //    pthread_create(&thread_watch3,   &attr, f640_watch,   (void *)(&video_lines));
 //    pthread_create(&thread_watch4,   &attr, f640_watch,   (void *)(&video_lines));
 
+    // Grayed
+    pthread_create(&thread_gray1,   &attr, f640_gray_mj,   (void *)(&video_lines));
+//    pthread_create(&thread_gray2,   &attr, f640_gray_mj,   (void *)(&video_lines));
+
     // Convert
     pthread_create(&thread_convert1, &attr, f640_convert, (void *)(&video_lines));
 //    pthread_create(&thread_convert2, &attr, f640_convert, (void *)(&video_lines));
@@ -850,6 +864,11 @@ int f640_processing()
 
     // Release
     pthread_create(&thread_release,  &attr, f640_release, (void *)(&video_lines));
+
+    // Read
+    if (video_lines.fd_get > 0) {
+        pthread_create(&thread_read,  &attr, f640_read, (void *)(&video_lines));
+    }
 
 
     // pnm
@@ -959,6 +978,7 @@ int f640_getopts(int argc, char *argv[])
         {"stream",          required_argument, NULL, 's'},
         {"grid",            required_argument, NULL, 'g'},
         {"edge",            required_argument, NULL, 'e'},
+        {"get",             required_argument, NULL, 'w'},
         {"buffers",         required_argument, NULL, 'b'},
         {"frames",          required_argument, NULL, 'f'},
         {"fps",             required_argument, NULL, 'z'},
@@ -1009,6 +1029,9 @@ int f640_getopts(int argc, char *argv[])
                 break;
             case 'e':
                 edge_no = atoi(optarg);
+                break;
+            case 'w':
+                get_no = atoi(optarg);
                 break;
             case 'b':
                 nb_buffers = atoi(optarg);
