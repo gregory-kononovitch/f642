@@ -740,6 +740,7 @@ void *f640_convert(void *video_lines) {
         if (DEBUG) printf("\t\t\t\tCONVERT : dequeue %d, frame %lu\n", l, line->frame);
 
         // Alert
+        line->flaged = 0;
 //        if (line->frame > 35 && line->grid_max > 0) {//line->grid_th) {
         if (1) {
 //            f640_full_yuv_to_rgb(line->yuv, line->rgb);
@@ -763,6 +764,7 @@ void *f640_convert(void *video_lines) {
                     if (line->dstFormat != PIX_FMT_ABGR) {
                         //f640_draw_rect(line->yuv, ix, line->grid->wlen, line->grid->hlen);
                         f640_draw_rect(line->rgb, ix, line->grid->wlen, line->grid->hlen);
+                        line->flaged = 1;
                     } else {
                         for(j = 0 ; j < line->grid->hlen ; j++) {
                             for(i = 0 ; i < line->grid->wlen ; i++) {
@@ -891,7 +893,8 @@ void *f640_record_mj(void *video_lines) {
         write(lines->fd_stream, line->rgb->data, line->rgb->data_size);
 
 
-        if (*(line->grid_max) > line->grid_th && line->frame > 35 && 0) {
+        //if (*(line->grid_max) > line->grid_th && line->frame > 35 ) {
+        if ( line->flaged ) {
             pkt.data = line->buffers[line->actual].start;
             pkt.size = line->buffers[line->actual].length;
             pkt.pts  = lines->recorded_frames;
@@ -961,15 +964,16 @@ void *f640_release(void *video_lines) {
 //            jiffs = clock_t_to_jiffies(times);
 //            ms = jiffies_to_msecs(jiffs);
 
-            printf("%02d/%02d %02d:%02d:%02d |%3.1fHz-%3lu%||"
+            printf("%02d/%02d %02d:%02d:%02d |%3.1fHz %3lu%||"
                     , tm1.tm_mon+1, tm1.tm_mday, tm1.tm_hour, tm1.tm_min, tm1.tm_sec
                     , 1. * (show_freq * 1000000) / (1000000 * tv3.tv_sec + tv3.tv_usec)
                     , 100 * (times2 - times1) / (1000000 * tv3.tv_sec + tv3.tv_usec)
             );
 
-            if ( lines->grid_max_value > line->grid_th || (lines->recorded_frames - recorded_frames) ) {
-                printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f%, %2ld - %2ld - " F640_RESET F640_BOLD F640_FG_RED "%5ld" F640_RESET
-                        " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f%, " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
+            //if ( lines->grid_max_value > line->grid_th || (lines->recorded_frames - recorded_frames) ) {
+            if ( lines->recorded_frames - recorded_frames ) {
+                printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - " F640_RESET F640_BOLD F640_FG_RED "%5ld" F640_RESET
+                        " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
                         " |%2d|%2d|¤%lds - %ldMo"
                         , f640_uns_queue_size(&lines->snaped),    100*td/t4
                         , f640_uns_queue_size(&lines->decoded),   100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
@@ -978,10 +982,11 @@ void *f640_release(void *video_lines) {
                         , f640_uns_queue_size(&lines->converted), 100*t3/t4, lines->recorded_frames - recorded_frames
                         , f640_uns_queue_size(&lines->recorded)
                         , f640_uns_queue_size(&lines->released)
-                        , lines->recorded_frames / lines->fps, lines->recorded_frames * lines->grid->size / (1536 * 1024)
+                        , lines->recorded_frames / lines->fps
+                        , lines->recorded_frames * 2 * lines->grid->size / (1024 * 1024)
                 );
             } else {
-                printf("%2d|¤de %2.0f% |%2d |¤wa %2.0f%, %2ld - %2ld - %5ld |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f%, +%2ld |%2d|%2d|¤%lds - %ldMo"
+                printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - %5ld |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f +%2ld |%2d|%2d|¤%lds - %ldMo"
                         , f640_uns_queue_size(&lines->snaped),    100*td/t4
                         , f640_uns_queue_size(&lines->decoded) ,  100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
                         , f640_uns_queue_size(&lines->watched),   100*te/t4
@@ -989,7 +994,9 @@ void *f640_release(void *video_lines) {
                         , f640_uns_queue_size(&lines->converted), 100*t3/t4, lines->recorded_frames - recorded_frames
                         , f640_uns_queue_size(&lines->recorded)
                         , f640_uns_queue_size(&lines->released)
-                        , lines->recorded_frames / lines->fps, lines->recorded_frames * lines->grid->size / (1536 * 1024)
+                        , lines->recorded_frames / lines->fps
+                        //, lines->recorded_frames * lines->grid->size / (1536 * 1024)
+                        , lines->recorded_frames * 2 * lines->grid->size / (1024 * 1024)
                 );
             }
             printf("\n");
@@ -1052,12 +1059,12 @@ void* f640_read(void *video_lines) {
         if (r == sizeof(long) * (6 + lines->grid->cols * lines->grid->rows)) {
             printf("READ  %dbytes : %dx%d\n", r, *((int*)(grid+16)), *((int*)(grid+20)));
             pthread_mutex_lock(&lines->grid->mutex_coefs);
-            memcpy(lines->grid->grid_coefs, grid, r);
+            memcpy(lines->grid->grid_coefs, grid + 6 * sizeof(long), r - 6 * sizeof(long));
             pthread_mutex_unlock(&lines->grid->mutex_coefs);
         } else if (r > 0) {
           printf("READ: wrong size read (%d), discarding\n", r);
         } else if (r) {
-            printf("READ: TimeOut\n");
+            printf("READ: Interrupt %d\n", r);
             usleep(1000*1000);  // bug
         }
     }

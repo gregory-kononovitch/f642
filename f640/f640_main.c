@@ -786,7 +786,7 @@ int f640_processing()
     struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_BGR24, cwidth, cheight, frames_pers);
 
     // LineUp
-    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, 500);  //220
+    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, 900);  //220
 
     // Lines
     struct f640_video_lines video_lines;

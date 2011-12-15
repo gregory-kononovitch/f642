@@ -96,6 +96,7 @@ struct f640_line {
     long                *grid_max;       // out
     long                *grid_values;   // alloced
     long                grid_th;        // in
+    int                 flaged;
 
     // Graphics
     enum PixelFormat    srcFormat;
