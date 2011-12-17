@@ -83,7 +83,58 @@ struct f640_grid *f640_make_grid(int width, int height, int factor) {
     return grid;
 }
 
+/*
+ *
+ */
+struct f640_grid2* f640_make_grid2(struct f640_grid *grid) {
+    int i;
+    struct f640_grid2 *grid2 = calloc(1, sizeof(struct f640_grid2));
+    if (!grid) {
+        printf("ENOMEM in allocating grid2, returning\n");
+        return NULL;
+    }
+    // Level 0
+    grid2->nb0    = 32;
+    grid2->shift0 = 5;
+    grid2->mask0  = 31;
+    grid2->grid_ratio_0 = calloc(grid2->nb0, grid->num * sizeof(int32_t));
 
+    // Transition
+    grid2->nb01    = 16;
+    grid2->shift01 = 4;
+    grid2->mask01  = 15;
+
+    // Level 1
+    grid2->nb1    = 8;
+    grid2->shift1 = 3;
+    grid2->mask1  = 7;
+    grid2->grid_ratio_10 = calloc(1,          4 * grid->num * sizeof(int16_t));
+    grid2->grid_ratio_1  = calloc(grid2->nb1, 4 * grid->num * sizeof(int16_t));
+
+    // Level 2
+    grid2->nb2    = 16;
+    grid2->shift2 = 4;
+    grid2->mask2  = 15;
+    grid2->grid_ratio_20 = calloc(1,          4 * grid->num * sizeof(int16_t));
+    grid2->grid_ratio_2  = calloc(grid2->nb2, 4 * grid->num * sizeof(int16_t));
+
+    // Level 3
+    grid2->nb3    = 32;
+    grid2->shift3 = 5;
+    grid2->mask3  = 31;
+    grid2->grid_ratio_30 = calloc(1,          4 * grid->num * sizeof(int16_t));
+    grid2->grid_ratio_3  = calloc(grid2->nb3, 4 * grid->num * sizeof(int16_t));
+
+    // Synchro
+    pthread_mutex_init(&grid2->mutex, NULL);
+    grid2->index0 = 0;
+    grid2->index1 = 0;
+    grid2->index2 = 0;
+    grid2->index3 = 0;
+
+    //
+    return grid2;
+}
 /*
  *
  */
@@ -519,6 +570,7 @@ void *f640_watch_mj(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
 
     uint8_t *im, *pix;
+    int32_t *grid2;
     long rms;
     int fact_shift = 1;
     int fact = 1 << fact_shift;
@@ -537,9 +589,11 @@ void *f640_watch_mj(void *video_lines) {
             ix = 0;
             im  = lines->decoded.lineup[line->previous_line].yuvp->data[0];
             pix = line->yuvp->data[0];
+            grid2 = lines->grid2->grid_ratio_0 + (line->frame & lines->grid2->mask0) * lines->grid->num;
 
             *(line->rms) = 0;
             memset(line->grid_values, 0, line->grid->num * sizeof(long));
+            memset(grid2, 0, line->grid->num * sizeof(int32_t));
             if (DEBUG) printf("\t\tWATCH_MJ   : image copied\n");
 
             k = (line->yuvp->linesize[0] << fact_shift) - line->grid->width;
@@ -548,6 +602,7 @@ void *f640_watch_mj(void *video_lines) {
                     rms = (*pix - *im) * (*pix - *im);
                     *(line->rms) += rms;
                     line->grid_values[line->grid->index_grid[ix]] += rms;
+                    grid2[line->grid->index_grid[ix]] += rms;
                     ix  += fact;
                     pix += fact;
                     im  += fact;
@@ -564,7 +619,8 @@ void *f640_watch_mj(void *video_lines) {
             *(line->grid_max) = 0;
             for(k = 0 ; k < line->grid->num ; k++) {
                 line->grid_values[k] /= line->grid->gsize / (fact * fact);
-//                line->grid->grid_coefs[k] += line->grid_values[k];
+                grid2[k] /= line->grid->gsize / (fact * fact);
+
                 if (line->grid_values[k] < *(line->grid_min)) *(line->grid_min) = line->grid_values[k];
                 if (line->grid_values[k] > *(line->grid_max)) *(line->grid_max) = line->grid_values[k];
             }
@@ -847,6 +903,11 @@ void *f640_record_mj(void *video_lines) {
     struct timeval tv;
     struct tm tm1;
 
+    int fd_grid10, fd_grid20, fd_grid30;
+    fd_grid10 = open("/dev/t030/t030-5", O_WRONLY);
+    fd_grid20 = open("/dev/t030/t030-6", O_WRONLY);
+    fd_grid30 = open("/dev/t030/t030-7", O_WRONLY);
+
     AVFormatContext *outputFile;
 
 
@@ -888,12 +949,167 @@ void *f640_record_mj(void *video_lines) {
 
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
-        write(lines->fd_grid, line->width, sizeof(long) * (6 + *(line->rows) * *(line->cols)));
+        /*
+         *  SUM GRID 2
+         */
+        // Level 10
+        int AVG = 0, MIN = 32700, MAX = -32700;
+        int c, i, p;
+        int del = 0, avg = 0, min = 32767, max = -32767;
+        int32_t *v;
+        int16_t *a = lines->grid2->grid_ratio_10;
+        for(c = 0 ; c < lines->grid->num ; c++) {
+            max = -32767;
+            min = 0x7FFE;
+            avg = 0;
+            v = lines->grid2->grid_ratio_0 + lines->grid->num * (line->frame & lines->grid2->mask0) + c;
+            for(i = 0 ; i < lines->grid2->nb01 ; i++) {
+                if (*v > max) max = *v;
+                if (*v < min) min = *v;
+                avg += *v;
+
+                v -= lines->grid->num;
+                if ( v < lines->grid2->grid_ratio_0 ) v = lines->grid2->grid_ratio_0 + lines->grid->num * lines->grid2->mask0 + c;
+            }
+            avg /= lines->grid2->nb01;
+            del = 0;
+            v = lines->grid2->grid_ratio_0 + lines->grid->num * (line->frame & lines->grid2->mask0) + c;
+            for(i = 0 ; i < lines->grid2->nb01 ; i++) {
+                del += (*v - avg) * (*v -avg);
+                v -= lines->grid->num;
+                if ( v < lines->grid2->grid_ratio_0 ) v = lines->grid2->grid_ratio_0 + lines->grid->num * lines->grid2->mask0 + c;
+            }
+            del = sqrt(del) / lines->grid2->nb01;
+            //
+            *(a++) = del;
+            *(a++) = max;
+            *(a++) = min;
+            *(a++) = avg;
+
+            AVG += avg;
+            if (MIN > min) MIN = min;
+            if (MAX < max) MAX = max;
+        }
+        AVG /= lines->grid->num;
+        if (DEBUG) printf(F640_RESET F640_FG_RED "\tLOOP 10 => cells I0 [ %d < %d < %d ]\n" F640_RESET, MIN, AVG, MAX);
+
+        // Histo
+        if ( (line->frame & lines->grid2->mask01) == lines->grid2->mask01 ) {
+            memcpy(lines->grid2->grid_ratio_1 + 4 * lines->grid->num * lines->grid2->index1, lines->grid2->grid_ratio_10, 4 * lines->grid->num * sizeof(int16_t));
+            if (DEBUG) printf(F640_RESET F640_FG_RED "\tLOOP 0 => cells I %d [ %d < %d < %d ]\n" F640_RESET, lines->grid2->index1, MIN, AVG, MAX);
+
+            // Loop 1
+            AVG = 0;
+            MIN = 0x7FFE;
+            MAX = -32767;
+            int16_t *w;
+            a = lines->grid2->grid_ratio_20;
+            avg = 0;
+            for(c = 0 ; c < lines->grid->num ; c++) {
+                max = -32767;
+                min = 0x7FFE;
+                avg = 0;
+                w = lines->grid2->grid_ratio_1 + (c << 2);
+                for(i = 0 ; i < lines->grid2->nb1 ; i++) {
+                    if (w[1] > max) max = w[1];
+                    if (w[2] < min) min = w[2];
+                    avg += w[3];          // Average of average
+
+                    w += (lines->grid->num << 2);
+                }
+                avg /= lines->grid2->nb1;
+                del = 0;
+                w = lines->grid2->grid_ratio_1 + (c << 2);
+                for(i = 0 ; i < lines->grid2->nb1 ; i++) {
+                    del += (w[3] - avg) * (w[3] - avg);          // Average of average
+                    w += (lines->grid->num << 2);
+                }
+                del = sqrt(del) / lines->grid2->nb1;
+                //
+                *(a++) = del;
+                *(a++) = max;
+                *(a++) = min;
+                *(a++) = avg;
+
+                AVG += avg;
+                if (MIN > min) MIN = min;
+                if (MAX < max) MAX = max;
+            }
+            AVG /= lines->grid->num;
+
+            lines->grid2->index1 = (lines->grid2->index1 + 1) & lines->grid2->mask1;
+            if (lines->grid2->index1 == 0) {
+                memcpy(lines->grid2->grid_ratio_2 + 4 * lines->grid->num * lines->grid2->index2, lines->grid2->grid_ratio_20, 4 * lines->grid->num * sizeof(int16_t));
+
+                // Loop 2
+                AVG = 0;
+                MIN = 0x7FFE;
+                MAX = -32767;
+                a = lines->grid2->grid_ratio_30;
+                for(c = 0 ; c < lines->grid->num ; c++) {
+                    max = -32767;
+                    min = 0x7FFE;
+                    avg = 0;
+                    w = lines->grid2->grid_ratio_2 + 4 * c;
+                    for(i = 0 ; i < lines->grid2->nb2 ; i++) {
+                        if (w[1] > max) max = w[1];
+                        if (w[2] < min) min = w[2];
+                        avg += w[3];          // Average of average
+
+                        w += lines->grid->num << 2;
+                    }
+                    avg /= lines->grid2->nb2;
+                    del = 0;
+                    w = lines->grid2->grid_ratio_2 + 4 * c;
+                    for(i = 0 ; i < lines->grid2->nb2 ; i++) {
+                        del += (w[3] - avg) * (w[3] - avg);
+                        w += lines->grid->num << 2;
+                    }
+                    del = sqrt(del) / lines->grid2->nb2;
+                    //
+                    *(a++) = del;
+                    *(a++) = max;
+                    *(a++) = min;
+                    *(a++) = avg;
+
+                    AVG += avg;
+                    if (MIN > min) MIN = min;
+                    if (MAX < max) MAX = max;
+                }
+                AVG /= lines->grid->num;
+
+                lines->grid2->index2 = (lines->grid2->index2 + 1) & lines->grid2->mask2;
+                printf(F640_RESET F640_BOLD F640_FG_RED "\t\tLoop I => cells II %d [ %d < %d < %d ]\n" F640_RESET, lines->grid2->index2, MIN, AVG, MAX);
+                if (lines->grid2->index2 == 0) {
+                    memcpy(lines->grid2->grid_ratio_3 + 4 * lines->grid->num * lines->grid2->index3, lines->grid2->grid_ratio_30, 4 * lines->grid->num * sizeof(int16_t));
+
+                    // Loop 3
+                    lines->grid2->index3 = (lines->grid2->index3 + 1) & lines->grid2->mask3;
+                    printf(F640_RESET F640_BOLD F640_FG_RED "\t\t\tLoop II => cells III %d add [ %d < %d < %d ]\n" F640_RESET, lines->grid2->index3, MIN, AVG, MAX);
+                }
+            }
+        }
+
+        /*
+         *  BROADCAST
+         */
+        write(lines->fd_grid, line->width, sizeof(long) * (6 + line->grid->num));
         if (lines->fd_edge > 0) write(lines->fd_edge, line->gry->data, line->gry->data_size);
         write(lines->fd_stream, line->rgb->data, line->rgb->data_size);
 
+        if (fd_grid10 > 0) {
+            write(fd_grid10, lines->grid2->grid_ratio_10, 4 * sizeof(int16_t) * line->grid->num);
+        }
+        if (fd_grid20 > 0) {
+            write(fd_grid20, lines->grid2->grid_ratio_20, 4 * sizeof(int16_t) * line->grid->num);
+        }
+        if (fd_grid30 > 0) {
+            write(fd_grid30, lines->grid2->grid_ratio_30, 4 * sizeof(int16_t) * line->grid->num);
+        }
 
-        //if (*(line->grid_max) > line->grid_th && line->frame > 35 ) {
+        /*
+         *  RECORD
+         */
         if ( line->flaged ) {
             pkt.data = line->buffers[line->actual].start;
             pkt.size = line->buffers[line->actual].length;

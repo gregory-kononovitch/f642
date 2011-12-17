@@ -73,6 +73,49 @@ struct f640_grid {
     int32_t     *grid_ratio;
 };
 
+/*
+ * nb0 : real           16 : ~0.5 s     int32_t for suming & int16_t for result
+ * nb1 : first agreg     8 : ~4.0 s     int32_t for suming & int16_t for result
+ * nb2 : second agreg   16 : ~1.0 mn    int32_t for suming & int16_t for result
+ * nb3 : third agreg    32 : ~0.5 h     int32_t for suming & int16_t for result
+ */
+struct f640_grid2 {
+    int         nb0;
+    int         shift0;
+    int         mask0;
+    int32_t     *grid_ratio_0;    //
+
+    int         nb01;
+    int         shift01;
+    int         mask01;
+
+    int         nb1;
+    int         shift1;
+    int         mask1;
+    int16_t     *grid_ratio_10;   // avg, min, max, del :   1 * cells
+    int16_t     *grid_ratio_1;    // avg, min, max, del : nb1 * cells
+
+    int         nb2;
+    int         shift2;
+    int         mask2;
+    int16_t     *grid_ratio_20;   // avg, min, max, del :   1 * cells
+    int16_t     *grid_ratio_2;    //
+
+    int         nb3;
+    int         shift3;
+    int         mask3;
+    int16_t     *grid_ratio_30;   // avg, min, max, del :   1 * cells
+    int16_t     *grid_ratio_3;    //
+
+    //
+    pthread_mutex_t mutex;
+    int         index0;
+    int         index1;
+    int         index2;
+    int         index3;
+
+};
+
 struct f640_line {
     int             index;
     // Data
@@ -97,6 +140,9 @@ struct f640_line {
     long                *grid_values;   // alloced
     long                grid_th;        // in
     int                 flaged;
+
+    // Grid2
+    int                 time2;
 
     // Graphics
     enum PixelFormat    srcFormat;
@@ -152,6 +198,9 @@ extern int f640_uns_queue_size(struct f640_video_queue *queue);
 
 struct f640_video_lines {
     struct f640_grid        *grid;
+    struct f640_grid2       *grid2;
+
+
     struct f640_video_queue snaped;
     struct f640_video_queue buffered;
     struct f640_video_queue decoded;
@@ -198,8 +247,9 @@ struct f640_v4l_point {
     pthread_mutex_t ioc;
 };
 
-extern struct f640_grid* f640_make_grid(int width, int height, int factor);
-extern struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, enum PixelFormat dstFormat, struct output_stream *stream, struct f051_log_env *log_env, long threshold);
+extern struct f640_grid*  f640_make_grid(int width, int height, int factor);
+extern struct f640_grid2* f640_make_grid2(struct f640_grid *grid);
+extern struct f640_line*  f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, enum PixelFormat dstFormat, struct output_stream *stream, struct f051_log_env *log_env, long threshold);
 
 extern void* f640_decode(void *video_lines);
 extern void* f640_watch(void *video_lines);

@@ -777,7 +777,8 @@ int f640_processing()
     int r, i, io, bs = 0;
 
     // Grid
-    struct f640_grid *grid = f640_make_grid(cwidth, cheight, 32);
+    struct f640_grid  *grid  = f640_make_grid(cwidth, cheight, 32);
+    struct f640_grid2 *grid2 = f640_make_grid2(grid);
 
     // Broadcast
 
@@ -791,8 +792,9 @@ int f640_processing()
     // Lines
     struct f640_video_lines video_lines;
     memset(&video_lines, 0, sizeof(struct f640_video_lines));
-    video_lines.grid = grid;
-    video_lines.fps  = frames_pers;
+    video_lines.grid    = grid;
+    video_lines.grid2   = grid2;
+    video_lines.fps     = frames_pers;
     char fname[64];
     sprintf(fname, "/dev/t030/t030-%d", stream_no);
     video_lines.fd_stream = open(fname, O_WRONLY);
