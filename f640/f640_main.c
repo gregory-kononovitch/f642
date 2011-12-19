@@ -34,16 +34,16 @@
 int DEBUG = 0;
 
 static struct f051_log_env *log_env;
+
+static int v4l2 = 1;
+static struct input_stream *file_stream;;
+
 static char device[32];
 static char *dev = "/dev/video0";
 static int fd;
 static struct v4l2_capability cap;
 static char *source = "/dev/video0";
 static char *input = NULL;
-static int stream_no = 1;
-static int grid_no = 2;
-static int edge_no = -1;
-static int get_no  = -1;
 static int cwidth = 320;
 static int cheight = 240;
 static uint32_t palette = 0x56595559;   // 0x47504A4D
@@ -56,9 +56,20 @@ static struct v4l2_buffer buf;
 static v4l2_buffer_t *buffer;
 static int loop;
 
+static int stream_no = 1;
+static int grid_no = 2;
+static int edge_no = -1;
+static int get_no  = -1;
+static int grid10_no  = -1;
+static int grid20_no  = -1;
+static int grid30_no  = -1;
+
+static int trigger = 1000;
+static int recording = 1;
+
 static int capture          = 1;
 static uint32_t nb_frames   = 0;
-static uint32_t frames_pers = 10;
+static uint32_t frames_pers = 1;
 static int verbose          = 0;
 static int quiet            = 0;
 static int debug            = 0;
@@ -769,12 +780,86 @@ void f640_signal_term_handler(int signum)
 /*
  *
  */
+int f640_get_v4l2_frame(int fd, struct v4l2_buffer *frame) {
+    // DeQueue
+    memset(frame, 0, sizeof(struct v4l2_buffer));
+    frame->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    frame->memory = V4L2_MEMORY_MMAP;
+    if(ioctl(fd, VIDIOC_DQBUF, frame) == -1) {
+        printf("VIDIOC_DQBUF: %s\n", strerror(errno));
+        return -1;
+    }
+    return frame->bytesused;
+}
+
+/*
+ *
+ */
+int f640_rel_v4l2_frame(int fd, struct v4l2_buffer *frame) {
+    // EnQueue
+    if(ioctl(fd, VIDIOC_QBUF, frame) == -1) {
+        printf("VIDIOC_QBUF: %s\n", strerror(errno));
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ *
+ */
+int f640_get_file_frame(struct v4l2_buffer *frame) {
+    int r = 1;
+    long delta = 1000 * 1000 / frames_pers;
+    static long index = 0;
+    static struct timeval tv1, tv2, tv3;
+
+    while (1) {
+        av_free_packet(&file_stream->pkt);
+        r = av_read_frame(file_stream->inputFile, &file_stream->pkt);
+        if (r < 0) {
+            printf("End of file : %d\n", r);
+            return -1;
+        }
+        if (file_stream->pkt.stream_index != file_stream->video_stream) continue;
+        break;
+    }
+    frame->index = index % nb_buffers;
+    frame->length = file_stream->pkt.size;
+    frame->bytesused = file_stream->pkt.size;
+    frame->sequence++;
+
+    memcpy(buffer[frame->index].start, file_stream->pkt.data, file_stream->pkt.size);
+
+    //
+    gettimeofday(&tv2, NULL);
+    if (index) {
+        timersub(&tv2, &tv1, &tv3);
+        if (1000000 * tv3.tv_sec + tv3.tv_usec < delta) {
+            usleep(delta - (1000000 * tv3.tv_sec + tv3.tv_usec));
+        }
+    }
+    index++;
+    gettimeofday(&tv1, NULL);
+    return 0;
+}
+
+/*
+ *
+ */
+int f640_rel_file_frame(struct v4l2_buffer *frame) {
+    return 0;
+}
+
+/*
+ *
+ */
 int f640_processing()
 {
     uint32_t frame = 0;
     struct timeval tv1, tv2, tv3;
     double d;
     int r, i, io, bs = 0;
+    long size_in = 0;
 
     // Grid
     struct f640_grid  *grid  = f640_make_grid(cwidth, cheight, 32);
@@ -783,11 +868,14 @@ int f640_processing()
     // Broadcast
 
     // Recording
+    struct output_stream *stream = NULL;
     //struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_YUYV422, cwidth, cheight, frames_pers);
-    struct output_stream *stream = f611_init_output("/work/test/loulou", PIX_FMT_BGR24, cwidth, cheight, frames_pers);
+    //struct output_stream *stream = f611_init_output("/work/test/loulouPPP", PIX_FMT_BGR24, cwidth, cheight, frames_pers);
+    if (recording) stream = f611_init_output("/work/test/loulouPPP", PIX_FMT_BGR24, cwidth, cheight, frames_pers);
+
 
     // LineUp
-    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, 900);  //220
+    struct f640_line *lineup = f640_make_lineup(buffer, req.count, grid, PIX_FMT_BGR24, stream, log_env, trigger);  //220
 
     // Lines
     struct f640_video_lines video_lines;
@@ -795,23 +883,46 @@ int f640_processing()
     video_lines.grid    = grid;
     video_lines.grid2   = grid2;
     video_lines.fps     = frames_pers;
+    video_lines.recording = recording;
+
     char fname[64];
-    sprintf(fname, "/dev/t030/t030-%d", stream_no);
-    video_lines.fd_stream = open(fname, O_WRONLY);
-    sprintf(fname, "/dev/t030/t030-%d", grid_no);
-    video_lines.fd_grid = open(fname, O_WRONLY);
+    sprintf(video_lines.stream_path, "/dev/t030/t030-%d", stream_no);
+    video_lines.fd_stream = open(video_lines.stream_path, O_WRONLY);
+    sprintf(video_lines.grid_path, "/dev/t030/t030-%d", grid_no);
+    video_lines.fd_grid = open(video_lines.grid_path, O_WRONLY);
     if (edge_no > 0) {
-        sprintf(fname, "/dev/t030/t030-%d", edge_no);
-        video_lines.fd_edge = open(fname, O_WRONLY);
+        sprintf(video_lines.edge_path, "/dev/t030/t030-%d", edge_no);
+        video_lines.fd_edge = open(video_lines.edge_path, O_WRONLY);
     } else {
         video_lines.fd_edge = -1;
     }
     if (get_no > 0) {
-        sprintf(fname, "/dev/t030/t030-%d", get_no);
-        video_lines.fd_get = open(fname, O_RDONLY);
+        sprintf(video_lines.get_path, "/dev/t030/t030-%d", get_no);
+        video_lines.fd_get = open(video_lines.get_path, O_RDONLY);
     } else {
         video_lines.fd_get = -1;
     }
+    if (grid10_no > 0) {
+        sprintf(video_lines.grid10_path, "/dev/t030/t030-%d", grid10_no);
+        video_lines.fd_grid10 = open(video_lines.grid10_path, O_WRONLY);
+    } else {
+        video_lines.fd_grid10 = -1;
+    }
+    if (grid20_no > 0) {
+        sprintf(video_lines.grid20_path, "/dev/t030/t030-%d", grid20_no);
+        video_lines.fd_grid20 = open(video_lines.grid20_path, O_WRONLY);
+    } else {
+        video_lines.fd_grid20 = -1;
+    }
+    if (grid30_no > 0) {
+        sprintf(video_lines.grid30_path, "/dev/t030/t030-%d", grid30_no);
+        video_lines.fd_grid30 = open(video_lines.grid30_path, O_WRONLY);
+    } else {
+        video_lines.fd_grid30 = -1;
+    }
+    printf("Streams : stream %d, edge %d, grid %d, write %d, grid10 %d, grid20 %d, grid30%d\n"
+            , video_lines.fd_stream, video_lines.fd_edge, video_lines.fd_grid, video_lines.fd_get, video_lines.fd_grid10, video_lines.fd_grid20, video_lines.fd_grid30
+    );
 
     f640_init_queue(&video_lines.snaped,    lineup, req.count);
     for(i = 0 ; i < video_lines.snaped.size ; i++) video_lines.snaped.lines[i] = i;
@@ -824,6 +935,8 @@ int f640_processing()
     f640_init_queue(&video_lines.released,  lineup, req.count);
     video_lines.fd = fd;
     pthread_mutex_init(&video_lines.ioc, NULL);
+
+    if (DEBUG) printf("Queues initialized\n");
 
     // Threads
     pthread_t thread_decode1, thread_decode2, thread_decode3, thread_decode4;
@@ -845,15 +958,30 @@ int f640_processing()
 //    usleep(150*1000);
 //    pthread_create(&thread_decode3,   &attr, f640_decode,   (void *)(&video_lines));
 
+    if (DEBUG) {
+        printf("Thread 1 launched\n");
+        usleep(100*1000);
+    }
+
     // Watch
     pthread_create(&thread_watch1,   &attr, f640_watch_mj,   (void *)(&video_lines));
 //    pthread_create(&thread_watch2,   &attr, f640_watch_mj,   (void *)(&video_lines));
 //    pthread_create(&thread_watch3,   &attr, f640_watch,   (void *)(&video_lines));
 //    pthread_create(&thread_watch4,   &attr, f640_watch,   (void *)(&video_lines));
 
+    if (DEBUG) {
+        printf("Thread 2 launched\n");
+        usleep(100*1000);
+    }
+
     // Grayed
     pthread_create(&thread_gray1,   &attr, f640_gray_mj,   (void *)(&video_lines));
 //    pthread_create(&thread_gray2,   &attr, f640_gray_mj,   (void *)(&video_lines));
+
+    if (DEBUG) {
+        printf("Thread 3 launched\n");
+        usleep(100*1000);
+    }
 
     // Convert
     pthread_create(&thread_convert1, &attr, f640_convert, (void *)(&video_lines));
@@ -861,17 +989,38 @@ int f640_processing()
 //    pthread_create(&thread_convert3, &attr, f640_convert, (void *)(&video_lines));
 //    pthread_create(&thread_convert4, &attr, f640_convert, (void *)(&video_lines));
 
+    if (DEBUG) {
+        printf("Thread 4 launched\n");
+        usleep(100*1000);
+    }
+
     // Record
     pthread_create(&thread_record,   &attr, f640_record_mj,  (void *)(&video_lines));
 
+    if (DEBUG) {
+        printf("Thread 5 launched\n");
+        usleep(100*1000);
+    }
+
     // Release
     pthread_create(&thread_release,  &attr, f640_release, (void *)(&video_lines));
+
+    if (DEBUG) {
+        printf("Thread 6 launched\n");
+        usleep(100*1000);
+    }
 
     // Read
     if (video_lines.fd_get > 0) {
         pthread_create(&thread_read,  &attr, f640_read, (void *)(&video_lines));
     }
 
+    if (DEBUG) {
+        printf("Thread 7 launched\n");
+        usleep(100*1000);
+    }
+
+    if (DEBUG) printf("Thread launched\n");
 
     // pnm
     //char *header = "P5?greg?240 320?255?";
@@ -880,10 +1029,12 @@ int f640_processing()
     int num_im = 0;
 
     // Stream ON
-    r = f640_stream_on();
-    if (r) {
-        printf("Stream on failed, returning\n");
-        return -1;
+    if (v4l2) {
+        r = f640_stream_on();
+        if (r) {
+            printf("Stream on failed, returning\n");
+            return -1;
+        }
     }
 
     // Loop
@@ -896,19 +1047,15 @@ int f640_processing()
     loop = 1;
     while(loop && (frame < nb_frames || nb_frames == 1)) {
         // DeQueue
-        memset(&buf, 0, sizeof(buf));
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-        if(ioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
-            printf("VIDIOC_DQBUF: %s\n", strerror(errno));
-            return -1;
-        }
-//        usleep(150000);
-//        buf.index = (frame++) % req.count;
-        bs++;
+        if (v4l2) size_in += f640_get_v4l2_frame(fd, &buf);
+        else f640_get_file_frame(&buf);
 
+
+        bs++;
         if (0) {
             if (frame % show_freq == 0) {
+                printf("GET: %.1f\n", 1. * size_in / (1024 * show_freq));
+                size_in = 0;
                 gettimeofday(&tv2, NULL);
                 d = ( (tv2.tv_sec + tv2.tv_usec / 1000000.0) - (tv1.tv_sec + tv1.tv_usec / 1000000.0) ) / show_freq;
                 if ( 1/d < 100) HZ[(int)(1/d)]++;
@@ -945,16 +1092,12 @@ int f640_processing()
             if (io < 0 && bs > req.count - 3) {
                 io = f640_dequeue_line(&video_lines.released);
             }
-            if(ioctl(fd, VIDIOC_QBUF, &lineup[io].buf) == -1) {
-                printf("VIDIOC_QBUF: %s\n", strerror(errno));
-            }
+            if (v4l2) f640_rel_v4l2_frame(fd, &lineup[io].buf);
+            else f640_rel_file_frame(&lineup[io].buf);
             bs--;
             f640_free_line(&video_lines.snaped, io);
             //printf("MAIN    : released %d (%u) / %d\n", io, lineup[io].buf.index, bs);
         }
-//        if(ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
-//            printf("VIDIOC_QBUF: %s\n", strerror(errno));
-//        }
     }
     if ( verbose ) printf("Exited from processing loop.\n");
 
@@ -977,14 +1120,20 @@ int f640_getopts(int argc, char *argv[])
         {"version",         no_argument,       NULL, 'i'},
         {"no-capture",      no_argument,       NULL, '0'},
         {"debug",           no_argument,       NULL, 'D'},
+        {"file",            no_argument,       NULL, 'a'},
+        {"norecord",        no_argument,       NULL, 'r'},
         {"stream",          required_argument, NULL, 's'},
         {"grid",            required_argument, NULL, 'g'},
         {"edge",            required_argument, NULL, 'e'},
+        {"grid10",          required_argument, NULL, '1'},
+        {"grid20",          required_argument, NULL, '2'},
+        {"grid30",          required_argument, NULL, '3'},
         {"get",             required_argument, NULL, 'w'},
         {"buffers",         required_argument, NULL, 'b'},
         {"frames",          required_argument, NULL, 'f'},
         {"fps",             required_argument, NULL, 'z'},
         {"device",          required_argument, NULL, 'd'},
+        {"trigger",         required_argument, NULL, 't'},
         {"palette",         required_argument, NULL, 'y'},
         {"width",           required_argument, NULL, 'W'},
         {"height",          required_argument, NULL, 'H'},
@@ -998,7 +1147,7 @@ int f640_getopts(int argc, char *argv[])
         {"show-video-std",  no_argument,       NULL, 'V'},
         {NULL, 0, NULL, 0}
     };
-    char *opts = "hqvi0D:s:g:e:b:f:z:d:y:W:H:APICFSRV";
+    char *opts = "hqvi0Dar:s:g:e:1:2:3:b:f:z:d:t:y:W:H:APICFSRV";
 
     while(1)
     {
@@ -1023,17 +1172,40 @@ int f640_getopts(int argc, char *argv[])
             case 'D':
                 DEBUG = 1;
                 break;
+            case 'a':
+                v4l2 = 0;
+                recording = 0;
+                break;
+            case 'r':
+                recording = 0;
+                break;
             case 's':
                 stream_no = atoi(optarg);
+                printf("Stream : %d\n", stream_no);
                 break;
             case 'g':
                 grid_no = atoi(optarg);
+                printf("Grid : %d\n", grid_no);
                 break;
             case 'e':
                 edge_no = atoi(optarg);
+                printf("Edge : %d\n", edge_no);
                 break;
             case 'w':
                 get_no = atoi(optarg);
+                printf("Write : %d\n", get_no);
+                break;
+            case '1':
+                grid10_no = atoi(optarg);
+                printf("Grid 10 : %d\n", grid10_no);
+                break;
+            case '2':
+                grid20_no = atoi(optarg);
+                printf("Grid 20 : %d\n", grid20_no);
+                break;
+            case '3':
+                grid30_no = atoi(optarg);
+                printf("Grid 30 : %d\n", grid30_no);
                 break;
             case 'b':
                 nb_buffers = atoi(optarg);
@@ -1043,11 +1215,16 @@ int f640_getopts(int argc, char *argv[])
                 break;
             case 'z':
                 frames_pers = atoi(optarg);
+                printf("Frame per second : \n", frames_pers);
                 break;
             case 'd':
                 snprintf(device, sizeof(device), "/dev/video%s", optarg);
                 dev = device;
                 source = device;
+                break;
+            case 't':
+                trigger = atoi(optarg);
+                printf("Threshold : %d\n", trigger);
                 break;
             case 'y':
                 switch(atoi(optarg)) {
@@ -1098,6 +1275,9 @@ int main(int argc, char *argv[])
 {
     int err;
 
+    avcodec_register_all();
+    av_register_all();
+
     // Options
     f640_getopts(argc, argv);
     printf("Options ok : frames %u  |  freq %u\n", nb_frames, frames_pers);
@@ -1107,68 +1287,105 @@ int main(int argc, char *argv[])
     signal(SIGINT , f640_signal_term_handler);
     printf("Signals ok\n");
 
-    // Open
-    fd = open(dev, O_RDWR );//| O_NONBLOCK);
-    if(fd < 0) {
-        printf("Error opening device: %s\n", dev);
-        printf("open: %s\n", strerror(errno));
-        return -1;
-    }
-    printf("Open video ok\n");
+    if ( !v4l2 ) {
+        int i;
 
-    //
-    if ( capture ) {
-        log_env = f051_init_data_env("video", "loulou", 3200);
-        //log_env = f051_init_data_env("bird", "brodge", 3200);
-        if (!log_env) {
-            printf(F640_FG_RED "No proc environment, exiting.\n" F640_RESET);
+        v4l2 = 0;
+
+        if (argc > 0) {
+            printf("Opening file %s\n", argv[argc-1]);
+            file_stream = f611_init_input(argv[argc-1]);
+        } else {
+            file_stream = f611_init_input("/music/tst.avi");
+        }
+        if (!file_stream || file_stream->video_stream < 0) return -1;
+
+        cwidth  = file_stream->decoderCtxt[file_stream->video_stream]->width;
+        cheight = file_stream->decoderCtxt[file_stream->video_stream]->height;
+        if (frames_pers == 1) frames_pers = file_stream->inputFile->streams[file_stream->video_stream]->r_frame_rate.num;
+
+        // Buffers
+        nb_buffers = 10;
+        req.count  = nb_buffers;
+        req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        req.memory = V4L2_MEMORY_USERPTR;
+
+        buffer = calloc(nb_buffers, sizeof(v4l2_buffer_t));
+        for(i = 0 ; i < nb_buffers ; i++) {
+            buffer[i].start  = calloc(1, 2 * cwidth * cheight);
+            buffer[i].length = 2 * cwidth * cheight;
+        }
+
+        err = f640_processing();
+
+        return 0;
+    } else {
+        v4l2 = 1;
+        if (frames_pers == 1) frames_pers = 10;
+
+        // Open
+        fd = open(dev, O_RDWR );//| O_NONBLOCK);
+        if(fd < 0) {
+            printf("Error opening device: %s\n", dev);
+            printf("open: %s\n", strerror(errno));
             return -1;
         }
+        printf("Open video ok\n");
+
+        //
+        if ( capture ) {
+            log_env = f051_init_data_env("video", "loulou", 3200);
+            //log_env = f051_init_data_env("bird", "brodge", 3200);
+            if (!log_env) {
+                printf(F640_FG_RED "No proc environment, exiting.\n" F640_RESET);
+                return -1;
+            }
+        }
+        printf("Init env ok\n");
+
+        // Debug
+        if ( ioctl(fd, VIDIOC_LOG_STATUS) == -1) {
+            printf("No debugging into kern.log : %s\n", strerror(errno));
+        } else {
+            printf("Debugging into kern.log.\n");
+        }
+
+        // Capabilities
+        if ( f640_get_capabilities() < 0 ) goto end;
+        printf("Capabilities ok\n");
+
+        // Input
+        err = f640_set_input();
+
+        // Controls
+        err = f640_list_controls();
+
+        // Format
+        err = f640_set_pix_format();
+
+        // Parm
+        err = f640_set_parm();
+
+        // Map
+        if ( capture ) {
+            err = f640_set_mmap();
+        }
+
+        // Capture
+        if ( capture ) {
+            err = f640_processing();
+        }
+
+        // UnMap
+        if ( capture ) {
+            err = f640_free_mmap();
+        }
+
+        //
+    end:
+        if( fd >= 0 ) close(fd);
+        f051_end_env(log_env);
+        printf(F640_BOLD "Exiting app.\n" F640_RESET);
+        return 0;
     }
-    printf("Init env ok\n");
-
-    // Debug
-    if ( ioctl(fd, VIDIOC_LOG_STATUS) == -1) {
-        printf("No debugging into kern.log : %s\n", strerror(errno));
-    } else {
-        printf("Debugging into kern.log.\n");
-    }
-
-    // Capabilities
-    if ( f640_get_capabilities() < 0 ) goto end;
-    printf("Capabilities ok\n");
-
-    // Input
-    err = f640_set_input();
-
-    // Controls
-    err = f640_list_controls();
-
-    // Format
-    err = f640_set_pix_format();
-
-    // Parm
-    err = f640_set_parm();
-
-    // Map
-    if ( capture ) {
-        err = f640_set_mmap();
-    }
-
-    // Capture
-    if ( capture ) {
-        err = f640_processing();
-    }
-
-    // UnMap
-    if ( capture ) {
-        err = f640_free_mmap();
-    }
-
-    //
-end:
-    if( fd >= 0 ) close(fd);
-    f051_end_env(log_env);
-    printf(F640_BOLD "Exiting app.\n" F640_RESET);
-    return 0;
 }

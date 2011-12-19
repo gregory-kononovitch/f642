@@ -898,47 +898,47 @@ void *f640_record(void *video_lines) {
 
 //
 void *f640_record_mj(void *video_lines) {
-    int frame = 1, ix, r;
+    int ix, r;
+    long frame = 1, size_out = 0;
     struct f640_video_lines *lines = video_lines;
     struct timeval tv;
     struct tm tm1;
 
-    int fd_grid10, fd_grid20, fd_grid30;
-    fd_grid10 = open("/dev/t030/t030-5", O_WRONLY);
-    fd_grid20 = open("/dev/t030/t030-6", O_WRONLY);
-    fd_grid30 = open("/dev/t030/t030-7", O_WRONLY);
-
-    AVFormatContext *outputFile;
-
-
-    avformat_alloc_output_context2(&outputFile, NULL, NULL, "/work/test/loulou.avi");
-    outputFile->start_time_realtime = 1500000000;
-    r = avio_open(&outputFile->pb, "/work/test/loulou.avi", AVIO_FLAG_WRITE);
-    AVStream *st = av_new_stream(outputFile, 0);
-    AVCodec *encoder = avcodec_find_encoder(CODEC_ID_MJPEG);
-    st->codec->pix_fmt       = PIX_FMT_YUVJ422P;
-    st->codec->coded_width   = lines->grid->width;
-    st->codec->coded_height  = lines->grid->height;
-    st->codec->time_base.num = 1;
-    st->codec->time_base.den = 30;
-    st->codec->sample_fmt = SAMPLE_FMT_S16;
-    st->codec->sample_rate = 44100;
-    r = avcodec_open2(st->codec, encoder, NULL);
-    st->time_base.num = 1;
-    st->time_base.den = 30;
-    st->r_frame_rate.num = 30;
-    st->r_frame_rate.den = 1;
-    st->avg_frame_rate.num = 30;
-    st->avg_frame_rate.den = 1;
-    st->pts.num = 1;
-    st->pts.den = 1;
-    st->pts.val = 1;
-
+    //
+    AVFormatContext *outputFile = NULL;
+    AVStream *st = NULL;
+    AVCodec *encoder = NULL;
     AVPacket pkt;
-    av_init_packet(&pkt);
-    av_new_packet(&pkt, 2 * lines->grid->width * lines->grid->height);
-    r = avformat_write_header(outputFile, NULL);
 
+    if (lines->recording) {
+        avformat_alloc_output_context2(&outputFile, NULL, NULL, "/work/test/loulou.avi");
+        outputFile->start_time_realtime = 1500000000;
+        r = avio_open(&outputFile->pb, "/work/test/loulou.avi", AVIO_FLAG_WRITE);
+        st = av_new_stream(outputFile, 0);
+        encoder = avcodec_find_encoder(CODEC_ID_MJPEG);
+        st->codec->pix_fmt       = PIX_FMT_YUVJ422P;
+        st->codec->coded_width   = lines->grid->width;
+        st->codec->coded_height  = lines->grid->height;
+        st->codec->time_base.num = 1;
+        st->codec->time_base.den = 30;
+        st->codec->sample_fmt = SAMPLE_FMT_S16;
+        st->codec->sample_rate = 44100;
+        r = avcodec_open2(st->codec, encoder, NULL);
+        st->time_base.num = 1;
+        st->time_base.den = 30;
+        st->r_frame_rate.num = 30;
+        st->r_frame_rate.den = 1;
+        st->avg_frame_rate.num = 30;
+        st->avg_frame_rate.den = 1;
+        st->pts.num = 1;
+        st->pts.den = 1;
+        st->pts.val = 1;
+
+        //
+        av_init_packet(&pkt);
+        av_new_packet(&pkt, 2 * lines->grid->width * lines->grid->height);
+        r = avformat_write_header(outputFile, NULL);
+    }
 
 
     gettimeofday(&tv, NULL);
@@ -1093,26 +1093,29 @@ void *f640_record_mj(void *video_lines) {
         /*
          *  BROADCAST
          */
-        write(lines->fd_grid, line->width, sizeof(long) * (6 + line->grid->num));
-        if (lines->fd_edge > 0) write(lines->fd_edge, line->gry->data, line->gry->data_size);
+        if (lines->fd_grid > 0) {
+            write(lines->fd_grid, line->width, sizeof(long) * (6 + line->grid->num));
+        }
+        if (lines->fd_edge > 0) {
+            write(lines->fd_edge, line->gry->data, line->gry->data_size);
+        }
         write(lines->fd_stream, line->rgb->data, line->rgb->data_size);
-
-        if (fd_grid10 > 0) {
-            write(fd_grid10, lines->grid2->grid_ratio_10, 4 * sizeof(int16_t) * line->grid->num);
+        if (lines->fd_grid10 > 0) {
+            write(lines->fd_grid10, lines->grid2->grid_ratio_10, 4 * sizeof(int16_t) * line->grid->num);
         }
-        if (fd_grid20 > 0) {
-            write(fd_grid20, lines->grid2->grid_ratio_20, 4 * sizeof(int16_t) * line->grid->num);
+        if (lines->fd_grid20 > 0) {
+            write(lines->fd_grid20, lines->grid2->grid_ratio_20, 4 * sizeof(int16_t) * line->grid->num);
         }
-        if (fd_grid30 > 0) {
-            write(fd_grid30, lines->grid2->grid_ratio_30, 4 * sizeof(int16_t) * line->grid->num);
+        if (lines->fd_grid30 > 0) {
+            write(lines->fd_grid30, lines->grid2->grid_ratio_30, 4 * sizeof(int16_t) * line->grid->num);
         }
 
         /*
          *  RECORD
          */
-        if ( line->flaged ) {
+        if ( lines->recording && line->flaged ) {
             pkt.data = line->buffers[line->actual].start;
-            pkt.size = line->buffers[line->actual].length;
+            pkt.size = line->buf.bytesused;
             pkt.pts  = lines->recorded_frames;
             pkt.dts  = pkt.pts;
             pkt.duration = 1;
@@ -1122,6 +1125,7 @@ void *f640_record_mj(void *video_lines) {
             //printf("Write frame return %d\n", r);
             avio_flush(outputFile->pb);
 
+            size_out += line->buf.bytesused;
             lines->recorded_frames++;
         }
 
@@ -1137,6 +1141,7 @@ void *f640_record_mj(void *video_lines) {
 //
 void *f640_release(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
+    long size_in = 0, size_out = 0;
     double t = 0, t0 = 0, td = 0, t1 = 0, t2 = 0, te = 0, t3 = 0, t4 = 0;
     struct timeval tv1, tv2, tv3;
     struct timespec ts1;
@@ -1152,6 +1157,10 @@ void *f640_release(void *video_lines) {
         int l = f640_dequeue_line(&lines->recorded);
         struct f640_line *line = &lines->recorded.lineup[l];
         gettimeofday(&line->tv40, NULL);
+
+        //
+        size_in += line->buf.bytesused;
+        if (line->flaged) size_out += line->buf.bytesused;
 
         // Agreg
         lines->rms += *(line->rms);
@@ -1180,17 +1189,18 @@ void *f640_release(void *video_lines) {
 //            jiffs = clock_t_to_jiffies(times);
 //            ms = jiffies_to_msecs(jiffs);
 
-            printf("%02d/%02d %02d:%02d:%02d |%3.1fHz %3lu%||"
+            printf("%02d/%02d %02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
                     , tm1.tm_mon+1, tm1.tm_mday, tm1.tm_hour, tm1.tm_min, tm1.tm_sec
-                    , 1. * (show_freq * 1000000) / (1000000 * tv3.tv_sec + tv3.tv_usec)
                     , 100 * (times2 - times1) / (1000000 * tv3.tv_sec + tv3.tv_usec)
+                    , 1. * (show_freq * 1000000) / (1000000 * tv3.tv_sec + tv3.tv_usec)
+                    , 1000000. * size_in / (1024 * 1024 * (1000000 * tv3.tv_sec + tv3.tv_usec))
             );
 
             //if ( lines->grid_max_value > line->grid_th || (lines->recorded_frames - recorded_frames) ) {
             if ( lines->recorded_frames - recorded_frames ) {
                 printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - " F640_RESET F640_BOLD F640_FG_RED "%5ld" F640_RESET
                         " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
-                        " |%2d|%2d|¤%lds - %ldMo"
+                        " |%2d|%2d|¤%.1fs - %.1fMo"
                         , f640_uns_queue_size(&lines->snaped),    100*td/t4
                         , f640_uns_queue_size(&lines->decoded),   100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
                         , f640_uns_queue_size(&lines->watched),   100*te/t4
@@ -1198,11 +1208,11 @@ void *f640_release(void *video_lines) {
                         , f640_uns_queue_size(&lines->converted), 100*t3/t4, lines->recorded_frames - recorded_frames
                         , f640_uns_queue_size(&lines->recorded)
                         , f640_uns_queue_size(&lines->released)
-                        , lines->recorded_frames / lines->fps
-                        , lines->recorded_frames * 2 * lines->grid->size / (1024 * 1024)
+                        , 1. * lines->recorded_frames / lines->fps
+                        , 1. * size_out / (1024 * 1024)
                 );
             } else {
-                printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - %5ld |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f +%2ld |%2d|%2d|¤%lds - %ldMo"
+                printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - %5ld |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f +%2ld |%2d|%2d|¤%.1fs - %.1fMo"
                         , f640_uns_queue_size(&lines->snaped),    100*td/t4
                         , f640_uns_queue_size(&lines->decoded) ,  100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
                         , f640_uns_queue_size(&lines->watched),   100*te/t4
@@ -1210,12 +1220,12 @@ void *f640_release(void *video_lines) {
                         , f640_uns_queue_size(&lines->converted), 100*t3/t4, lines->recorded_frames - recorded_frames
                         , f640_uns_queue_size(&lines->recorded)
                         , f640_uns_queue_size(&lines->released)
-                        , lines->recorded_frames / lines->fps
-                        //, lines->recorded_frames * lines->grid->size / (1536 * 1024)
-                        , lines->recorded_frames * 2 * lines->grid->size / (1024 * 1024)
+                        , 1. * lines->recorded_frames / lines->fps
+                        , 1. * size_out / (1024 * 1024)
                 );
             }
             printf("\n");
+            size_in  = 0;
             t  = 0;
             td = 0;
             t1 = 0;

@@ -217,13 +217,27 @@ struct f640_video_lines {
     long rms;
     long grid_min_value;
     long grid_max_value;
+
+    //
+    int  recording;
+    char record_path[256];
     long recorded_frames;
 
     //
+    char stream_path[256];
     int fd_stream;
+    char grid_path[256];
     int fd_grid;
+    char edge_path[256];
     int fd_edge;
+    char get_path[256];
     int fd_get;
+    char grid10_path[256];
+    int fd_grid10;
+    char grid20_path[256];
+    int fd_grid20;
+    char grid30_path[256];
+    int fd_grid30;
 };
 
 struct f640_processing_point {
