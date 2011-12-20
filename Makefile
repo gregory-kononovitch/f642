@@ -8,6 +8,8 @@ p644:
 all:
 	make -C f640
 	mv f640/f640.xo .
+	make -C f641
+	mv f641/f641.xo .
 #	make -C c642
 #	mv c642/c642-brodge.ko .
 #	make -C p643
@@ -18,7 +20,8 @@ all:
 
 clean:
 	make -C f640 clean
+	make -C f641 clean
 	make -C c642 clean
 	make -C p643 clean
 	make -C p644 clean
-	rm -f core* *.o f640.xo f640.1.gz c642-pictu.ko p643-brdg.xo p644-brodger.xo
+	rm -f core* *.o f640.xo f641.xo f640.1.gz c642-pictu.ko p643-brdg.xo p644-brodger.xo
