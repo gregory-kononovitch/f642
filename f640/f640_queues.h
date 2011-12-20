@@ -23,7 +23,8 @@
 
 
 struct f640_stone {
-    const int key;
+    int key;
+    struct f640_stone   *stones;
 
     long                frame;
     long                status;
@@ -32,34 +33,37 @@ struct f640_stone {
     void*   private;
 };
 
+struct f640_tab {
+    int     length;
+
+    // Queue
+    int     *tab;
+
+    // Backtrace
+    long    *nexts;
+    long    mini;
+    long    maxi;
+};
+int  f640_add(struct f640_tab *tab, struct f640_stone *stone);
+void f640_del(struct f640_tab *tab, struct f640_stone *stone);
 
 struct f640_queue {
     struct f640_stone   *stones;    // [index] = stone[key]
     int                 length;
 
     //
-    long                *nexts;
-    long                maxi;
-    long                mini;
-
-    //
     int                 outs;
     long                *foractions;
-    int                 **queue;     // [index] = key
-    int                 *next_in;    // index
-    int                 *next_out;   // index
+    struct f640_tab     *queues;     // [index] = key
 
     // Constraints
     long                constraints;
 
     // Speed / order
-    int                 ecart;
+    int                 nn_1;   // 0 : x, 1 : ordered, i : n(n-1)(n-i)
 
-    int                 *backtrack;
-    long                *backs;
-    long                bmaxi;
-    long                bmini;
-
+    int                 back_diff;
+    struct f640_tab     *backtrack;
 
     //
     pthread_mutex_t mutex;
@@ -68,26 +72,28 @@ struct f640_queue {
     //
 
 };
-struct f640_queue   *f640_make_queue(struct f640_stone *stones, int length, int *foractions, int *constraints, int ecart);
-int                 f640_dequeue(struct f640_queue *queue, int block, int foraction);
-void                f640_enqueue(struct f640_queue *queue, int block, int key, int action);
+struct f640_queue   *f640_make_queue(struct f640_stone *stones, int length, long *foractions, long constraints, int nn_1, int back_diff);
+int                 f640_enqueue(struct f640_queue *queue, int block, int key, long action);
+int                 f640_dequeue(struct f640_queue *queue, int block, long foraction);
 void                f640_backtrack(struct f640_queue *queue, int block, int key);
+void                f640_dump_queue(struct f640_queue *queue);
 
 #define F640_UNBLOCK    0
 #define F640_BLOCK      1
 
 struct f640_thread {
-    int                 action;
+    char                name[32];
+    long                action;
     struct f640_queue   *queue_in;
     int                 block_dequeue;
     struct f640_queue   *queue_out;
     int                 block_enqueue;
 
-    int                 backtrack;
+    int                 nn_1;
 
     int                 (*process)(struct f640_stone *stone);
 };
-
+void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone));
 void *f640_loop(void* prm);
 
 #endif /* F640_QUEUES_H_ */

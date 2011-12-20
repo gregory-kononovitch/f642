@@ -14,16 +14,34 @@
 
 
 int f640_make_stone(struct f640_stone *stone, int key) {
+    int r;
     stone->key      = key;
     stone->frame    = 0;
     stone->status   = 0;
-    pthread_spin_init(stone->spin, 0);
+    r = pthread_spin_init(&stone->spin, 0);
+    printf("Spin init return %d\n", r);
     stone->private  = NULL;
     return 0;
 }
 
-struct f640_queue *f640_make_queue(struct f640_stone *stones, int length, int *foractions, long constraints, int ecart) {
-    int i, *a;
+int f640_make_tab(struct f640_tab *tab, int length) {
+    if (!tab) return -1;
+    tab->length = length;
+    tab->tab = calloc(tab->length, sizeof(int));
+    if (!tab->tab) return -1;
+    for(length = 0 ; length < tab->length ; length++) tab->tab[length] = -1;
+    tab->nexts = calloc(tab->length, sizeof(long));
+    if (!tab->nexts) return -1;
+    for(length = 0 ; length < tab->length ; length++) tab->nexts[length] = length + 1;
+    tab->mini = 1;
+    tab->maxi = tab->length + 1;
+    return 0;
+}
+
+struct f640_queue *f640_make_queue(struct f640_stone *stones, int length, long *foractions
+        , long constraints, int nn_1, int back_diff) {
+    int i;
+    long *a;
     struct f640_queue *queue = calloc(1, sizeof(struct f640_queue));
     if (!queue) {
         printf("ENOMEM for a new queue, returning\n");
@@ -33,49 +51,35 @@ struct f640_queue *f640_make_queue(struct f640_stone *stones, int length, int *f
     queue->stones = stones;
     queue->length = length;
 
-    // NEXTS
-    queue->nexts = calloc(1, queue->length * sizeof(long));
-    for(i = 0 ; i < queue->length ; i++) queue->nexts[i] = i + 1;
-    queue->mini = 1;
-    queue->maxi = queue->length + 1;
-
     //
     if (!foractions) {
         queue->outs = 1;
-        queue->foractions = NULL;
-        queue->queue = calloc(1, queue->length * sizeof(int));
-        queue->next_in = calloc(1, sizeof(int));
-        queue->next_out = calloc(1, sizeof(int));
+        queue->foractions = calloc(1, sizeof(long));
+        queue->queues = calloc(1, sizeof(struct f640_tab));
+        f640_make_tab(queue->queues, queue->length);
     } else {
         i = 0;
-        for(a = foractions ; a != NULL ; a++) i++;
+        for(a = foractions ; *a > 0 ; a++) i++;
         queue->outs = i;
-        queue->foractions = calloc(queue->outs, sizeof(int));
-        memcpy(queue->foractions, foractions, queue->outs * sizeof(int));
-        queue->queue = calloc(queue->outs, sizeof(int*));
+        queue->foractions = calloc(queue->outs, sizeof(long));
+        memcpy(queue->foractions, foractions, queue->outs * sizeof(long));
+        queue->queues = calloc(queue->outs, sizeof(struct f640_tab));
         for(i = 0 ; i < queue->outs ; i++) {
-            queue->queue[i] = calloc(1, queue->length * sizeof(int));
+            f640_make_tab(&queue->queues[i], queue->length);
         }
-        queue->next_in = calloc(queue->outs, sizeof(int));
-        queue->next_out = calloc(queue->outs, sizeof(int));
     }
-
     //
     queue->constraints = constraints;
-
-    //
-    if (ecart < 1) {
-        queue->ecart = 0;
-    } else {
-        queue->ecart = ecart;
-
-    }
+    queue->nn_1 = nn_1;
 
     // BACKS
-    queue->backs = calloc(1, queue->length * sizeof(long));
-    for(i = 0 ; i < queue->length ; i++) queue->backs[i] = i + 1;
-    queue->bmini = 1;
-    queue->bmaxi = queue->length + 1;
+    if (back_diff) {
+        queue->back_diff = back_diff;
+        queue->backtrack = calloc(1, sizeof(struct f640_tab));
+        f640_make_tab(queue->backtrack, queue->length);
+    } else {
+        queue->back_diff = 0;
+    }
 
     //
     pthread_mutex_init(&queue->mutex, NULL);
@@ -84,8 +88,96 @@ struct f640_queue *f640_make_queue(struct f640_stone *stones, int length, int *f
     return queue;
 }
 
-int  f640_dequeue(struct f640_queue *queue, int block, int foraction) {
+
+/*
+ *
+ */
+int f640_add(struct f640_tab *tab, struct f640_stone *stone) {
+    int i, j;
+    if ( stone->frame && stone->frame < tab->mini ) return 1;       // @@@ -- pb multi&spin, already gone
+    for(i = 0 ; i < tab->length ; i++) {
+        if (stone->key == tab->tab[i]) return 1;       // secure (spin status + multi enq...) : still there
+        if (tab->tab[i] < 0) {                     // Last entry
+            tab->tab[i] = stone->key;
+            return 0;
+        }
+        if (stone->stones[tab->tab[i]].frame > stone->frame) break; // between existing
+    }
+    for(j = tab->length - 1 ; j > i ; j--) tab->tab[j] = tab->tab[j-1];
+    tab->tab[i] = stone->key;
+    return 0;
+}
+
+void f640_del(struct f640_tab *tab, struct f640_stone *stone) {
+    int i, j;
+    for(i = 0 ; i < tab->length ; i++) {
+        if (tab->tab[i] == stone->key) {
+            break;
+        }
+    }
+    for(j = i + 1 ; j < tab->length ; j++) tab->tab[j - 1] = tab->tab[j];
+    tab->tab[tab->length - 1] = -1;
+    //
+    tab->mini = tab->maxi;
+    for(i = 0 ; i < tab->length ; i++) {
+        if (tab->nexts[i] == stone->frame) {
+            tab->nexts[i] = tab->maxi;
+            tab->maxi++;
+        }
+        if (tab->mini > tab->nexts[i]) tab->mini = tab->nexts[i];
+    }
+}
+
+/*
+ *
+ */
+void f640_dump_queue(struct f640_queue *queue) {
+    int q, i;
+    printf("----------- QUEUE ------------\n");
+    for(q = 0 ; q < queue->outs ; q++) {
+        printf("Out %X (%ld < %ld) :", queue->foractions ? queue->foractions[q] : 0, queue->queues[q].mini,queue->queues[q].maxi);
+        for(i = 0 ; i < queue->length ; i++) {
+            if (queue->queues[q].tab[i] > -1) printf(" %d (%ld)", queue->queues[q].tab[i], queue->stones[queue->queues[q].tab[i]].frame);
+            else break;
+        }
+        printf("\n");
+    }
+    if (queue->back_diff) {
+        printf("Backtrack (%ld < %ld) :", queue->backtrack->mini,queue->backtrack->maxi);
+        for(i = 0 ; i < queue->length ; i++) {
+            if (queue->backtrack->tab[i] > -1) printf(" %d (%ld)", queue->backtrack->tab[i], queue->stones[queue->backtrack->tab[i]].frame);
+            else break;
+        }
+        printf("\n");
+    }
+}
+
+/*
+ *
+ */
+int f640_enqueue(struct f640_queue *queue, int block, int key, long action) {
+    int q, i;
+    pthread_mutex_lock(&queue->mutex);
+    pthread_spin_lock(&queue->stones[key].spin);
+    if ( (queue->constraints & queue->stones[key].status) != queue->constraints ) {
+        pthread_spin_unlock(&queue->stones[key].spin);
+        pthread_mutex_unlock(&queue->mutex);
+        return 1;
+    }
+    pthread_spin_unlock(&queue->stones[key].spin);
+    for(q = 0 ; q < queue->outs ; q++) {
+        i = f640_add(&queue->queues[q], &queue->stones[key]);
+    }
+    pthread_cond_broadcast(&queue->cond);
+    pthread_mutex_unlock(&queue->mutex);
+    return i;
+}
+
+
+static int debug_dequeue = 0;
+int f640_dequeue(struct f640_queue *queue, int block, long foraction) {
     int i;
+    if (debug_dequeue) printf("\tDeQueue (blocking %d) for %X action / %d tabs\n", block, foraction, queue->outs);
     pthread_mutex_lock(&queue->mutex);
     if (queue->outs > 1) {
         for(i = 0 ; i < queue->outs ; i++) {
@@ -93,6 +185,7 @@ int  f640_dequeue(struct f640_queue *queue, int block, int foraction) {
         }
         if (i == queue->outs) {
             pthread_mutex_unlock(&queue->mutex);
+            printf("Bad foraction %ld, exiting queue\n", foraction);
             return -1;
         } else {
             foraction = i;
@@ -100,42 +193,68 @@ int  f640_dequeue(struct f640_queue *queue, int block, int foraction) {
     } else {
         foraction = 0;
     }
+    if (debug_dequeue) printf("\tDeQueue tab[%d / %d]\n", foraction, queue->outs);
     while(1) {
-        if( queue->next_out[foraction] != queue->next_in[foraction] ) {
-            int key = -1;
-            for( i = queue->next_out[foraction] ; i != queue->next_in[foraction] ; i = (i + 1) % queue->length) {
-                int j;
-                key = queue->queue[foraction][i];
-                // Ecart
-                if ( queue->ecart == 1) {
-                    if ( queue->stones[key].getNum(&queue->stones[key]) != queue->bmini ) continue;
-                }
+        i = 0;
+        if (debug_dequeue) printf("\t\tDeQueue tab[%d][0] = %d\n", foraction, queue->queues[foraction].tab[i]);
+        while( queue->queues[foraction].tab[i] > -1 ) {
+            struct f640_stone *st = &queue->stones[queue->queues[foraction].tab[i]];
+            if (queue->nn_1 == 1) {
+                // Order
+                if (st->frame != queue->queues[foraction].mini)
+                    goto wait;
+                // Speed
+                if (queue->back_diff && st->frame - queue->backtrack->mini > queue->back_diff)
+                    goto wait;
                 // Ok
-
-                // Backtrack
-                if (queue->backtrack) {
-                    for(j = 0 ; j < queue->length ; j++) {
-                        if (queue->backtrack[foraction][j] == -1) {
-                            queue->backtrack[foraction][j] = key;
-                            break;
-                        }
-                    }
-                } else if (queue->ecart == 1){
-                    queue->num++;
-                } else {
-                    // not possible
-                }
-                // Reorg
-                for(j = i ; j != queue->next_out[foraction] ; j = (j - 1) % queue->length ) {
-                    queue->queue[foraction][j] = queue->queue[foraction][(j - 1) % queue->length];
-                }
-                // Increment
-                queue->next_out[foraction] = (queue->next_out[foraction] + 1) % queue->length;
-                // Return
+                f640_del(&queue->queues[foraction], st);
+                if (queue->back_diff) f640_add(queue->backtrack, st);
+                // return
                 pthread_mutex_unlock(&queue->mutex);
-                return key;
+                return st->key;
+            } else if( queue->nn_1 < 1) {
+                // Speed
+                if (queue->back_diff && st->frame - queue->backtrack->mini > queue->back_diff)
+                    goto wait;
+                // Ok
+                f640_del(&queue->queues[foraction], st);
+                if (queue->back_diff) f640_add(queue->backtrack, st);
+                // return
+                pthread_mutex_unlock(&queue->mutex);
+                return st->key;
+            } else if (i == 0) {
+                // Speed
+                if (queue->back_diff && st->frame - queue->backtrack->mini > queue->back_diff)
+                    goto wait;
+                // Ok
+                f640_del(&queue->queues[foraction], st);
+                if (queue->back_diff) f640_add(queue->backtrack, st);
+                // return
+                pthread_mutex_unlock(&queue->mutex);
+                return st->key;
+            } else {
+                int j, k;
+                for(j = 1 ; j < queue->nn_1 ; j++) {
+                    for(k = 0 ; k < queue->length ; k++)
+                        if (queue->queues[foraction].nexts[k] == (st->frame - j) )
+                            break;
+                    if (k < queue->length) break;
+                }
+                if (j != queue->nn_1) goto next;
+                // Speed
+                if (queue->back_diff && st->frame - queue->backtrack->mini > queue->back_diff)
+                    goto wait;
+                // Ok
+                f640_del(&queue->queues[foraction], st);
+                if (queue->back_diff) f640_add(queue->backtrack, st);
+                // return
+                pthread_mutex_unlock(&queue->mutex);
+                return st->key;
             }
+next:
+            i++;
         }
+wait:
         if (block) {
             pthread_cond_wait(&queue->cond, &queue->mutex);
         } else {
@@ -144,77 +263,83 @@ int  f640_dequeue(struct f640_queue *queue, int block, int foraction) {
     }
 }
 
-void f640_enqueue(struct f640_queue *queue, int block, int key, int action) {
+
+void f640_backtrack(struct f640_queue *queue, int block, int key) {
     int q, i;
+    if ( queue->back_diff < 1) return;
+
     pthread_mutex_lock(&queue->mutex);
-    if ( (queue->constraints & queue->stones[key].status) != queue->constraints ) {
-        pthread_mutex_unlock(&queue->mutex);
-        return;
-    }
-    queue->mini = queue->maxi;
-    for(i = 0 ; i < queue->length ; i++) {
-        if (queue->nexts[i] == queue->stones[key].getNum(&queue->stones[key]) ) {
-            queue->nexts[i] = queue->maxi;
-            queue->maxi++;
+    pthread_spin_lock(&queue->stones[key].spin);
+    for(q = 0 ; q < queue->outs ; q++) {        // bad no synchr mngmt (status can change, but ok)
+        if ( (queue->stones[key].status & queue->foractions[q]) != queue->foractions[q]) {
+            pthread_spin_unlock(&queue->stones[key].spin);
+            pthread_mutex_unlock(&queue->mutex);
+            return;
         }
-        if (queue->mini > queue->nexts[i]) queue->mini = queue->nexts[i];
     }
-    for(q = 0 ; q < queue->outs ; q++) {
-        queue->queue[q][queue->next_in[q]] = key;
-        queue->next_in[q] = (queue->next_in[q] + 1) % queue->length;
-    }
+    pthread_spin_unlock(&queue->stones[key].spin);
+    f640_del(queue->backtrack, &queue->stones[key]);
     pthread_cond_broadcast(&queue->cond);
     pthread_mutex_unlock(&queue->mutex);
 }
 
-void f640_backtrack(struct f640_queue *queue, int block, int key) {
-    int q, i;
-    if ( queue->backtrack == NULL) return;
-
-    pthread_mutex_lock(&queue->mutex);
-    for(q = 0 ; q < queue->outs ; q++) {
-        if ( !queue->stones[key].isDone(&queue->stones[key], queue->foractions[q]) ) break;
-    }
-    if (q == (queue->outs + 1) ) {
-        queue->bmini = queue->bmaxi;
-        for(i = 0 ; i < queue->length ; i++) {
-            if (queue->backtrack[i] == key) {
-                queue->backtrack[i] = -1;
-            }
-            if (queue->backs[i] == queue->stones[key].getNum(&queue->stones[key])) {
-                queue->backs[i] = queue->bmaxi;
-                queue->bmaxi++;
-            }
-            if (queue->bmini > queue->backs[i]) queue->bmini = queue->backs[i];
-        }
-        pthread_cond_broadcast(&queue->cond);
-    }
-    pthread_mutex_unlock(&queue->mutex);
-}
-
-
+static int debug_loop = 0;
 void *f640_loop(void* prm) {
     int r;
     struct f640_thread *thread = prm;
 
+    if (debug_loop) printf("%s : launched\n", thread->name);
     while(1) {
         // Dequeue
         int key = f640_dequeue(thread->queue_in, thread->block_dequeue, thread->action);
-
         // Check
         if ( key < 0) {
-            printf("End of in queue, exiting\n");
+            printf("End of in queue for thread %s, exiting\n", thread->name);
             break;
         }
+        struct f640_stone *stone = &thread->queue_in->stones[key];
+        if (debug_loop) printf("%s : DeQueue %d (%ld)\n", thread->name, key, stone->frame);
 
         // Processing
-        r = thread->process(&thread->queue_in->stones[key]);
+        r = thread->process(stone);
+
+        // Flaging
+        pthread_spin_lock(&stone->spin);
+        stone->status |= thread->action;
+        pthread_spin_unlock(&stone->spin);
 
         // Backtrack
-        if (thread->backtrack) f640_backtrack(thread->queue_in, 0, key, thread->action);
+        if (thread->queue_in->back_diff) {
+            if (debug_loop) printf("%s : Backtrack %d (%ld)\n", thread->name, key, stone->frame);
+            f640_backtrack(thread->queue_in, 0, key);
+        }
 
         // Enqueue
-        f640_enqueue(thread->queue_out, thread->block_enqueue, key, thread->action);
+        r = f640_enqueue(thread->queue_out, thread->block_enqueue, key, thread->action);
+        if (debug_loop) printf("%s : EnQueue '%X' %d (%ld) : %s (%X / %X)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
+
+        if (debug_loop) f640_dump_queue(thread->queue_in);
+        if (debug_loop) f640_dump_queue(thread->queue_out);
     }
     pthread_exit(NULL);
+}
+
+void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone)) {
+    int t;
+    for(t = 0 ; t < nb ; t++) {
+        struct f640_thread *th = calloc(1, sizeof(struct f640_thread));
+        sprintf(th->name, "Thread '%lX' n%d", action, t);
+        th->action = action;
+        th->queue_in = queue_in;
+        th->block_dequeue = block_dequeue;
+        th->queue_out = queue_out;
+        th->block_enqueue = block_enqueue;
+        th->nn_1 = nn_1;
+        th->process = process;
+
+        pthread_t *thread = calloc(1, sizeof(pthread_t));
+
+        // Launch
+        pthread_create(thread, NULL, f640_loop, (void *)th);
+    }
 }
