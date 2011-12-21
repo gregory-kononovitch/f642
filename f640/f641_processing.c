@@ -1117,6 +1117,8 @@ void *f640_record_mj(void *video_lines) {
             pkt.data = line->buffers[line->actual].start;
             pkt.size = line->buf.bytesused;
             pkt.pts  = lines->recorded_frames;
+            lines->tvr.tv_sec = line->buf.timestamp.tv_sec;
+            lines->tvr.tv_usec = line->buf.timestamp.tv_usec;
             pkt.dts  = pkt.pts;
             pkt.duration = 1;
             pkt.pos  = -1;
@@ -1143,9 +1145,9 @@ void *f640_release(void *video_lines) {
     struct f640_video_lines *lines = video_lines;
     long size_in = 0, size_out = 0;
     double t = 0, t0 = 0, td = 0, t1 = 0, t2 = 0, te = 0, t3 = 0, t4 = 0;
-    struct timeval tv1, tv2, tv3;
+    struct timeval tv1, tv2, tv3, tvs, tvp, tva;
     struct timespec ts1;
-    struct tm tm1;
+    struct tm tm1, tml;
     time_t time70;
     clock_t times1, times2;
     unsigned long jiffs, ms;
@@ -1183,6 +1185,9 @@ void *f640_release(void *video_lines) {
         if (line->frame % show_freq == 0) {
             gettimeofday(&tv2, NULL);
             localtime_r(&tv2.tv_sec, &tm1);
+            timersub(&line->tv00, &line->buf.timestamp, &tvs);
+            timersub(&line->tv40, &line->tv00, &tvp);
+            timersub(&tv2, &line->buf.timestamp, &tva);
             times2 = clock();// / CLOCKS_PER_SECOND ~ 1 000 000;
             timersub(&tv2, &tv1, &tv3);
 //            time(&time70);
@@ -1200,7 +1205,7 @@ void *f640_release(void *video_lines) {
             if ( lines->recorded_frames - recorded_frames ) {
                 printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - " F640_RESET F640_BOLD F640_FG_RED "%5ld" F640_RESET
                         " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
-                        " |%2d|%2d|¤%.1fs - %.1fMo"
+                        " |%2d|%2d|¤%.1fs %.1fMo|%ld %ld"
                         , f640_uns_queue_size(&lines->snaped),    100*td/t4
                         , f640_uns_queue_size(&lines->decoded),   100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
                         , f640_uns_queue_size(&lines->watched),   100*te/t4
@@ -1210,9 +1215,12 @@ void *f640_release(void *video_lines) {
                         , f640_uns_queue_size(&lines->released)
                         , 1. * lines->recorded_frames / lines->fps
                         , 1. * size_out / (1024 * 1024)
+                        , tvs.tv_usec / 1000, tvp.tv_usec / 1000
                 );
             } else {
-                printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - %5ld |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f +%2ld |%2d|%2d|¤%.1fs - %.1fMo"
+                printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - %5ld"
+                        " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f +%2ld"
+                        " |%2d|%2d|¤%.1fs %.1fMo|%ld %ld"
                         , f640_uns_queue_size(&lines->snaped),    100*td/t4
                         , f640_uns_queue_size(&lines->decoded) ,  100*t1/t4, lines->grid_min_value, lines->rms / show_freq, lines->grid_max_value
                         , f640_uns_queue_size(&lines->watched),   100*te/t4
@@ -1222,6 +1230,7 @@ void *f640_release(void *video_lines) {
                         , f640_uns_queue_size(&lines->released)
                         , 1. * lines->recorded_frames / lines->fps
                         , 1. * size_out / (1024 * 1024)
+                        , tvs.tv_usec / 1000, tvp.tv_usec / 1000
                 );
             }
             printf("\n");

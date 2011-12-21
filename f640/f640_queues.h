@@ -103,7 +103,7 @@ struct f640_thread {
 
     void*               (*init)(void *appli);
     int                 (*exec)(void *appli, void* ressources, struct f640_stone *stone);
-    int                 (*free)(void *appli, void* ressources);
+    void                (*free)(void *appli, void* ressources);
 };
 void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone));
 void *f640_loop(void* prm);

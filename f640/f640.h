@@ -222,6 +222,7 @@ struct f640_video_lines {
     int  recording;
     char record_path[256];
     long recorded_frames;
+    struct timeval tvr;
 
     //
     char stream_path[256];

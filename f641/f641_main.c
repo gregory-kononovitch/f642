@@ -9,8 +9,8 @@
  */
 
 
+#include "../f640/f641/f641.h"
 
-#include "../f640/f640_queues.h"
 
 #define F641_HZ             5
 
@@ -102,8 +102,8 @@ int f641_process_re(struct f640_stone *stone) {
     return 0;
 }
 
-static int debug_main = 0;
-int main(int argc, char *argv[]) {
+static int debug_test = 0;
+static int f641_queue_test() {
     int nb = 15;
     int i;
     struct timeval tv1, tv2, tv3;
@@ -159,9 +159,9 @@ int main(int argc, char *argv[]) {
     gettimeofday(&tv1, NULL);
     while(1) {
         // Dequeue
-        if (debug_main) printf("Try DeQueue for release\n");
+        if (debug_test) printf("Try DeQueue for release\n");
         int key = f640_dequeue(forrel, 1, F641_RELEASED);
-        if (debug_main) printf("DeQueued %d\n", key);
+        if (debug_test) printf("DeQueued %d\n", key);
         // Check
         if ( key < 0) {
             printf("End of in queue, exiting\n");
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
         struct f640_stone *stone = &forrel->stones[key];
 
         // Processing
-        if (debug_main) printf("Releasing %d (%ld)\n", key, stone->frame);
+        if (debug_test) printf("Releasing %d (%ld)\n", key, stone->frame);
         pthread_spin_lock(&stone->spin);
         stone->frame  = 0;
         stone->status = 0;
@@ -198,6 +198,17 @@ int main(int argc, char *argv[]) {
             gettimeofday(&tv1, NULL);
         }
     }
+
+    return 0;
+}
+
+
+/*
+ *
+ */
+int main(int argc, char *argv[]) {
+
+    f641_queue_test();
 
     return 0;
 }

@@ -24,10 +24,7 @@
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
 
-#include "../../../f610-equa/f611/f611_common.h"
-
-#include "../f640_graphics.h"
-
+#include "../f640.h"
 #include "../f640_queues.h"
 
 #endif /* F641_H_ */
