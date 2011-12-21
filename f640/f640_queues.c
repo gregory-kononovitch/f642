@@ -115,7 +115,8 @@ void f640_del(struct f640_tab *tab, struct f640_stone *stone) {
             break;
         }
     }
-    for(j = i + 1 ; j < tab->length ; j++) tab->tab[j - 1] = tab->tab[j];
+    for(j = i + 1 ; j < tab->length ; j++)
+        if ( (tab->tab[j - 1] = tab->tab[j]) < 0 ) break;
     tab->tab[tab->length - 1] = -1;
     //
     tab->mini = tab->maxi;
@@ -287,11 +288,21 @@ static int debug_loop = 0;
 void *f640_loop(void* prm) {
     int r;
     struct f640_thread *thread = prm;
+    int times = 0;
+    struct timeval tve1, tve2, tve3, tvb1, tvb2, tvb3, tvd1, tvd2, tvd3;
 
+    timerclear(&tvd3);
+    timerclear(&tvb3);
+    timerclear(&tve3);
     if (debug_loop) printf("%s : launched\n", thread->name);
     while(1) {
         // Dequeue
+        if (times) gettimeofday(&tvd1, NULL);
         int key = f640_dequeue(thread->queue_in, thread->block_dequeue, thread->action);
+        if (times) gettimeofday(&tvd2, NULL);
+        if (times) timersub(&tvd2, &tvd1, &tvd1);
+        if (times) timeradd(&tvd3, &tvd1, &tvd3);
+
         // Check
         if ( key < 0) {
             printf("End of in queue for thread %s, exiting\n", thread->name);
@@ -311,11 +322,20 @@ void *f640_loop(void* prm) {
         // Backtrack
         if (thread->queue_in->back_diff) {
             if (debug_loop) printf("%s : Backtrack %d (%ld)\n", thread->name, key, stone->frame);
+            if (times) gettimeofday(&tvb1, NULL);
             f640_backtrack(thread->queue_in, 0, key);
+            if (times) gettimeofday(&tvb2, NULL);
+            if (times) timersub(&tvb2, &tvb1, &tvb1);
+            if (times) timeradd(&tvb3, &tvb1, &tvb3);
         }
 
         // Enqueue
+        if (times) gettimeofday(&tve1, NULL);
         r = f640_enqueue(thread->queue_out, thread->block_enqueue, key, thread->action);
+        if (times) gettimeofday(&tve2, NULL);
+        if (times) timersub(&tve2, &tve1, &tve1);
+        if (times) timeradd(&tve3, &tve1, &tve3);
+
         if (debug_loop) printf("%s : EnQueue '%X' %d (%ld) : %s (%X / %X)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
 
         if (debug_loop) f640_dump_queue(thread->queue_in);

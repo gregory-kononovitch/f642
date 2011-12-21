@@ -84,14 +84,26 @@ void                f640_dump_queue(struct f640_queue *queue);
 struct f640_thread {
     char                name[32];
     long                action;
+    // In
     struct f640_queue   *queue_in;
     int                 block_dequeue;
+    // Out
     struct f640_queue   *queue_out;
     int                 block_enqueue;
 
-    int                 nn_1;
+    // Logic
+    int                 nn_1;   // 0 : raw, 1 : ordered, i : n...(n-i)
 
+    // Old
     int                 (*process)(struct f640_stone *stone);
+
+    // Processing
+    void*               appli;          // in
+    void*               ressources;     // from init
+
+    void*               (*init)(void *appli);
+    int                 (*exec)(void *appli, void* ressources, struct f640_stone *stone);
+    int                 (*free)(void *appli, void* ressources);
 };
 void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone));
 void *f640_loop(void* prm);

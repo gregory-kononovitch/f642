@@ -12,7 +12,7 @@
 
 #include "../f640/f640_queues.h"
 
-#define F641_HZ             1800
+#define F641_HZ             5
 
 #define F641_SNAPED_422     0x00000001  // DQBUF
 #define F641_SNAPED_MJPEG   0x00000002  // DQBUF & read_frame
@@ -86,14 +86,14 @@ int f641_process_tg(struct f640_stone *stone) {
 // 1 - 1.5ms
 int f641_process_br(struct f640_stone *stone) {
     struct f641_im *im = stone->private;
-    usleep( 1000 * (1000 + 500 * 1 * random() / RAND_MAX) / (5 * F641_HZ));
+    usleep( 1000 * (750 + 500 * 1 * random() / RAND_MAX) / (5 * F641_HZ));
     return 0;
 }
 
 // 1 - 10ms
 int f641_process_rc(struct f640_stone *stone) {
     struct f641_im *im = stone->private;
-    usleep( 1000 * (1000 + 4000 * 1 * random() / RAND_MAX) / (4 * F641_HZ));
+    usleep( 1000 * (1000 + 500 * 1 * random() / RAND_MAX) / (5 * F641_HZ));
     return 0;
 }
 
@@ -133,13 +133,13 @@ int main(int argc, char *argv[]) {
     long actfr[2] = {F641_RELEASED, -1};
     struct f640_queue *forrel  = f640_make_queue(stones, nb, actfr, F641_BROADCASTED | F641_RECORDED, 0, 0);
 
-    f640_make_thread(1, F641_SNAPED,    buffers, 1, snapped, 0, 0, f641_process_sn);
-    f640_make_thread(4, F641_DECODED,   snapped, 1, decoded, 0, 0, f641_process_de);
-    f640_make_thread(4, F641_WATCHED,   decoded, 1, fortagg, 0, 2, f641_process_wa);
-    f640_make_thread(4, F641_CONVERTED, decoded, 1, fortagg, 0, 0, f641_process_cv);
-    f640_make_thread(3, F641_TAGGED,    fortagg, 1, tagged,  0, 0, f641_process_tg);
-    f640_make_thread(1, F641_BROADCASTED, tagged,  1, forrel,  0, 1, f641_process_br);
-    f640_make_thread(1, F641_RECORDED,  tagged,  1, forrel,  0, 1, f641_process_rc);
+    f640_make_thread(1, F641_SNAPED,        buffers, 1, snapped, 0, 0, f641_process_sn);
+    f640_make_thread(4, F641_DECODED,       snapped, 1, decoded, 0, 0, f641_process_de);
+    f640_make_thread(4, F641_WATCHED,       decoded, 1, fortagg, 0, 2, f641_process_wa);
+    f640_make_thread(4, F641_CONVERTED,     decoded, 1, fortagg, 0, 0, f641_process_cv);
+    f640_make_thread(3, F641_TAGGED,        fortagg, 1, tagged,  0, 0, f641_process_tg);
+    f640_make_thread(1, F641_BROADCASTED,   tagged,  1, forrel,  0, 1, f641_process_br);
+    f640_make_thread(1, F641_RECORDED,      tagged,  1, forrel,  0, 1, f641_process_rc);
 
     usleep(100*1000);
 
@@ -154,6 +154,8 @@ int main(int argc, char *argv[]) {
     ts.tv_sec = 5;
     ts.tv_nsec = 0;
     long cpt = 0;
+    clock_t times1, times2;
+    times1 = clock();
     gettimeofday(&tv1, NULL);
     while(1) {
         // Dequeue
@@ -181,16 +183,18 @@ int main(int argc, char *argv[]) {
         f640_enqueue(buffers, 0, key, F641_RELEASED);
         cpt++;
 
-        if (cpt % F641_HZ == 0) {
+        if ( (cpt % (2 * F641_HZ)) == 0) {
+            times2 = clock();
             gettimeofday(&tv2, NULL);
             timersub(&tv2, &tv1, &tv3);
-            printf("Duree : %lus.%ldms", tv3.tv_sec, tv3.tv_usec/1000);
+            printf("Duree : %lus.%03ldms | times = %7lu | cpu = %3.1f", tv3.tv_sec, tv3.tv_usec/1000, times2 - times1, 100. * (times2 - times1) / (1000000 * tv3.tv_sec + tv3.tv_usec));
             f640_dump_queue(buffers);
             f640_dump_queue(snapped);
             f640_dump_queue(decoded);
             f640_dump_queue(fortagg);
             f640_dump_queue(tagged);
             f640_dump_queue(forrel);
+            times1 = clock();
             gettimeofday(&tv1, NULL);
         }
     }
