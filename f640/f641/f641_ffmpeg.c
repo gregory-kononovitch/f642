@@ -325,6 +325,27 @@ static void f641_free_converting_torgb(void *appli, void* ressources) {
 }
 
 
+/******************************
+ *      GRAY THREAD
+ ******************************/
+static int f641_exec_edge(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int i;
+    uint8_t *im, *pix;
+
+    im  = line->gry->data;
+    pix = line->yuvp->data[0];
+    for(i = line->grid->height ; i > 0 ; i--) {
+        memcpy(im, pix, line->grid->width);
+        im  += line->grid->width;
+        pix += line->yuvp->linesize[0];
+    }
+
+    return 0;
+}
+
+
 /*************************************
  *      Recording Thread
  *************************************/
@@ -457,6 +478,7 @@ static int f641_exec_recording(void *appli, void* ressources, struct f640_stone 
         r = av_write_frame(res->outputFile, &res->pkt);
         avio_flush(res->outputFile->pb);
 
+        gettimeofday(&app->process->tvr, NULL);
         app->process->recorded_frames++;
     }
 

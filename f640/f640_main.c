@@ -44,9 +44,9 @@ static int fd;
 static struct v4l2_capability cap;
 static char *source = "/dev/video0";
 static char *input = NULL;
-static int cwidth = 320;
-static int cheight = 240;
-static uint32_t palette = 0x56595559;   // 0x47504A4D
+static int cwidth = 1024;
+static int cheight = 576;
+static uint32_t palette = 0x47504A4D;   // 0x56595559
 static struct v4l2_format format;
 static struct v4l2_fmtdesc format_desc;
 static int nb_buffers = 10;

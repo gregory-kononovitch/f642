@@ -12,7 +12,7 @@
 
 #include "f640.h"
 
-extern int DEBUG;
+static int DEBUG = 0;
 
 /*
  *
@@ -140,117 +140,119 @@ struct f640_grid2* f640_make_grid2(struct f640_grid *grid) {
  */
 struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct f640_grid *grid, enum PixelFormat dstFormat, struct output_stream *stream, struct f051_log_env *log_env, long threshold) {
     int i;
-    struct f640_line *f640_lineup = calloc(nbuffers, sizeof(struct f640_line));
-    if (!f640_lineup) {
+    struct f640_line *lineup = calloc(nbuffers, sizeof(struct f640_line));
+    if (!lineup) {
         printf("ENOMEM allocating lineup, returning\n");
         return NULL;
     }
 
     for(i = 0 ; i < nbuffers ; i++) {
-        f640_lineup[i].index        = i;
-        f640_lineup[i].buffers      = buffers;
-        f640_lineup[i].grid         = grid;
+        lineup[i].lineup       = lineup;
+        lineup[i].lineup_length = nbuffers;
+        lineup[i].index        = i;
+        lineup[i].buffers      = buffers;
+        lineup[i].grid         = grid;
 
         // Data Ptrs
-        f640_lineup[i].width  = calloc(6 + grid->rows * grid->cols, sizeof(long));
-        if (!f640_lineup[i].width) {
+        lineup[i].width  = calloc(6 + grid->rows * grid->cols, sizeof(long));
+        if (!lineup[i].width) {
             printf("ENOMEM allocating grid_values, returning\n");
             for(--i ; i > -1 ; i--) {
-                free(f640_lineup[i].rgb->data);
-                free(f640_lineup[i].grid_values);
+                free(lineup[i].rgb->data);
+                free(lineup[i].grid_values);
             }
-            free(f640_lineup);
-            f640_lineup = NULL;
+            free(lineup);
+            lineup = NULL;
             return NULL;
         }
-        f640_lineup[i].height      = f640_lineup[i].width + 1;
-        f640_lineup[i].cell_width  = f640_lineup[i].width + 2;
-        f640_lineup[i].cell_height = f640_lineup[i].width + 3;
-        f640_lineup[i].rows        = f640_lineup[i].width + 4;
-        f640_lineup[i].cols        = f640_lineup[i].width + 5;
-        f640_lineup[i].rms         = (long*) (f640_lineup[i].width + 6);
-        f640_lineup[i].grid_min    = (long*) (f640_lineup[i].width + 8);       // out
-        f640_lineup[i].grid_max    = (long*) (f640_lineup[i].width + 10);       // out
-        f640_lineup[i].grid_values = (long*) (f640_lineup[i].width + 12);
+        lineup[i].height      = lineup[i].width + 1;
+        lineup[i].cell_width  = lineup[i].width + 2;
+        lineup[i].cell_height = lineup[i].width + 3;
+        lineup[i].rows        = lineup[i].width + 4;
+        lineup[i].cols        = lineup[i].width + 5;
+        lineup[i].rms         = (long*) (lineup[i].width + 6);
+        lineup[i].grid_min    = (long*) (lineup[i].width + 8);       // out
+        lineup[i].grid_max    = (long*) (lineup[i].width + 10);       // out
+        lineup[i].grid_values = (long*) (lineup[i].width + 12);
         // Data
-        *(f640_lineup[i].width       ) = grid->width;
-        *(f640_lineup[i].height      ) = grid->height;
-        *(f640_lineup[i].cell_width  ) = grid->wlen;
-        *(f640_lineup[i].cell_height ) = grid->hlen;
-        *(f640_lineup[i].rows        ) = grid->rows;
-        *(f640_lineup[i].cols        ) = grid->cols;
+        *(lineup[i].width       ) = grid->width;
+        *(lineup[i].height      ) = grid->height;
+        *(lineup[i].cell_width  ) = grid->wlen;
+        *(lineup[i].cell_height ) = grid->hlen;
+        *(lineup[i].rows        ) = grid->rows;
+        *(lineup[i].cols        ) = grid->cols;
 
 
 
-        f640_lineup[i].grid_th = threshold;
+        lineup[i].grid_th = threshold;
 
         //
-        f640_lineup[i].srcFormat    = PIX_FMT_YUYV422;
-        f640_lineup[i].dstFormat    = dstFormat;
-        f640_lineup[i].yuv          = f640_create_yuv_image(grid->width, grid->height);
-        f640_lineup[i].gry          = f640_create_gry_image(grid->width, grid->height);
+        lineup[i].srcFormat    = PIX_FMT_YUYV422;
+        lineup[i].dstFormat    = dstFormat;
+        lineup[i].yuv          = f640_create_yuv_image(grid->width, grid->height);
+        lineup[i].gry          = f640_create_gry_image(grid->width, grid->height);
 
         switch(dstFormat) {
             case PIX_FMT_GRAY8 :
-                f640_lineup[i].rgb  = f640_create_gry_image(grid->width, grid->height);
+                lineup[i].rgb  = f640_create_gry_image(grid->width, grid->height);
                 break;
             case PIX_FMT_YUYV422 :
-                f640_lineup[i].rgb  = f640_create_yuv_image(grid->width, grid->height);
+                lineup[i].rgb  = f640_create_yuv_image(grid->width, grid->height);
                 break;
             case PIX_FMT_BGR24 :
             case PIX_FMT_RGB24 :
-                f640_lineup[i].rgb  = f640_create_rgb_image(grid->width, grid->height);
+                lineup[i].rgb  = f640_create_rgb_image(grid->width, grid->height);
                 break;
             case PIX_FMT_ABGR :
             case PIX_FMT_ARGB :
             case PIX_FMT_BGRA :
             case PIX_FMT_RGBA :
-                f640_lineup[i].rgb  = f640_create_rgba_image(grid->width, grid->height);
+                lineup[i].rgb  = f640_create_rgba_image(grid->width, grid->height);
                 break;
         }
 
         // YUVJP
-        f640_lineup[i].yuvp = calloc(1, sizeof(AVPicture));
-        avpicture_alloc(f640_lineup[i].yuvp, PIX_FMT_YUVJ422P, 12 * grid->width / 10, 12 * grid->height / 10);
-//        f640_lineup[i].yuvp->data[0] = malloc(grid->width + 32);
-//        f640_lineup[i].yuvp->data[1] = malloc((grid->width + 32)/2);
-//        f640_lineup[i].yuvp->data[2] = malloc((grid->width + 32)/2);
-//        f640_lineup[i].yuvp->data[3] = NULL;
+        lineup[i].yuvp = calloc(1, sizeof(AVPicture));
+        avpicture_alloc(lineup[i].yuvp, PIX_FMT_YUVJ422P, 12 * grid->width / 10, 12 * grid->height / 10);
+//        lineup[i].yuvp->data[0] = malloc(grid->width + 32);
+//        lineup[i].yuvp->data[1] = malloc((grid->width + 32)/2);
+//        lineup[i].yuvp->data[2] = malloc((grid->width + 32)/2);
+//        lineup[i].yuvp->data[3] = NULL;
 //
-//        f640_lineup[i].yuvp->linesize[0] = grid->width + 32;
-//        f640_lineup[i].yuvp->linesize[1] = (grid->width + 32)/2;
-//        f640_lineup[i].yuvp->linesize[2] = (grid->width + 32)/2;
-//        f640_lineup[i].yuvp->linesize[3] = 0;
+//        lineup[i].yuvp->linesize[0] = grid->width + 32;
+//        lineup[i].yuvp->linesize[1] = (grid->width + 32)/2;
+//        lineup[i].yuvp->linesize[2] = (grid->width + 32)/2;
+//        lineup[i].yuvp->linesize[3] = 0;
 
 
 
-        if (!f640_lineup[i].yuv || !f640_lineup[i].rgb) {
+        if (!lineup[i].yuv || !lineup[i].rgb) {
             printf("ENOMEM allocating grid_values, returning\n");
-            if (f640_lineup[i].rgb->data) free(f640_lineup[i].rgb->data);
-            if (f640_lineup[i].yuv->data) free(f640_lineup[i].yuv->data);
-            free(f640_lineup[i].grid_values);
+            if (lineup[i].rgb->data) free(lineup[i].rgb->data);
+            if (lineup[i].yuv->data) free(lineup[i].yuv->data);
+            free(lineup[i].grid_values);
             for(--i ; i > -1 ; i--) {
-                free(f640_lineup[i].rgb->data);
-                free(f640_lineup[i].yuv->data);
-                free(f640_lineup[i].width);
+                free(lineup[i].rgb->data);
+                free(lineup[i].yuv->data);
+                free(lineup[i].width);
             }
-            free(f640_lineup);
-            f640_lineup = NULL;
+            free(lineup);
+            lineup = NULL;
             return NULL;
         }
 
-        f640_lineup[i].log_env        = log_env;
-        f640_lineup[i].stream         = stream;
+        lineup[i].log_env        = log_env;
+        lineup[i].stream         = stream;
 
         //
-        f640_lineup[i].swsCtxt = sws_getCachedContext(f640_lineup[i].swsCtxt,
-                grid->width, grid->height, PIX_FMT_YUVJ422P, //f640_lineup[i].srcFormat,
-                grid->width, grid->height, f640_lineup[i].dstFormat,
+        lineup[i].swsCtxt = sws_getCachedContext(lineup[i].swsCtxt,
+                grid->width, grid->height, PIX_FMT_YUVJ422P, //lineup[i].srcFormat,
+                grid->width, grid->height, lineup[i].dstFormat,
                 SWS_BICUBIC, NULL, NULL, NULL
         );
 
     }
-    return f640_lineup;
+    return lineup;
 }
 
 
@@ -494,7 +496,6 @@ void *f640_decode(void *video_lines) {
     f640_snaped = &lines->buffered;
 
     codec = avcodec_find_decoder(CODEC_ID_MJPEG);
-    f611_dump_codec(codec);
 
     decoderCtxt = avcodec_alloc_context3(codec);    // PIX_FMT_YUVJ422P
     avcodec_open2(decoderCtxt, codec, NULL);

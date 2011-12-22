@@ -363,3 +363,28 @@ void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int bloc
         pthread_create(thread, NULL, f640_loop, (void *)th);
     }
 }
+
+struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1,
+        void* (*init)(void *appli), int (*exec)(void *appli, void* ressources, struct f640_stone *stone), void (*free)(void *appli, void* ressources)) {
+    int t;
+
+    struct f640_thread *group = calloc(nb, sizeof(struct f640_thread));
+
+    for(t = 0 ; t < nb ; t++) {
+        struct f640_thread *th = &group[t];
+        th->group = group;
+        th->group_size = nb;
+        sprintf(th->name, "Thread '%lX' n%d", action, t);
+        th->action = action;
+        th->queue_in = queue_in;
+        th->block_dequeue = block_dequeue;
+        th->queue_out = queue_out;
+        th->block_enqueue = block_enqueue;
+        th->nn_1 = nn_1;
+        th->init = init;
+        th->exec = exec;
+        th->free = free;
+    }
+
+    return &group[0];
+}

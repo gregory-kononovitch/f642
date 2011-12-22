@@ -37,6 +37,9 @@ struct f641_raw_data {
 struct f641_process_data {
 
     //
+    int proc_len;
+
+    //
     struct timeval tv0;
 
 
@@ -68,6 +71,7 @@ struct f641_appli {
     int frames_pers;
 
     // V4L2
+    char device[256];
     int fd;
 
     // Recording
@@ -92,8 +96,43 @@ struct f641_appli {
     int fd_grid20;
     char grid30_path[256];
     int fd_grid30;
-
 };
 
+
+struct f641_v4l2_parameters {
+    int DEBUG;
+
+    char device[32];
+    char *dev;// = "/dev/video0";
+    int fd;
+    struct v4l2_capability cap;
+    char *source;// = "/dev/video0";
+    char *input;// = NULL;
+    int width;// = 1024;
+    int height;// = 576;
+    int frames_pers;
+    uint32_t palette;// = 0x47504A4D;   // 0x56595559
+    struct v4l2_format format;
+    struct v4l2_fmtdesc format_desc;
+
+    enum v4l2_memory memory;
+    struct v4l2_requestbuffers req;
+    struct v4l2_buffer buf;
+
+    v4l2_buffer_t *buffers;
+
+    int capture;
+    int verbose;
+    int quiet;
+    int debug;
+    int show_all;
+    int show_caps;
+    int show_inputs;
+    int show_controls;
+    int show_formats;
+    int show_framsize;
+    int show_framints;
+    int show_vidstds;
+};
 
 #endif /* F641_H_ */

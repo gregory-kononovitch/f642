@@ -27,6 +27,7 @@
 
 #define F641_WATCHED        0x00000100
 #define F641_EDGED          0x00000200
+#define F641_GRIDED         0x00000400
 
 
 #define F641_CONVERTED      0x00001000
@@ -206,9 +207,142 @@ static int f641_queue_test() {
 /*
  *
  */
+extern int f641_get_capabilities(struct f641_v4l2_parameters *prm);
+extern int f641_set_input(struct f641_v4l2_parameters *prm);
+extern int f641_list_controls(struct f641_v4l2_parameters *prm);
+extern int f641_set_pix_format(struct f641_v4l2_parameters *prm);
+extern int f641_set_parm(struct f641_v4l2_parameters *prm);
+extern int f641_set_mmap(struct f641_v4l2_parameters *prm, int nb_buffers);
+extern int f641_set_uptr(struct f641_v4l2_parameters *prm, int nb_buffers);
+extern int f641_stream_on(struct f641_v4l2_parameters *prm);
+extern int f641_test_dq(struct f641_v4l2_parameters *prm, int nb);
+extern int f641_free_mmap(struct f641_v4l2_parameters *prm);
+
+extern struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli);
+extern void f641_free_v4l2(struct f641_v4l2_parameters *prm);
+
+int f641_v4l2() {
+    int i, r;
+    struct f641_appli           appli;
+    struct f641_process_data    proc_data;
+    struct f641_v4l2_parameters *v4l2;
+
+
+
+//    // Capture
+//    if ( prm.capture ) {
+//        r = f641_stream_on(&prm);
+//        r = f641_test_dq(&prm, 10);
+//    }
+//
+//    // UnMap
+//    if ( prm.capture ) {
+//        r = f641_free_mmap(&prm);
+//    }
+//
+//    return 0;
+
+    // APP DATA
+    appli.width  = 1024;
+    appli.height = 576;
+    appli.size   = appli.width * appli.height;
+    appli.frames_pers = 30;
+
+    snprintf(appli.device, sizeof(appli.device), "/dev/video0");
+
+    appli.recording = 1;
+    snprintf(appli.record_path, sizeof(appli.record_path), "/test/work/tust.avi");
+
+    snprintf(appli.stream_path, sizeof(appli.stream_path), "/dev/t030/t030-%d", 1);
+    appli.fd_stream = open(appli.stream_path, O_WRONLY);
+
+    snprintf(appli.edge_path, sizeof(appli.edge_path), "/dev/t030/t030-%d", 2);
+    appli.fd_edge = open(appli.edge_path, O_WRONLY);
+
+    snprintf(appli.grid_path, sizeof(appli.grid_path), "/dev/t030/t030-%d", 3);
+    appli.fd_grid = open(appli.grid_path, O_WRONLY);
+
+    snprintf(appli.get_path, sizeof(appli.get_path), "/dev/t030/t030-%d", 4);
+    appli.fd_get = open(appli.get_path, O_RDONLY);
+
+    snprintf(appli.grid10_path, sizeof(appli.grid10_path), "/dev/t030/t030-%d", 5);
+    appli.fd_grid10 = open(appli.grid10_path, O_WRONLY);
+
+    snprintf(appli.grid20_path, sizeof(appli.grid20_path), "/dev/t030/t030-%d", 6);
+    appli.fd_grid20 = open(appli.grid20_path, O_WRONLY);
+
+    snprintf(appli.grid30_path, sizeof(appli.grid30_path), "/dev/t030/t030-%d", 7);
+    appli.fd_grid30 = open(appli.grid30_path, O_WRONLY);
+
+    // PROC DATA
+    proc_data.proc_len = 10;
+    proc_data.tv0;
+    proc_data.decoded_format = PIX_FMT_YUVJ422P;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
+    proc_data.broadcast_format = PIX_FMT_BGR24;               // PIX_FMT_BGR24, PIX_FMT_GRAY8
+    proc_data.grid = f640_make_grid(appli.width, appli.height, 32);
+    proc_data.grid2 = f640_make_grid2(proc_data.grid);
+    proc_data.recording_codec = CODEC_ID_MJPEG;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
+    proc_data.record_format = PIX_FMT_YUVJ422P;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
+    proc_data.recorded_frames = 0;
+    appli.process = &proc_data;
+
+    // V4L2 PRM
+    v4l2 = f641_init_v4l2(&appli);
+
+    // STONES
+    struct f640_line *lineup = f640_make_lineup(v4l2->buffers, proc_data.proc_len, proc_data.grid, PIX_FMT_BGR24, NULL, NULL, 350);
+    struct f640_stone *stones = calloc(proc_data.proc_len, sizeof(struct f640_stone));
+    for(i = 0 ; i < proc_data.proc_len ; i++) {
+        f640_make_stone(&stones[i], i);
+        stones[i].stones = stones;
+        stones[i].private = &lineup[i];
+    }
+
+    // QUEUES
+    long actbf[2] = {F641_SNAPED, -1};
+    struct f640_queue *released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+
+    long actsn[2] = {F641_DECODED, -1};
+    struct f640_queue *snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
+
+    long actde[4] = {F641_WATCHED, F641_CONVERTED, F641_GRAYED, -1};
+    struct f640_queue *decoded = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
+
+    long actpr[2] = {F641_GRIDED, -1};
+    struct f640_queue *processed = f640_make_queue(stones, proc_data.proc_len, actpr, F641_WATCHED | F641_CONVERTED | F641_GRAYED, 1, 0);
+
+    long actgr[2] = {F641_TAGGED, -1};
+    struct f640_queue *grided = f640_make_queue(stones, proc_data.proc_len, actgr, 0, 0, 0);
+
+    long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
+    struct f640_queue *tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+
+    long actfr[2] = {F641_RELEASED, -1};
+    struct f640_queue *broaded  = f640_make_queue(stones, proc_data.proc_len, actfr, F641_BROADCASTED | F641_RECORDED, 0, 0);
+
+    // THREAD
+    f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, NULL, NULL, NULL);
+    f641_make_group(4, F641_DECODED,       snapped,   1, decoded,   0, 0, NULL, NULL, NULL);
+    f641_make_group(4, F641_WATCHED,       decoded,   1, processed, 0, 2, NULL, NULL, NULL);
+    f641_make_group(4, F641_CONVERTED,     decoded,   1, processed, 0, 0, NULL, NULL, NULL);
+    f641_make_group(4, F641_GRAYED,        decoded,   1, processed, 0, 0, NULL, NULL, NULL);
+    f641_make_group(1, F641_GRIDED,        processed, 1, grided,    0, 1, NULL, NULL, NULL);
+    f641_make_group(1, F641_TAGGED,        grided,    1, tagged,    0, 0, NULL, NULL, NULL);
+    f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, NULL, NULL, NULL);
+    f641_make_group(1, F641_RECORDED,      tagged,    1, broaded,   0, 1, NULL, NULL, NULL);
+
+}
+
+
+
+
+/*
+ *
+ */
 int main(int argc, char *argv[]) {
 
-    f641_queue_test();
+    f641_v4l2();
+    //f641_queue_test();
 
     return 0;
 }

@@ -97,6 +97,10 @@ struct f640_thread {
     // Old
     int                 (*process)(struct f640_stone *stone);
 
+    // Group
+    int                 group_size;
+    struct f640_thread  *group;
+
     // Processing
     void*               appli;          // in
     void*               ressources;     // from init
@@ -106,6 +110,9 @@ struct f640_thread {
     void                (*free)(void *appli, void* ressources);
 };
 void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone));
+struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1,
+        void* (*init)(void *appli), int (*exec)(void *appli, void* ressources, struct f640_stone *stone), void (*free)(void *appli, void* ressources)
+);
 void *f640_loop(void* prm);
 
 #endif /* F640_QUEUES_H_ */
