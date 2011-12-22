@@ -117,14 +117,30 @@ struct f640_grid2 {
 };
 
 struct f640_line {
-    int             index;
-    // Data
-    struct v4l2_buffer buf;
-    v4l2_buffer_t   *buffers;           // ref (tab)
-    int             last;               // in (v4l buffer index)
-    int             actual;             // in (v4l buffer index)
+    struct f640_line    *lineup;            // +
+    int                 lineup_length;      // +
+    int                 index;
+
+    // Raw Data
+    v4l2_buffer_t       *buffers;           // ref (tab)
+    // Infos
+    union {
+        // V4L2
+        struct v4l2_buffer buf;
+        // FFMpeg infos
+        struct {
+            int ffm_index;
+            int ffm_bytes_used;
+            struct timeval ffm_timestamp;
+        };
+    };
+
+    //
+    int             last;                   // in (v4l buffer index)
+    int             actual;                 // in (v4l buffer index)
     int             previous_line;
     uint64_t        frame;
+    int             *histo;                 // +
 
     // Grid
     struct f640_grid    *grid;          // ref
@@ -147,22 +163,22 @@ struct f640_line {
     // Graphics
     enum PixelFormat    srcFormat;
     enum PixelFormat    dstFormat;
-    struct f640_image   *gry;           // out
-    struct f640_image   *yuv;           // in ( / out )
-    struct f640_image   *rgb;           // out
-    AVPicture           *yuvp;          // MJPEG
-    uint8_t             *mjpeg;
+    uint8_t             *mjpeg;         // DQ / get_frame           // 2        * 500Ko
+    AVPicture           *yuvp;          // decode MJPEG / MPEG      // 1,5 - 2  * 500Ko
+    struct f640_image   *yuv;           // in ( / out )             // 2        * 500Ko
 
-    // Decode
-//    AVCodecContext      *decoderCtxt;
-//    AVFrame             *picture;
-//    AVPacket            avpkt;
+    struct f640_image   *gry;           // out                      // 1        * 500Ko
+    struct f640_image   *rgb;           // out                      // 3        * 500Ko
+                                                                    // 3Mo - 3.75Mo - 4Mo
+
 
     // Store
     struct output_stream *stream;       // ref
 
-    // Broadcast
+    // Convert
     struct SwsContext   *swsCtxt;
+
+    // Broadcast
     struct f051_log_env *log_env;       // ref
 
     //

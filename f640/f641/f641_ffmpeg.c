@@ -11,9 +11,9 @@
 #include "f641.h"
 
 
-/*
+/*************************************
  *      MJPEG Decoding Thread
- */
+ *************************************/
 static int DEBUG = 0;
 struct f641_decode_mjpeg_ressources {
     AVCodec             *codec;
@@ -189,7 +189,6 @@ int f641_exec_decode_mjpeg(void *ressources, struct f640_stone *stone) {
     return !got_pict;
 }
 
-
 /*
  * thread unsafe cf f641_func
  */
@@ -202,4 +201,281 @@ void f641_free_decode_mjpeg(void *appli, void* ressources) {
     av_free(res->picture);      // @@@ ?
     av_free(res->decoderCtxt);
     free(res);
+}
+
+
+
+/*************************************
+ *      Converse to RGB Thread
+ *************************************/
+struct f641_convert_torgb_ressources {
+    struct SwsContext   *swsCtxt;
+    AVFrame             *origin;
+    AVFrame             *scaled;
+};
+
+//
+static void* f641_init_converting_torgb(void *appli) {
+    int r;
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_convert_torgb_ressources *res = NULL;
+
+    // Calloc
+    res = calloc(1, sizeof(struct f641_convert_torgb_ressources));
+    if (!res) {
+        printf("ENOMEM allocating struct f641_convert_torgb, returning\n");
+        return NULL;
+    }
+
+    // SwScaleCtxt
+    res->swsCtxt = sws_getCachedContext(res->swsCtxt,
+            app->process->grid->width, app->process->grid->height, app->process->decoded_format,
+            app->process->grid->width, app->process->grid->height, app->process->broadcast_format,
+            SWS_BICUBIC, NULL, NULL, NULL
+    );
+    if (!res->swsCtxt) {
+        printf("PB allocating scale context f641_convert_torgb, returning\n");
+        free(res);
+        return NULL;
+    }
+
+    // Origin Picture
+    res->origin = avcodec_alloc_frame();
+    if (!res->origin) {
+        printf("ENOMEM allocating struct f641_convert_torgb, returning\n");
+        av_free(res->swsCtxt);
+        free(res);
+        return NULL;
+    }
+    avcodec_get_frame_defaults(res->origin);
+    r = avpicture_alloc((AVPicture*)res->origin, app->process->decoded_format, app->process->grid->width, app->process->grid->height);
+    if (r < 0) {
+        printf("PB allocating origin picture in converting, returning\n");
+        av_free(res->origin);
+        av_free(res->swsCtxt);
+        free(res);
+        return NULL;
+    }
+    res->origin->width = app->process->grid->width;
+    res->origin->height = app->process->grid->height;
+    res->origin->format = app->process->decoded_format;
+
+    // Scaled Picture
+    res->scaled = avcodec_alloc_frame();
+    if (!res->scaled) {
+        printf("ENOMEM allocating struct f641_convert_torgb, returning\n");
+        avpicture_free((AVPicture*)res->origin);
+        av_free(res->origin);
+        av_free(res->swsCtxt);
+        free(res);
+        return NULL;
+    }
+    avcodec_get_frame_defaults(res->scaled);
+    r = avpicture_alloc((AVPicture*)res->scaled, app->process->broadcast_format, app->process->grid->width, app->process->grid->height);
+    if (r < 0) {
+        printf("PB allocating origin picture in converting, returning\n");
+        av_free(res->scaled);
+        avpicture_free((AVPicture*)res->origin);
+        av_free(res->origin);
+        av_free(res->swsCtxt);
+        free(res);
+        return NULL;
+    }
+    res->scaled->width = app->process->grid->width;
+    res->scaled->height = app->process->grid->height;
+    res->scaled->format = app->process->broadcast_format;
+
+    return res;
+}
+
+//
+static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_convert_torgb_ressources *res = (struct f641_convert_torgb_ressources*)ressources;
+    struct f640_line *line = (struct f640_line*) stone->private;
+
+
+    gettimeofday(&line->tv20, NULL);
+
+    if (DEBUG) printf("\t\t\t\tCONVERT : dequeue %d, frame %lu\n", line->index, line->frame);
+
+    res->scaled->data[0] = line->rgb->data;
+    //res->origin->data[0] = line->yuv->data;
+    //sws_scale(line->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, line->grid->height, scaled->data, scaled->linesize);
+    sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, line->grid->height, res->scaled->data, res->scaled->linesize);
+
+
+    if (DEBUG) printf("\t\t\t\tCONVERT : enqueue %d, frame %lu\n", line->index, line->frame);
+    gettimeofday(&line->tv21, NULL);
+
+    return 0;
+}
+
+//
+static void f641_free_converting_torgb(void *appli, void* ressources) {
+    struct f641_convert_torgb_ressources *res = (struct f641_convert_torgb_ressources*)ressources;
+    if (res) {
+        avpicture_free((AVPicture*)res->scaled);
+        av_free(res->scaled);
+        avpicture_free((AVPicture*)res->origin);
+        av_free(res->origin);
+        av_free(res->swsCtxt);
+        free(res);
+    }
+}
+
+
+/*************************************
+ *      Recording Thread
+ *************************************/
+struct f641_recording_ressources {
+    AVFormatContext *outputFile;
+    AVStream *video_stream;
+    AVCodec *encoder;
+    AVPacket pkt;
+};
+
+//
+static void* f641_init_recording(void *appli) {
+    int r;
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_recording_ressources *res = NULL;
+
+    // Calloc
+    res = calloc(1, sizeof(struct f641_recording_ressources));
+    if (!res) {
+        printf("ENOMEM allocating struct f641_record_ressources, returning\n");
+        return NULL;
+    }
+
+    // AVFormatCtxt
+    r = avformat_alloc_output_context2(&res->outputFile, NULL, NULL, app->record_path);
+    if (r < 0) {
+        printf("PB allocating output ctxt in recording, returning\n");
+        free(res);
+        return NULL;
+    }
+    res->outputFile->start_time_realtime = 1500000000;
+
+    // AVIoCtxt
+    r = avio_open(&res->outputFile->pb, app->record_path, AVIO_FLAG_WRITE);
+    if (r < 0) {
+        printf("PB opening output ctxt in recording, returning\n");
+        avformat_free_context(res->outputFile);
+        free(res);
+        return NULL;
+    }
+
+    // Video stream
+    res->video_stream = av_new_stream(res->outputFile, 0);
+    if (!res->video_stream) {
+        printf("PB getting new stream in recording, returning\n");
+        avio_close(res->outputFile->pb);
+        avformat_free_context(res->outputFile);
+        free(res);
+        return NULL;
+    }
+    res->video_stream->codec->pix_fmt       = app->process->record_format;
+    res->video_stream->codec->coded_width   = app->width;
+    res->video_stream->codec->coded_height  = app->height;
+    res->video_stream->codec->time_base.num = 1;
+    res->video_stream->codec->time_base.den = app->frames_pers;
+    res->video_stream->codec->sample_fmt    = SAMPLE_FMT_S16;
+    res->video_stream->codec->sample_rate   = 44100;
+
+    // Codec / CodecCtxt
+    res->encoder = avcodec_find_encoder(app->process->recording_codec);
+    if (!res->encoder) {
+        printf("PB finding codec in recording, returning\n");
+        avio_close(res->outputFile->pb);
+        avformat_free_context(res->outputFile);
+        free(res);
+        return NULL;
+    }
+    r = avcodec_open2(res->video_stream->codec, res->encoder, NULL);
+    if (r < 0) {
+        printf("PB opening codecCtxt in recording, returning\n");
+        avio_close(res->outputFile->pb);
+        avformat_free_context(res->outputFile);
+        free(res);
+        return NULL;
+    }
+    res->video_stream->time_base.num = 1;
+    res->video_stream->time_base.den = app->frames_pers;
+    res->video_stream->r_frame_rate.num = app->frames_pers;
+    res->video_stream->r_frame_rate.den = 1;
+    res->video_stream->avg_frame_rate.num = app->frames_pers;
+    res->video_stream->avg_frame_rate.den = 1;
+    res->video_stream->pts.num = 1;
+    res->video_stream->pts.den = 1;
+    res->video_stream->pts.val = 1;
+
+    //
+    av_init_packet(&res->pkt);
+    r = av_new_packet(&res->pkt, 2 * app->width * app->height);
+    if (r < 0) {
+        printf("PB getting new packet in recording, returning\n");
+        avcodec_close(res->video_stream->codec);    // @@@ ?
+        avio_close(res->outputFile->pb);
+        avformat_free_context(res->outputFile);
+        free(res);
+        return NULL;
+    }
+
+    // Header
+    r = avformat_write_header(res->outputFile, NULL);
+    if (r < 0) {
+        printf("PB getting writing header in recording, returning\n");
+        av_free_packet(&res->pkt);
+        avcodec_close(res->video_stream->codec);    // @@@ ?
+        avio_close(res->outputFile->pb);
+        avformat_free_context(res->outputFile);
+        free(res);
+        return NULL;
+    }
+
+    return res;
+}
+
+//
+static int f641_exec_recording(void *appli, void* ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_recording_ressources *res = (struct f641_recording_ressources*)ressources;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int r;
+
+    gettimeofday(&line->tv30, NULL);
+
+    if ( app->recording && line->flaged ) {
+        res->pkt.data = line->buffers[line->actual].start;
+        res->pkt.size = line->buf.bytesused;
+        res->pkt.pts  = app->process->recorded_frames;
+        res->pkt.dts  = res->pkt.pts;
+        res->pkt.duration = 1;
+        res->pkt.pos  = -1;
+        res->pkt.stream_index = 0;
+        r = av_write_frame(res->outputFile, &res->pkt);
+        avio_flush(res->outputFile->pb);
+
+        app->process->recorded_frames++;
+    }
+
+    //
+    if (DEBUG) printf("\t\t\t\t\t\tRECORD  : enqueue %d, frame %lu\n", line->index, line->frame);
+    gettimeofday(&line->tv31, NULL);
+
+
+    return 0;
+}
+
+//
+static void f641_free_recording(void *appli, void* ressources) {
+    struct f641_recording_ressources *res = (struct f641_recording_ressources*)ressources;
+    if (res) {
+        av_free_packet(&res->pkt);
+        avcodec_close(res->video_stream->codec);    // @@@ ?
+        avio_close(res->outputFile->pb);
+        avformat_free_context(res->outputFile);
+        free(res);
+    }
 }
