@@ -38,9 +38,10 @@ struct f641_process_data {
 
     //
     int proc_len;
+    struct f640_stone *stones;
 
     //
-    struct timeval tv0;
+    struct timeval tv0;     // start
 
 
     // Decoding
@@ -69,6 +70,7 @@ struct f641_appli {
 
     // Parameters
     int frames_pers;
+    long max_frame;
 
     // V4L2
     char device[256];
@@ -103,13 +105,13 @@ struct f641_v4l2_parameters {
     int DEBUG;
 
     char device[32];
-    char *dev;// = "/dev/video0";
+    char dev[32];
     int fd;
     struct v4l2_capability cap;
-    char *source;// = "/dev/video0";
-    char *input;// = NULL;
-    int width;// = 1024;
-    int height;// = 576;
+    char source[32];
+    char input[32];
+    int width;
+    int height;
     int frames_pers;
     uint32_t palette;// = 0x47504A4D;   // 0x56595559
     struct v4l2_format format;
@@ -134,5 +136,27 @@ struct f641_v4l2_parameters {
     int show_framints;
     int show_vidstds;
 };
+
+/************************************
+ *      VIDEO FUNCTIONS
+ ************************************/
+// V4L2
+extern void f641_attrib_v4l2_snaping(struct f641_thread_operations *ops);
+extern void f641_attrib_v4l2_desnaping(struct f641_thread_operations *ops);
+
+// FFMpeg
+extern void f641_attrib_recording(struct f641_thread_operations *ops);
+extern void f641_attrib_edging(struct f641_thread_operations *ops);
+extern void f641_attrib_converting_torgb(struct f641_thread_operations *ops);
+extern void f641_attrib_decoding_mjpeg(struct f641_thread_operations *ops);
+
+// Processing
+extern void f641_attrib_logging(struct f641_thread_operations *ops);
+extern void f641_attrib_griding(struct f641_thread_operations *ops);
+extern void f641_attrib_broadcasting(struct f641_thread_operations *ops);
+extern void f641_attrib_tagging(struct f641_thread_operations *ops);
+extern void f641_attrib_watching_422p(struct f641_thread_operations *ops);
+
+
 
 #endif /* F641_H_ */

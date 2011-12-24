@@ -19,7 +19,6 @@ int f640_make_stone(struct f640_stone *stone, int key) {
     stone->frame    = 0;
     stone->status   = 0;
     r = pthread_spin_init(&stone->spin, 0);
-    printf("Spin init return %d\n", r);
     stone->private  = NULL;
     return 0;
 }
@@ -285,9 +284,9 @@ void f640_backtrack(struct f640_queue *queue, int block, int key) {
 }
 
 static int debug_loop = 0;
-void *f640_loop(void* prm) {
+void *f640_loop(void* th) {
     int r;
-    struct f640_thread *thread = prm;
+    struct f640_thread *thread = th;
     int times = 0;
     struct timeval tve1, tve2, tve3, tvb1, tvb2, tvb3, tvd1, tvd2, tvd3;
 
@@ -344,6 +343,67 @@ void *f640_loop(void* prm) {
     pthread_exit(NULL);
 }
 
+static int debug_loop2 = 0;
+void *f641_loop2(void* th) {
+    int r;
+    struct f640_thread *thread = th;
+    int times = 0;
+    struct timeval tve1, tve2, tve3, tvb1, tvb2, tvb3, tvd1, tvd2, tvd3;
+
+    timerclear(&tvd3);
+    timerclear(&tvb3);
+    timerclear(&tve3);
+    if (debug_loop2) printf("%s : launched\n", thread->name);
+    while(1) {
+        // Dequeue
+        if (times) gettimeofday(&tvd1, NULL);
+        int key = f640_dequeue(thread->queue_in, thread->block_dequeue, thread->action);
+        if (times) gettimeofday(&tvd2, NULL);
+        if (times) timersub(&tvd2, &tvd1, &tvd1);
+        if (times) timeradd(&tvd3, &tvd1, &tvd3);
+
+        // Check
+        if ( key < 0) {
+            printf("End of in queue for thread %s, exiting\n", thread->name);
+            break;
+        }
+        struct f640_stone *stone = &thread->queue_in->stones[key];
+        if (debug_loop2) printf("%s : DeQueue %d (%ld)\n", thread->name, key, stone->frame);
+
+        // Processing
+        if (debug_loop2) printf("%s : Exec %p ; appli %p ; res %p ; stone %p\n", thread->name, thread->ops.exec, thread->ops.appli, thread->ops.ressources, stone);
+        r = thread->ops.exec(thread->ops.appli, thread->ops.ressources, stone);
+
+        // Flaging
+        pthread_spin_lock(&stone->spin);
+        stone->status |= thread->action;
+        pthread_spin_unlock(&stone->spin);
+
+        // Backtrack
+        if (thread->queue_in->back_diff) {
+            if (debug_loop2) printf("%s : Backtrack %d (%ld)\n", thread->name, key, stone->frame);
+            if (times) gettimeofday(&tvb1, NULL);
+            f640_backtrack(thread->queue_in, 0, key);
+            if (times) gettimeofday(&tvb2, NULL);
+            if (times) timersub(&tvb2, &tvb1, &tvb1);
+            if (times) timeradd(&tvb3, &tvb1, &tvb3);
+        }
+
+        // Enqueue
+        if (times) gettimeofday(&tve1, NULL);
+        r = f640_enqueue(thread->queue_out, thread->block_enqueue, key, thread->action);
+        if (times) gettimeofday(&tve2, NULL);
+        if (times) timersub(&tve2, &tve1, &tve1);
+        if (times) timeradd(&tve3, &tve1, &tve3);
+
+        if (debug_loop2) printf("%s : EnQueue '%X' %d (%ld) : %s (%X / %X)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
+
+//        if (debug_loop2) f640_dump_queue(thread->queue_in);
+//        if (debug_loop2) f640_dump_queue(thread->queue_out);
+    }
+    pthread_exit(NULL);
+}
+
 void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone)) {
     int t;
     for(t = 0 ; t < nb ; t++) {
@@ -364,8 +424,8 @@ void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int bloc
     }
 }
 
-struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1,
-        void* (*init)(void *appli), int (*exec)(void *appli, void* ressources, struct f640_stone *stone), void (*free)(void *appli, void* ressources)) {
+struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1
+        , void (*attrib)(struct f641_thread_operations *ops)) {
     int t;
 
     struct f640_thread *group = calloc(nb, sizeof(struct f640_thread));
@@ -381,10 +441,27 @@ struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queu
         th->queue_out = queue_out;
         th->block_enqueue = block_enqueue;
         th->nn_1 = nn_1;
-        th->init = init;
-        th->exec = exec;
-        th->free = free;
+
+        th->attrib = attrib;
+        if (attrib) {
+            attrib(&th->ops);
+        }
     }
 
     return &group[0];
+}
+
+int f641_init_thread(struct f640_thread *thread, void *appli) {
+
+    thread->ops.appli = appli;
+    if (thread->ops.init) {
+        thread->ops.ressources = thread->ops.init(appli);
+        if (!thread->ops.ressources) {                      // @@@ return value
+            return -1;
+        }
+    } else {
+        thread->ops.ressources = NULL;
+    }
+
+    return 0;
 }

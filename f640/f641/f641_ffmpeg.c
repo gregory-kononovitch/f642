@@ -23,6 +23,7 @@ struct f641_decode_mjpeg_ressources {
 
     int                 get_buffer_index;
     struct f640_queue   *get_buffer_queue;
+    struct f640_line    **line0;
 };
 
 static int f641_get_mjpeg_buffer(struct AVCodecContext *c, AVFrame *picture, struct f640_line *line) {
@@ -53,46 +54,59 @@ static int f641_func[F641_MJPEG_MAX_GET_BUFFER] = {0,};
 static struct f640_queue *f641_get_buffer_queue0 = NULL;
 static struct f640_queue *f641_get_buffer_queue1 = NULL;
 static struct f640_queue *f641_get_buffer_queue2 = NULL;
+static struct f640_line *line0 = NULL;
+static struct f640_line *line1 = NULL;
+static struct f640_line *line2 = NULL;
 static int f641_get_mjpeg_buffer0(struct AVCodecContext *c, AVFrame *picture) {
-    // Dequeue
-    int s = f640_dequeue(f641_get_buffer_queue0, 1, 0);
-    struct f640_stone *st = &f641_get_buffer_queue0->stones[s];
-    struct f640_line *line = (struct f640_line*) st->private;
+//    // Dequeue
+//    int s = f640_dequeue(f641_get_buffer_queue0, 1, 0);
+//    struct f640_stone *st = &f641_get_buffer_queue0->stones[s];
+//    struct f640_line *line = (struct f640_line*) st->private;
+//
+//    gettimeofday(&line->tvd0, NULL);
 
-    gettimeofday(&line->tvd0, NULL);
-
-    return f641_get_mjpeg_buffer(c, picture, line);
+    return f641_get_mjpeg_buffer(c, picture, line0);
 }
 static int f641_get_mjpeg_buffer1(struct AVCodecContext *c, AVFrame *picture) {
-    // Dequeue
-    int s = f640_dequeue(f641_get_buffer_queue1, 1, 0);
-    struct f640_stone *st = &f641_get_buffer_queue1->stones[s];
-    struct f640_line *line = (struct f640_line*) st->private;
+//    // Dequeue
+//    int s = f640_dequeue(f641_get_buffer_queue1, 1, 0);
+//    struct f640_stone *st = &f641_get_buffer_queue1->stones[s];
+//    struct f640_line *line = (struct f640_line*) st->private;
+//
+//    gettimeofday(&line->tvd0, NULL);
 
-    gettimeofday(&line->tvd0, NULL);
-
-    return f641_get_mjpeg_buffer(c, picture, line);
+    return f641_get_mjpeg_buffer(c, picture, line1);
 }
 static int f641_get_mjpeg_buffer2(struct AVCodecContext *c, AVFrame *picture) {
-    // Dequeue
-    int s = f640_dequeue(f641_get_buffer_queue2, 1, 0);
-    struct f640_stone *st = &f641_get_buffer_queue2->stones[s];
-    struct f640_line *line = (struct f640_line*) st->private;
+//    // Dequeue
+//    int s = f640_dequeue(f641_get_buffer_queue2, 1, 0);
+//    struct f640_stone *st = &f641_get_buffer_queue2->stones[s];
+//    struct f640_line *line = (struct f640_line*) st->private;
+//
+//    gettimeofday(&line->tvd0, NULL);
 
-    gettimeofday(&line->tvd0, NULL);
-
-    return f641_get_mjpeg_buffer(c, picture, line);
+    return f641_get_mjpeg_buffer(c, picture, line2);
 }
 
 static void f641_release_mjpeg_buffer(struct AVCodecContext *c, AVFrame *picture) {
     AVPicture *pict = (AVPicture*)picture->opaque;
 }
 
+int f641_init_ffmpeg(void* appli) {
+    struct f641_appli *app = appli;
+    avcodec_register_all();
+    av_register_all();
+//    f641_get_buffer_queue0 = f640_make_queue(app->process->stones, app->process->proc_len, NULL, 0, 0, 0);
+//    f641_get_buffer_queue1 = f640_make_queue(app->process->stones, app->process->proc_len, NULL, 0, 0, 0);
+//    f641_get_buffer_queue2 = f640_make_queue(app->process->stones, app->process->proc_len, NULL, 0, 0, 0);
+}
+
 /*
  * thread unsafe cf f641_func
  */
-void* f641_init_decode_mjpeg(void* appli) {
+static void* f641_init_decoding_mjpeg(void* appli) {
     int r;
+    struct f641_appli *app = appli;
     struct f641_decode_mjpeg_ressources *res;
 
     for(r = 0 ; r < F641_MJPEG_MAX_GET_BUFFER ; r++)
@@ -127,16 +141,19 @@ void* f641_init_decode_mjpeg(void* appli) {
             res->get_buffer_queue = f641_get_buffer_queue0;
             res->decoderCtxt->get_buffer = f641_get_mjpeg_buffer0;
             res->decoderCtxt->release_buffer = f641_release_mjpeg_buffer;
+            res->line0 = &line0;
             break;
         case 1 :
             res->get_buffer_queue = f641_get_buffer_queue1;
             res->decoderCtxt->get_buffer = f641_get_mjpeg_buffer1;
             res->decoderCtxt->release_buffer = f641_release_mjpeg_buffer;
+            res->line0 = &line1;
             break;
         case 2 :
             res->get_buffer_queue = f641_get_buffer_queue2;
             res->decoderCtxt->get_buffer = f641_get_mjpeg_buffer2;
             res->decoderCtxt->release_buffer = f641_release_mjpeg_buffer;
+            res->line0 = &line2;
             break;
     }
     f641_func[res->get_buffer_index] = 1;
@@ -157,34 +174,40 @@ void* f641_init_decode_mjpeg(void* appli) {
 }
 
 
-int f641_exec_decode_mjpeg(void *ressources, struct f640_stone *stone) {
+static int f641_exec_decoding_mjpeg(void *appli, void *ressources, struct f640_stone *stone) {
     int i, j, k, m;
 
     int len, got_pict;
-
+    struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_decode_mjpeg_ressources *res = (struct f641_decode_mjpeg_ressources*)ressources;
     struct f640_line *line = (struct f640_line*) stone->private;
+
+    struct timeval tv;
     gettimeofday(&line->tvd0, NULL);
 
-    if (DEBUG) printf("\t\tDECODE   : dequeue %d, frame %lu (size = %ld)\n", stone->key, line->frame, line->buffers[line->actual].length);
+    if (DEBUG) printf("\t\tDECODE a : dequeue %d, frame %lu (size = %ld)\n", stone->key, line->frame, line->buf.bytesused);
 
     // Processing
-    res->pkt.data = line->buffers[line->actual].start;
-    res->pkt.size = line->buffers[line->actual].length;
+    res->pkt.data = line->buffers[line->buf.index].start;
+    res->pkt.size = line->buf.bytesused;
 
-    f640_enqueue(res->get_buffer_queue, 1, stone->key, 0);
+//    f640_enqueue(res->get_buffer_queue, 1, stone->key, 0);
+    *res->line0 = line;
 
-    if (DEBUG) printf("\t\tDECODE   : dequeue %d, frame %lu, data %p, pkt %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0, &res->pkt);
+    if (DEBUG) printf("\t\tDECODE b : dequeue %d, frame %lu, data %p, pkt %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0, &res->pkt);
 
     res->picture->opaque = line->yuvp;
     len = avcodec_decode_video2(res->decoderCtxt, res->picture, &got_pict, &res->pkt);
     if (got_pict) {
-        if (DEBUG) printf("\t\tDECODE   : dequeue %d, frame %lu, data %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0);
+        if (DEBUG) printf("\t\tDECODE e : dequeue %d, frame %lu, data %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0);
     } else {
-        if (DEBUG) printf("\t\tDECODE   : failed, dequeue %d, frame %lu, data %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0);
+        if (DEBUG) printf("\t\tDECODE e : failed, dequeue %d, frame %lu, data %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0);
     }
 
     gettimeofday(&line->tvd1, NULL);
+
+//    timersub(&line->tvd1, &line->tvd0, &tv);
+//    printf("Decode MJPEG [%u (%u)] = %d (%d) : %.1fms\n", line->buf.index, line->buf.bytesused, len, got_pict, 0.001 * tv.tv_usec);
 
     return !got_pict;
 }
@@ -192,7 +215,7 @@ int f641_exec_decode_mjpeg(void *ressources, struct f640_stone *stone) {
 /*
  * thread unsafe cf f641_func
  */
-void f641_free_decode_mjpeg(void *appli, void* ressources) {
+static void f641_free_decoding_mjpeg(void *appli, void* ressources) {
     int r;
     struct f641_decode_mjpeg_ressources *res = (struct f641_decode_mjpeg_ressources*)ressources;
     if (!res) return;
@@ -203,6 +226,13 @@ void f641_free_decode_mjpeg(void *appli, void* ressources) {
     free(res);
 }
 
+//
+void f641_attrib_decoding_mjpeg(struct f641_thread_operations *ops) {
+        ops->init = f641_init_decoding_mjpeg;
+        ops->updt = NULL;
+        ops->exec = f641_exec_decoding_mjpeg;
+        ops->free = f641_free_decoding_mjpeg;
+}
 
 
 /*************************************
@@ -211,7 +241,7 @@ void f641_free_decode_mjpeg(void *appli, void* ressources) {
 struct f641_convert_torgb_ressources {
     struct SwsContext   *swsCtxt;
     AVFrame             *origin;
-    AVFrame             *scaled;
+    AVPicture           scaled;
 };
 
 //
@@ -229,8 +259,8 @@ static void* f641_init_converting_torgb(void *appli) {
 
     // SwScaleCtxt
     res->swsCtxt = sws_getCachedContext(res->swsCtxt,
-            app->process->grid->width, app->process->grid->height, app->process->decoded_format,
-            app->process->grid->width, app->process->grid->height, app->process->broadcast_format,
+            app->width, app->height, app->process->decoded_format,
+            app->width, app->height, app->process->broadcast_format,
             SWS_BICUBIC, NULL, NULL, NULL
     );
     if (!res->swsCtxt) {
@@ -248,7 +278,7 @@ static void* f641_init_converting_torgb(void *appli) {
         return NULL;
     }
     avcodec_get_frame_defaults(res->origin);
-    r = avpicture_alloc((AVPicture*)res->origin, app->process->decoded_format, app->process->grid->width, app->process->grid->height);
+    r = avpicture_alloc((AVPicture*)res->origin, app->process->decoded_format, app->width, app->height);
     if (r < 0) {
         printf("PB allocating origin picture in converting, returning\n");
         av_free(res->origin);
@@ -256,34 +286,22 @@ static void* f641_init_converting_torgb(void *appli) {
         free(res);
         return NULL;
     }
-    res->origin->width = app->process->grid->width;
-    res->origin->height = app->process->grid->height;
+    res->origin->width = app->width;
+    res->origin->height = app->height;
     res->origin->format = app->process->decoded_format;
 
     // Scaled Picture
-    res->scaled = avcodec_alloc_frame();
-    if (!res->scaled) {
-        printf("ENOMEM allocating struct f641_convert_torgb, returning\n");
-        avpicture_free((AVPicture*)res->origin);
-        av_free(res->origin);
-        av_free(res->swsCtxt);
-        free(res);
-        return NULL;
-    }
-    avcodec_get_frame_defaults(res->scaled);
-    r = avpicture_alloc((AVPicture*)res->scaled, app->process->broadcast_format, app->process->grid->width, app->process->grid->height);
+    r = avpicture_alloc(&res->scaled, app->process->broadcast_format, app->width, app->height);
     if (r < 0) {
         printf("PB allocating origin picture in converting, returning\n");
-        av_free(res->scaled);
         avpicture_free((AVPicture*)res->origin);
         av_free(res->origin);
         av_free(res->swsCtxt);
         free(res);
         return NULL;
     }
-    res->scaled->width = app->process->grid->width;
-    res->scaled->height = app->process->grid->height;
-    res->scaled->format = app->process->broadcast_format;
+    avpicture_free(&res->scaled);
+    printf("Converse : scaled.linesize = (%d , %d , %d , %d)\n", res->scaled.linesize[0], res->scaled.linesize[1], res->scaled.linesize[2], res->scaled.linesize[3]);
 
     return res;
 }
@@ -299,10 +317,10 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
 
     if (DEBUG) printf("\t\t\t\tCONVERT : dequeue %d, frame %lu\n", line->index, line->frame);
 
-    res->scaled->data[0] = line->rgb->data;
+    res->scaled.data[0] = line->rgb->data;
     //res->origin->data[0] = line->yuv->data;
     //sws_scale(line->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, line->grid->height, scaled->data, scaled->linesize);
-    sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, line->grid->height, res->scaled->data, res->scaled->linesize);
+    sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
 
 
     if (DEBUG) printf("\t\t\t\tCONVERT : enqueue %d, frame %lu\n", line->index, line->frame);
@@ -315,8 +333,6 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
 static void f641_free_converting_torgb(void *appli, void* ressources) {
     struct f641_convert_torgb_ressources *res = (struct f641_convert_torgb_ressources*)ressources;
     if (res) {
-        avpicture_free((AVPicture*)res->scaled);
-        av_free(res->scaled);
         avpicture_free((AVPicture*)res->origin);
         av_free(res->origin);
         av_free(res->swsCtxt);
@@ -324,15 +340,25 @@ static void f641_free_converting_torgb(void *appli, void* ressources) {
     }
 }
 
+//
+void f641_attrib_converting_torgb(struct f641_thread_operations *ops) {
+        ops->init = f641_init_converting_torgb;
+        ops->updt = NULL;
+        ops->exec = f641_exec_converting_torgb;
+        ops->free = f641_free_converting_torgb;
+}
+
 
 /******************************
  *      GRAY THREAD
  ******************************/
-static int f641_exec_edge(void *appli, void *ressources, struct f640_stone *stone) {
+static int f641_exec_edging(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f640_line *line = (struct f640_line*) stone->private;
     int i;
     uint8_t *im, *pix;
+
+    gettimeofday(&line->tve0, NULL);
 
     im  = line->gry->data;
     pix = line->yuvp->data[0];
@@ -342,9 +368,17 @@ static int f641_exec_edge(void *appli, void *ressources, struct f640_stone *ston
         pix += line->yuvp->linesize[0];
     }
 
+    gettimeofday(&line->tve1, NULL);
     return 0;
 }
 
+//
+void f641_attrib_edging(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_edging;
+        ops->free = NULL;
+}
 
 /*************************************
  *      Recording Thread
@@ -501,3 +535,12 @@ static void f641_free_recording(void *appli, void* ressources) {
         free(res);
     }
 }
+
+//
+void f641_attrib_recording(struct f641_thread_operations *ops) {
+        ops->init = f641_init_recording;
+        ops->updt = NULL;
+        ops->exec = f641_exec_recording;
+        ops->free = f641_free_recording;
+}
+

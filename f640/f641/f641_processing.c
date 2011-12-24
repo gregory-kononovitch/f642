@@ -20,7 +20,7 @@ static int DEBUG = 0;
  ***************************************/
 
 //
-static int f641_exec_watch_422p(void *appli, void *ressources, struct f640_stone *stone) {
+static int f641_exec_watching_422p(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f640_line *line = (struct f640_line*) stone->private;
 
@@ -86,6 +86,15 @@ static int f641_exec_watch_422p(void *appli, void *ressources, struct f640_stone
     return 0;
 }
 
+//
+void f641_attrib_watching_422p(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_watching_422p;
+        ops->free = NULL;
+}
+
+
 /******************************
  *      TAGGING THREAD
  ******************************/
@@ -95,6 +104,7 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
     int k, ix;
 
 //    pthread_mutex_lock(&app->process->grid->mutex_coefs);
+    line->flaged = 0;
     for(k = 0 ; k < app->process->grid->num ; k++) {
         if ( app->process->grid->grid_ratio[(k << 1) + 1] * line->grid_values[k] > app->process->grid->grid_ratio[k << 1] * line->grid_th) {
             int i, j;
@@ -112,6 +122,14 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
 
 
     return 0;
+}
+
+//
+void f641_attrib_tagging(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_tagging;
+        ops->free = NULL;
 }
 
 /******************************
@@ -152,6 +170,13 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
     return 0;
 }
 
+//
+void f641_attrib_broadcasting(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_broadcasting;
+        ops->free = NULL;
+}
 
 /******************************
  *      GRID THREAD
@@ -305,8 +330,180 @@ static int f641_exec_grid(void *appli, void *ressources, struct f640_stone *ston
 
     return 0;
 }
+//
+void f641_attrib_griding(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_grid;
+        ops->free = NULL;
+}
 
 
+/******************************
+ *      LOGGING THREAD
+ ******************************/
+struct f641_logging_ressources {
+    long size_in;
+    long size_out;
+    double t;
+    double t0;
+    double td;
+    double t1;
+    double t2;
+    double te;
+    double t3;
+    double t4;
+    struct timeval tv1;
+    struct timeval tv2;
+    struct timeval tv3;
+    struct timeval tvs;
+    struct timeval tvp;
+    struct timeval tva;
+    struct timespec ts1;
+    struct tm tml;
+    time_t time70;
+    clock_t times1;
+    clock_t times2;
+    unsigned long jiffs, ms;
+    int show_freq;
+
+    long rms;
+    long grid_min_value;
+    long grid_max_value;
+    int recorded_one;
+    long recorded_frames;
+};
+//
+static void* f641_init_logging(void *appli) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_logging_ressources *res = calloc(1, sizeof(struct f641_logging_ressources));
+    res->show_freq = app->frames_pers;
+    return res;
+}
+//
+static void f641_free_logging(void *appli, void* ressources) {
+    if (ressources) free(ressources);
+}
+//
+static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_logging_ressources *res = (struct f641_logging_ressources*) ressources;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    struct tm tm1;
+
+    gettimeofday(&line->tv40, NULL);
+
+    // Agreg
+    res->size_in += line->buf.bytesused;
+    if (line->flaged) {
+        res->size_out += line->buf.bytesused;
+        res->recorded_frames++;
+        res->recorded_one++;
+    }
+    res->rms += *(line->rms);
+    if (res->grid_min_value > *(line->grid_min)) res->grid_min_value = *(line->grid_min);
+    if (res->grid_max_value < *(line->grid_max)) res->grid_max_value = *(line->grid_max);
+
+    // Times
+    res->t  += f640_duration (line->tv40, line->tv10);
+    res->td += f640_duration (line->tvd1, line->tvd0);   // decode
+//    timersub(&line->tv11, &line->tv10, &line->tv11); timeradd(&res->tv1, &line->tv11, &res->tv1); @@@buggy
+    res->t1 += f640_duration (line->tv11, line->tv10);   // watch
+    res->te += f640_duration (line->tve1, line->tve0);   // edge
+//    timersub(&line->tv21, &line->tv20, &line->tv21); timeradd(&res->tv2, &line->tv21, &res->tv2);
+    res->t2 += f640_duration (line->tv21, line->tv20);   // convert
+//    timersub(&line->tv31, &line->tv30, &line->tv31); timeradd(&res->tv3, &line->tv31, &res->tv3);
+    res->t3 += f640_duration (line->tv31, line->tv30);   // record
+    res->t4 += f640_duration (line->tvd1, line->tvd0)
+       +  f640_duration (line->tv11, line->tv10)
+       +  f640_duration (line->tve1, line->tve0)
+       +  f640_duration (line->tv21, line->tv20)
+       +  f640_duration (line->tv31, line->tv30);
+
+    printf("td = %.3fs , t1 = %.3fs , te = %.3fs , t2 = %.3fs , t3 = %.3fs , tt = %.3fs\n", res->td, res->t1, res->te, res->t2, res->t3, res->t4);
+
+
+    if (DEBUG) printf("\t\t\t\t\t\t\t\tRELEASE : dequeue %d, frame %lu\n", line->index, line->frame);
+    if (line->frame % res->show_freq == 0) {
+        gettimeofday(&res->tv2, NULL);
+        localtime_r(&res->tv2.tv_sec, &tm1);
+        timersub(&line->tv00, &line->buf.timestamp, &res->tvs);
+        timersub(&line->tv40, &line->tv00, &res->tvp);
+        timersub(&res->tv2, &line->buf.timestamp, &res->tva);
+        res->times2 = clock();// / CLOCKS_PER_SECOND ~ 1 000 000;
+        timersub(&res->tv2, &res->tv1, &res->tv3);
+//            time(&time70);
+//            jiffs = clock_t_to_jiffies(times);
+//            ms = jiffies_to_msecs(jiffs);
+
+        printf("%02d/%02d %02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
+                , tm1.tm_mon + 1, tm1.tm_mday, tm1.tm_hour, tm1.tm_min, tm1.tm_sec
+                , 100 * (res->times2 - res->times1) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
+                , 1. * (res->show_freq * 1000000) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
+                , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tv3.tv_sec + res->tv3.tv_usec))
+        );
+
+        //if ( lines->grid_max_value > line->grid_th || (lines->recorded_frames - recorded_frames) ) {
+        if ( res->recorded_one ) {
+            printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - " F640_RESET F640_BOLD F640_FG_RED "%5ld" F640_RESET
+                    " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
+                    " |%2d|%2d|¤%.1fs %.1fMo|%ld %ld"
+                    , /*snaped*/0,    res->td//100*res->td / res->t4
+                    , /*decoded*/0,   100*res->t1 / res->t4, res->grid_min_value, res->rms / res->show_freq, res->grid_max_value
+                    , /*watched*/0,   100*res->te / res->t4
+                    , /*edged*/0,     100*res->t2 / res->t4
+                    , /*converted*/0, 100*res->t3 / res->t4, res->recorded_frames
+                    , /*recorded*/0
+                    , /*released*/0
+                    , 1. * app->process->recorded_frames / app->frames_pers
+                    , 1. * res->size_out / (1024 * 1024)
+                    , res->tvs.tv_usec / 1000, res->tvp.tv_usec / 1000
+            );
+        } else {
+            printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - %5ld"
+                    " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f +%2ld"
+                    " |%2d|%2d|¤%.1fs %.1fMo|%ld %ld"
+                    , /*snaped*/0,    100*res->td / res->t4
+                    , /*decoded*/0 ,  100*res->t1 / res->t4, res->grid_min_value, res->rms / res->show_freq, res->grid_max_value
+                    , /*watched*/0,   100*res->te / res->t4
+                    , /*edged*/0,     100*res->t2 / res->t4
+                    , /*converted*/0, 100*res->t3 / res->t4, res->recorded_frames
+                    , /*recorded*/0
+                    , /*released*/0
+                    , 1. * app->process->recorded_frames / app->frames_pers
+                    , 1. * res->size_out / (1024 * 1024)
+                    , res->tvs.tv_usec / 1000, res->tvp.tv_usec / 1000
+            );
+        }
+        printf("\n");
+        res->size_in  = 0;
+        res->t  = 0;
+        res->td = 0;
+        res->t1 = 0;
+        res->te = 0;
+        res->t2 = 0;
+        res->t3 = 0;
+        res->t4 = 0;
+        res->rms = 0;
+        res->grid_min_value = 0xFFFFFFFFFFL;
+        res->grid_max_value = 0;
+        res->recorded_frames = 0;
+        res->recorded_one = 0;
+        res->tv1.tv_sec = res->tv2.tv_sec; res->tv1.tv_usec = res->tv2.tv_usec;
+        res->times1 = res->times2;
+    }
+
+    gettimeofday(&line->tv41, NULL);
+
+    return 0;
+}
+
+void f641_attrib_logging(struct f641_thread_operations *ops) {
+        ops->init = f641_init_logging;
+        ops->updt = NULL;
+        ops->exec = f641_exec_logging;
+        ops->free = f641_free_logging;
+}
 
 /**********************************************
  *  COPY from f640

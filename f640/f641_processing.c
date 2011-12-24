@@ -559,6 +559,7 @@ void *f640_decode(void *video_lines) {
         // Enqueue
         if (DEBUG) printf("\t\tDECODE   : enqueue %d, frame %lu\n", l, line->frame);
         gettimeofday(&line->tvd1, NULL);
+
         f640_sync(&lines->snaped, line->frame);
         f640_enqueue_line(&lines->decoded, l);
     }
@@ -1260,24 +1261,8 @@ void *f640_release(void *video_lines) {
                 , f640_duration (line->tv41, line->tv00)
                 , f640_frequency(line->tv41, line->tv00)
         );
-//        printf("Frame " F640_BOLD "%4d" F640_RESET
-//            " | " F640_BOLD "RMS" F640_RESET " = " F640_FG_RED "%5.1f" F640_RESET
-//            " | ABS = %5.2f | min %4.1f | MAX %5.0f | N %5.0f |\n"// %u %u %u %u %u %u %u %u %u %u %u\n"
-//            , frame, rms, 1.*moy/size, 0, 0, 0
-//            //, y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15], y[16]
-//        );
-//        printf(" %3.0fms | " F640_FG_RED "%4.1fHz" F640_RESET " | seq %4u | %3u | %2u | %2u | %6u | %6u\n"
-//                , frame, 1000 * d1, 1/d1
-//                , buf.sequence, buf.timecode.minutes, buf.timecode.seconds, buf.timecode.frames, buf.bytesused, buf.length);
 
         f640_enqueue_line(&lines->released, l);
-
-        // EnQueue
-//        //pthread_mutex_lock(&lines->ioc);
-//        if(ioctl(lines->fd, VIDIOC_QBUF, &line->buf) == -1) {
-//            printf("!!!!!!!!!!!! VIDIOC_QBUF: %s !!!!!!!!!!!!!!!!!!\n", strerror(errno));
-//        }
-//        //pthread_mutex_unlock(&lines->ioc);
     }
     pthread_exit(NULL);
 }

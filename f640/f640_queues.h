@@ -21,6 +21,14 @@
 #include <time.h>
 #include <sys/time.h>
 
+#define F640_UNBLOCK    0
+#define F640_BLOCK      1
+
+#define F640_RAW        0
+#define F640_ORDERED    1
+#define F640_NN_1       2
+
+
 
 struct f640_stone {
     int key;
@@ -78,8 +86,21 @@ int                 f640_dequeue(struct f640_queue *queue, int block, long forac
 void                f640_backtrack(struct f640_queue *queue, int block, int key);
 void                f640_dump_queue(struct f640_queue *queue);
 
-#define F640_UNBLOCK    0
-#define F640_BLOCK      1
+
+struct f641_thread_operations {
+    // Processing
+    void*               appli;          // in
+    void*               ressources;     // from init
+
+    void*               (*init)(void *appli);
+    void*               (*updt)(void *appli, void* ressources);
+    int                 (*exec)(void *appli, void* ressources, struct f640_stone *stone);
+    void                (*free)(void *appli, void* ressources);
+};
+
+struct f641_thread_multi_ops {
+    struct f641_thread_operations *multi;
+};
 
 struct f640_thread {
     char                name[32];
@@ -100,19 +121,21 @@ struct f640_thread {
     // Group
     int                 group_size;
     struct f640_thread  *group;
+    void                (*attrib)(struct f641_thread_operations *ops);
 
     // Processing
-    void*               appli;          // in
-    void*               ressources;     // from init
+    pthread_t   id;
+    struct f641_thread_operations ops;
 
-    void*               (*init)(void *appli);
-    int                 (*exec)(void *appli, void* ressources, struct f640_stone *stone);
-    void                (*free)(void *appli, void* ressources);
 };
-void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone));
-struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1,
-        void* (*init)(void *appli), int (*exec)(void *appli, void* ressources, struct f640_stone *stone), void (*free)(void *appli, void* ressources)
-);
-void *f640_loop(void* prm);
+extern void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone));
+extern void *f640_loop(void* th);
+
+extern struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1
+        , void (*attrib)(struct f641_thread_operations *ops));
+
+extern int f641_init_thread(struct f640_thread *thread, void *appli);
+extern void *f641_loop2(void* th);
+
 
 #endif /* F640_QUEUES_H_ */

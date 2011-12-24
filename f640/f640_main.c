@@ -1108,7 +1108,7 @@ int f640_processing()
 /*
  *
  */
-int f640_getopts(int argc, char *argv[])
+static int f640_getopts(int argc, char *argv[])
 {
     int c;
     int index = 0;

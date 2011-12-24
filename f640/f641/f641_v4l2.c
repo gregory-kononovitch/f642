@@ -814,9 +814,11 @@ struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli) {
         printf("ENOMEM allocating v4l2 parameters, returning\n");
         return NULL;
     }
-    prm->DEBUG = 1;
+
+    prm->DEBUG = 0;
     snprintf(prm->dev, sizeof(prm->dev), appli->device);
     prm->fd  = open(prm->dev, O_RDWR);
+    appli->fd = prm->fd;
     snprintf(prm->source, sizeof(prm->source), appli->device);
     prm->width = appli->width;
     prm->height = appli->height;
@@ -834,6 +836,8 @@ struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli) {
     prm->show_framsize   = 1;
     prm->show_framints   = 1;
     prm->show_vidstds    = 1;
+
+    printf("V4L2 prm calloced\n");
 
     // Capabilities
     if ( f641_get_capabilities(prm) < 0 ) {
@@ -872,10 +876,13 @@ void f641_free_v4l2(struct f641_v4l2_parameters *prm) {
 /********************************
  *      V4L2 SNAP THREAD
  ********************************/
-static int f641_exec_v4l2_snap(void *appli, void *ressources, struct f640_stone *stone) {
+static int f641_exec_v4l2_snaping(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_v4l2_snap_ressource *res = (struct f641_v4l2_snap_ressource*)ressources;
     struct f640_line *line = (struct f640_line*) stone->private;
+    //
+    static struct f640_line *previous_line = NULL;
+    static long frame = 1;  // @@@
 
     memset(&line->buf, 0, sizeof(struct v4l2_buffer));
     line->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -884,13 +891,31 @@ static int f641_exec_v4l2_snap(void *appli, void *ressources, struct f640_stone 
         printf("VIDIOC_DQBUF: %s\n", strerror(errno));
         return -1;
     }
+    pthread_spin_lock(&stone->spin);
+    stone->frame = frame++;
+    line->frame  = stone->frame;
+    pthread_spin_unlock(&stone->spin);
+
+    line->actual = line->buf.index;
+    line->last   = previous_line ? previous_line->buf.index : 0;
+    line->previous_line = previous_line ? previous_line->index : 0;
+    previous_line = line;
+
+    gettimeofday(&line->tv00, NULL);
     return line->buf.bytesused;
 }
 
-/*
- *
- */
-static int f641_exec_v4l2_desnap(void *appli, void *ressources, struct f640_stone *stone) {
+void f641_attrib_v4l2_snaping(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_v4l2_snaping;
+        ops->free = NULL;
+}
+
+/********************************
+ *      V4L2 DESNAP THREAD
+ ********************************/
+static int f641_exec_v4l2_desnaping(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_v4l2_snap_ressource *res = (struct f641_v4l2_snap_ressource*)ressources;
     struct f640_line *line = (struct f640_line*) stone->private;
@@ -901,3 +926,11 @@ static int f641_exec_v4l2_desnap(void *appli, void *ressources, struct f640_ston
     }
     return 0;
 }
+
+void f641_attrib_v4l2_desnaping(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_v4l2_desnaping;
+        ops->free = NULL;
+}
+
