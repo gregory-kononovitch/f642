@@ -80,11 +80,11 @@ struct f640_queue {
     //
 
 };
-struct f640_queue   *f640_make_queue(struct f640_stone *stones, int length, long *foractions, long constraints, int nn_1, int back_diff);
-int                 f640_enqueue(struct f640_queue *queue, int block, int key, long action);
-int                 f640_dequeue(struct f640_queue *queue, int block, long foraction);
-void                f640_backtrack(struct f640_queue *queue, int block, int key);
-void                f640_dump_queue(struct f640_queue *queue);
+extern struct f640_queue   *f640_make_queue(struct f640_stone *stones, int length, long *foractions, long constraints, int nn_1, int back_diff);
+extern int                 f640_enqueue(struct f640_queue *queue, int block, int key, long action);
+extern int                 f640_dequeue(struct f640_queue *queue, int block, long foraction);
+extern void                f640_backtrack(struct f640_queue *queue, int block, int key);
+extern void                f640_dump_queue(struct f640_queue *queue);
 
 
 struct f641_thread_operations {

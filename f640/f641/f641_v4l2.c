@@ -892,8 +892,9 @@ static int f641_exec_v4l2_snaping(void *appli, void *ressources, struct f640_sto
         return -1;
     }
     pthread_spin_lock(&stone->spin);
-    stone->frame = frame++;
-    line->frame  = stone->frame;
+    stone->status = 0;
+    stone->frame  = frame++;
+    line->frame   = stone->frame;
     pthread_spin_unlock(&stone->spin);
 
     line->actual = line->buf.index;

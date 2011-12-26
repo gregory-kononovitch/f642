@@ -114,6 +114,8 @@ struct f640_grid2 {
     int         index2;
     int         index3;
 
+    // Sky
+    long        *sky;
 };
 
 struct f640_line {
@@ -182,8 +184,8 @@ struct f640_line {
     struct f051_log_env *log_env;       // ref
 
     //
-    struct timeval tv00, tv01, tvd0, tvd1, tv10, tv11, tv20, tv21, tve0, tve1, tv30, tv31, tv40, tv41;
-    double t, t0, td, t1, t2, te, t3, t4;
+    struct timeval tv00, tv01, tvd0, tvd1, tv10, tv11, tv20, tv21, tve0, tve1, tvg0, tvg1, tvb0, tvb1, tv30, tv31, tv40, tv41;
+    double t, t0, td, t1, t2, te, tg, tb, t3, t4;
 };
 
 #define F640_MULTI_MAX 3

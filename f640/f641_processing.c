@@ -133,6 +133,9 @@ struct f640_grid2* f640_make_grid2(struct f640_grid *grid) {
     grid2->index3 = 0;
 
     //
+    grid2->sky = calloc(grid->size, sizeof(long));
+
+    //
     return grid2;
 }
 /*

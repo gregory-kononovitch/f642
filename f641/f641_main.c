@@ -309,9 +309,9 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
 //                grid30_no = atoi(optarg);
 //                printf("Grid 30 : %d\n", grid30_no);
 //                break;
-//            case 'b':
-//                nb_buffers = atoi(optarg);
-//                break;
+            case 'b':
+                appli->process->proc_len = atoi(optarg);
+                break;
             case 'f':
                 appli->max_frame = atoi(optarg);
                 break;
@@ -322,10 +322,10 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
             case 'd':
                 snprintf(appli->device, sizeof(appli->device), "/dev/video%s", optarg);
                 break;
-//            case 't':
-//                trigger = atoi(optarg);
-//                printf("Threshold : %d\n", trigger);
-//                break;
+            case 't':
+                appli->threshold = atoi(optarg);
+                printf("Threshold : %d\n", appli->threshold);
+                break;
 //            case 'y':
 //                switch(atoi(optarg)) {
 //                    case 0 : palette = 0x56595559; break;
@@ -396,7 +396,11 @@ int f641_v4l2(int argc, char *argv[]) {
     appli.size   = appli.width * appli.height;
     appli.frames_pers = 5;
     appli.max_frame = 0xFFFFFFFFFFFFFFL;
+    appli.threshold = 1024;
     snprintf(appli.device, sizeof(appli.device), "/dev/video0");
+
+    proc_data.proc_len = 16;
+    appli.process = &proc_data;
 
     // Parameters
     f640_getopts(&appli, argc, argv);
@@ -430,16 +434,14 @@ int f641_v4l2(int argc, char *argv[]) {
     printf("Appli OK\n");
 
     // PROC DATA
-    proc_data.proc_len = 10;
     proc_data.tv0;
     proc_data.decoded_format = PIX_FMT_YUVJ422P;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
-    proc_data.broadcast_format = PIX_FMT_BGR24;               // PIX_FMT_BGR24, PIX_FMT_GRAY8
-    proc_data.grid = f640_make_grid(appli.width, appli.height, 32);
+    proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+    proc_data.grid  = f640_make_grid(appli.width, appli.height, 32);
     proc_data.grid2 = f640_make_grid2(proc_data.grid);
     proc_data.recording_codec = CODEC_ID_MJPEG;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
     proc_data.record_format = PIX_FMT_YUVJ422P;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
     proc_data.recorded_frames = 0;
-    appli.process = &proc_data;
 
     printf("Appli.Process OK\n");
 
@@ -457,7 +459,7 @@ int f641_v4l2(int argc, char *argv[]) {
 
 
     // STONES
-    struct f640_line *lineup = f640_make_lineup(v4l2->buffers, proc_data.proc_len, proc_data.grid, PIX_FMT_BGR24, NULL, NULL, 350);
+    struct f640_line *lineup = f640_make_lineup(v4l2->buffers, proc_data.proc_len, proc_data.grid, proc_data.broadcast_format, NULL, NULL, 350);
     struct f640_stone *stones = calloc(proc_data.proc_len, sizeof(struct f640_stone));
     for(i = 0 ; i < proc_data.proc_len ; i++) {
         f640_make_stone(&stones[i], i);
@@ -467,48 +469,107 @@ int f641_v4l2(int argc, char *argv[]) {
     proc_data.stones = stones;
     printf("Stones %d OK\n", 0);
 
+    // FUNCTION
+    appli.functions = 0;
+    struct f640_queue *released  = NULL;
+    struct f640_queue *snapped   = NULL;
+    struct f640_queue *decoded   = NULL;
+    struct f640_queue *processed = NULL;
+    struct f640_queue *grided    = NULL;
+    struct f640_queue *tagged    = NULL;
+    struct f640_queue *broaded   = NULL;
+    struct f640_queue *logged    = NULL;
+
+
     // QUEUES
-    long actbf[2] = {F641_SNAPED, -1};
-    struct f640_queue *released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+    if (appli.functions == 0) {
+        long actbf[2] = {F641_SNAPED, -1};
+        released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
 
-    long actsn[2] = {F641_DECODED, -1};
-    struct f640_queue *snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
+        long actsn[2] = {F641_DECODED, -1};
+        snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
 
-    long actde[4] = {F641_WATCHED, F641_CONVERTED, F641_GRAYED, -1};
-    struct f640_queue *decoded = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
+        long actde[4] = {F641_CONVERTED, -1};
+        decoded = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
 
-    long actpr[2] = {F641_GRIDED, -1};
-    struct f640_queue *processed = f640_make_queue(stones, proc_data.proc_len, actpr, F641_WATCHED | F641_CONVERTED | F641_GRAYED, 1, 0);
+        long actpr[2] = {F641_TAGGED, -1};
+        processed = f640_make_queue(stones, proc_data.proc_len, actpr, F641_CONVERTED, 1, 0);
 
-    long actgr[2] = {F641_TAGGED, -1};
-    struct f640_queue *grided = f640_make_queue(stones, proc_data.proc_len, actgr, 0, 0, 0);
+        long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
+        tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
 
-    long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
-    struct f640_queue *tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+        long actbr[2] = {F641_LOGGED, -1};
+        broaded  = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED | F641_RECORDED, 0, 0);
 
-    long actbr[2] = {F641_LOGGED, -1};
-    struct f640_queue *broaded  = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED | F641_RECORDED, 0, 0);
+        long actlg[2] = {F641_RELEASED, -1};
+        logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+    } else if (appli.functions == 1) {
+        long actbf[2] = {F641_SNAPED, -1};
+        released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
 
-    long actlg[2] = {F641_RELEASED, -1};
-    struct f640_queue *logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+        long actsn[2] = {F641_DECODED, -1};
+        snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
+
+        long actde[4] = {F641_WATCHED, F641_CONVERTED, F641_GRAYED, -1};
+        decoded = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
+
+        long actpr[2] = {F641_GRIDED, -1};
+        processed = f640_make_queue(stones, proc_data.proc_len, actpr, F641_WATCHED | F641_CONVERTED | F641_GRAYED, 1, 0);
+
+        long actgr[2] = {F641_TAGGED, -1};
+        grided = f640_make_queue(stones, proc_data.proc_len, actgr, 0, 0, 0);
+
+        long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
+        tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+
+        long actbr[2] = {F641_LOGGED, -1};
+        broaded  = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED | F641_RECORDED, 0, 0);
+
+        long actlg[2] = {F641_RELEASED, -1};
+        logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+    }
 
     printf("Queues OK\n");
 
     // THREAD
+    i = 0;
     struct f640_thread *groups[32];//     = calloc(32, sizeof(struct f640_thread*));
-    struct f640_thread *snaping     = groups[0]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
-    struct f640_thread *decoding    = groups[1]  = f641_make_group(2, F641_DECODED,       snapped,   1, decoded,   0, 0, f641_attrib_decoding_mjpeg);
-    struct f640_thread *watching    = groups[2]  = f641_make_group(1, F641_WATCHED,       decoded,   1, processed, 0, 2, f641_attrib_watching_422p);
-    struct f640_thread *converting  = groups[3]  = f641_make_group(1, F641_CONVERTED,     decoded,   1, processed, 0, 0, f641_attrib_converting_torgb);
-    struct f640_thread *graying     = groups[4]  = f641_make_group(1, F641_GRAYED,        decoded,   1, processed, 0, 0, f641_attrib_edging);
-    struct f640_thread *griding     = groups[5]  = f641_make_group(1, F641_GRIDED,        processed, 1, grided,    0, 1, f641_attrib_griding);
-    struct f640_thread *tagging     = groups[6]  = f641_make_group(1, F641_TAGGED,        grided,    1, tagged,    0, 0, f641_attrib_tagging);
-    struct f640_thread *broading    = groups[7]  = f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, f641_attrib_broadcasting);
-    struct f640_thread *recording   = groups[8]  = f641_make_group(1, F641_RECORDED,      tagged,    1, broaded,   0, 1, f641_attrib_recording);
-    struct f640_thread *logging     = groups[9]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
-    struct f640_thread *releasing   = groups[10] = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
-    groups[11] = NULL;
+    struct f640_thread *snaping     = NULL;
+    struct f640_thread *decoding    = NULL;
+    struct f640_thread *watching    = NULL;
+    struct f640_thread *converting  = NULL;
+    struct f640_thread *graying     = NULL;
+    struct f640_thread *griding     = NULL;
+    struct f640_thread *tagging     = NULL;
+    struct f640_thread *broading    = NULL;
+    struct f640_thread *recording   = NULL;
+    struct f640_thread *logging     = NULL;
+    struct f640_thread *releasing   = NULL;
 
+    if (appli.functions == 0) {
+        snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
+        decoding    = groups[i++]  = f641_make_group(3, F641_DECODED,       snapped,   1, decoded,   0, 0, f641_attrib_decoding_mjpeg);
+        converting  = groups[i++]  = f641_make_group(3, F641_CONVERTED,     decoded,   1, processed, 0, 0, f641_attrib_converting_torgb);
+        tagging     = groups[i++]  = f641_make_group(1, F641_TAGGED,        processed, 1, tagged,    0, 0, f641_attrib_tagging);
+        broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, f641_attrib_broadcasting);
+        recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      tagged,    1, broaded,   0, 1, f641_attrib_recording);
+        logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
+        releasing   = groups[i++]  = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
+        groups[i++] = NULL;
+    } else if (appli.functions == 1) {
+        snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
+        decoding    = groups[i++]  = f641_make_group(3, F641_DECODED,       snapped,   1, decoded,   0, 0, f641_attrib_decoding_mjpeg);
+        watching    = groups[i++]  = f641_make_group(3, F641_WATCHED,       decoded,   1, processed, 0, 2, f641_attrib_watching_422p);
+        converting  = groups[i++]  = f641_make_group(3, F641_CONVERTED,     decoded,   1, processed, 0, 0, f641_attrib_converting_torgb);
+        graying     = groups[i++]  = f641_make_group(1, F641_GRAYED,        decoded,   1, processed, 0, 0, f641_attrib_edging);
+        griding     = groups[i++]  = f641_make_group(1, F641_GRIDED,        processed, 1, grided,    0, 1, f641_attrib_griding);
+        tagging     = groups[i++]  = f641_make_group(1, F641_TAGGED,        grided,    1, tagged,    0, 0, f641_attrib_tagging);
+        broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, f641_attrib_broadcasting);
+        recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      tagged,    1, broaded,   0, 1, f641_attrib_recording);
+        logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
+        releasing   = groups[i++]  = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
+        groups[i++] = NULL;
+    }
     printf("Thread OK\n");
 
     // INIT RESSOURCES
@@ -558,15 +619,16 @@ int f641_v4l2(int argc, char *argv[]) {
     printf("Launch done\n");
 
     //
+    void *grid = calloc(1, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows));
     while(1) {
-        r = read(appli.fd_get, appli.process->grid, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows) );
+        r = read(appli.fd_get, grid, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows) );
         if (r == sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows)) {
-            printf("READ  %dbytes : %dx%d\n", r, *((int*)(appli.process->grid+16)), *((int*)(appli.process->grid+20)));
-//            pthread_mutex_lock(&lines->grid->mutex_coefs);
-//            memcpy(lines->grid->grid_coefs, grid + 6 * sizeof(long), r - 6 * sizeof(long));
-//            pthread_mutex_unlock(&lines->grid->mutex_coefs);
+            printf("READ  %dbytes : %dx%d\n", r, *((int*)(grid+16)), *((int*)(grid+20)));
+            pthread_mutex_lock(&appli.process->grid->mutex_coefs);
+            memcpy(appli.process->grid->grid_coefs, grid + 6 * sizeof(long), r - 6 * sizeof(long));
+            pthread_mutex_unlock(&appli.process->grid->mutex_coefs);
         } else if (r > 0) {
-          printf("READ: wrong size read (%d), discarding\n", r);
+          printf("READ: wrong size read %d / %dx%d, discarding\n", r, appli.process->grid->cols, appli.process->grid->rows);
         } else if (r) {
             printf("READ: Interrupt %d\n", r);
             usleep(1000*1000);  // bug

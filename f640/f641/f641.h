@@ -43,7 +43,6 @@ struct f641_process_data {
     //
     struct timeval tv0;     // start
 
-
     // Decoding
     int decoded_format;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
     int broadcast_format;               // PIX_FMT_BGR24, PIX_FMT_GRAY8
@@ -72,9 +71,15 @@ struct f641_appli {
     int frames_pers;
     long max_frame;
 
+    // Functions
+    long functions;
+
     // V4L2
     char device[256];
     int fd;
+
+    // Tagging
+    int threshold;
 
     // Recording
     int  recording;

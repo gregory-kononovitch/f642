@@ -200,6 +200,12 @@ static int f641_exec_decoding_mjpeg(void *appli, void *ressources, struct f640_s
     len = avcodec_decode_video2(res->decoderCtxt, res->picture, &got_pict, &res->pkt);
     if (got_pict) {
         if (DEBUG) printf("\t\tDECODE e : dequeue %d, frame %lu, data %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0);
+        if (line->frame == 1) { // @@@
+            for(i = 0 ; i < app->process->proc_len ; i++) {
+                struct f640_line *lin = &line->lineup[i];
+                memcpy(lin->yuvp->linesize, res->picture->linesize, 4 * sizeof(int));
+            }
+        }
     } else {
         if (DEBUG) printf("\t\tDECODE e : failed, dequeue %d, frame %lu, data %p\n", stone->key, line->frame, line->yuvp ? line->yuvp->data[0] : 0);
     }
@@ -372,11 +378,57 @@ static int f641_exec_edging(void *appli, void *ressources, struct f640_stone *st
     return 0;
 }
 
+static int f641_exec_skying(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int i, j;
+    uint8_t *im, *pix0, *pix1, *pix2;
+    long *acc, min = 0xFFFFFFFFFFFFFFL, max = 0, l, lmin = 0xFFFFFFFFFFFFFFL, lmax = 0;
+
+    gettimeofday(&line->tve0, NULL);
+
+    if (line->frame > 30) {
+        pix0 = line->yuvp->data[0];
+        pix1 = line->yuvp->data[0] + line->yuvp->linesize[0];
+        pix2 = line->yuvp->data[0] + 2 * line->yuvp->linesize[0];
+        acc  = app->process->grid2->sky + app->width + 1;
+
+        for(i = app->height ; i > 2 ; i--) {
+            for(j = app->width ; j > 2 ; j--) {
+                l  = pix0[0] + pix0[1] + pix0[2];
+                l += pix1[0] + pix1[1] + pix1[2];
+                l += pix2[0] + pix2[1] + pix2[2];
+                if (l < lmin) lmin = l;
+                if (l > lmax) lmax = l;
+
+                *acc += l;
+                if (*acc < min) min = *acc;
+                if (*acc > max) max = *acc;
+
+                acc++;
+                pix0++;
+                pix1++;
+                pix2++;
+            }
+            pix0 += line->yuvp->linesize[0] - line->grid->width + 2;
+            pix1 += line->yuvp->linesize[0] - line->grid->width + 2;
+            pix2 += line->yuvp->linesize[0] - line->grid->width + 2;
+        }
+
+        if (line->frame % app->frames_pers == 0) {
+            printf("Sky : min = %ld , max = %ld, lmin = %ld, lmax = %d\n", min, max, lmin, lmax);
+        }
+    }
+
+    gettimeofday(&line->tve1, NULL);
+    return 0;
+}
+
 //
 void f641_attrib_edging(struct f641_thread_operations *ops) {
         ops->init = NULL;
         ops->updt = NULL;
-        ops->exec = f641_exec_edging;
+        ops->exec = f641_exec_skying;
         ops->free = NULL;
 }
 
