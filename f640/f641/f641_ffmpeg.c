@@ -358,7 +358,7 @@ void f641_attrib_converting_torgb(struct f641_thread_operations *ops) {
 /******************************
  *      GRAY THREAD
  ******************************/
-static int f641_exec_edging(void *appli, void *ressources, struct f640_stone *stone) {
+static int f641_exec_graying(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f640_line *line = (struct f640_line*) stone->private;
     int i;
@@ -378,12 +378,21 @@ static int f641_exec_edging(void *appli, void *ressources, struct f640_stone *st
     return 0;
 }
 
-static int f641_exec_skying(void *appli, void *ressources, struct f640_stone *stone) {
+/******************************
+ *      SKY THREAD
+ ******************************/
+// @@ deprecated
+static int f641_exec_skying_422p(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f640_line *line = (struct f640_line*) stone->private;
     int i, j;
     uint8_t *im, *pix0, *pix1, *pix2;
     long *acc, min = 0xFFFFFFFFFFFFFFL, max = 0, l, lmin = 0xFFFFFFFFFFFFFFL, lmax = 0;
+    uint16_t *sky;
+
+    static int rep[256] = {0,};
+    static int del = 0, mins, maxs;
+
 
     gettimeofday(&line->tve0, NULL);
 
@@ -391,13 +400,16 @@ static int f641_exec_skying(void *appli, void *ressources, struct f640_stone *st
         pix0 = line->yuvp->data[0];
         pix1 = line->yuvp->data[0] + line->yuvp->linesize[0];
         pix2 = line->yuvp->data[0] + 2 * line->yuvp->linesize[0];
-        acc  = app->process->grid2->sky + app->width + 1;
+        acc  = app->process->grid2->acc + app->width + 1;
 
         for(i = app->height ; i > 2 ; i--) {
             for(j = app->width ; j > 2 ; j--) {
                 l  = pix0[0] + pix0[1] + pix0[2];
                 l += pix1[0] + pix1[1] + pix1[2];
                 l += pix2[0] + pix2[1] + pix2[2];
+
+//                if (l < 255) rep[l]++;
+//                else rep[255]++;
                 if (l < lmin) lmin = l;
                 if (l > lmax) lmax = l;
 
@@ -410,13 +422,167 @@ static int f641_exec_skying(void *appli, void *ressources, struct f640_stone *st
                 pix1++;
                 pix2++;
             }
-            pix0 += line->yuvp->linesize[0] - line->grid->width + 2;
-            pix1 += line->yuvp->linesize[0] - line->grid->width + 2;
-            pix2 += line->yuvp->linesize[0] - line->grid->width + 2;
+            acc += 2;
+            pix0 += line->yuvp->linesize[0] - app->width + 2;
+            pix1 += line->yuvp->linesize[0] - app->width + 2;
+            pix2 += line->yuvp->linesize[0] - app->width + 2;
         }
 
-        if (line->frame % app->frames_pers == 0) {
-            printf("Sky : min = %ld , max = %ld, lmin = %ld, lmax = %d\n", min, max, lmin, lmax);
+        if (line->frame % (app->recording_perst * app->frames_pers) == 0) {
+            mins = 0xFFFFFFF;
+            maxs = 0;
+            sky  = app->process->grid2->sky + 4 * (app->width + 1);
+            acc  = app->process->grid2->acc + app->width + 1;
+//            for(i = app->height ; i > 2 ; i--) {
+//                for(j = app->width ; j > 2 ; j--) {
+//
+//                    sky[0] = *acc;
+//                    if (*acc < sky[1]) sky[1] = *acc;
+//                    if (*acc > sky[2]) sky[2] = *acc;
+//
+//                    if (*acc < mins) mins = *acc;
+//                    if (*acc > maxs) maxs = *acc;
+//                    if (sky[2] - sky[1] > del) del = sky[2] - sky[1];
+//
+//                    if (sky[1] < 2551) rep[sky[1] / 10]++;
+//                    else rep[255]++;
+//
+//
+//                    sky += 4;
+//                    acc++;
+//                }
+//                acc  += 2;
+//                sky  += 4 * 2;
+//            }
+
+            pix0 = app->process->grid2->skyDif; //line->gry->data + app->width + 1;
+            acc  = app->process->grid2->acc + app->width + 1;
+            for(i = app->height ; i > 2 ; i--) {
+                for(j = app->width ; j > 2 ; j--) {
+                    *pix0 = 256 * (*acc - min) / (max - min + 1);
+                    if (app->level) {
+                        if (*pix0 > app->level) *pix0 = 0xFF;
+                        else *pix0 = 0;
+                    }
+                    acc++;
+                    pix0++;
+                }
+                acc  += 2;
+                pix0 += 2;
+            }
+
+//            printf("\nMin = %ld , Max = %ld, lmin = %ld , lmax = %ld , mins = %d , maxs = %d , del = %d", min, max, lmin, lmax, mins, maxs, del);
+//            for(i = 0 ; i < 32 ; i++) {
+//                printf("\n%d :", 8 * i);
+//                for(j = 0 ; j < 8 ; j++) {
+//                    printf(" %d", rep[8*i + j]);
+//                }
+//            }
+
+            memset(app->process->grid2->acc, 0, app->size * sizeof(long));
+            memset(rep, 0, sizeof(rep));
+        }
+    }
+
+    gettimeofday(&line->tve1, NULL);
+    return 0;
+}
+
+
+static int f641_exec_skying_422(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int i;
+    uint8_t  *pix;
+    uint16_t *acc;
+    uint16_t *sky;
+
+
+    gettimeofday(&line->tve0, NULL);
+
+    if (line->frame > 30) {
+        pix = line->buffers[line->buf.index].start;
+
+        acc  = app->process->grid2->acc;
+        for(i = app->size ; i > 0 ; i--) {
+            *(acc++) += *(pix++);
+            *(acc++) += *(pix++);
+        }
+
+        if (line->frame % (app->recording_perst * app->frames_pers) == 0) {
+            memcpy(app->process->grid2->sky, app->process->grid2->acc, 2 * app->size * sizeof(uint16_t));
+            memset(app->process->grid2->acc, 0, 2 * app->size * sizeof(uint16_t));
+        }
+    }
+
+    gettimeofday(&line->tve1, NULL);
+    return 0;
+}
+
+//
+void f641_attrib_skying_422(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_skying_422;
+        ops->free = NULL;
+}
+
+
+/******************************
+ *      EDGE THREAD
+ ******************************/
+static int f641_exec_edging(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int i, j;
+    uint8_t *im, *pix0, *pix1, *pix2, *edge;
+    long *acc, min = 0xFFFFFFFFFFFFFFL, max = 0, l, lmin = 0xFFFFFFFFFFFFFFL, lmax = 0;
+
+    gettimeofday(&line->tve0, NULL);
+
+    if (line->frame > 30) {
+        pix0 = line->yuvp->data[0];
+        pix1 = line->yuvp->data[0] + line->yuvp->linesize[0];
+        pix2 = line->yuvp->data[0] + 2 * line->yuvp->linesize[0];
+        edge = line->gry->data + 2 * app->width + 2;
+
+        for(i = app->height ; i > 3 ; i--) {
+            for(j = app->width ; j > 3 ; j--) {
+                if (pix0[0] > pix2[2]) *edge = pix0[0] - pix2[2];
+                else *edge = pix2[2] - pix0[0];
+                if (pix0[1] > pix2[2]) l = pix0[1] - pix2[2];
+                else l = pix2[2] - pix0[1];
+                if (*edge < l) *edge = l;
+                if (pix0[2] > pix2[2]) l = pix0[2] - pix2[2];
+                else l = pix2[2] - pix0[2];
+                if (*edge < l) *edge = l;
+
+                if (pix1[0] > pix2[2]) l = pix1[0] - pix2[2];
+                else l = pix2[2] - pix1[0];
+                if (*edge < l) *edge = l;
+                if (pix1[1] > pix2[2]) l = pix1[1] - pix2[2];
+                else l = pix2[2] - pix1[1];
+                if (*edge < l) *edge = l;
+                if (pix1[2] > pix2[2]) l = pix1[2] - pix2[2];
+                else l = pix2[2] - pix1[2];
+                if (*edge < l) *edge = l;
+
+                if (pix2[0] > pix2[2]) l = pix2[0] - pix2[2];
+                else l = pix2[2] - pix2[0];
+                if (*edge < l) *edge = l;
+                if (pix2[1] > pix2[2]) l = pix2[1] - pix2[2];
+                else l = pix2[2] - pix2[1];
+                if (*edge < l) *edge = l;
+
+                edge++;
+                pix0++;
+                pix1++;
+                pix2++;
+            }
+            edge += 3;
+            pix0 += line->yuvp->linesize[0] - app->width + 3;
+            pix1 += line->yuvp->linesize[0] - app->width + 3;
+            pix2 += line->yuvp->linesize[0] - app->width + 3;
         }
     }
 
@@ -428,7 +594,7 @@ static int f641_exec_skying(void *appli, void *ressources, struct f640_stone *st
 void f641_attrib_edging(struct f641_thread_operations *ops) {
         ops->init = NULL;
         ops->updt = NULL;
-        ops->exec = f641_exec_skying;
+        ops->exec = f641_exec_skying_422;
         ops->free = NULL;
 }
 
@@ -486,7 +652,7 @@ static void* f641_init_recording(void *appli) {
     res->video_stream->codec->coded_width   = app->width;
     res->video_stream->codec->coded_height  = app->height;
     res->video_stream->codec->time_base.num = 1;
-    res->video_stream->codec->time_base.den = app->frames_pers;
+    res->video_stream->codec->time_base.den = app->recording_rate;
     res->video_stream->codec->sample_fmt    = SAMPLE_FMT_S16;
     res->video_stream->codec->sample_rate   = 44100;
 
@@ -508,10 +674,10 @@ static void* f641_init_recording(void *appli) {
         return NULL;
     }
     res->video_stream->time_base.num = 1;
-    res->video_stream->time_base.den = app->frames_pers;
-    res->video_stream->r_frame_rate.num = app->frames_pers;
+    res->video_stream->time_base.den = app->recording_rate;
+    res->video_stream->r_frame_rate.num = app->recording_rate;
     res->video_stream->r_frame_rate.den = 1;
-    res->video_stream->avg_frame_rate.num = app->frames_pers;
+    res->video_stream->avg_frame_rate.num = app->recording_rate;
     res->video_stream->avg_frame_rate.den = 1;
     res->video_stream->pts.num = 1;
     res->video_stream->pts.den = 1;
@@ -554,8 +720,13 @@ static int f641_exec_recording(void *appli, void* ressources, struct f640_stone 
     gettimeofday(&line->tv30, NULL);
 
     if ( app->recording && line->flaged ) {
-        res->pkt.data = line->buffers[line->actual].start;
-        res->pkt.size = line->buf.bytesused;
+        if (app->functions == 2) {
+            res->pkt.data = app->process->grid2->skyDif;    //line->gry->data; //line->buffers[line->actual].start;
+            res->pkt.size = app->size; //line->buf.bytesused;
+        } else {
+            res->pkt.data = line->buffers[line->actual].start;
+            res->pkt.size = line->buf.bytesused;
+        }
         res->pkt.pts  = app->process->recorded_frames;
         res->pkt.dts  = res->pkt.pts;
         res->pkt.duration = 1;

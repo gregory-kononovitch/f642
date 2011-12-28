@@ -71,7 +71,11 @@ struct f641_appli {
     int frames_pers;
     long max_frame;
 
-    // Functions
+    /* Functions
+     * 0 : mjpeg + decoded + {converted bgra + skyed} + tagged + {brdcast fb0/t0 + record fps} + logged + real
+     * 1 : mjpeg + decoded + {cv brg24 + watch + gray} + grided + tagged + {brd t0 + rc flag} + logged + re
+     * 2 : yuv422 + skyed + tagged + {br t0 + rc fps} + logged + re
+     */
     long functions;
 
     // V4L2
@@ -80,9 +84,12 @@ struct f641_appli {
 
     // Tagging
     int threshold;
+    int level;
 
     // Recording
     int  recording;
+    int  recording_rate;
+    int  recording_perst;
     char record_path[256];
 
     // Processing
@@ -162,6 +169,6 @@ extern void f641_attrib_broadcasting(struct f641_thread_operations *ops);
 extern void f641_attrib_tagging(struct f641_thread_operations *ops);
 extern void f641_attrib_watching_422p(struct f641_thread_operations *ops);
 
-
+extern void f641_attrib_saving(struct f641_thread_operations *ops);
 
 #endif /* F641_H_ */

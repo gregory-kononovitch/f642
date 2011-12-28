@@ -115,7 +115,9 @@ struct f640_grid2 {
     int         index3;
 
     // Sky
-    long        *sky;
+    uint16_t    *acc;
+    uint16_t    *sky;
+    uint8_t     *skyDif;
 };
 
 struct f640_line {

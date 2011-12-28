@@ -124,6 +124,9 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
             }
         }
         //    pthread_mutex_unlock(&app->process->grid->mutex_coefs);
+    } else if (app->functions == 2) {
+        line->flaged = 0;
+        if (line->frame % (app->recording_perst * app->frames_pers) == 0) line->flaged = 1;
     }
 
     ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - app->process->tv0.tv_sec);
@@ -134,11 +137,59 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
     return 0;
 }
 
+
 //
 void f641_attrib_tagging(struct f641_thread_operations *ops) {
         ops->init = NULL;
         ops->updt = NULL;
         ops->exec = f641_exec_tagging;
+        ops->free = NULL;
+}
+
+/******************************
+ *      TAGGING THREAD
+ ******************************/
+static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int r;
+    static long nb = 1;
+    static long size = 0;
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+
+    if ( (app->functions == 2) && ( (line->frame % (app->recording_perst * app->frames_pers)) == 0) ) {
+        char fname[128];
+        FILE *filp;
+        if (size < 8000000000L) {
+            sprintf(fname, "/work/test/snap/sky2-%ld.raw", nb++);
+        } else if (size < 22272620000L) {
+            sprintf(fname, "/media/test/snap/sky2-%ld.raw", nb++);
+        } else {
+            sprintf(fname, "/mnt/test/snap/sky2-%ld.raw", nb++);
+        }
+        filp = fopen(fname, "wb");
+        if (!filp) {
+            printf("\nPB to open %s, returning", fname);
+            return 0;
+        }
+        r = fwrite(app->process->grid2->sky, 1, 2 * app->size * sizeof(uint16_t), filp);
+        fwrite(&tv.tv_sec, 1, sizeof(long), filp);
+        fflush(filp);
+        fclose(filp);
+        size += r + 512;
+        printf("\nSaved %d bytes (%.1f Mo)", r, 1. * size / (1024*1024));
+    }
+
+    return 0;
+}
+
+//
+void f641_attrib_saving(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_saving;
         ops->free = NULL;
 }
 
@@ -172,14 +223,15 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
     if (res && res->fd_fb > 0 && app->functions == 0) {
         lseek(res->fd_fb, 0, SEEK_SET);
         write(res->fd_fb, line->rgb->data, line->rgb->data_size);
-    } else {
+    } else if (app->functions == 1) {
         // Grid
         if (app->fd_grid > 0) {
             write(app->fd_grid, line->width, sizeof(long) * (6 + line->grid->num));
         }
         // Edge
         if (app->fd_edge > 0) {
-            write(app->fd_edge, line->gry->data, line->gry->data_size);
+            //write(app->fd_edge, line->gry->data, line->gry->data_size);
+            write(app->fd_edge, app->process->grid2->skyDif, app->size);
         }
         // RGB
         write(app->fd_stream, line->rgb->data, line->rgb->data_size);
@@ -202,6 +254,8 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
         if (app->fd_grid30 > 0) {
             write(app->fd_grid30, app->process->grid2->grid_ratio_30, 4 * sizeof(int16_t) * line->grid->num);
         }
+    } else if (app->functions == 2 && (line->frame % (app->recording_perst * app->frames_pers) == 0)) {
+        write(app->fd_stream, app->process->grid2->sky, 2 * app->size * sizeof(uint16_t));
     }
 
     gettimeofday(&line->tvb1, NULL);
@@ -365,13 +419,13 @@ static int f641_exec_grid(void *appli, void *ressources, struct f640_stone *ston
             AVG /= app->process->grid->num;
 
             app->process->grid2->index2 = (app->process->grid2->index2 + 1) & app->process->grid2->mask2;
-            printf(F640_RESET F640_BOLD F640_FG_RED "\t\tLoop I => cells II %d [ %d < %d < %d ]\n" F640_RESET, app->process->grid2->index2, MIN, AVG, MAX);
+//            printf(F640_RESET F640_BOLD F640_FG_RED "\t\tLoop I => cells II %d [ %d < %d < %d ]\n" F640_RESET, app->process->grid2->index2, MIN, AVG, MAX);
             if (app->process->grid2->index2 == 0) {
                 memcpy(app->process->grid2->grid_ratio_3 + 4 * app->process->grid->num * app->process->grid2->index3, app->process->grid2->grid_ratio_30, 4 * app->process->grid->num * sizeof(int16_t));
 
                 // Loop 3
                 app->process->grid2->index3 = (app->process->grid2->index3 + 1) & app->process->grid2->mask3;
-                printf(F640_RESET F640_BOLD F640_FG_RED "\t\t\tLoop II => cells III %d add [ %d < %d < %d ]\n" F640_RESET, app->process->grid2->index3, MIN, AVG, MAX);
+//                printf(F640_RESET F640_BOLD F640_FG_RED "\t\t\tLoop II => cells III %d add [ %d < %d < %d ]\n" F640_RESET, app->process->grid2->index3, MIN, AVG, MAX);
             }
         }
     }
@@ -502,6 +556,7 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
 //            jiffs = clock_t_to_jiffies(times);
 //            ms = jiffies_to_msecs(jiffs);
 
+        printf("\n");
         printf("%02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
                 , tm1.tm_hour, tm1.tm_min, tm1.tm_sec
                 , 100 * (res->times2 - res->times1) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
@@ -557,7 +612,7 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
                     , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
             );
         }
-        printf("\n");
+
         res->size_in  = 0;
         res->t  = 0;
         res->td = 0;

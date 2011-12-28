@@ -390,13 +390,15 @@ void *f641_loop2(void* th) {
         }
 
         // Enqueue
-        if (times) gettimeofday(&tve1, NULL);
-        r = f640_enqueue(thread->queue_out, thread->block_enqueue, key, thread->action);
-        if (times) gettimeofday(&tve2, NULL);
-        if (times) timersub(&tve2, &tve1, &tve1);
-        if (times) timeradd(&tve3, &tve1, &tve3);
+        if (thread->queue_out) {
+            if (times) gettimeofday(&tve1, NULL);
+            r = f640_enqueue(thread->queue_out, thread->block_enqueue, key, thread->action);
+            if (times) gettimeofday(&tve2, NULL);
+            if (times) timersub(&tve2, &tve1, &tve1);
+            if (times) timeradd(&tve3, &tve1, &tve3);
 
-        if (debug_loop2) printf("%s : EnQueue '%X' %d (%ld) : %s (%X / %X)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
+            if (debug_loop2) printf("%s : EnQueue '%X' %d (%ld) : %s (%X / %X)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
+        }
 
 //        if (debug_loop2) f640_dump_queue(thread->queue_in);
 //        if (debug_loop2) f640_dump_queue(thread->queue_out);

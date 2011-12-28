@@ -341,13 +341,22 @@ int f641_list_controls(struct f641_v4l2_parameters *prm)
         f640_show_control(prm, &queryctrl);
     }
 
-//    c = V4L2_CID_EXPOSURE;
+
+    // EXPOSURE
 //    memset(&queryctrl, 0, sizeof(queryctrl));
-//    queryctrl.id = c;
-//    if(ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) {
+//    queryctrl.id = V4L2_CID_EXPOSURE_ABSOLUTE;
+//    if(ioctl(prm->fd, VIDIOC_QUERYCTRL, &queryctrl)) {
 //        printf("No exposure control... : %s\n", queryctrl.name);
 //    } else {
-//        f640_show_control(&queryctrl);
+//        f640_show_control(prm, &queryctrl);
+//        int e;
+//        for(e = 30000 ; e < 270000 ; e += 10000) {
+//            struct v4l2_control control;
+//            control.id = queryctrl.id;
+//            control.value = e;
+//            c = ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+//            printf("Set exposure to %d, return %d, %s\n", e, c, c ? strerror(errno) : "OK");
+//        }
 //    }
 
     // Camera-class controls
@@ -476,8 +485,8 @@ int f641_set_parm(struct f641_v4l2_parameters *prm)
                     , parm.parm.capture.timeperframe.denominator, parm.parm.capture.timeperframe.numerator);
         } else {
             if ( prm->verbose )
-                printf("SetStreamParm to %ufrm / %us : ok.\n"
-                    , parm.parm.capture.timeperframe.denominator, parm.parm.capture.timeperframe.numerator);
+                printf("SetStreamParm to %ufrm / %us : ok (asked = %d/s)\n"
+                    , parm.parm.capture.timeperframe.denominator, parm.parm.capture.timeperframe.numerator, prm->frames_pers);
         }
     } else {
         if ( prm->verbose )
@@ -779,6 +788,37 @@ int f641_free_mmap(struct f641_v4l2_parameters *prm)
     return 0;
 }
 
+//
+int f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int white, int expo) {
+    int r;
+    struct v4l2_control control;
+
+    // GAIN
+    control.id = V4L2_CID_GAIN;
+    control.value = gain;
+    r = ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+    printf("Set gain to %d (%d asked), return %d, %s\n", control.value, gain, r, r ? strerror(errno) : "OK");
+
+    // SHARP
+    control.id = V4L2_CID_SHARPNESS;
+    control.value = sharp;
+    r = ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+    printf("Set sharpness to %d (%d asked), return %d, %s\n", control.value, sharp, r, r ? strerror(errno) : "OK");
+
+    // WHITE
+    control.id = V4L2_CID_WHITE_BALANCE_TEMPERATURE;
+    control.value = white;
+    r = ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+    printf("Set exposure to %d (%d asked), return %d, %s\n", control.value, white, r, r ? strerror(errno) : "OK");
+
+    // EXPOSURE
+    control.id = V4L2_CID_EXPOSURE_ABSOLUTE;
+    control.value = expo;
+    r = ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+    printf("Set exposure to %d (%d asked), return %d, %s\n", control.value, expo, r, r ? strerror(errno) : "OK");
+
+    return 0;
+}
 /*
  *
  */
@@ -805,7 +845,7 @@ int f641_free_mmap(struct f641_v4l2_parameters *prm)
 
 
 //
-struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli) {
+struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli, uint32_t palette) {
     int r;
 
     // V4L2 device
@@ -823,7 +863,7 @@ struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli) {
     prm->width = appli->width;
     prm->height = appli->height;
     prm->frames_pers = appli->frames_pers;
-    prm->palette = 0x47504A4D;   //0x47504A4D;   // 0x56595559
+    prm->palette = palette;   //0x47504A4D;   // 0x56595559
     prm->capture         = 1;
     prm->verbose         = 1;
     prm->quiet           = 0;

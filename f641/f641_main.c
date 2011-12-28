@@ -28,6 +28,7 @@
 #define F641_WATCHED        0x00000100
 #define F641_EDGED          0x00000200
 #define F641_GRIDED         0x00000400
+#define F641_SKYED          0x00000800
 
 
 #define F641_CONVERTED      0x00001000
@@ -224,6 +225,7 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
         {"debug",           no_argument,       NULL, 'D'},
         {"file",            no_argument,       NULL, 'a'},
         {"norecord",        no_argument,       NULL, 'r'},
+        {"function",        required_argument, NULL, 'o'},
         {"stream",          required_argument, NULL, 's'},
         {"grid",            required_argument, NULL, 'g'},
         {"edge",            required_argument, NULL, 'e'},
@@ -249,7 +251,7 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
         {"show-video-std",  no_argument,       NULL, 'V'},
         {NULL, 0, NULL, 0}
     };
-    char *opts = "hqvi0Dar:s:g:e:1:2:3:b:f:z:d:t:y:W:H:APICFSRV";
+    char *opts = "hqvi0Dar:s:g:e:1:2:3:o:b:f:z:d:t:y:W:H:APICFSRV";
 
     while(1)
     {
@@ -309,6 +311,9 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
 //                grid30_no = atoi(optarg);
 //                printf("Grid 30 : %d\n", grid30_no);
 //                break;
+            case 'o':
+                appli->functions = atoi(optarg);
+                break;
             case 'b':
                 appli->process->proc_len = atoi(optarg);
                 break;
@@ -380,8 +385,9 @@ extern int f641_set_uptr(struct f641_v4l2_parameters *prm, int nb_buffers);
 extern int f641_stream_on(struct f641_v4l2_parameters *prm);
 extern int f641_test_dq(struct f641_v4l2_parameters *prm, int nb);
 extern int f641_free_mmap(struct f641_v4l2_parameters *prm);
+extern int f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int white, int expo);
 
-extern struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli);
+extern struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli, uint32_t palette);
 extern void f641_free_v4l2(struct f641_v4l2_parameters *prm);
 
 int f641_v4l2(int argc, char *argv[]) {
@@ -391,10 +397,17 @@ int f641_v4l2(int argc, char *argv[]) {
     struct f641_v4l2_parameters *v4l2;
 
     // APP DEFAULT DATA
+    memset(&appli, 0, sizeof(struct f641_appli));
+    memset(&proc_data, 0, sizeof(struct f641_process_data));
+
+    appli.functions = 1;
+
     appli.width  = 1024;
     appli.height = 576;
     appli.size   = appli.width * appli.height;
     appli.frames_pers = 5;
+    appli.recording_rate = 24;
+    appli.recording_perst = 10;
     appli.max_frame = 0xFFFFFFFFFFFFFFL;
     appli.threshold = 1024;
     snprintf(appli.device, sizeof(appli.device), "/dev/video0");
@@ -436,17 +449,32 @@ int f641_v4l2(int argc, char *argv[]) {
     // PROC DATA
     proc_data.tv0;
     proc_data.decoded_format = PIX_FMT_YUVJ422P;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
-    proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+    if (appli.functions == 0) {
+        proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+    }
+    else {
+        proc_data.broadcast_format = PIX_FMT_BGR24;
+    }
     proc_data.grid  = f640_make_grid(appli.width, appli.height, 32);
     proc_data.grid2 = f640_make_grid2(proc_data.grid);
-    proc_data.recording_codec = CODEC_ID_MJPEG;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
-    proc_data.record_format = PIX_FMT_YUVJ422P;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
+    if (appli.functions == 2) {
+        proc_data.recording_codec = CODEC_ID_RAWVIDEO;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
+        proc_data.record_format = PIX_FMT_GRAY8;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
+    } else {
+        proc_data.recording_codec = CODEC_ID_MJPEG;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
+        proc_data.record_format = PIX_FMT_YUVJ422P;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
+    }
+
     proc_data.recorded_frames = 0;
 
     printf("Appli.Process OK\n");
 
     // V4L2 PRM
-    v4l2 = f641_init_v4l2(&appli);
+    if (appli.functions == 2) {
+        v4l2 = f641_init_v4l2(&appli, 0x56595559);      //0x47504A4D;   // 0x56595559
+    } else {
+        v4l2 = f641_init_v4l2(&appli, 0x47504A4D);      //0x47504A4D;   // 0x56595559
+    }
     appli.width  = v4l2->width;
     appli.height = v4l2->height;
     appli.size   = appli.width * appli.height;
@@ -470,7 +498,6 @@ int f641_v4l2(int argc, char *argv[]) {
     printf("Stones %d OK\n", 0);
 
     // FUNCTION
-    appli.functions = 0;
     struct f640_queue *released  = NULL;
     struct f640_queue *snapped   = NULL;
     struct f640_queue *decoded   = NULL;
@@ -527,6 +554,24 @@ int f641_v4l2(int argc, char *argv[]) {
 
         long actlg[2] = {F641_RELEASED, -1};
         logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+    } else if (appli.functions == 2) {
+        long actbf[2] = {F641_SNAPED, -1};
+        released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+
+        long actsn[2] = {F641_SKYED, -1};
+        snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 0);
+
+        long actpr[2] = {F641_TAGGED, -1};
+        processed = f640_make_queue(stones, proc_data.proc_len, actpr, 0, 1, 0);
+
+        long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
+        tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+
+        long actbr[2] = {F641_LOGGED, -1};
+        broaded  = f640_make_queue(stones, proc_data.proc_len, actbr, 0, 0, 0);
+
+        long actlg[2] = {F641_RELEASED, -1};
+        logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
     }
 
     printf("Queues OK\n");
@@ -561,11 +606,20 @@ int f641_v4l2(int argc, char *argv[]) {
         decoding    = groups[i++]  = f641_make_group(3, F641_DECODED,       snapped,   1, decoded,   0, 0, f641_attrib_decoding_mjpeg);
         watching    = groups[i++]  = f641_make_group(3, F641_WATCHED,       decoded,   1, processed, 0, 2, f641_attrib_watching_422p);
         converting  = groups[i++]  = f641_make_group(3, F641_CONVERTED,     decoded,   1, processed, 0, 0, f641_attrib_converting_torgb);
-        graying     = groups[i++]  = f641_make_group(1, F641_GRAYED,        decoded,   1, processed, 0, 0, f641_attrib_edging);
+        graying     = groups[i++]  = f641_make_group(3, F641_GRAYED,        decoded,   1, processed, 0, 0, f641_attrib_edging);
         griding     = groups[i++]  = f641_make_group(1, F641_GRIDED,        processed, 1, grided,    0, 1, f641_attrib_griding);
         tagging     = groups[i++]  = f641_make_group(1, F641_TAGGED,        grided,    1, tagged,    0, 0, f641_attrib_tagging);
         broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, f641_attrib_broadcasting);
         recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      tagged,    1, broaded,   0, 1, f641_attrib_recording);
+        logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
+        releasing   = groups[i++]  = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
+        groups[i++] = NULL;
+    } else if (appli.functions == 2) {
+        snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
+        converting  = groups[i++]  = f641_make_group(1, F641_SKYED,         snapped,   1, processed, 0, 0, f641_attrib_edging);
+        tagging     = groups[i++]  = f641_make_group(1, F641_TAGGED,        processed, 1, tagged,    0, 0, f641_attrib_tagging);
+        broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, f641_attrib_broadcasting);
+        recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      tagged,    1, NULL,      0, 1, f641_attrib_saving);
         logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
         releasing   = groups[i++]  = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
         groups[i++] = NULL;
@@ -619,14 +673,25 @@ int f641_v4l2(int argc, char *argv[]) {
     printf("Launch done\n");
 
     //
+    if (appli.functions == 2) {
+        usleep(2000*1000);
+        f641_set_defaults(v4l2, 119, 22, 4000, 2047);
+    }
+
+    //
     void *grid = calloc(1, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows));
     while(1) {
         r = read(appli.fd_get, grid, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows) );
         if (r == sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows)) {
-            printf("READ  %dbytes : %dx%d\n", r, *((int*)(grid+16)), *((int*)(grid+20)));
-            pthread_mutex_lock(&appli.process->grid->mutex_coefs);
-            memcpy(appli.process->grid->grid_coefs, grid + 6 * sizeof(long), r - 6 * sizeof(long));
-            pthread_mutex_unlock(&appli.process->grid->mutex_coefs);
+            if (*((int*)(grid+20)) == 999999) {
+                appli.level = *((int*)(grid+24));
+                printf("\nREAD : Level set to %d", appli.level);
+            } else {
+                printf("READ  %dbytes : %dx%d\n", r, *((int*)(grid+16)), *((int*)(grid+20)));
+                pthread_mutex_lock(&appli.process->grid->mutex_coefs);
+                memcpy(appli.process->grid->grid_coefs, grid + 6 * sizeof(long), r - 6 * sizeof(long));
+                pthread_mutex_unlock(&appli.process->grid->mutex_coefs);
+            }
         } else if (r > 0) {
           printf("READ: wrong size read %d / %dx%d, discarding\n", r, appli.process->grid->cols, appli.process->grid->rows);
         } else if (r) {
