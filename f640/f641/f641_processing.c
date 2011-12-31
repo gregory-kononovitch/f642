@@ -162,12 +162,12 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
     if ( (app->functions == 2) && ( (line->frame % (app->recording_perst * app->frames_pers)) == 0) ) {
         char fname[128];
         FILE *filp;
-        if (size < 8000000000L) {
-            sprintf(fname, "/work/test/snap/sky2-%ld.raw", nb++);
-        } else if (size < 22272620000L) {
-            sprintf(fname, "/media/test/snap/sky2-%ld.raw", nb++);
+        if ( (size >> 10) < 15000000L) {
+            sprintf(fname, "/work/test/snap/sky6-%ld.raw", nb++);
+        } else if ( (size >> 10) < 30000000L) {
+            sprintf(fname, "/media/test/snap/sky6-%ld.raw", nb++);
         } else {
-            sprintf(fname, "/mnt/test/snap/sky2-%ld.raw", nb++);
+            sprintf(fname, "/mnt/test/snap/sky6-%ld.raw", nb++);
         }
         filp = fopen(fname, "wb");
         if (!filp) {
@@ -178,7 +178,7 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
         fwrite(&tv.tv_sec, 1, sizeof(long), filp);
         fflush(filp);
         fclose(filp);
-        size += r + 512;
+        size += 2 * app->size * sizeof(uint16_t) + 8;
         printf("\nSaved %d bytes (%.1f Mo)", r, 1. * size / (1024*1024));
     }
 
