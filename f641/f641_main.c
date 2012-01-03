@@ -688,11 +688,13 @@ int f641_v4l2(int argc, char *argv[]) {
     //
     appli.logging = 0;
     initscr();                      /* Start curses mode            */
+    scrl(0);
     raw();                          /* Line buffering disabled      */
     keypad(stdscr, TRUE);           /* We get F1, F2 etc..          */
     noecho();                       /* Don't echo() while we do getch */
     start_color();                  /* Start color                  */
-    init_pair(1, COLOR_BLACK, COLOR_RED);
+    init_pair(1, COLOR_BLACK, COLOR_GREEN);
+    init_pair(2, COLOR_BLACK, COLOR_RED);
 
     if (appli.functions == 2) {
         usleep(2000*1000);
@@ -703,6 +705,7 @@ int f641_v4l2(int argc, char *argv[]) {
     getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
     int ctrl = 0;
     int selected = 0;
+    int32_t value = 0;
 
     while(1) {
         int ch = getch();
@@ -726,66 +729,129 @@ int f641_v4l2(int argc, char *argv[]) {
             usleep(300*1000);
             printf("\n");
             return 0;
-        } else if (ch == KEY_F(2)) {
-            if (!selected) selected = 1;
-            else selected = 0;
+        } else if (ch == '\n') {
+            if (selected && value != v4l2->controls_value[ctrl]) {
+                struct v4l2_control control;
+                control.id = v4l2->controls[ctrl].id;
+                control.value = value;
+                ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
+                control.id = v4l2->controls[ctrl].id;
+                control.value = 0;
+                if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
+                    v4l2->controls_value[ctrl] = control.value;
+                    value = control.value;
+                }
+                selected = 0;
+            } else if (selected) {
+                selected = 0;
+            } else {
+                selected = 1;
+                value = v4l2->controls_value[ctrl];
+            }
         } else if (ch == KEY_LEFT && selected) {
-
+            value -= v4l2->controls[ctrl].step;
+            if (value < v4l2->controls[ctrl].minimum) value = v4l2->controls[ctrl].minimum;
         } else if (ch == KEY_RIGHT && selected) {
-
+            value += v4l2->controls[ctrl].step;
+            if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
         } else if (ch == KEY_UP) {
             selected = 0;
             if (ctrl) ctrl--;
             else ctrl = v4l2->nb_controls - 1;
+            value = v4l2->controls_value[ctrl];
         } else if (ch == KEY_DOWN) {
             selected = 0;
             ctrl = (ctrl + 1) % v4l2->nb_controls;
+            value = v4l2->controls_value[ctrl];
         } else if (ch == '-') {
-            appli.recording_perst++;
+            if (selected) {
+                value = v4l2->controls_value[ctrl] - v4l2->controls[ctrl].step;
+                if (value < v4l2->controls[ctrl].minimum) value = v4l2->controls[ctrl].minimum;
+                if (selected && value != v4l2->controls_value[ctrl]) {
+                    struct v4l2_control control;
+                    control.id = v4l2->controls[ctrl].id;
+                    control.value = value;
+                    ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
+                    control.id = v4l2->controls[ctrl].id;
+                    control.value = 0;
+                    if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
+                        v4l2->controls_value[ctrl] = control.value;
+                        value = control.value;
+                    }
+                }
+            } else {
+                appli.recording_perst++;
+            }
         } else if (ch == '+') {
-            if (appli.recording_perst > 1) appli.recording_perst--;
-            else appli.recording_perst = 1;
+            if (selected) {
+                value = v4l2->controls_value[ctrl] + v4l2->controls[ctrl].step;
+                if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
+                if (selected && value != v4l2->controls_value[ctrl]) {
+                    struct v4l2_control control;
+                    control.id = v4l2->controls[ctrl].id;
+                    control.value = value;
+                    ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
+                    control.id = v4l2->controls[ctrl].id;
+                    control.value = 0;
+                    if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
+                        v4l2->controls_value[ctrl] = control.value;
+                        value = control.value;
+                    }
+                }
+            } else {
+                if (appli.recording_perst > 1) appli.recording_perst--;
+                else appli.recording_perst = 1;
+            }
         } else {
             move(rows - 1, 2);
             printw("%c typed", ch);
         }
 
-        move(rows - 2, 0);
-        printw("                                                                   ");
+        // RAZ
+        getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
+        for(i = rows - 3 ; i < rows ; i++) {
+            for(j = 0 ; j < cols ; j++) {
+                move(i, j);
+                printw(" ");
+            }
+        }
+
+
         move(rows - 2, 0);
         if (selected) {
-            attron(COLOR_PAIR(1));
+            if (value == v4l2->controls_value[ctrl]) attron(COLOR_PAIR(1));
+            else attron(COLOR_PAIR(2));
         }
         struct v4l2_querymenu querymenu;
         switch(v4l2->controls[ctrl].type) {
             case V4L2_CTRL_TYPE_INTEGER:
-                printw("%32s = %d (%d%) : %d < %d +/-%d", v4l2->controls[ctrl].name, v4l2->controls_value[ctrl], 100 * (v4l2->controls_value[ctrl] - v4l2->controls[ctrl].minimum) / (v4l2->controls[ctrl].maximum - v4l2->controls[ctrl].minimum)
+                printw("%-32s = %d (%d%) : %d < %d  +%d", v4l2->controls[ctrl].name, value, 100 * (value - v4l2->controls[ctrl].minimum) / (v4l2->controls[ctrl].maximum - v4l2->controls[ctrl].minimum)
                         , v4l2->controls[ctrl].minimum, v4l2->controls[ctrl].maximum, v4l2->controls[ctrl].step);
                 break;
             case V4L2_CTRL_TYPE_BOOLEAN:
-                printw("%32s : %s", v4l2->controls[ctrl].name, v4l2->controls_value[ctrl] ? "true" : "false");
+                printw("%-32s : %s", v4l2->controls[ctrl].name, value ? "true" : "false");
                 break;
             case V4L2_CTRL_TYPE_MENU:
                 memset(&querymenu, 0, sizeof(struct v4l2_querymenu));
                 querymenu.id    = v4l2->controls[ctrl].id;
-                querymenu.index = v4l2->controls_value[ctrl];
+                querymenu.index = value;
                 if(ioctl(v4l2->fd, VIDIOC_QUERYMENU, &querymenu)) {
-                    printw("%32s : error", v4l2->controls[ctrl].name);
+                    printw("%-32s : error", v4l2->controls[ctrl].name);
                 } else {
-                    printw("%32s : %s", v4l2->controls[ctrl].name, querymenu.name);
+                    printw("%-32s : %s (%d < %d +%d)", v4l2->controls[ctrl].name, querymenu.name
+                            , v4l2->controls[ctrl].minimum, v4l2->controls[ctrl].maximum, v4l2->controls[ctrl].step);
                 }
                 break;
             default:
-                printw("%32s : ??", v4l2->controls[ctrl].name);
+                printw("%-32s : ??", v4l2->controls[ctrl].name);
                 break;
         }
         if (selected) {
-            attroff(COLOR_PAIR(1));
+            if (value == v4l2->controls_value[ctrl]) attroff(COLOR_PAIR(1));
+            else attroff(COLOR_PAIR(2));
         }
 
 
-        move(rows - 1, 20);
-        printw("       ", appli.recording_perst);
         move(rows - 1, 20);
         printw("rcs %d", appli.recording_perst);
         refresh();
