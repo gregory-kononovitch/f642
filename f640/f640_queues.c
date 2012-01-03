@@ -81,6 +81,7 @@ struct f640_queue *f640_make_queue(struct f640_stone *stones, int length, long *
     }
 
     //
+    queue->run = 1;
     pthread_mutex_init(&queue->mutex, NULL);
     pthread_cond_init (&queue->cond , NULL);
     //
@@ -257,6 +258,9 @@ next:
 wait:
         if (block) {
             pthread_cond_wait(&queue->cond, &queue->mutex);
+            if (!queue->run) {
+                return -1;
+            }
         } else {
             return -1;
         }
@@ -354,7 +358,7 @@ void *f641_loop2(void* th) {
     timerclear(&tvb3);
     timerclear(&tve3);
     if (debug_loop2) printf("%s : launched\n", thread->name);
-    while(1) {
+    while(thread->loop) {
         // Dequeue
         if (times) gettimeofday(&tvd1, NULL);
         int key = f640_dequeue(thread->queue_in, thread->block_dequeue, thread->action);
@@ -364,7 +368,7 @@ void *f641_loop2(void* th) {
 
         // Check
         if ( key < 0) {
-            printf("End of in queue for thread %s, exiting\n", thread->name);
+            printf("\nEnd of in queue for thread %s, exiting", thread->name);
             break;
         }
         struct f640_stone *stone = &thread->queue_in->stones[key];
@@ -403,6 +407,13 @@ void *f641_loop2(void* th) {
 //        if (debug_loop2) f640_dump_queue(thread->queue_in);
 //        if (debug_loop2) f640_dump_queue(thread->queue_out);
     }
+
+    //
+    if (thread->ops.free && thread->ops.ressources) {
+        thread->ops.free(thread->ops.appli, thread->ops.ressources);
+    }
+
+    //printf("\nEnd of thread %s", thread->name);
     pthread_exit(NULL);
 }
 
@@ -418,6 +429,7 @@ void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int bloc
         th->block_enqueue = block_enqueue;
         th->nn_1 = nn_1;
         th->process = process;
+        th->loop = 1;
 
         pthread_t *thread = calloc(1, sizeof(pthread_t));
 
@@ -448,6 +460,8 @@ struct f640_thread *f641_make_group(int nb, long action, struct f640_queue *queu
         if (attrib) {
             attrib(&th->ops);
         }
+
+        th->loop = 1;
     }
 
     return &group[0];
@@ -464,6 +478,6 @@ int f641_init_thread(struct f640_thread *thread, void *appli) {
     } else {
         thread->ops.ressources = NULL;
     }
-
+    thread->loop = 1;
     return 0;
 }

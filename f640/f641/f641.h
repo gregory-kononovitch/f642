@@ -24,6 +24,8 @@
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
 
+#include <ncurses.h>
+
 #include "../f640.h"
 #include "../f640_graphics.h"
 #include "../f640_queues.h"
@@ -46,6 +48,8 @@ struct f641_process_data {
     // Decoding
     int decoded_format;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
     int broadcast_format;               // PIX_FMT_BGR24, PIX_FMT_GRAY8
+    int broadcast_width;
+    int broadcast_height;
 
     // Grid
     struct f640_grid        *grid;
@@ -61,6 +65,9 @@ struct f641_process_data {
 
 
 struct f641_appli {
+
+    // Logging
+    int logging;
 
     // Dimension
     int width;
@@ -147,6 +154,10 @@ struct f641_v4l2_parameters {
     int show_framsize;
     int show_framints;
     int show_vidstds;
+
+    int nb_controls;
+    struct v4l2_queryctrl controls[128];
+    int32_t controls_value[128];
 };
 
 /************************************

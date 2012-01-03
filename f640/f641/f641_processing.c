@@ -110,7 +110,7 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
 
     if (app->functions == 0) {
         line->flaged = 0;
-        if (line->frame % app->frames_pers == 0) line->flaged = 1;
+        if (line->frame % app->recording_perst == 0) line->flaged = 1;
     } else if (app->functions == 1) {
         //    pthread_mutex_lock(&app->process->grid->mutex_coefs);
         line->flaged = 0;
@@ -129,9 +129,15 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
         if (line->frame % (app->recording_perst * app->frames_pers) == 0) line->flaged = 1;
     }
 
-    ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - app->process->tv0.tv_sec);
-    ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->frame);
-    ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, *(line->grid_max));
+    if (app->functions == 0) {
+        ix = f640_draw_number(line->rgb, app->process->broadcast_width - 5, app->process->broadcast_height - 5, line->tv00.tv_sec - app->process->tv0.tv_sec);
+        ix = f640_draw_number(line->rgb, ix - 20, app->process->broadcast_height - 5, line->frame);
+        ix = f640_draw_number(line->rgb, ix - 20, app->process->broadcast_height - 5, *(line->grid_max));
+    } else {
+        ix = f640_draw_number(line->rgb, line->grid->width - 5, line->grid->height - 5, line->tv00.tv_sec - app->process->tv0.tv_sec);
+        ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, line->frame);
+        ix = f640_draw_number(line->rgb, ix - 20, line->grid->height - 5, *(line->grid_max));
+    }
 
 
     return 0;
@@ -162,12 +168,12 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
     if ( (app->functions == 2) && ( (line->frame % (app->recording_perst * app->frames_pers)) == 0) ) {
         char fname[128];
         FILE *filp;
-        if ( (size >> 10) < 15000000L) {
-            sprintf(fname, "/work/test/snap/sky6-%ld.raw", nb++);
-        } else if ( (size >> 10) < 30000000L) {
-            sprintf(fname, "/media/test/snap/sky6-%ld.raw", nb++);
+        if ( (size >> 10) < 0) {
+            sprintf(fname, "/work/test/snap/sky7-%ld.raw", nb++);
+        } else if ( (size >> 10) < 15000000L) {
+            sprintf(fname, "/media/test/snap/sky7-%ld.raw", nb++);
         } else {
-            sprintf(fname, "/mnt/test/snap/sky6-%ld.raw", nb++);
+            sprintf(fname, "/mnt/test/snap/sky7-%ld.raw", nb++);
         }
         filp = fopen(fname, "wb");
         if (!filp) {
@@ -222,7 +228,8 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
     // FB
     if (res && res->fd_fb > 0 && app->functions == 0) {
         lseek(res->fd_fb, 0, SEEK_SET);
-        write(res->fd_fb, line->rgb->data, line->rgb->data_size);
+//        write(res->fd_fb, line->rgb->data, line->rgb->data_size);
+        write(res->fd_fb, line->rgb->data, 4 * app->width * app->process->broadcast_height);
     } else if (app->functions == 1) {
         // Grid
         if (app->fd_grid > 0) {
@@ -556,61 +563,92 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
 //            jiffs = clock_t_to_jiffies(times);
 //            ms = jiffies_to_msecs(jiffs);
 
-        printf("\n");
-        printf("%02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
-                , tm1.tm_hour, tm1.tm_min, tm1.tm_sec
-                , 100 * (res->times2 - res->times1) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
-                , 1. * (res->show_freq * 1000000) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
-                , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tv3.tv_sec + res->tv3.tv_usec))
-        );
 
-        if ( res->recorded_one ) {
-//            printf("%2d|¤de %2.0f% |%2d|¤wa %2.0f %2ld - %2ld - " F640_RESET F640_BOLD F640_FG_RED "%5ld" F640_RESET
-//                    " |%2d|¤ed %2.0f% |%2d|¤cv %2.0f% |%2d|¤rc %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
-//                    " |%2d|%2d|¤%.1fs %.1fMo|%ld %ld"
-//                    , /*snaped*/0,    100*res->td / res->t4
-//                    , /*decoded*/0,   100*res->t1 / res->t4, res->grid_min_value, res->rms / res->show_freq, res->grid_max_value
-//                    , /*watched*/0,   100*res->te / res->t4
-//                    , /*edged*/0,     100*res->t2 / res->t4
-//                    , /*converted*/0, 100*res->t3 / res->t4, res->recorded_frames
-//                    , /*recorded*/0
-//                    , /*released*/0
-//                    , 1. * app->process->recorded_frames / app->frames_pers
-//                    , 1. * res->size_out / (1024 * 1024)
-//                    , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)
-//                    , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
-//            );
-            printf("%2d|¤de %2.0f|%2d|¤wa %2.0f|%2ld " F640_RESET F640_BOLD F640_FG_RED "%4ld" F640_RESET
-                    "|%2d|¤ed %2.0f %2.0f|%2d|¤cv %2.0f|%2d|¤rc %2.0f %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
-                    "|%2d|%2d|%.1fs %.1fMo|%ld %ld"
-                    , /*snaped*/0,    1000*res->td / res->show_freq//res->t4
-                    , /*decoded*/0 ,  1000*res->t1 / res->show_freq, res->rms / res->show_freq, res->grid_max_value
-                    , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
-                    , /*edged*/0,     1000*res->t2 / res->show_freq
-                    , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->t3 / res->show_freq, res->recorded_frames
-                    , /*recorded*/0
-                    , /*released*/0
-                    , 1. * app->process->recorded_frames / app->frames_pers
-                    , 1. * res->size_out / (1024 * 1024)
-                    , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)
-                    , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
+        if (app->functions == 0) {
+            int rows, cols;
+            getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
+            move(rows - 5, 0);
+
+            printw("%02d:%02d:%02d  %3.2f - %3.1fHz - %3.2fMo/s"
+                    , tm1.tm_hour, tm1.tm_min, tm1.tm_sec
+                    , 1. * (res->times2 - res->times1) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
+                    , 1. * (res->show_freq * 1000000) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
+                    , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tv3.tv_sec + res->tv3.tv_usec))
             );
+
+            move(rows - 4, 0);
+            if ( res->recorded_one ) {
+                printw("dec %2.0f "
+                        "con %2.0f  rec %2.0f %2.0f +%2ld"
+                        " (%.1fs %.1fMo) : %ldms + %ldms"
+                        , 1000*res->td / res->show_freq                                                 // t decode
+                        , 1000*res->t2 / res->show_freq                                                 // t converse
+                        , 1000*res->tb / res->show_freq                                                 // t broadcast
+                        , 1000*res->t3 / res->show_freq                                                 // t record
+                        , res->recorded_frames
+                        , 1. * app->process->recorded_frames / app->frames_pers                         // recorded time
+                        , 1. * res->size_out / (1024 * 1024)                                            // recorded size
+                        , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)    // t sys
+                        , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)    // t cod
+                );
+            } else {
+                printw("dec %2.0f "
+                        "con %2.0f  rec %2.0f %2.0f +%2ld"
+                        " (%.1fs %.1fMo) : %ldms + %ldms"
+                        , 1000*res->td / res->show_freq                                                 // t decode
+                        , 1000*res->t2 / res->show_freq                                                 // t converse
+                        , 1000*res->tb / res->show_freq                                                 // t broadcast
+                        , 1000*res->t3 / res->show_freq                                                 // t record
+                        , res->recorded_frames
+                        , 1. * app->process->recorded_frames / app->frames_pers                         // recorded time
+                        , 1. * res->size_out / (1024 * 1024)                                            // recorded size
+                        , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)    // t sys
+                        , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)    // t cod
+                );
+            }
+            refresh();                      /* Print it on to the real screen */
         } else {
-            printf("%2d|¤de %2.0f|%2d|¤wa %2.0f|%2ld %4ld"
-                    "|%2d|¤ed %2.0f %2.0f|%2d|¤cv %2.0f|%2d|¤rc %2.0f %2.0f +%2ld"
-                    "|%2d|%2d|%.1fs %.1fMo|%ld %ld"
-                    , /*snaped*/0,    1000*res->td / res->show_freq//res->t4
-                    , /*decoded*/0 ,  1000*res->t1 / res->show_freq, res->rms / res->show_freq, res->grid_max_value
-                    , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
-                    , /*edged*/0,     1000*res->t2 / res->show_freq
-                    , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->t3 / res->show_freq, res->recorded_frames
-                    , /*recorded*/0
-                    , /*released*/0
-                    , 1. * app->process->recorded_frames / app->frames_pers
-                    , 1. * res->size_out / (1024 * 1024)
-                    , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)
-                    , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
+            printf("\n");
+            printf("%02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
+                    , tm1.tm_hour, tm1.tm_min, tm1.tm_sec
+                    , 100 * (res->times2 - res->times1) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
+                    , 1. * (res->show_freq * 1000000) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
+                    , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tv3.tv_sec + res->tv3.tv_usec))
             );
+
+            if ( res->recorded_one ) {
+                printf("%2d|¤de %2.0f|%2d|¤wa %2.0f|%2ld " F640_RESET F640_BOLD F640_FG_RED "%4ld" F640_RESET
+                        "|%2d|¤ed %2.0f %2.0f|%2d|¤cv %2.0f|%2d|¤rc %2.0f %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
+                        "|%2d|%2d|%.1fs %.1fMo|%ld %ld"
+                        , /*snaped*/0,    1000*res->td / res->show_freq//res->t4
+                        , /*decoded*/0 ,  1000*res->t1 / res->show_freq, res->rms / res->show_freq, res->grid_max_value
+                        , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
+                        , /*edged*/0,     1000*res->t2 / res->show_freq
+                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->t3 / res->show_freq, res->recorded_frames
+                        , /*recorded*/0
+                        , /*released*/0
+                        , 1. * app->process->recorded_frames / app->frames_pers
+                        , 1. * res->size_out / (1024 * 1024)
+                        , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)
+                        , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
+                );
+            } else {
+                printf("%2d|¤de %2.0f|%2d|¤wa %2.0f|%2ld %4ld"
+                        "|%2d|¤ed %2.0f %2.0f|%2d|¤cv %2.0f|%2d|¤rc %2.0f %2.0f +%2ld"
+                        "|%2d|%2d|%.1fs %.1fMo|%ld %ld"
+                        , /*snaped*/0,    1000*res->td / res->show_freq//res->t4
+                        , /*decoded*/0 ,  1000*res->t1 / res->show_freq, res->rms / res->show_freq, res->grid_max_value
+                        , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
+                        , /*edged*/0,     1000*res->t2 / res->show_freq
+                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->t3 / res->show_freq, res->recorded_frames
+                        , /*recorded*/0
+                        , /*released*/0
+                        , 1. * app->process->recorded_frames / app->frames_pers
+                        , 1. * res->size_out / (1024 * 1024)
+                        , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)
+                        , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
+                );
+            }
         }
 
         res->size_in  = 0;

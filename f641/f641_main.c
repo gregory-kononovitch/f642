@@ -451,9 +451,14 @@ int f641_v4l2(int argc, char *argv[]) {
     proc_data.decoded_format = PIX_FMT_YUVJ422P;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
     if (appli.functions == 0) {
         proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+        proc_data.broadcast_height = appli.height - 70;
+        proc_data.broadcast_width  = appli.width * proc_data.broadcast_height / appli.height;
+        appli.recording_perst = appli.frames_pers;
     }
     else {
         proc_data.broadcast_format = PIX_FMT_BGR24;
+        proc_data.broadcast_width  = appli.width;
+        proc_data.broadcast_height = appli.height;
     }
     proc_data.grid  = f640_make_grid(appli.width, appli.height, 32);
     proc_data.grid2 = f640_make_grid2(proc_data.grid);
@@ -498,6 +503,7 @@ int f641_v4l2(int argc, char *argv[]) {
     printf("Stones %d OK\n", 0);
 
     // FUNCTION
+    struct f640_queue *queues[32];
     struct f640_queue *released  = NULL;
     struct f640_queue *snapped   = NULL;
     struct f640_queue *decoded   = NULL;
@@ -509,69 +515,76 @@ int f641_v4l2(int argc, char *argv[]) {
 
 
     // QUEUES
+    i = 0;
     if (appli.functions == 0) {
         long actbf[2] = {F641_SNAPED, -1};
-        released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+        released = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
 
         long actsn[2] = {F641_DECODED, -1};
-        snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
+        snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
 
         long actde[4] = {F641_CONVERTED, -1};
-        decoded = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
+        decoded = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
 
         long actpr[2] = {F641_TAGGED, -1};
-        processed = f640_make_queue(stones, proc_data.proc_len, actpr, F641_CONVERTED, 1, 0);
+        processed = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actpr, F641_CONVERTED, 1, 0);
 
         long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
-        tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+        tagged  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
 
         long actbr[2] = {F641_LOGGED, -1};
-        broaded  = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED | F641_RECORDED, 0, 0);
+        broaded  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED | F641_RECORDED, 0, 0);
 
         long actlg[2] = {F641_RELEASED, -1};
-        logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+        logged   = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+
+        queues[i++] = NULL;
     } else if (appli.functions == 1) {
         long actbf[2] = {F641_SNAPED, -1};
-        released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+        released = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
 
         long actsn[2] = {F641_DECODED, -1};
-        snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
+        snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
 
         long actde[4] = {F641_WATCHED, F641_CONVERTED, F641_GRAYED, -1};
-        decoded = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
+        decoded = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
 
         long actpr[2] = {F641_GRIDED, -1};
-        processed = f640_make_queue(stones, proc_data.proc_len, actpr, F641_WATCHED | F641_CONVERTED | F641_GRAYED, 1, 0);
+        processed = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actpr, F641_WATCHED | F641_CONVERTED | F641_GRAYED, 1, 0);
 
         long actgr[2] = {F641_TAGGED, -1};
-        grided = f640_make_queue(stones, proc_data.proc_len, actgr, 0, 0, 0);
+        grided = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actgr, 0, 0, 0);
 
         long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
-        tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+        tagged  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
 
         long actbr[2] = {F641_LOGGED, -1};
-        broaded  = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED | F641_RECORDED, 0, 0);
+        broaded  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED | F641_RECORDED, 0, 0);
 
         long actlg[2] = {F641_RELEASED, -1};
-        logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+        logged   = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+
+        queues[i++] = NULL;
     } else if (appli.functions == 2) {
         long actbf[2] = {F641_SNAPED, -1};
-        released = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+        released = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
 
         long actsn[2] = {F641_SKYED, -1};
-        snapped = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 0);
+        snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 0);
 
         long actpr[2] = {F641_TAGGED, -1};
-        processed = f640_make_queue(stones, proc_data.proc_len, actpr, 0, 1, 0);
+        processed = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actpr, 0, 1, 0);
 
         long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
-        tagged  = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+        tagged  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
 
         long actbr[2] = {F641_LOGGED, -1};
-        broaded  = f640_make_queue(stones, proc_data.proc_len, actbr, 0, 0, 0);
+        broaded  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbr, 0, 0, 0);
 
         long actlg[2] = {F641_RELEASED, -1};
-        logged   = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+        logged   = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+
+        queues[i++] = NULL;
     }
 
     printf("Queues OK\n");
@@ -673,10 +686,112 @@ int f641_v4l2(int argc, char *argv[]) {
     printf("Launch done\n");
 
     //
+    appli.logging = 0;
+    initscr();                      /* Start curses mode            */
+    raw();                          /* Line buffering disabled      */
+    keypad(stdscr, TRUE);           /* We get F1, F2 etc..          */
+    noecho();                       /* Don't echo() while we do getch */
+    start_color();                  /* Start color                  */
+    init_pair(1, COLOR_BLACK, COLOR_RED);
+
     if (appli.functions == 2) {
         usleep(2000*1000);
         f641_set_defaults(v4l2, 119, 22, 4000, 2047);
     }
+
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
+    int ctrl = 0;
+    int selected = 0;
+
+    while(1) {
+        int ch = getch();
+
+        if (ch == KEY_CANCEL || ch == KEY_F(1)) {
+            endwin();
+
+            snaping->loop = 0;
+            usleep(2000 / appli.frames_pers);
+
+            i = 0;
+            while(queues[i] != NULL) {
+                queues[i]->run = 0;
+
+                pthread_mutex_lock(&queues[i]->mutex);
+                pthread_cond_broadcast(&queues[i]->cond);
+                pthread_mutex_unlock(&queues[i]->mutex);
+
+                i++;
+            }
+            usleep(300*1000);
+            printf("\n");
+            return 0;
+        } else if (ch == KEY_F(2)) {
+            if (!selected) selected = 1;
+            else selected = 0;
+        } else if (ch == KEY_LEFT && selected) {
+
+        } else if (ch == KEY_RIGHT && selected) {
+
+        } else if (ch == KEY_UP) {
+            selected = 0;
+            if (ctrl) ctrl--;
+            else ctrl = v4l2->nb_controls - 1;
+        } else if (ch == KEY_DOWN) {
+            selected = 0;
+            ctrl = (ctrl + 1) % v4l2->nb_controls;
+        } else if (ch == '-') {
+            appli.recording_perst++;
+        } else if (ch == '+') {
+            if (appli.recording_perst > 1) appli.recording_perst--;
+            else appli.recording_perst = 1;
+        } else {
+            move(rows - 1, 2);
+            printw("%c typed", ch);
+        }
+
+        move(rows - 2, 0);
+        printw("                                                                   ");
+        move(rows - 2, 0);
+        if (selected) {
+            attron(COLOR_PAIR(1));
+        }
+        struct v4l2_querymenu querymenu;
+        switch(v4l2->controls[ctrl].type) {
+            case V4L2_CTRL_TYPE_INTEGER:
+                printw("%32s = %d (%d%) : %d < %d +/-%d", v4l2->controls[ctrl].name, v4l2->controls_value[ctrl], 100 * (v4l2->controls_value[ctrl] - v4l2->controls[ctrl].minimum) / (v4l2->controls[ctrl].maximum - v4l2->controls[ctrl].minimum)
+                        , v4l2->controls[ctrl].minimum, v4l2->controls[ctrl].maximum, v4l2->controls[ctrl].step);
+                break;
+            case V4L2_CTRL_TYPE_BOOLEAN:
+                printw("%32s : %s", v4l2->controls[ctrl].name, v4l2->controls_value[ctrl] ? "true" : "false");
+                break;
+            case V4L2_CTRL_TYPE_MENU:
+                memset(&querymenu, 0, sizeof(struct v4l2_querymenu));
+                querymenu.id    = v4l2->controls[ctrl].id;
+                querymenu.index = v4l2->controls_value[ctrl];
+                if(ioctl(v4l2->fd, VIDIOC_QUERYMENU, &querymenu)) {
+                    printw("%32s : error", v4l2->controls[ctrl].name);
+                } else {
+                    printw("%32s : %s", v4l2->controls[ctrl].name, querymenu.name);
+                }
+                break;
+            default:
+                printw("%32s : ??", v4l2->controls[ctrl].name);
+                break;
+        }
+        if (selected) {
+            attroff(COLOR_PAIR(1));
+        }
+
+
+        move(rows - 1, 20);
+        printw("       ", appli.recording_perst);
+        move(rows - 1, 20);
+        printw("rcs %d", appli.recording_perst);
+        refresh();
+
+    }
+    endwin();                       /* End curses mode                */
 
     //
     void *grid = calloc(1, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows));

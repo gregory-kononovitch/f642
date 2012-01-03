@@ -266,7 +266,7 @@ static void* f641_init_converting_torgb(void *appli) {
     // SwScaleCtxt
     res->swsCtxt = sws_getCachedContext(res->swsCtxt,
             app->width, app->height, app->process->decoded_format,
-            app->width, app->height, app->process->broadcast_format,
+            app->process->broadcast_width, app->process->broadcast_height, app->process->broadcast_format,
             SWS_BICUBIC, NULL, NULL, NULL
     );
     if (!res->swsCtxt) {
@@ -694,12 +694,13 @@ static void* f641_init_recording(void *appli) {
         free(res);
         return NULL;
     }
+    av_free(res->pkt.data);
 
     // Header
     r = avformat_write_header(res->outputFile, NULL);
     if (r < 0) {
         printf("PB getting writing header in recording, returning\n");
-        av_free_packet(&res->pkt);
+//        av_free_packet(&res->pkt);
         avcodec_close(res->video_stream->codec);    // @@@ ?
         avio_close(res->outputFile->pb);
         avformat_free_context(res->outputFile);
@@ -751,7 +752,8 @@ static int f641_exec_recording(void *appli, void* ressources, struct f640_stone 
 static void f641_free_recording(void *appli, void* ressources) {
     struct f641_recording_ressources *res = (struct f641_recording_ressources*)ressources;
     if (res) {
-        av_free_packet(&res->pkt);
+        //av_free_packet(&res->pkt);
+        //av_free(res->pkt.data);
         avcodec_close(res->video_stream->codec);    // @@@ ?
         avio_close(res->outputFile->pb);
         avformat_free_context(res->outputFile);

@@ -78,7 +78,7 @@ struct f640_queue {
     pthread_cond_t  cond;
 
     //
-
+    int run;
 };
 extern struct f640_queue   *f640_make_queue(struct f640_stone *stones, int length, long *foractions, long constraints, int nn_1, int back_diff);
 extern int                 f640_enqueue(struct f640_queue *queue, int block, int key, long action);
@@ -126,6 +126,7 @@ struct f640_thread {
     // Processing
     pthread_t   id;
     struct f641_thread_operations ops;
+    int loop;
 
 };
 extern void f640_make_thread(int nb, long action, struct f640_queue *queue_in, int block_dequeue, struct f640_queue *queue_out, int block_enqueue, int nn_1, int (*process)(struct f640_stone *stone));

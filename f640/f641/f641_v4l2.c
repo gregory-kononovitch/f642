@@ -168,6 +168,7 @@ static int f640_show_control(struct f641_v4l2_parameters *prm, struct v4l2_query
             printf("Error reading value of control '%s'.\n", queryctrl->name);
             printf("VIDIOC_G_CTRL: %s\n", strerror(errno));
         }
+        prm->controls_value[prm->nb_controls] = control.value;
     }
 
     switch(queryctrl->type)
@@ -330,7 +331,10 @@ int f641_list_controls(struct f641_v4l2_parameters *prm)
         memset(&queryctrl, 0, sizeof(queryctrl));
         queryctrl.id = c;
         if(ioctl(prm->fd, VIDIOC_QUERYCTRL, &queryctrl)) continue;
+
+        memcpy(&prm->controls[prm->nb_controls], &queryctrl, sizeof(queryctrl));
         f640_show_control(prm, &queryctrl);
+        prm->nb_controls++;
     }
     // Display device-specific controls.
     printf(F640_UNDER "Device-specific controls :\n" F640_RESET);
@@ -338,7 +342,10 @@ int f641_list_controls(struct f641_v4l2_parameters *prm)
         memset(&queryctrl, 0, sizeof(queryctrl));
         queryctrl.id = c;
         if(ioctl(prm->fd, VIDIOC_QUERYCTRL, &queryctrl)) break;
+
+        memcpy(&prm->controls[prm->nb_controls], &queryctrl, sizeof(queryctrl));
         f640_show_control(prm, &queryctrl);
+        prm->nb_controls++;
     }
 
 
@@ -361,13 +368,15 @@ int f641_list_controls(struct f641_v4l2_parameters *prm)
 
     // Camera-class controls
     printf(F640_UNDER "Camera-class controls :\n" F640_RESET);
-    for(c = V4L2_CID_EXPOSURE_AUTO; c < V4L2_CID_PRIVACY ; c++ ) {
+    for(c = V4L2_CID_EXPOSURE_AUTO; c < V4L2_CID_CAMERA_CLASS_BASE + 19 ; c++ ) {
         memset(&queryctrl, 0, sizeof(queryctrl));
         queryctrl.id = c;
         if(ioctl(prm->fd, VIDIOC_QUERYCTRL, &queryctrl)) {
             continue;
         } else {
+            memcpy(&prm->controls[prm->nb_controls], &queryctrl, sizeof(queryctrl));
             f640_show_control(prm, &queryctrl);
+            prm->nb_controls++;
         }
     }
 

@@ -1,8 +1,8 @@
 
 
 CC      = gcc
-CFLAGS  = -g -pg -O0
-LDFLAGS = -L/usr/lib -L/usr/local/lib -lasound -lfftw3 -lfftw3f -lf051-0.1 -lm
+CFLAGS  = -g -pg  -O3
+LDFLAGS = -L/usr/lib -L/usr/local/lib -lasound -lfftw3 -lfftw3f -lf051-0.1 -lm -lncurses
 
 INCL=-I/usr/local/include/libavformat -I/usr/local/include/libavdevice -I/usr/local/include/libswscale -I/usr/local/include/libavcodec -I/usr/local/include/libavutil
 LIBS=-L/usr/local/lib -lavformat -lavdevice -lswscale -lavutil -lavcodec
