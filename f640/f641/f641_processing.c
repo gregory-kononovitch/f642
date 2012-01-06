@@ -203,17 +203,41 @@ void f641_attrib_saving(struct f641_thread_operations *ops) {
  *      BROADCAST THREAD
  ******************************/
 struct f641_broadcast_ressources {
+    // FB
     int fd_fb;
+    void* start;
+    int len;
+
+    // Sky
     int fd_sky;
 };
 
+#include <sys/mman.h>
+#include <linux/fb.h>
 static void* f641_init_broadcasting(void *appli) {
     int r;
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_broadcast_ressources *res = calloc(1, sizeof(struct f641_broadcast_ressources));
 
-    res->fd_fb = open("/dev/fb0", O_WRONLY);
-    res->fd_sky = open("/dev/t030/t030-15", O_WRONLY);
+    if (app->functions == 0) {
+        res->fd_fb = open("/dev/fb0", O_RDWR);
+        if (res->fd_fb < 1) return res;
+        struct fb_fix_screeninfo fix;
+        memset(&fix, 0, sizeof(fix));
+        r = ioctl(res->fd_fb, FBIOGET_FSCREENINFO, &fix);
+        if (r < 0) return res;
+        res->start = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, res->fd_fb, 0);
+        if (res->start == MAP_FAILED) {
+            res->start = NULL;
+            return res;
+        }
+        printf("MMAP return %p\n", res->start);
+
+    } else if (app->functions == 2) {
+        res->fd_sky = open("/dev/t030/t030-15", O_WRONLY);
+    } else {
+
+    }
 
     return res;
 }
@@ -226,10 +250,14 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
     gettimeofday(&line->tvb0, NULL);
 
     // FB
-    if (res && res->fd_fb > 0 && app->functions == 0) {
-        lseek(res->fd_fb, 0, SEEK_SET);
-//        write(res->fd_fb, line->rgb->data, line->rgb->data_size);
-        write(res->fd_fb, line->rgb->data, 4 * app->width * app->process->broadcast_height);
+    if (res && app->functions == 0) {
+        if (res->start) {
+            memcpy(res->start, line->rgb->data, 4 * app->width * app->process->broadcast_height);
+            ioctl(res->fd_fb, FBIOBLANK, FB_BLANK_UNBLANK);
+        } else if (res->fd_fb > 0) {
+            lseek(res->fd_fb, 0, SEEK_SET);
+            write(res->fd_fb, line->rgb->data, 4 * app->width * app->process->broadcast_height);
+        }
     } else if (app->functions == 1) {
         // Grid
         if (app->fd_grid > 0) {
@@ -464,11 +492,11 @@ struct f641_logging_ressources {
     double te;
     double tg;
     double tb;
-    double t3;
+    double tr;
     double t4;
     struct timeval tv1;
     struct timeval tv2;
-    struct timeval tv3;
+    struct timeval tvr;
     struct timeval tvs;
     struct timeval tvp;
     struct timeval tva;
@@ -530,13 +558,13 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
     res->t2 += f640_duration (line->tv21, line->tv20);   // convert
     res->tg += f640_duration (line->tvg1, line->tvg0);   // grid
     res->tb += f640_duration (line->tvb1, line->tvb0);   // broadc
-//    timersub(&line->tv31, &line->tv30, &line->tv31); timeradd(&res->tv3, &line->tv31, &res->tv3);
-    res->t3 += f640_duration (line->tv31, line->tv30);   // record
+//    timersub(&line->tvr1, &line->tvr0, &line->tvr1); timeradd(&res->tvr, &line->tvr1, &res->tvr);
+    res->tr += f640_duration (line->tvr1, line->tvr0);   // record
     res->t4 += f640_duration (line->tvd1, line->tvd0)
        +  f640_duration (line->tv11, line->tv10)
        +  f640_duration (line->tve1, line->tve0)
        +  f640_duration (line->tv21, line->tv20)
-       +  f640_duration (line->tv31, line->tv30);
+       +  f640_duration (line->tvr1, line->tvr0);
 
     timersub(&line->tv00, &line->buf.timestamp, &tmp);
     timeradd(&res->tsys, &tmp, &res->tsys);
@@ -545,8 +573,8 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
     timeradd(&res->tcod, &tmp, &res->tcod);
 
 
-//    printf("Line[%d, %lu/%ld] %lX : td = %.3fs , t1 = %.3fs , te = %.3fs , t2 = %.3fs , t3 = %.3fs , tt = %.3fs\n"
-//            , line->index, line->frame, stone->frame, stone->status, res->td, res->t1, res->te, res->t2, res->t3, res->t4);
+//    printf("Line[%d, %lu/%ld] %lX : td = %.3fs , t1 = %.3fs , te = %.3fs , t2 = %.3fs , tr = %.3fs , tt = %.3fs\n"
+//            , line->index, line->frame, stone->frame, stone->status, res->td, res->t1, res->te, res->t2, res->tr, res->t4);
 //    printf("-------------------------------------------------------------\n");
 
 
@@ -558,7 +586,7 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
         timersub(&line->tv40, &line->tv00, &res->tvp);
         timersub(&res->tv2, &line->buf.timestamp, &res->tva);
         res->times2 = clock();// / CLOCKS_PER_SECOND ~ 1 000 000;
-        timersub(&res->tv2, &res->tv1, &res->tv3);
+        timersub(&res->tv2, &res->tv1, &res->tvr);
 //            time(&time70);
 //            jiffs = clock_t_to_jiffies(times);
 //            ms = jiffies_to_msecs(jiffs);
@@ -571,20 +599,20 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
 
             printw("%02d:%02d:%02d  %3.2f - %3.1fHz - %3.2fMo/s"
                     , tm1.tm_hour, tm1.tm_min, tm1.tm_sec
-                    , 1. * (res->times2 - res->times1) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
-                    , 1. * (res->show_freq * 1000000) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
-                    , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tv3.tv_sec + res->tv3.tv_usec))
+                    , 1. * (res->times2 - res->times1) / (1000000 * res->tvr.tv_sec + res->tvr.tv_usec)
+                    , 1. * (res->show_freq * 1000000) / (1000000 * res->tvr.tv_sec + res->tvr.tv_usec)
+                    , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tvr.tv_sec + res->tvr.tv_usec))
             );
 
             move(rows - 4, 0);
             if ( res->recorded_one ) {
                 printw("dec %2.0f "
-                        "con %2.0f  rec %2.0f %2.0f +%2ld"
+                        "con %2.0f brd %2.0f rec %2.0f +%2ld"
                         " (%.1fs %.1fMo) : %ldms + %ldms"
                         , 1000*res->td / res->show_freq                                                 // t decode
                         , 1000*res->t2 / res->show_freq                                                 // t converse
                         , 1000*res->tb / res->show_freq                                                 // t broadcast
-                        , 1000*res->t3 / res->show_freq                                                 // t record
+                        , 1000*res->tr / res->show_freq                                                 // t record
                         , res->recorded_frames
                         , 1. * app->process->recorded_frames / app->frames_pers                         // recorded time
                         , 1. * res->size_out / (1024 * 1024)                                            // recorded size
@@ -593,12 +621,12 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
                 );
             } else {
                 printw("dec %2.0f "
-                        "con %2.0f  rec %2.0f %2.0f +%2ld"
+                        "con %2.0f brd %2.0f rec %2.0f +%2ld"
                         " (%.1fs %.1fMo) : %ldms + %ldms"
                         , 1000*res->td / res->show_freq                                                 // t decode
                         , 1000*res->t2 / res->show_freq                                                 // t converse
                         , 1000*res->tb / res->show_freq                                                 // t broadcast
-                        , 1000*res->t3 / res->show_freq                                                 // t record
+                        , 1000*res->tr / res->show_freq                                                 // t record
                         , res->recorded_frames
                         , 1. * app->process->recorded_frames / app->frames_pers                         // recorded time
                         , 1. * res->size_out / (1024 * 1024)                                            // recorded size
@@ -611,9 +639,9 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
             printf("\n");
             printf("%02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
                     , tm1.tm_hour, tm1.tm_min, tm1.tm_sec
-                    , 100 * (res->times2 - res->times1) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
-                    , 1. * (res->show_freq * 1000000) / (1000000 * res->tv3.tv_sec + res->tv3.tv_usec)
-                    , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tv3.tv_sec + res->tv3.tv_usec))
+                    , 100 * (res->times2 - res->times1) / (1000000 * res->tvr.tv_sec + res->tvr.tv_usec)
+                    , 1. * (res->show_freq * 1000000) / (1000000 * res->tvr.tv_sec + res->tvr.tv_usec)
+                    , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tvr.tv_sec + res->tvr.tv_usec))
             );
 
             if ( res->recorded_one ) {
@@ -624,7 +652,7 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
                         , /*decoded*/0 ,  1000*res->t1 / res->show_freq, res->rms / res->show_freq, res->grid_max_value
                         , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
                         , /*edged*/0,     1000*res->t2 / res->show_freq
-                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->t3 / res->show_freq, res->recorded_frames
+                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->tr / res->show_freq, res->recorded_frames
                         , /*recorded*/0
                         , /*released*/0
                         , 1. * app->process->recorded_frames / app->frames_pers
@@ -640,7 +668,7 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
                         , /*decoded*/0 ,  1000*res->t1 / res->show_freq, res->rms / res->show_freq, res->grid_max_value
                         , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
                         , /*edged*/0,     1000*res->t2 / res->show_freq
-                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->t3 / res->show_freq, res->recorded_frames
+                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->tr / res->show_freq, res->recorded_frames
                         , /*recorded*/0
                         , /*released*/0
                         , 1. * app->process->recorded_frames / app->frames_pers
@@ -659,7 +687,7 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
         res->tg = 0;
         res->tb = 0;
         res->t2 = 0;
-        res->t3 = 0;
+        res->tr = 0;
         res->t4 = 0;
         res->rms = 0;
         res->grid_min_value = 0xFFFFFFFFFFL;

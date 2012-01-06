@@ -718,7 +718,7 @@ static int f641_exec_recording(void *appli, void* ressources, struct f640_stone 
     struct f640_line *line = (struct f640_line*) stone->private;
     int r;
 
-    gettimeofday(&line->tv30, NULL);
+    gettimeofday(&line->tvr0, NULL);
 
     if ( app->recording && line->flaged ) {
         if (app->functions == 2) {
@@ -742,7 +742,7 @@ static int f641_exec_recording(void *appli, void* ressources, struct f640_stone 
 
     //
     if (DEBUG) printf("\t\t\t\t\t\tRECORD  : enqueue %d, frame %lu\n", line->index, line->frame);
-    gettimeofday(&line->tv31, NULL);
+    gettimeofday(&line->tvr1, NULL);
 
 
     return 0;

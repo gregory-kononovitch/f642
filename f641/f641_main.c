@@ -241,6 +241,8 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
         {"palette",         required_argument, NULL, 'y'},
         {"width",           required_argument, NULL, 'W'},
         {"height",          required_argument, NULL, 'H'},
+        {"bwidth",          required_argument, NULL, 0xff0},
+        {"bheight",         required_argument, NULL, 0xff1},
         {"show-all",        no_argument,       NULL, 'A'},
         {"show-caps",       no_argument,       NULL, 'P'},
         {"show-inputs",     no_argument,       NULL, 'I'},
@@ -342,6 +344,12 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
                 break;
             case 'H':
                 appli->height = atoi(optarg);
+                break;
+            case 0xff0:
+                appli->broadcast_width = atoi(optarg);
+                break;
+            case 0xff1:
+                appli->broadcast_height = atoi(optarg);
                 break;
 //            case 'A':
 //                show_all = 1;

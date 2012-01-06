@@ -866,7 +866,7 @@ void *f640_record(void *video_lines) {
     while(1) {
         int l = f640_dequeue_line_number(&lines->converted, frame++);
         struct f640_line *line = &lines->converted.lineup[l];
-        gettimeofday(&line->tv30, NULL);
+        gettimeofday(&line->tvr0, NULL);
 
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
@@ -900,7 +900,7 @@ void *f640_record(void *video_lines) {
 
         //
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : enqueue %d, frame %lu\n", l, line->frame);
-        gettimeofday(&line->tv31, NULL);
+        gettimeofday(&line->tvr1, NULL);
         f640_enqueue_line(&lines->recorded, l);
     }
     pthread_exit(NULL);
@@ -955,7 +955,7 @@ void *f640_record_mj(void *video_lines) {
     while(1) {
         int l = f640_dequeue_line_number(&lines->converted, frame++);
         struct f640_line *line = &lines->converted.lineup[l];
-        gettimeofday(&line->tv30, NULL);
+        gettimeofday(&line->tvr0, NULL);
 
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : dequeue %d, frame %lu\n", l, line->frame);
 
@@ -1143,7 +1143,7 @@ void *f640_record_mj(void *video_lines) {
 
         //
         if (DEBUG) printf("\t\t\t\t\t\tRECORD  : enqueue %d, frame %lu\n", l, line->frame);
-        gettimeofday(&line->tv31, NULL);
+        gettimeofday(&line->tvr1, NULL);
         f640_enqueue_line(&lines->recorded, l);
     }
     pthread_exit(NULL);
@@ -1184,12 +1184,12 @@ void *f640_release(void *video_lines) {
         t1 += f640_duration (line->tv11, line->tv10);   // watch
         te += f640_duration (line->tve1, line->tve0);   // edge
         t2 += f640_duration (line->tv21, line->tv20);   // convert
-        t3 += f640_duration (line->tv31, line->tv30);   // record
+        t3 += f640_duration (line->tvr1, line->tvr0);   // record
         t4 += f640_duration (line->tvd1, line->tvd0)
            +  f640_duration (line->tv11, line->tv10)
            +  f640_duration (line->tve1, line->tve0)
            +  f640_duration (line->tv21, line->tv20)
-           +  f640_duration (line->tv31, line->tv30);
+           +  f640_duration (line->tvr1, line->tvr0);
 
         if (DEBUG) printf("\t\t\t\t\t\t\t\tRELEASE : dequeue %d, frame %lu\n", l, line->frame);
         if (line->frame % show_freq == 0) {
@@ -1265,7 +1265,7 @@ void *f640_release(void *video_lines) {
         if (DEBUG) printf("\t\t\t\t\t\t\t\tFrame %lu : - %5.0f - %5.0f - %5.0f = %4.3fms (%5.0f)\n", line->frame
                 , f640_frequency(line->tv11, line->tv10)
                 , f640_frequency(line->tv21, line->tv20)
-                , f640_frequency(line->tv31, line->tv30)
+                , f640_frequency(line->tvr1, line->tvr0)
                 , f640_duration (line->tv41, line->tv00)
                 , f640_frequency(line->tv41, line->tv00)
         );

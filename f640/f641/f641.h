@@ -74,6 +74,11 @@ struct f641_appli {
     int height;
     int size;
 
+    int broadcast_width;
+    int broadcast_height;
+    int broadcast_size;
+
+
     // Parameters
     int frames_pers;
     long max_frame;
