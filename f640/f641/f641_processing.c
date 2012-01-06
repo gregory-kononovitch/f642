@@ -712,6 +712,40 @@ void f641_attrib_logging(struct f641_thread_operations *ops) {
         ops->free = f641_free_logging;
 }
 
+
+
+/***************************************
+ *      READING MJPEG FRAMES THREAD
+ ***************************************/
+
+struct f641_read_mjpeg_ressources {
+    FILE *filp;
+    int read_size;
+    void* reads;
+};
+//
+static void* f641_init_reading_mjpeg(void *appli) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_read_mjpeg_ressources *res = calloc(1, sizeof(struct f641_read_mjpeg_ressources));
+
+    return res;
+}
+//
+static void f641_free_reading_mjpeg(void *appli, void* ressources) {
+    if (ressources) free(ressources);
+}
+
+//
+static int f641_exec_reading_mjpeg(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_read_mjpeg_ressources *res = (struct f641_read_mjpeg_ressources*)ressources;
+    struct f640_line *line = (struct f640_line*) stone->private;
+}
+
+
+
+
+
 /**********************************************
  *  COPY from f640
  */
