@@ -243,6 +243,7 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
         {"height",          required_argument, NULL, 'H'},
         {"bwidth",          required_argument, NULL, 0xff0},
         {"bheight",         required_argument, NULL, 0xff1},
+        {"path",            required_argument, NULL, 0xff10},
         {"show-all",        no_argument,       NULL, 'A'},
         {"show-caps",       no_argument,       NULL, 'P'},
         {"show-inputs",     no_argument,       NULL, 'I'},
@@ -351,6 +352,9 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
             case 0xff1:
                 appli->broadcast_height = atoi(optarg);
                 break;
+            case 0xff10:
+                strcpy(appli->file_path, optarg);
+                break;
 //            case 'A':
 //                show_all = 1;
 //                break;
@@ -416,6 +420,7 @@ int f641_v4l2(int argc, char *argv[]) {
     appli.frames_pers = 5;
     appli.recording_rate = 24;
     appli.recording_perst = 10;
+    appli.viewing_rate = 24;
     appli.max_frame = 0xFFFFFFFFFFFFFFL;
     appli.threshold = 1024;
     snprintf(appli.device, sizeof(appli.device), "/dev/video0");
@@ -457,7 +462,7 @@ int f641_v4l2(int argc, char *argv[]) {
     // PROC DATA
     proc_data.tv0;
     proc_data.decoded_format = PIX_FMT_YUVJ422P;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
-    if (appli.functions == 0) {
+    if (appli.functions == 0 || appli.functions == 10) {
         proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
         proc_data.broadcast_height = appli.height - 70;
         proc_data.broadcast_width  = appli.width * proc_data.broadcast_height / appli.height;
@@ -483,24 +488,46 @@ int f641_v4l2(int argc, char *argv[]) {
     printf("Appli.Process OK\n");
 
     // V4L2 PRM
-    if (appli.functions == 2) {
-        v4l2 = f641_init_v4l2(&appli, 0x56595559);      //0x47504A4D;   // 0x56595559
+    if (appli.functions < 10) {
+        if (appli.functions == 2) {
+            v4l2 = f641_init_v4l2(&appli, 0x56595559);      //0x47504A4D;   // 0x56595559
+        } else {
+            v4l2 = f641_init_v4l2(&appli, 0x47504A4D);      //0x47504A4D;   // 0x56595559
+        }
+        appli.width  = v4l2->width;
+        appli.height = v4l2->height;
+        appli.size   = appli.width * appli.height;
+        appli.frames_pers = v4l2->frames_pers;
+        printf("V4L2 initialized\n");
+    } else if (appli.functions < 20) {
+
     } else {
-        v4l2 = f641_init_v4l2(&appli, 0x47504A4D);      //0x47504A4D;   // 0x56595559
+        return -1;
     }
-    appli.width  = v4l2->width;
-    appli.height = v4l2->height;
-    appli.size   = appli.width * appli.height;
-    appli.frames_pers = v4l2->frames_pers;
-    printf("V4L2 initialized\n");
 
     // FFMPEG
     f641_init_ffmpeg(&appli);
     printf("FFMpeg initialized\n");
 
+    // LINES
+    struct f640_line *lineup = NULL;
+    if (appli.functions < 10) {
+        lineup = f640_make_lineup(v4l2->buffers, proc_data.proc_len, proc_data.grid, proc_data.broadcast_format, NULL, NULL, 350);
+    } else if (appli.functions < 20) {
+        void* buffer = calloc(proc_data.proc_len, 256 * 1024);
+        v4l2_buffer_t *buffers = calloc(proc_data.proc_len, sizeof(v4l2_buffer_t));
+        for(i = 0 ; i < proc_data.proc_len ; i++) {
+            buffers[i].start  = buffer + i * 256 * 1024;
+            buffers[i].length = 256 * 1024;
+        }
+        lineup = f640_make_lineup(buffers, proc_data.proc_len, proc_data.grid, proc_data.broadcast_format, NULL, NULL, 350);
+        for(i = 0 ; i < proc_data.proc_len ; i++) {
+            lineup[i].buf.index  = i;
+            lineup[i].buf.length = 256 * 1024;
+        }
+    }
 
     // STONES
-    struct f640_line *lineup = f640_make_lineup(v4l2->buffers, proc_data.proc_len, proc_data.grid, proc_data.broadcast_format, NULL, NULL, 350);
     struct f640_stone *stones = calloc(proc_data.proc_len, sizeof(struct f640_stone));
     for(i = 0 ; i < proc_data.proc_len ; i++) {
         f640_make_stone(&stones[i], i);
@@ -593,6 +620,26 @@ int f641_v4l2(int argc, char *argv[]) {
         logged   = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
 
         queues[i++] = NULL;
+    } else if (appli.functions == 10) {
+        long actbf[2] = {F641_SNAPED, -1};
+        released = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+
+        long actsn[2] = {F641_DECODED, -1};
+        snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
+
+        long actde[4] = {F641_CONVERTED, -1};
+        decoded = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
+
+        long actpr[2] = {F641_TAGGED, -1};
+        processed = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actpr, F641_CONVERTED, 1, 0);
+
+        long acttg[3] = {F641_BROADCASTED, -1};
+        tagged  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+
+        long actbr[2] = {F641_LOGGED, -1};
+        broaded  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbr, F641_BROADCASTED, 0, 0);
+
+        queues[i++] = NULL;
     }
 
     printf("Queues OK\n");
@@ -644,6 +691,14 @@ int f641_v4l2(int argc, char *argv[]) {
         logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
         releasing   = groups[i++]  = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
         groups[i++] = NULL;
+    } else if (appli.functions == 10) {
+        snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_reading_mjpeg);
+        decoding    = groups[i++]  = f641_make_group(3, F641_DECODED,       snapped,   1, decoded,   0, 0, f641_attrib_decoding_mjpeg);
+        converting  = groups[i++]  = f641_make_group(3, F641_CONVERTED,     decoded,   1, processed, 0, 0, f641_attrib_converting_torgb);
+        tagging     = groups[i++]  = f641_make_group(1, F641_TAGGED,        processed, 1, tagged,    0, 0, f641_attrib_tagging);
+        broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, f641_attrib_broadcasting);
+        logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, released,  0, 1, f641_attrib_logging);
+        groups[i++] = NULL;
     }
     printf("Thread OK\n");
 
@@ -667,8 +722,12 @@ int f641_v4l2(int argc, char *argv[]) {
     usleep(300*1000);
 
     // STREAM ON
-    f641_stream_on(v4l2);
-    printf("Stream ON\n");
+    if (appli.functions < 10) {
+        f641_stream_on(v4l2);
+        printf("Stream ON\n");
+    } else if (appli.functions < 20) {
+
+    }
 
     // LAUNCH
     gettimeofday(&appli.process->tv0, NULL);
@@ -693,199 +752,280 @@ int f641_v4l2(int argc, char *argv[]) {
     }
     printf("Launch done\n");
 
-    //
-    appli.logging = 0;
-    initscr();                      /* Start curses mode            */
-    scrl(0);
-    raw();                          /* Line buffering disabled      */
-    keypad(stdscr, TRUE);           /* We get F1, F2 etc..          */
-    noecho();                       /* Don't echo() while we do getch */
-    start_color();                  /* Start color                  */
-    init_pair(1, COLOR_BLACK, COLOR_GREEN);
-    init_pair(2, COLOR_BLACK, COLOR_RED);
+    if (appli.functions < 10) {
+        //
+        appli.logging = 0;
+        initscr();                      /* Start curses mode            */
+        scrl(0);
+        raw();                          /* Line buffering disabled      */
+        keypad(stdscr, TRUE);           /* We get F1, F2 etc..          */
+        noecho();                       /* Don't echo() while we do getch */
+        start_color();                  /* Start color                  */
+        init_pair(1, COLOR_BLACK, COLOR_GREEN);
+        init_pair(2, COLOR_BLACK, COLOR_RED);
 
-    if (appli.functions == 2) {
-        usleep(2000*1000);
-        f641_set_defaults(v4l2, 119, 22, 4000, 2047);
-    }
-
-    int rows, cols;
-    getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
-    int ctrl = 0;
-    int selected = 0;
-    int32_t value = 0;
-
-    while(1) {
-        int ch = getch();
-
-        if (ch == KEY_CANCEL || ch == KEY_F(1)) {
-            endwin();
-
-            snaping->loop = 0;
-            usleep(2000 / appli.frames_pers);
-
-            i = 0;
-            while(queues[i] != NULL) {
-                queues[i]->run = 0;
-
-                pthread_mutex_lock(&queues[i]->mutex);
-                pthread_cond_broadcast(&queues[i]->cond);
-                pthread_mutex_unlock(&queues[i]->mutex);
-
-                i++;
-            }
-            usleep(300*1000);
-            printf("\n");
-            return 0;
-        } else if (ch == '\n') {
-            if (selected && value != v4l2->controls_value[ctrl]) {
-                struct v4l2_control control;
-                control.id = v4l2->controls[ctrl].id;
-                control.value = value;
-                ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
-                control.id = v4l2->controls[ctrl].id;
-                control.value = 0;
-                if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
-                    v4l2->controls_value[ctrl] = control.value;
-                    value = control.value;
-                }
-                selected = 0;
-            } else if (selected) {
-                selected = 0;
-            } else {
-                selected = 1;
-                value = v4l2->controls_value[ctrl];
-            }
-        } else if (ch == KEY_LEFT && selected) {
-            value -= v4l2->controls[ctrl].step;
-            if (value < v4l2->controls[ctrl].minimum) value = v4l2->controls[ctrl].minimum;
-        } else if (ch == KEY_RIGHT && selected) {
-            value += v4l2->controls[ctrl].step;
-            if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
-        } else if (ch == KEY_UP) {
-            selected = 0;
-            if (ctrl) ctrl--;
-            else ctrl = v4l2->nb_controls - 1;
-            value = v4l2->controls_value[ctrl];
-        } else if (ch == KEY_DOWN) {
-            selected = 0;
-            ctrl = (ctrl + 1) % v4l2->nb_controls;
-            value = v4l2->controls_value[ctrl];
-        } else if (ch == '-') {
-            if (selected) {
-                value = v4l2->controls_value[ctrl] - v4l2->controls[ctrl].step;
-                if (value < v4l2->controls[ctrl].minimum) value = v4l2->controls[ctrl].minimum;
-                if (selected && value != v4l2->controls_value[ctrl]) {
-                    struct v4l2_control control;
-                    control.id = v4l2->controls[ctrl].id;
-                    control.value = value;
-                    ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
-                    control.id = v4l2->controls[ctrl].id;
-                    control.value = 0;
-                    if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
-                        v4l2->controls_value[ctrl] = control.value;
-                        value = control.value;
-                    }
-                }
-            } else {
-                appli.recording_perst++;
-            }
-        } else if (ch == '+') {
-            if (selected) {
-                value = v4l2->controls_value[ctrl] + v4l2->controls[ctrl].step;
-                if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
-                if (selected && value != v4l2->controls_value[ctrl]) {
-                    struct v4l2_control control;
-                    control.id = v4l2->controls[ctrl].id;
-                    control.value = value;
-                    ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
-                    control.id = v4l2->controls[ctrl].id;
-                    control.value = 0;
-                    if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
-                        v4l2->controls_value[ctrl] = control.value;
-                        value = control.value;
-                    }
-                }
-            } else {
-                if (appli.recording_perst > 1) appli.recording_perst--;
-                else appli.recording_perst = 1;
-            }
-        } else {
-            move(rows - 1, 2);
-            printw("%c typed", ch);
+        if (appli.functions == 2) {
+            usleep(2000*1000);
+            f641_set_defaults(v4l2, 119, 22, 4000, 2047);
         }
 
-        // RAZ
+        int rows, cols;
         getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
-        for(i = rows - 3 ; i < rows ; i++) {
-            for(j = 0 ; j < cols ; j++) {
-                move(i, j);
-                printw(" ");
-            }
-        }
+        int ctrl = 0;
+        int selected = 0;
+        int32_t value = 0;
 
+        while(1) {
+            int ch = getch();
 
-        move(rows - 2, 0);
-        if (selected) {
-            if (value == v4l2->controls_value[ctrl]) attron(COLOR_PAIR(1));
-            else attron(COLOR_PAIR(2));
-        }
-        struct v4l2_querymenu querymenu;
-        switch(v4l2->controls[ctrl].type) {
-            case V4L2_CTRL_TYPE_INTEGER:
-                printw("%-32s = %d (%d%) : %d < %d  +%d", v4l2->controls[ctrl].name, value, 100 * (value - v4l2->controls[ctrl].minimum) / (v4l2->controls[ctrl].maximum - v4l2->controls[ctrl].minimum)
-                        , v4l2->controls[ctrl].minimum, v4l2->controls[ctrl].maximum, v4l2->controls[ctrl].step);
-                break;
-            case V4L2_CTRL_TYPE_BOOLEAN:
-                printw("%-32s : %s", v4l2->controls[ctrl].name, value ? "true" : "false");
-                break;
-            case V4L2_CTRL_TYPE_MENU:
-                memset(&querymenu, 0, sizeof(struct v4l2_querymenu));
-                querymenu.id    = v4l2->controls[ctrl].id;
-                querymenu.index = value;
-                if(ioctl(v4l2->fd, VIDIOC_QUERYMENU, &querymenu)) {
-                    printw("%-32s : error", v4l2->controls[ctrl].name);
-                } else {
-                    printw("%-32s : %s (%d < %d +%d)", v4l2->controls[ctrl].name, querymenu.name
-                            , v4l2->controls[ctrl].minimum, v4l2->controls[ctrl].maximum, v4l2->controls[ctrl].step);
+            if (ch == KEY_CANCEL || ch == KEY_F(1)) {
+                endwin();
+
+                snaping->loop = 0;
+                usleep(2000 / appli.frames_pers);
+
+                i = 0;
+                while(queues[i] != NULL) {
+                    queues[i]->run = 0;
+
+                    pthread_mutex_lock(&queues[i]->mutex);
+                    pthread_cond_broadcast(&queues[i]->cond);
+                    pthread_mutex_unlock(&queues[i]->mutex);
+
+                    i++;
                 }
-                break;
-            default:
-                printw("%-32s : ??", v4l2->controls[ctrl].name);
-                break;
-        }
-        if (selected) {
-            if (value == v4l2->controls_value[ctrl]) attroff(COLOR_PAIR(1));
-            else attroff(COLOR_PAIR(2));
-        }
-
-
-        move(rows - 1, 20);
-        printw("rcs %d", appli.recording_perst);
-        refresh();
-
-    }
-    endwin();                       /* End curses mode                */
-
-    //
-    void *grid = calloc(1, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows));
-    while(1) {
-        r = read(appli.fd_get, grid, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows) );
-        if (r == sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows)) {
-            if (*((int*)(grid+20)) == 999999) {
-                appli.level = *((int*)(grid+24));
-                printf("\nREAD : Level set to %d", appli.level);
+                usleep(300*1000);
+                printf("\n");
+                return 0;
+            } else if (ch == '\n') {
+                if (selected && value != v4l2->controls_value[ctrl]) {
+                    struct v4l2_control control;
+                    control.id = v4l2->controls[ctrl].id;
+                    control.value = value;
+                    ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
+                    control.id = v4l2->controls[ctrl].id;
+                    control.value = 0;
+                    if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
+                        v4l2->controls_value[ctrl] = control.value;
+                        value = control.value;
+                    }
+                    selected = 0;
+                } else if (selected) {
+                    selected = 0;
+                } else {
+                    selected = 1;
+                    value = v4l2->controls_value[ctrl];
+                }
+            } else if (ch == KEY_LEFT && selected) {
+                value -= v4l2->controls[ctrl].step;
+                if (value < v4l2->controls[ctrl].minimum) value = v4l2->controls[ctrl].minimum;
+            } else if (ch == KEY_RIGHT && selected) {
+                value += v4l2->controls[ctrl].step;
+                if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
+            } else if (ch == KEY_UP) {
+                selected = 0;
+                if (ctrl) ctrl--;
+                else ctrl = v4l2->nb_controls - 1;
+                value = v4l2->controls_value[ctrl];
+            } else if (ch == KEY_DOWN) {
+                selected = 0;
+                ctrl = (ctrl + 1) % v4l2->nb_controls;
+                value = v4l2->controls_value[ctrl];
+            } else if (ch == '-') {
+                if (selected) {
+                    value = v4l2->controls_value[ctrl] - v4l2->controls[ctrl].step;
+                    if (value < v4l2->controls[ctrl].minimum) value = v4l2->controls[ctrl].minimum;
+                    if (selected && value != v4l2->controls_value[ctrl]) {
+                        struct v4l2_control control;
+                        control.id = v4l2->controls[ctrl].id;
+                        control.value = value;
+                        ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
+                        control.id = v4l2->controls[ctrl].id;
+                        control.value = 0;
+                        if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
+                            v4l2->controls_value[ctrl] = control.value;
+                            value = control.value;
+                        }
+                    }
+                } else {
+                    appli.recording_perst++;
+                }
+            } else if (ch == '+') {
+                if (selected) {
+                    value = v4l2->controls_value[ctrl] + v4l2->controls[ctrl].step;
+                    if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
+                    if (selected && value != v4l2->controls_value[ctrl]) {
+                        struct v4l2_control control;
+                        control.id = v4l2->controls[ctrl].id;
+                        control.value = value;
+                        ioctl(v4l2->fd, VIDIOC_S_CTRL, &control);
+                        control.id = v4l2->controls[ctrl].id;
+                        control.value = 0;
+                        if ( ioctl(v4l2->fd, VIDIOC_G_CTRL, &control) > -1 ) {
+                            v4l2->controls_value[ctrl] = control.value;
+                            value = control.value;
+                        }
+                    }
+                } else {
+                    if (appli.recording_perst > 1) appli.recording_perst--;
+                    else appli.recording_perst = 1;
+                }
             } else {
-                printf("READ  %dbytes : %dx%d\n", r, *((int*)(grid+16)), *((int*)(grid+20)));
-                pthread_mutex_lock(&appli.process->grid->mutex_coefs);
-                memcpy(appli.process->grid->grid_coefs, grid + 6 * sizeof(long), r - 6 * sizeof(long));
-                pthread_mutex_unlock(&appli.process->grid->mutex_coefs);
+                move(rows - 1, 2);
+                printw("%c typed", ch);
             }
-        } else if (r > 0) {
-          printf("READ: wrong size read %d / %dx%d, discarding\n", r, appli.process->grid->cols, appli.process->grid->rows);
-        } else if (r) {
-            printf("READ: Interrupt %d\n", r);
-            usleep(1000*1000);  // bug
+
+            // RAZ
+            getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
+            for(i = rows - 3 ; i < rows ; i++) {
+                for(j = 0 ; j < cols ; j++) {
+                    move(i, j);
+                    printw(" ");
+                }
+            }
+
+
+            move(rows - 2, 0);
+            if (selected) {
+                if (value == v4l2->controls_value[ctrl]) attron(COLOR_PAIR(1));
+                else attron(COLOR_PAIR(2));
+            }
+            struct v4l2_querymenu querymenu;
+            switch(v4l2->controls[ctrl].type) {
+                case V4L2_CTRL_TYPE_INTEGER:
+                    printw("%-32s = %d (%d%) : %d < %d  +%d", v4l2->controls[ctrl].name, value, 100 * (value - v4l2->controls[ctrl].minimum) / (v4l2->controls[ctrl].maximum - v4l2->controls[ctrl].minimum)
+                            , v4l2->controls[ctrl].minimum, v4l2->controls[ctrl].maximum, v4l2->controls[ctrl].step);
+                    break;
+                case V4L2_CTRL_TYPE_BOOLEAN:
+                    printw("%-32s : %s", v4l2->controls[ctrl].name, value ? "true" : "false");
+                    break;
+                case V4L2_CTRL_TYPE_MENU:
+                    memset(&querymenu, 0, sizeof(struct v4l2_querymenu));
+                    querymenu.id    = v4l2->controls[ctrl].id;
+                    querymenu.index = value;
+                    if(ioctl(v4l2->fd, VIDIOC_QUERYMENU, &querymenu)) {
+                        printw("%-32s : error", v4l2->controls[ctrl].name);
+                    } else {
+                        printw("%-32s : %s (%d < %d +%d)", v4l2->controls[ctrl].name, querymenu.name
+                                , v4l2->controls[ctrl].minimum, v4l2->controls[ctrl].maximum, v4l2->controls[ctrl].step);
+                    }
+                    break;
+                default:
+                    printw("%-32s : ??", v4l2->controls[ctrl].name);
+                    break;
+            }
+            if (selected) {
+                if (value == v4l2->controls_value[ctrl]) attroff(COLOR_PAIR(1));
+                else attroff(COLOR_PAIR(2));
+            }
+
+
+            move(rows - 1, 20);
+            printw("rcs %d", appli.recording_perst);
+            refresh();
+
+        }
+        endwin();                       /* End curses mode                */
+    } else if (appli.functions < 20) {
+        //
+        appli.logging = 0;
+        initscr();                      /* Start curses mode            */
+        scrl(0);
+        raw();                          /* Line buffering disabled      */
+        keypad(stdscr, TRUE);           /* We get F1, F2 etc..          */
+        noecho();                       /* Don't echo() while we do getch */
+        start_color();                  /* Start color                  */
+        init_pair(1, COLOR_BLACK, COLOR_GREEN);
+        init_pair(2, COLOR_BLACK, COLOR_RED);
+
+        int rows, cols;
+        getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
+        int tmp = INT32_MAX;
+        int ctrl = 0;
+        int selected = 0;
+        int32_t value = 0;
+
+        while(1) {
+            int ch = getch();
+
+            if (ch == KEY_CANCEL || ch == KEY_F(1)) {
+                endwin();
+
+                snaping->loop = 0;
+                usleep(2000 / appli.frames_pers);
+
+                i = 0;
+                while(queues[i] != NULL) {
+                    queues[i]->run = 0;
+
+                    pthread_mutex_lock(&queues[i]->mutex);
+                    pthread_cond_broadcast(&queues[i]->cond);
+                    pthread_mutex_unlock(&queues[i]->mutex);
+
+                    i++;
+                }
+                usleep(300*1000);
+                printf("\n");
+                return 0;
+            } else if (ch == '\n') {
+            } else if (ch == KEY_LEFT && selected) {
+            } else if (ch == KEY_RIGHT && selected) {
+            } else if (ch == KEY_UP) {
+            } else if (ch == KEY_DOWN) {
+            } else if (ch == '-') {
+                appli.viewing_rate--;
+            } else if (ch == '+') {
+                appli.viewing_rate++;
+            } else if (ch == 'p') {
+                if (tmp == INT32_MAX) {
+                    tmp = appli.viewing_rate;
+                    appli.viewing_rate = 0;
+                } else {
+                    appli.viewing_rate = tmp;
+                    tmp = INT32_MAX;
+                }
+            } else {
+                move(rows - 1, 2);
+                printw("%c typed", ch);
+            }
+
+            // RAZ
+            getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
+            for(i = rows - 3 ; i < rows ; i++) {
+                for(j = 0 ; j < cols ; j++) {
+                    move(i, j);
+                    printw(" ");
+                }
+            }
+
+            //
+            move(rows - 1, 20);
+            printw("fps %d", appli.viewing_rate);
+            refresh();
+
+        }
+        endwin();                       /* End curses mode                */
+    } else {
+        //
+        void *grid = calloc(1, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows));
+        while(1) {
+            r = read(appli.fd_get, grid, sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows) );
+            if (r == sizeof(long) * (6 + appli.process->grid->cols * appli.process->grid->rows)) {
+                if (*((int*)(grid+20)) == 999999) {
+                    appli.level = *((int*)(grid+24));
+                    printf("\nREAD : Level set to %d", appli.level);
+                } else {
+                    printf("READ  %dbytes : %dx%d\n", r, *((int*)(grid+16)), *((int*)(grid+20)));
+                    pthread_mutex_lock(&appli.process->grid->mutex_coefs);
+                    memcpy(appli.process->grid->grid_coefs, grid + 6 * sizeof(long), r - 6 * sizeof(long));
+                    pthread_mutex_unlock(&appli.process->grid->mutex_coefs);
+                }
+            } else if (r > 0) {
+              printf("READ: wrong size read %d / %dx%d, discarding\n", r, appli.process->grid->cols, appli.process->grid->rows);
+            } else if (r) {
+//                printf("\nREAD: Interrupt %d", r);
+                usleep(1000*1000);  // @@@ bug
+            }
         }
     }
 }

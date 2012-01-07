@@ -104,6 +104,10 @@ struct f641_appli {
     int  recording_perst;
     char record_path[256];
 
+    // Viewing
+    int  viewing_rate;
+    char file_path[256];
+
     // Processing
     struct f641_process_data *process;
 
@@ -185,6 +189,7 @@ extern void f641_attrib_broadcasting(struct f641_thread_operations *ops);
 extern void f641_attrib_tagging(struct f641_thread_operations *ops);
 extern void f641_attrib_watching_422p(struct f641_thread_operations *ops);
 
-extern void f641_attrib_saving(struct f641_thread_operations *ops);
+extern void f641_attrib_saving(struct f641_thread_operations *ops);             // Save enhanced pictures
+extern void f641_attrib_reading_mjpeg(struct f641_thread_operations *ops);      // direct reading frames
 
 #endif /* F641_H_ */

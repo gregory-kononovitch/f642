@@ -108,7 +108,7 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
     int k, ix;
 
 
-    if (app->functions == 0) {
+    if (app->functions == 0 || app->functions == 10) {
         line->flaged = 0;
         if (line->frame % app->recording_perst == 0) line->flaged = 1;
     } else if (app->functions == 1) {
@@ -129,7 +129,7 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
         if (line->frame % (app->recording_perst * app->frames_pers) == 0) line->flaged = 1;
     }
 
-    if (app->functions == 0) {
+    if (app->functions == 0 || app->functions == 10) {
         ix = f640_draw_number(line->rgb, app->process->broadcast_width - 5, app->process->broadcast_height - 5, line->tv00.tv_sec - app->process->tv0.tv_sec);
         ix = f640_draw_number(line->rgb, ix - 20, app->process->broadcast_height - 5, line->frame);
         ix = f640_draw_number(line->rgb, ix - 20, app->process->broadcast_height - 5, *(line->grid_max));
@@ -219,7 +219,7 @@ static void* f641_init_broadcasting(void *appli) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_broadcast_ressources *res = calloc(1, sizeof(struct f641_broadcast_ressources));
 
-    if (app->functions == 0) {
+    if (app->functions == 0 || app->functions == 10) {
         res->fd_fb = open("/dev/fb0", O_RDWR);
         if (res->fd_fb < 1) return res;
         struct fb_fix_screeninfo fix;
@@ -250,10 +250,10 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
     gettimeofday(&line->tvb0, NULL);
 
     // FB
-    if (res && app->functions == 0) {
+    if (res && (app->functions == 0 || app->functions == 10) ) {
         if (res->start) {
             memcpy(res->start, line->rgb->data, 4 * app->width * app->process->broadcast_height);
-            ioctl(res->fd_fb, FBIOBLANK, FB_BLANK_UNBLANK);
+            //ioctl(res->fd_fb, FBIOBLANK, FB_BLANK_UNBLANK);
         } else if (res->fd_fb > 0) {
             lseek(res->fd_fb, 0, SEEK_SET);
             write(res->fd_fb, line->rgb->data, 4 * app->width * app->process->broadcast_height);
@@ -592,7 +592,7 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
 //            ms = jiffies_to_msecs(jiffs);
 
 
-        if (app->functions == 0) {
+        if (app->functions == 0 || app->functions == 10) {
             int rows, cols;
             getmaxyx(stdscr, rows, cols);     /* get the number of rows and columns */
             move(rows - 5, 0);
@@ -722,17 +722,35 @@ struct f641_read_mjpeg_ressources {
     FILE *filp;
     int read_size;
     void* reads;
+    int i;
+    long offset;
+    long frame;
 };
 //
 static void* f641_init_reading_mjpeg(void *appli) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_read_mjpeg_ressources *res = calloc(1, sizeof(struct f641_read_mjpeg_ressources));
 
+    res->filp = fopen(app->file_path, "rb");
+    res->read_size = 1024*1024;
+    setvbuf(res->filp, NULL, _IOFBF, 4 * res->read_size);
+    res->reads = calloc(1, res->read_size);
+
+    fread(res->reads, 1, res->read_size, res->filp);
+    res->i = 0;
+    res->offset = res->read_size;
+    res->frame = 1;
+
     return res;
 }
 //
 static void f641_free_reading_mjpeg(void *appli, void* ressources) {
-    if (ressources) free(ressources);
+    if (ressources) {
+        struct f641_read_mjpeg_ressources *res = (struct f641_read_mjpeg_ressources*)ressources;
+        fclose(res->filp);
+        free(res->reads);
+        free(ressources);
+    }
 }
 
 //
@@ -740,9 +758,115 @@ static int f641_exec_reading_mjpeg(void *appli, void *ressources, struct f640_st
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_read_mjpeg_ressources *res = (struct f641_read_mjpeg_ressources*)ressources;
     struct f640_line *line = (struct f640_line*) stone->private;
+    int r, *si, off = 0;
+    static struct f640_line *previous_line = NULL;
+    static struct timeval tic = {0, 0};
+
+
+    while(1) {
+        //for( ; res->i < res->read_size - 4 ; res->i++) {
+        do {
+            if (res->i < 0) break;
+            si = res->reads + res->i;
+            if (*si == 0x63643030) {
+                if ( res->i < res->read_size - 8 ) {
+                    if ( *(si+1) > 0 && *(si+1) < 200000 ) {
+                        if (res->i + 8 + *(si+1) < res->read_size - 4) {
+                            //printf("%5d : Found %6d at %9ld after reading %ldMo\n", res->frame, *(si+1), res->offset + res->i + 4, res->offset / (1024*1024));
+                            // FOUND FRAME
+                            gettimeofday(&line->buf.timestamp, NULL);
+                            memcpy(line->buffers[line->buf.index].start, res->reads + res->i + 8, *(si+1));
+                            line->buf.bytesused = *(si+1);
+                            //
+                            pthread_spin_lock(&stone->spin);
+                            stone->status = 0;
+                            stone->frame  = res->frame++;
+                            line->frame   = stone->frame;
+                            pthread_spin_unlock(&stone->spin);
+                            //
+                            line->actual = line->buf.index;
+                            line->last   = previous_line ? previous_line->buf.index : 0;
+                            line->previous_line = previous_line ? previous_line->index : 0;
+                            previous_line = line;
+                            // TIMER
+                            gettimeofday(&line->tv00, NULL);
+                            int sign = 0;
+                            while(1) {
+                                if (app->viewing_rate > 0) {
+                                    timersub(&line->tv00, &tic, &tic);
+                                    if (!tic.tv_sec && tic.tv_usec < 1000000 / app->viewing_rate) {
+                                        usleep(1000000 / app->viewing_rate - tic.tv_usec);
+                                    }
+                                    gettimeofday(&tic, NULL);
+                                    sign = 1;
+                                    break;
+                                } else if (app->viewing_rate < 0) {
+                                    timersub(&line->tv00, &tic, &tic);
+                                    if (!tic.tv_sec && tic.tv_usec < -1000000 / app->viewing_rate) {
+                                        usleep(-1000000 / app->viewing_rate - tic.tv_usec);
+                                    }
+                                    gettimeofday(&tic, NULL);
+                                    sign = -1;
+                                    break;
+                                } else {
+                                    timerclear(&tic);
+                                    usleep(40 * 1000);
+                                }
+                            }
+
+                            res->i += sign;
+                            return *(si+1);
+                        } else {
+                            off = res->read_size - res->i;
+                            break;
+                        }
+                    }
+                } else {
+                    off = res->read_size - res->i;
+                    break;
+                }
+            }
+            if (app->viewing_rate < 0) res->i--;
+            else res->i++;
+        } while( res->i > -1 && res->i < res->read_size - 4 );
+
+        if (res->i == res->read_size -4) {  // rare
+            off = 3;
+            r = fseek(res->filp, -off, SEEK_CUR);
+            if (r > -1) res->offset += -off;
+            r = fread(res->reads, 1, res->read_size, res->filp);
+            res->i = 0;
+        } else if (res->i < 0) {          // normal/4
+            r = fseek(res->filp, -2 * res->read_size + 256 * 1024, SEEK_CUR);
+            if (r > -1) res->offset += -2 * res->read_size + 256 * 1024;
+            r = fread(res->reads, 1, res->read_size, res->filp);
+            res->i = res->read_size - 256 * 1024;
+        } else {
+            if (app->viewing_rate < 0) {    // rare
+                r = fseek(res->filp, - off, SEEK_CUR);
+                if (r > -1) res->offset += -off;
+                r = fread(res->reads, 1, res->read_size, res->filp);
+                res->i = 0;
+            } else {                        // normal
+                r = fseek(res->filp, - off, SEEK_CUR);
+                if (r > -1) res->offset += -off;
+                r = fread(res->reads, 1, res->read_size, res->filp);
+                res->i = 0;
+            }
+        }
+        if (r < 1) return -1;
+    }
+
+    return -1;
 }
 
 
+void f641_attrib_reading_mjpeg(struct f641_thread_operations *ops) {
+        ops->init = f641_init_reading_mjpeg;
+        ops->updt = NULL;
+        ops->exec = f641_exec_reading_mjpeg;
+        ops->free = f641_free_reading_mjpeg;
+}
 
 
 
