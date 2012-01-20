@@ -419,7 +419,7 @@ int f641_v4l2(int argc, char *argv[]) {
     appli.size   = appli.width * appli.height;
     appli.frames_pers = 5;
     appli.recording_rate = 24;
-    appli.recording_perst = 10;
+    appli.recording_perst = 30;
     appli.viewing_rate = 24;
     appli.max_frame = 0xFFFFFFFFFFFFFFL;
     appli.threshold = 1024;
@@ -752,7 +752,7 @@ int f641_v4l2(int argc, char *argv[]) {
     }
     printf("Launch done\n");
 
-    if (appli.functions < 10) {
+    if (appli.functions < 10 && appli.functions != 2) {
         //
         appli.logging = 0;
         initscr();                      /* Start curses mode            */
@@ -926,7 +926,7 @@ int f641_v4l2(int argc, char *argv[]) {
 
         }
         endwin();                       /* End curses mode                */
-    } else if (appli.functions < 20) {
+    } else if (appli.functions < 20 && appli.functions != 2) {
         //
         appli.logging = 0;
         initscr();                      /* Start curses mode            */

@@ -166,15 +166,26 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
     gettimeofday(&tv, NULL);
 
     if ( (app->functions == 2) && ( (line->frame % (app->recording_perst * app->frames_pers)) == 0) ) {
+//    if ( (app->functions == 2) && ( (line->frame % 50) == 0) ) {
         char fname[128];
         FILE *filp;
-        if ( (size >> 10) < 0) {
-            sprintf(fname, "/work/test/snap/sky7-%ld.raw", nb++);
-        } else if ( (size >> 10) < 15000000L) {
-            sprintf(fname, "/media/test/snap/sky7-%ld.raw", nb++);
-        } else {
-            sprintf(fname, "/mnt/test/snap/sky7-%ld.raw", nb++);
-        }
+        sprintf(fname, "/bak/test/snap/sky31-%ld.raw", nb++);
+//        if ( (size>>10)  < 10500000L) {
+//            sprintf(fname, "/music/test/snap/sky21-%ld.raw", nb++);
+//        } else if ( (size>>10) < 16830000L) {
+//            sprintf(fname, "/mnt/test/snap/sky21-%ld.raw", nb++);
+//        } else if ( (size>>10) < 20830000L) {
+//            sprintf(fname, "/base/test/snap/sky21-%ld.raw", nb++);
+//        } else if ( (size>>10) < 25830000L) {
+//            sprintf(fname, "/test/snap/sky21-%ld.raw", nb++);
+//        } else if ( (size>>10) < 27430000L) {
+//            sprintf(fname, "/doc/test/snap/sky21-%ld.raw", nb++);
+//        } else if ( (size>>10) < 47430000L) {
+//            sprintf(fname, "/bak/test/snap/sky21-%ld.raw", nb++);
+//        } else {
+//            printf("ENOSIZE\n");
+//            return 0;
+//        }
         filp = fopen(fname, "wb");
         if (!filp) {
             printf("\nPB to open %s, returning", fname);
@@ -184,8 +195,8 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
         fwrite(&tv.tv_sec, 1, sizeof(long), filp);
         fflush(filp);
         fclose(filp);
-        size += 2 * app->size * sizeof(uint16_t) + 8;
-        printf("\nSaved %d bytes (%.1f Mo)", r, 1. * size / (1024*1024));
+        size += 2 * app->size * sizeof(uint16_t) + 4096;
+        printf("\nSaved %d bytes (%.1f Mo)", r, 1. * size / 1024);
     }
 
     return 0;
@@ -635,6 +646,40 @@ static int f641_exec_logging(void *appli, void *ressources, struct f640_stone *s
                 );
             }
             refresh();                      /* Print it on to the real screen */
+        } else if (app->functions == 2) {
+            printf("\n");
+            printf("%02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
+                    , tm1.tm_hour, tm1.tm_min, tm1.tm_sec
+                    , 100 * (res->times2 - res->times1) / (1000000 * res->tvr.tv_sec + res->tvr.tv_usec)
+                    , 1. * (res->show_freq * 1000000) / (1000000 * res->tvr.tv_sec + res->tvr.tv_usec)
+                    , 1000000. * res->size_in / (1024 * 1024 * (1000000 * res->tvr.tv_sec + res->tvr.tv_usec))
+            );
+
+            if ( res->recorded_one ) {
+                printf(
+                        "|%2d|¤ed %2.0f %2.0f|%2d|¤cv %2.0f|%2d|¤rc %2.0f %2.0f " F640_RESET F640_BOLD F640_FG_RED "+%2ld" F640_RESET
+                        "|%.1fs %.1fMo|%ld %ld"
+                        , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
+                        , /*edged*/0,     1000*res->t2 / res->show_freq
+                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->tr / res->show_freq, res->recorded_frames
+                        , 1. * app->process->recorded_frames / app->frames_pers
+                        , 1. * res->size_out / (1024 * 1024)
+                        , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)
+                        , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
+                );
+            } else {
+                printf(
+                        "|%2d|¤ed %2.0f %2.0f|%2d|¤cv %2.0f|%2d|¤rc %2.0f %2.0f +%2ld"
+                        "|%.1fs %.1fMo|%ld %ld"
+                        , /*watched*/0,   1000*res->te / res->show_freq, 1000*res->tg / res->show_freq
+                        , /*edged*/0,     1000*res->t2 / res->show_freq
+                        , /*converted*/0, 1000*res->tb / res->show_freq, 1000*res->tr / res->show_freq, res->recorded_frames
+                        , 1. * app->process->recorded_frames / app->frames_pers
+                        , 1. * res->size_out / (1024 * 1024)
+                        , (1000000 * res->tsys.tv_sec + res->tsys.tv_usec) / (1000 * res->show_freq)
+                        , (1000000 * res->tcod.tv_sec + res->tcod.tv_usec) / (1000 * res->show_freq)
+                );
+            }
         } else {
             printf("\n");
             printf("%02d:%02d:%02d %3lu%|%3.1fHz %3.2fMo/s||"
