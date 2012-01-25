@@ -169,7 +169,7 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
 //    if ( (app->functions == 2) && ( (line->frame % 50) == 0) ) {
         char fname[128];
         FILE *filp;
-        sprintf(fname, "/bak/test/snap/sky31-%ld.raw", nb++);
+        sprintf(fname, "/bak/test/snap/sky35-%ld.raw", nb++);
 //        if ( (size>>10)  < 10500000L) {
 //            sprintf(fname, "/music/test/snap/sky21-%ld.raw", nb++);
 //        } else if ( (size>>10) < 16830000L) {
