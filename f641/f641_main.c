@@ -402,6 +402,9 @@ extern int f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sha
 extern struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli, uint32_t palette);
 extern void f641_free_v4l2(struct f641_v4l2_parameters *prm);
 
+extern void f641_attrib_skying_422(struct f641_thread_operations *ops);
+extern void f641_attrib_clouding(struct f641_thread_operations *ops);
+
 int f641_v4l2(int argc, char *argv[]) {
     int i, j, r;
     struct f641_appli           appli;
@@ -419,7 +422,7 @@ int f641_v4l2(int argc, char *argv[]) {
     appli.size   = appli.width * appli.height;
     appli.frames_pers = 5;
     appli.recording_rate = 24;
-    appli.recording_perst = 10;
+    appli.recording_perst = 32;
     appli.viewing_rate = 24;
     appli.max_frame = 0xFFFFFFFFFFFFFFL;
     appli.threshold = 1024;
@@ -467,14 +470,27 @@ int f641_v4l2(int argc, char *argv[]) {
         proc_data.broadcast_height = appli.height - 70;
         proc_data.broadcast_width  = appli.width * proc_data.broadcast_height / appli.height;
         appli.recording_perst = appli.frames_pers;
-    }
-    else {
+    } else if (appli.functions == 3) {
+        appli.width  = 544;
+        appli.height = 288;
+        appli.frames_pers = 5;
+        appli.recording_perst = 5;
+        proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+        proc_data.broadcast_width  = 512;
+        proc_data.broadcast_height = 288;
+        proc_data.recording_codec = CODEC_ID_RAWVIDEO;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
+        proc_data.record_format = PIX_FMT_GRAY8;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
+    } else {
         proc_data.broadcast_format = PIX_FMT_BGR24;
         proc_data.broadcast_width  = appli.width;
         proc_data.broadcast_height = appli.height;
     }
     proc_data.grid  = f640_make_grid(appli.width, appli.height, 32);
-    proc_data.grid2 = f640_make_grid2(proc_data.grid);
+    printf("Appli.grid OK\n");
+    if (appli.functions != 3) {
+        proc_data.grid2 = f640_make_grid2(proc_data.grid);
+        printf("Appli.grid2 OK\n");
+    }
     if (appli.functions == 2) {
         proc_data.recording_codec = CODEC_ID_RAWVIDEO;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
         proc_data.record_format = PIX_FMT_GRAY8;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
@@ -489,7 +505,7 @@ int f641_v4l2(int argc, char *argv[]) {
 
     // V4L2 PRM
     if (appli.functions < 10) {
-        if (appli.functions == 2) {
+        if (appli.functions == 2 || appli.functions == 3) {
             v4l2 = f641_init_v4l2(&appli, 0x56595559);      //0x47504A4D;   // 0x56595559
         } else {
             v4l2 = f641_init_v4l2(&appli, 0x47504A4D);      //0x47504A4D;   // 0x56595559
@@ -558,7 +574,7 @@ int f641_v4l2(int argc, char *argv[]) {
         long actsn[2] = {F641_DECODED, -1};
         snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
 
-        long actde[4] = {F641_CONVERTED, -1};
+        long actde[2] = {F641_CONVERTED, -1};
         decoded = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
 
         long actpr[2] = {F641_TAGGED, -1};
@@ -612,6 +628,23 @@ int f641_v4l2(int argc, char *argv[]) {
 
         long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
         tagged  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
+
+        long actbr[2] = {F641_LOGGED, -1};
+        broaded  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbr, 0, 0, 0);
+
+        long actlg[2] = {F641_RELEASED, -1};
+        logged   = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actlg, 0, 0, 0);
+
+        queues[i++] = NULL;
+    } else if (appli.functions == 3) {
+        long actbf[2] = {F641_SNAPED, -1};
+        released = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
+
+        long actsn[2] = {F641_SKYED, -1};
+        snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 0);
+
+        long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
+        processed = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
 
         long actbr[2] = {F641_LOGGED, -1};
         broaded  = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbr, 0, 0, 0);
@@ -684,10 +717,18 @@ int f641_v4l2(int argc, char *argv[]) {
         groups[i++] = NULL;
     } else if (appli.functions == 2) {
         snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
-        converting  = groups[i++]  = f641_make_group(1, F641_SKYED,         snapped,   1, processed, 0, 0, f641_attrib_edging);
+        converting  = groups[i++]  = f641_make_group(1, F641_SKYED,         snapped,   1, processed, 0, 0, f641_attrib_skying_422);
         tagging     = groups[i++]  = f641_make_group(1, F641_TAGGED,        processed, 1, tagged,    0, 0, f641_attrib_tagging);
         broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   tagged,    1, broaded,   0, 1, f641_attrib_broadcasting);
         recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      tagged,    1, NULL,      0, 1, f641_attrib_saving);
+        logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
+        releasing   = groups[i++]  = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
+        groups[i++] = NULL;
+    } else if (appli.functions == 3) {
+        snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
+        converting  = groups[i++]  = f641_make_group(1, F641_SKYED,         snapped,   1, processed, 0, 0, f641_attrib_clouding);
+        broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   processed, 1, broaded,   0, 1, f641_attrib_broadcasting);
+        recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      processed, 1, NULL,      0, 1, f641_attrib_saving);
         logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
         releasing   = groups[i++]  = f641_make_group(1, F641_RELEASED,      logged,    1, released,  0, 0, f641_attrib_v4l2_desnaping);
         groups[i++] = NULL;
@@ -752,7 +793,7 @@ int f641_v4l2(int argc, char *argv[]) {
     }
     printf("Launch done\n");
 
-    if (appli.functions < 10 && appli.functions != 2) {
+    if (appli.functions < 10 && appli.functions != 2 && appli.functions != 3) {
         //
         appli.logging = 0;
         initscr();                      /* Start curses mode            */
@@ -926,7 +967,7 @@ int f641_v4l2(int argc, char *argv[]) {
 
         }
         endwin();                       /* End curses mode                */
-    } else if (appli.functions < 20 && appli.functions != 2) {
+    } else if (appli.functions < 20 && appli.functions != 2  && appli.functions != 3) {
         //
         appli.logging = 0;
         initscr();                      /* Start curses mode            */

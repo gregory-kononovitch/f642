@@ -519,14 +519,111 @@ static int f641_exec_skying_422(void *appli, void *ressources, struct f640_stone
     return 0;
 }
 
+/*
+ * shorter data file & squeeze over 22, min at 17
+ */
+static int f641_exec_skying_422_2(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int i, c;
+    uint8_t  *pix;
+    int8_t  *sum;
+    int16_t s;
+    uint16_t *acc;
+    uint16_t *sky;
+
+
+    gettimeofday(&line->tve0, NULL);
+
+    if (line->frame > app->recording_perst) {
+        c = (line->frame & 0x1F) >> 4;
+        pix = line->buffers[line->buf.index].start;
+
+        sum  = (int8_t*)app->process->grid2->acc;
+        sum += c;
+        acc  = app->process->grid2->acc;
+        for(i = 0 ; i < app->size ; i++) {
+            s = *sum + *pix - 17;
+            if (s < 127) *sum = s;
+            else *sum = 127;
+            sum += 2;
+            pix += 2;
+        }
+
+        if (line->frame % app->recording_perst == 0) {
+            memcpy(app->process->grid2->sky, app->process->grid2->acc, app->size * sizeof(uint16_t));
+            memset(app->process->grid2->acc, 0x8080, app->size * sizeof(uint16_t));
+        }
+    }
+
+    gettimeofday(&line->tve1, NULL);
+    return 0;
+}
+
 //
 void f641_attrib_skying_422(struct f641_thread_operations *ops) {
         ops->init = NULL;
         ops->updt = NULL;
-        ops->exec = f641_exec_skying_422;
+        ops->exec = f641_exec_skying_422_2;
         ops->free = NULL;
 }
 
+
+
+/******************************
+ *      CLOUD THREAD
+ ******************************/
+static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int i, c, x, y;
+    uint8_t  *pix;
+    int8_t  *edg;
+    int16_t s;
+    uint16_t *acc;
+    uint16_t *sky;
+
+
+    gettimeofday(&line->tve0, NULL);
+
+    if (line->frame % app->recording_perst == 0) {
+        edg = (int8_t*)line->gry->data;
+        pix = line->buffers[line->buf.index].start;
+        i = 0;
+
+        pix += 32;
+        for(y = 0 ; y < 288 ; y++) {
+            for(x = 0 ; x < 512 ; x++) {
+                *edg = ((*pix >> 4) << 4) - 128;
+                edg++;
+                pix += 2;
+            }
+            pix += 64;
+        }
+
+        edg = (int8_t*)line->gry->data;
+        for(y = 0 ; y < 287 ; y++) {
+            for(x = 1 ; x < 511 ; x++) {
+                if (edg[0] != edg[1] || edg[0] != edg[513] || edg[0] != edg[512] || edg[0] != edg[511]) {
+                    *edg = -128;
+                }
+                edg++;
+            }
+            edg +=2;
+        }
+    }
+
+    gettimeofday(&line->tve1, NULL);
+    return 0;
+}
+
+//
+void f641_attrib_clouding(struct f641_thread_operations *ops) {
+        ops->init = NULL;
+        ops->updt = NULL;
+        ops->exec = f641_exec_clouding_1;
+        ops->free = NULL;
+}
 
 /******************************
  *      EDGE THREAD
