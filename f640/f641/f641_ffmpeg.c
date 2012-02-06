@@ -323,10 +323,17 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
 
     if (DEBUG) printf("\t\t\t\tCONVERT : dequeue %d, frame %lu\n", line->index, line->frame);
 
-    res->scaled.data[0] = line->rgb->data;
-    //res->origin->data[0] = line->yuv->data;
-    //sws_scale(line->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, line->grid->height, scaled->data, scaled->linesize);
-    sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
+    if (app->functions == 3 && (line->frame % app->recording_perst == 0) ) {
+        res->origin->data[0] = line->buffers[line->buf.index].start;
+        res->origin->linesize[0] = 2 * line->yuv->width;
+        res->scaled.data[0] = line->rgb->data;
+        sws_scale(res->swsCtxt, (const uint8_t**)res->origin->data, res->origin->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
+    } else {
+        res->scaled.data[0] = line->rgb->data;
+        //res->origin->data[0] = line->yuv->data;
+        //sws_scale(line->swsCtxt, (const uint8_t**)picture->data, picture->linesize, 0, line->grid->height, scaled->data, scaled->linesize);
+        sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
+    }
 
 
     if (DEBUG) printf("\t\t\t\tCONVERT : enqueue %d, frame %lu\n", line->index, line->frame);

@@ -473,13 +473,12 @@ int f641_v4l2(int argc, char *argv[]) {
     } else if (appli.functions == 3) {
         appli.width  = 544;
         appli.height = 288;
+        appli.process->decoded_format = PIX_FMT_YUYV422;
         appli.frames_pers = 5;
         appli.recording_perst = 5;
-        proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
-        proc_data.broadcast_width  = 512;
+        proc_data.broadcast_format = PIX_FMT_BGR24;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+        proc_data.broadcast_width  = 544;
         proc_data.broadcast_height = 288;
-        proc_data.recording_codec = CODEC_ID_RAWVIDEO;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
-        proc_data.record_format = PIX_FMT_GRAY8;                  // MJPEG -> PIX_FMT_YUVJ422P, CODEC_ID_MPEG1VIDEO -> PIX_FMT_YUV420P
     } else {
         proc_data.broadcast_format = PIX_FMT_BGR24;
         proc_data.broadcast_width  = appli.width;
@@ -640,8 +639,8 @@ int f641_v4l2(int argc, char *argv[]) {
         long actbf[2] = {F641_SNAPED, -1};
         released = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
 
-        long actsn[2] = {F641_SKYED, -1};
-        snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 0);
+        long actsn[3] = {F641_CONVERTED, F641_SKYED, -1};
+        snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 1, 0);
 
         long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
         processed = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
@@ -726,7 +725,8 @@ int f641_v4l2(int argc, char *argv[]) {
         groups[i++] = NULL;
     } else if (appli.functions == 3) {
         snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
-        converting  = groups[i++]  = f641_make_group(1, F641_SKYED,         snapped,   1, processed, 0, 0, f641_attrib_clouding);
+        converting  = groups[i++]  = f641_make_group(1, F641_CONVERTED,     snapped,   1, processed, 0, 1, f641_attrib_converting_torgb);
+        graying     = groups[i++]  = f641_make_group(1, F641_SKYED,         snapped,   1, processed, 0, 1, f641_attrib_clouding);
         broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   processed, 1, broaded,   0, 1, f641_attrib_broadcasting);
         recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      processed, 1, NULL,      0, 1, f641_attrib_saving);
         logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);
