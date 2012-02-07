@@ -586,7 +586,7 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
     int i, c, x, y;
     uint8_t  *pix;
     int8_t  *edg;
-    int16_t s;
+    int16_t  s;
     uint16_t *acc;
     uint16_t *sky;
 
@@ -601,7 +601,7 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
         pix += 32;
         for(y = 0 ; y < 288 ; y++) {
             for(x = 0 ; x < 512 ; x++) {
-                *edg = ((*pix >> 4) << 4) - 128;
+                *edg = ((*pix >> 3) << 3) - 128;
                 edg++;
                 pix += 2;
             }
