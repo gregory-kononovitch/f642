@@ -639,8 +639,11 @@ int f641_v4l2(int argc, char *argv[]) {
         long actbf[2] = {F641_SNAPED, -1};
         released = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actbf, 0, 0, 0);
 
-        long actsn[3] = {F641_CONVERTED, F641_SKYED, -1};
+        long actsn[2] = {F641_CONVERTED, -1};
         snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 1, 0);
+
+        long actdc[2] = {F641_SKYED, -1};
+        decoded = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actdc, 0, 1, 0);
 
         long acttg[3] = {F641_BROADCASTED, F641_RECORDED, -1};
         processed = queues[i++] = f640_make_queue(stones, proc_data.proc_len, acttg, 0, 1, 0);
@@ -725,8 +728,8 @@ int f641_v4l2(int argc, char *argv[]) {
         groups[i++] = NULL;
     } else if (appli.functions == 3) {
         snaping     = groups[i++]  = f641_make_group(1, F641_SNAPED,        released,  1, snapped,   0, 0, f641_attrib_v4l2_snaping);
-        converting  = groups[i++]  = f641_make_group(1, F641_CONVERTED,     snapped,   1, processed, 0, 1, f641_attrib_converting_torgb);
-        graying     = groups[i++]  = f641_make_group(1, F641_SKYED,         snapped,   1, processed, 0, 1, f641_attrib_clouding);
+        converting  = groups[i++]  = f641_make_group(1, F641_CONVERTED,     snapped,   1, decoded,   0, 1, f641_attrib_converting_torgb);
+        graying     = groups[i++]  = f641_make_group(1, F641_SKYED,         decoded,   1, processed, 0, 1, f641_attrib_clouding);
         broading    = groups[i++]  = f641_make_group(1, F641_BROADCASTED,   processed, 1, broaded,   0, 1, f641_attrib_broadcasting);
         recording   = groups[i++]  = f641_make_group(1, F641_RECORDED,      processed, 1, NULL,      0, 1, f641_attrib_saving);
         logging     = groups[i++]  = f641_make_group(1, F641_LOGGED,        broaded,   1, logged,    0, 1, f641_attrib_logging);

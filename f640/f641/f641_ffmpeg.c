@@ -584,7 +584,7 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f640_line *line = (struct f640_line*) stone->private;
     int i, c, x, y;
-    uint8_t  *pix;
+    uint8_t  *pix, hsb[3];
     int8_t  *edg;
     int16_t  s;
     uint16_t *acc;
@@ -595,18 +595,33 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
 
     if (line->frame % app->recording_perst == 0) {
         edg = (int8_t*)line->gry->data;
-        pix = line->buffers[line->buf.index].start;
+        pix = line->rgb->data;
         i = 0;
 
-        pix += 32;
+        pix += 48;
         for(y = 0 ; y < 288 ; y++) {
             for(x = 0 ; x < 512 ; x++) {
-                *edg = ((*pix >> 3) << 3) - 128;
+                f640_rgb_to_hsb0(pix, hsb);
+                *edg = -128 + ((hsb[2] >> 5) << 5);
                 edg++;
-                pix += 2;
+                pix += 3;
             }
-            pix += 64;
+            pix += 96;
         }
+
+//        edg = (int8_t*)line->gry->data;
+//        pix = line->buffers[line->buf.index].start;
+//        i = 0;
+//
+//        pix += 32;
+//        for(y = 0 ; y < 288 ; y++) {
+//            for(x = 0 ; x < 512 ; x++) {
+//                *edg = ((*pix >> 3) << 3) - 128;
+//                edg++;
+//                pix += 2;
+//            }
+//            pix += 64;
+//        }
 
         edg = (int8_t*)line->gry->data;
         for(y = 0 ; y < 287 ; y++) {

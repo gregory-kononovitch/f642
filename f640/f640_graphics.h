@@ -88,4 +88,10 @@ extern struct f640_image *f640_create_rgba_image(int width, int height);
 extern void f640_yuv_to_rgb(struct f640_image *yuv, int index, struct f640_image *rgb);
 extern void f640_full_yuv_to_rgb(struct f640_image *yuv, struct f640_image *rgb);
 
+/*
+ * java formulas
+ */
+extern void f640_rgb_to_hsb(uint8_t *rgb, uint8_t *hsb);        // with integer
+extern void f640_rgb_to_hsb0(uint8_t *rgb, uint8_t *hsb);       // with float
+
 #endif /* F640_GRAPHICS_H_ */

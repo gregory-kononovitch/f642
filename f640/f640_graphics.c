@@ -220,4 +220,71 @@ void f640_full_yuv_to_rgb(struct f640_image *yuv, struct f640_image *rgb) {
     }
 }
 
+/*******************************************************************
+ ******************        JAVA        *****************************
+ *******************************************************************/
+void f640_rgb_to_hsb(uint8_t *rgb, uint8_t *hsb) {
+    uint8_t cmin, cmax;
+    int8_t hue;
 
+    cmin = rgb[0] < rgb[1] ? rgb[0] : rgb[1];
+    cmin = rgb[2] < cmin   ? rgb[2] : cmin;
+    cmax = rgb[0] > rgb[1] ? rgb[0] : rgb[1];
+    cmax = rgb[2] > cmax   ? rgb[2] : cmax;
+
+    // Brightness
+    hsb[2] = cmax;
+
+    // Saturation & Hue
+    if (cmax > 0) {
+        hsb[1] = 255 * (cmax - cmin) / cmax;
+
+        if (cmax == rgb[2]) {
+            hue = 255 * (rgb[0] - rgb[1]) / (cmax - cmin);
+        } else if (cmax == rgb[1]) {
+            hue = 510  + 255 * (rgb[2] - rgb[0]) / (cmax - cmin);
+        } else {
+            hue = 1020 + 255 * (rgb[1] - rgb[2]) / (cmax - cmin);
+        }
+        hue /= 6;
+        if (hue < 0) hue += 255;
+        hsb[0] = hue;
+    } else {
+        hsb[1] = 0;
+        hsb[0] = 0;
+    }
+}
+
+void f640_rgb_to_hsb0(uint8_t *rgb, uint8_t *hsb) {
+    double cmin, cmax;
+    double hue, sat;
+
+    cmin = rgb[0] < rgb[1] ? rgb[0] : rgb[1];
+    cmin = rgb[2] < cmin   ? rgb[2] : cmin;
+    cmax = rgb[0] > rgb[1] ? rgb[0] : rgb[1];
+    cmax = rgb[2] > cmax   ? rgb[2] : cmax;
+
+    // Brightness
+    hsb[2] = cmax;
+
+    // Saturation & Hue
+    if (cmax > 0) {
+        sat = (cmax - cmin) / cmax;
+
+        if (cmax == rgb[2]) {
+            hue = 1. * (rgb[0] - rgb[1]) / (cmax - cmin);
+        } else if (cmax == rgb[1]) {
+            hue = 2. + (rgb[2] - rgb[0]) / (cmax - cmin);
+        } else {
+            hue = 4. + (rgb[1] - rgb[2]) / (cmax - cmin);
+        }
+        hue /= 6;
+        if (hue < 0) hue += 1.;
+
+        hsb[1] = 255. * sat + .5;
+        hsb[0] = 255. * hue + .5;
+    } else {
+        hsb[1] = 0;
+        hsb[0] = 0;
+    }
+}
