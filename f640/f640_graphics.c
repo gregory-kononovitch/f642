@@ -232,13 +232,8 @@ void f640_rgb_to_hsb(uint8_t *rgb, uint8_t *hsb) {
     cmax = rgb[0] > rgb[1] ? rgb[0] : rgb[1];
     cmax = rgb[2] > cmax   ? rgb[2] : cmax;
 
-    // Brightness
-    hsb[2] = cmax;
-
-    // Saturation & Hue
+    // Brightness & Saturation & Hue
     if (cmax > 0) {
-        hsb[1] = 255 * (cmax - cmin) / cmax;
-
         if (cmax == rgb[2]) {
             hue = 255 * (rgb[0] - rgb[1]) / (cmax - cmin);
         } else if (cmax == rgb[1]) {
@@ -248,8 +243,11 @@ void f640_rgb_to_hsb(uint8_t *rgb, uint8_t *hsb) {
         }
         hue /= 6;
         if (hue < 0) hue += 255;
+        hsb[2] = cmax;
+        hsb[1] = 255 * (cmax - cmin) / cmax;
         hsb[0] = hue;
     } else {
+        hsb[2] = cmax;
         hsb[1] = 0;
         hsb[0] = 0;
     }
@@ -264,10 +262,7 @@ void f640_rgb_to_hsb0(uint8_t *rgb, uint8_t *hsb) {
     cmax = rgb[0] > rgb[1] ? rgb[0] : rgb[1];
     cmax = rgb[2] > cmax   ? rgb[2] : cmax;
 
-    // Brightness
-    hsb[2] = cmax;
-
-    // Saturation & Hue
+    // Brightness & Saturation & Hue
     if (cmax > 0) {
         sat = (cmax - cmin) / cmax;
 
@@ -281,9 +276,11 @@ void f640_rgb_to_hsb0(uint8_t *rgb, uint8_t *hsb) {
         hue /= 6;
         if (hue < 0) hue += 1.;
 
+        hsb[2] = cmax;
         hsb[1] = 255. * sat + .5;
         hsb[0] = 255. * hue + .5;
     } else {
+        hsb[2] = cmax;
         hsb[1] = 0;
         hsb[0] = 0;
     }

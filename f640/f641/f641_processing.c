@@ -194,8 +194,8 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
     } else if ( (app->functions == 3) && (line->frame % app->recording_perst == 0) ) {
         char fname[128];
         FILE *filp;
-        if ( (size>>10) > 2000000 ) return 0;
-        sprintf(fname, "/test/snap/cloud/cloud16-%ld.raw", nb++);
+        if ( (size>>10) > -1 ) return 0;
+        sprintf(fname, "/test/snap/cloud/cloud20-%ld.raw", nb++);
         filp = fopen(fname, "wb");
         r = fwrite(line->gry->data, 1, 288 * 512, filp);
         fwrite(&tv.tv_sec, 1, sizeof(long), filp);
@@ -314,7 +314,7 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
         write(app->fd_stream, line->rgb->data, line->rgb->data_size);
 
         // Cloud
-        write(app->fd_edge, line->gry->data, 512 * 288);
+        write(app->fd_edge, line->gry->data, 544 * 288);
     }
 
     gettimeofday(&line->tvb1, NULL);

@@ -323,7 +323,8 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
 
     if (DEBUG) printf("\t\t\t\tCONVERT : dequeue %d, frame %lu\n", line->index, line->frame);
 
-    if (app->functions == 3 && (line->frame % app->recording_perst == 0) ) {
+//    if (app->functions == 3 && (line->frame % app->recording_perst == 0) ) {
+      if (app->functions == 3 ) {
         res->origin->data[0] = line->buffers[line->buf.index].start;
         res->origin->linesize[0] = 2 * line->yuv->width;
         res->scaled.data[0] = line->rgb->data;
@@ -602,7 +603,8 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
         for(y = 0 ; y < 288 ; y++) {
             for(x = 0 ; x < 512 ; x++) {
                 f640_rgb_to_hsb0(pix, hsb);
-                *edg = -128 + ((hsb[2] >> 5) << 5);
+                //*edg = -128 + ((hsb[2] >> 5) << 5);
+                *edg = -128 + hsb[2];
                 edg++;
                 pix += 3;
             }
@@ -623,15 +625,44 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
 //            pix += 64;
 //        }
 
+//        edg = (int8_t*)line->gry->data;
+//        for(y = 0 ; y < 287 ; y++) {
+//            for(x = 1 ; x < 511 ; x++) {
+//                if (edg[0] != edg[1] || edg[0] != edg[513] || edg[0] != edg[512] || edg[0] != edg[511]) {
+//                    *edg = -128;
+//                }
+//                edg++;
+//            }
+//            edg +=2;
+//        }
+    }
+
+    gettimeofday(&line->tve1, NULL);
+    return 0;
+}
+
+static int f641_exec_clouding_2(void *appli, void *ressources, struct f640_stone *stone) {
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f640_line *line = (struct f640_line*) stone->private;
+    int x, y;
+    uint8_t  *pix, *pix2;
+    int8_t  *edg;
+
+
+    gettimeofday(&line->tve0, NULL);
+
+    if (line->frame % app->recording_perst == 0) {
         edg = (int8_t*)line->gry->data;
-        for(y = 0 ; y < 287 ; y++) {
-            for(x = 1 ; x < 511 ; x++) {
-                if (edg[0] != edg[1] || edg[0] != edg[513] || edg[0] != edg[512] || edg[0] != edg[511]) {
-                    *edg = -128;
-                }
+        pix  = line->rgb->data;
+        pix2 = line->lineup[line->last].rgb->data;
+
+        for(y = 0 ; y < 288 ; y++) {
+            for(x = 0 ; x < 544 ; x++) {
+                *edg = *pix > *pix2 ? -128 + *pix - *pix2 : -128 + *pix2 - *pix;
                 edg++;
+                pix++;
+                pix2++;
             }
-            edg +=2;
         }
     }
 
@@ -643,7 +674,7 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
 void f641_attrib_clouding(struct f641_thread_operations *ops) {
         ops->init = NULL;
         ops->updt = NULL;
-        ops->exec = f641_exec_clouding_1;
+        ops->exec = f641_exec_clouding_2;
         ops->free = NULL;
 }
 

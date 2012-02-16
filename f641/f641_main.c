@@ -437,7 +437,7 @@ int f641_v4l2(int argc, char *argv[]) {
 
     //
     appli.recording = 1;
-    snprintf(appli.record_path, sizeof(appli.record_path), "/work/test/tust.avi");
+    snprintf(appli.record_path, sizeof(appli.record_path), "/test/snap/tust.avi");
 
     snprintf(appli.stream_path, sizeof(appli.stream_path), "/dev/t030/t030-%d", 1);
     appli.fd_stream = open(appli.stream_path, O_WRONLY);
@@ -474,9 +474,9 @@ int f641_v4l2(int argc, char *argv[]) {
         appli.width  = 544;
         appli.height = 288;
         appli.process->decoded_format = PIX_FMT_YUYV422;
-        appli.frames_pers = 5;
+//        appli.frames_pers = 5;
         appli.recording_perst = 5;
-        proc_data.broadcast_format = PIX_FMT_BGR24;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+        proc_data.broadcast_format = PIX_FMT_GRAY8;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
         proc_data.broadcast_width  = 544;
         proc_data.broadcast_height = 288;
     } else {
