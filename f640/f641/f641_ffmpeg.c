@@ -641,29 +641,89 @@ static int f641_exec_clouding_1(void *appli, void *ressources, struct f640_stone
     return 0;
 }
 
+struct f641_clouding_2_res {
+    uint16_t *sum;
+    uint16_t *min;
+    uint16_t *max;
+};
+
+static void* f641_init_clouding_2(void *appli) {
+    int r;
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_clouding_2_res *res = calloc(1, sizeof(struct f641_clouding_2_res));
+    res->sum = calloc(544 * 288, sizeof(uint16_t));
+    res->min = calloc(544 * 288, sizeof(uint16_t));
+    res->max = calloc(544 * 288, sizeof(uint16_t));
+
+    return res;
+}
+
 static int f641_exec_clouding_2(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_clouding_2_res *res = (struct f641_clouding_2_res*)ressources;
     struct f640_line *line = (struct f640_line*) stone->private;
-    int x, y;
-    uint8_t  *pix, *pix2;
-    int8_t  *edg;
+    struct timeval tv;
 
+    int x, y;
+    uint8_t  *pix;
+    int8_t  *edg;
+    uint16_t  *acc, *mi, *ma, max = 1;
 
     gettimeofday(&line->tve0, NULL);
+    timersub(&line->tve0, &app->process->tv0, &tv);
 
-    if (line->frame % app->recording_perst == 0) {
-        edg = (int8_t*)line->gry->data;
-        pix  = line->rgb->data;
-        pix2 = line->lineup[line->last].rgb->data;
+    edg = (int8_t*)line->gry->data;
 
+    pix  = line->rgb->data;
+    acc  = res->sum;
+    mi   = res->min;
+    ma   = res->max;
+
+    for(y = 0 ; y < 288 ; y++) {
+        for(x = 0 ; x < 544 ; x++) {
+            if (y > 144 && x < 272) {
+                *mi  = 0;
+                *ma  = 1;
+                *acc = 1;
+            } else {
+                if (*mi > *pix) *mi = *pix;
+                if (*ma < *pix) *ma = *pix;
+                *acc = *ma - *mi;
+                if (*acc > max) max = *acc;
+            }
+
+            acc++;
+            mi ++;
+            ma ++;
+            pix++;
+        }
+    }
+
+    if (line->flaged == -1) {
+        acc  = res->sum;
+        mi   = res->min;
+        ma   = res->max;
+        pix  = line->gry->data;
         for(y = 0 ; y < 288 ; y++) {
             for(x = 0 ; x < 544 ; x++) {
-                *edg = *pix > *pix2 ? -128 + *pix - *pix2 : -128 + *pix2 - *pix;
-                edg++;
+                if (y > 144 && x < 272)  {
+                    *pix = 0;
+                } else {
+    //                if (*acc > 9) *pix = 255 * (*acc) / max;
+    //                else *pix = 0;
+                    *pix = 255 * (*acc) / max;
+                }
+                *acc = 0;
+                *mi  = 256;
+                *ma  = 0;
+
+                acc++;
+                mi++;
+                ma++;
                 pix++;
-                pix2++;
             }
         }
+        printf("\nSumming : frame = %ld, max = %u at %lus.%06ldµs", line->frame, max, tv.tv_sec, tv.tv_usec);
     }
 
     gettimeofday(&line->tve1, NULL);
@@ -672,7 +732,7 @@ static int f641_exec_clouding_2(void *appli, void *ressources, struct f640_stone
 
 //
 void f641_attrib_clouding(struct f641_thread_operations *ops) {
-        ops->init = NULL;
+        ops->init = f641_init_clouding_2;
         ops->updt = NULL;
         ops->exec = f641_exec_clouding_2;
         ops->free = NULL;

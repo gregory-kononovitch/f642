@@ -632,21 +632,20 @@ int f641_set_mmap(struct f641_v4l2_parameters *prm, int nb_buffers) {
         if ( prm->verbose ) printf("%i length=%d\n", b, buf.length);
     }
 
-    for(b = 0; b < prm->req.count; b++)
-    {
-        memset(&prm->buf, 0, sizeof(prm->buf));
-
-        prm->buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        prm->buf.memory = V4L2_MEMORY_MMAP;
-        prm->buf.index  = b;
-
-        if(ioctl(prm->fd, VIDIOC_QBUF, &prm->buf) == -1) {
-            printf("VIDIOC_QBUF: %s\n", strerror(errno));
-            for(i = 0; i < prm->req.count; i++) munmap(prm->buffers[i].start, prm->buffers[i].length);
-            return -1;
-        }
-        printf("QBuf : index = %u, len = %u, input = %u, offset = %u, ptr = %p\n", prm->buf.index, prm->buf.length, prm->buf.input, prm->buf.m.offset, prm->buf.m.userptr);
-    }
+//    for(b = 0; b < prm->req.count; b++) {
+//        memset(&prm->buf, 0, sizeof(prm->buf));
+//
+//        prm->buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+//        prm->buf.memory = V4L2_MEMORY_MMAP;
+//        prm->buf.index  = b;
+//
+//        if(ioctl(prm->fd, VIDIOC_QBUF, &prm->buf) == -1) {
+//            printf("VIDIOC_QBUF: %s\n", strerror(errno));
+//            for(i = 0; i < prm->req.count; i++) munmap(prm->buffers[i].start, prm->buffers[i].length);
+//            return -1;
+//        }
+//        printf("QBuf : index = %u, len = %u, input = %u, offset = %u, ptr = %p\n", prm->buf.index, prm->buf.length, prm->buf.input, prm->buf.m.offset, prm->buf.m.userptr);
+//    }
     return 0;
 }
 
@@ -925,6 +924,31 @@ void f641_free_v4l2(struct f641_v4l2_parameters *prm) {
 /********************************
  *      V4L2 SNAP THREAD
  ********************************/
+struct f641_v4l2_snap_ressource {
+    long *frames;
+    pthread_mutex_t mutex;
+};
+
+static void* f641_init_v4l2_snaping(void *appli) {
+    int r;
+    struct f641_appli *app = (struct f641_appli*)appli;
+    struct f641_v4l2_snap_ressource *res = calloc(1, sizeof(struct f641_v4l2_snap_ressource));
+
+    res->frames = calloc(app->process->proc_len, sizeof(long));
+    pthread_mutex_init(&res->mutex, NULL);
+
+//    for(r = 0 ; r < app->process->proc_len ; r++) {
+//        memset(&((struct f640_line*)app->process->stones[r].private)->buf, 0, sizeof(struct v4l2_buffer));
+//
+//        ((struct f640_line*)app->process->stones[r].private)->buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+//        ((struct f640_line*)app->process->stones[r].private)->buf.memory = V4L2_MEMORY_MMAP;
+//        ((struct f640_line*)app->process->stones[r].private)->buf.index  = r;
+//    }
+
+    return res;
+}
+
+
 static int f641_exec_v4l2_snaping(void *appli, void *ressources, struct f640_stone *stone) {
     struct f641_appli *app = (struct f641_appli*)appli;
     struct f641_v4l2_snap_ressource *res = (struct f641_v4l2_snap_ressource*)ressources;
@@ -932,6 +956,18 @@ static int f641_exec_v4l2_snaping(void *appli, void *ressources, struct f640_sto
     //
     static struct f640_line *previous_line = NULL;
     static long frame = 1;  // @@@
+    static long nb = 0;
+    static struct timeval tvt;
+    struct timeval tv;
+
+//    if (nb == 4) {
+//        gettimeofday(&tv, NULL);
+//        timersub(&tv, &tvt, &tv);
+//        printf("\n4 in %lus.%06ldµs", tv.tv_sec, tv.tv_usec);
+//        gettimeofday(&tvt, NULL);
+//        nb = 0;
+//    }
+//    nb++;
 
     memset(&line->buf, 0, sizeof(struct v4l2_buffer));
     line->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -940,11 +976,16 @@ static int f641_exec_v4l2_snaping(void *appli, void *ressources, struct f640_sto
         printf("VIDIOC_DQBUF: %s\n", strerror(errno));
         return -1;
     }
+
     pthread_spin_lock(&stone->spin);
     stone->status = 0;
     stone->frame  = frame++;
     line->frame   = stone->frame;
     pthread_spin_unlock(&stone->spin);
+
+    pthread_mutex_lock(&res->mutex);
+    res->frames[line->index] = line->frame;
+    pthread_mutex_unlock(&res->mutex);
 
     line->actual = line->buf.index;
     line->last   = previous_line ? previous_line->buf.index : 0;
@@ -952,11 +993,12 @@ static int f641_exec_v4l2_snaping(void *appli, void *ressources, struct f640_sto
     previous_line = line;
 
     gettimeofday(&line->tv00, NULL);
+
     return line->buf.bytesused;
 }
 
 void f641_attrib_v4l2_snaping(struct f641_thread_operations *ops) {
-        ops->init = NULL;
+        ops->init = f641_init_v4l2_snaping;
         ops->updt = NULL;
         ops->exec = f641_exec_v4l2_snaping;
         ops->free = NULL;
@@ -970,9 +1012,53 @@ static int f641_exec_v4l2_desnaping(void *appli, void *ressources, struct f640_s
     struct f641_v4l2_snap_ressource *res = (struct f641_v4l2_snap_ressource*)ressources;
     struct f640_line *line = (struct f640_line*) stone->private;
 
+    static long nb = 0;
+
+    if (app->functions == 3) {
+        if (nb % app->recording_perst == 0) {
+            usleep(1000 * 1000);
+            line->flaged = 1;
+        } else if ((nb+1) % app->recording_perst == 0) {
+            line->flaged = -1;
+        } else {
+            line->flaged = 0;
+        }
+        nb++;
+    }
+
     if(ioctl(app->fd, VIDIOC_QBUF, &line->buf) == -1) {
         printf("VIDIOC_QBUF: %s\n", strerror(errno));
         return -1;
+    }
+    return 0;
+
+    if (app->functions == 3) {
+        int i = 0, j = 0;
+        pthread_mutex_lock(&res->mutex);
+        res->frames[line->index] = -res->frames[line->index];
+        for(j = 0 ; j < app->process->proc_len ; j++) {
+            if (res->frames[j] < 0) {
+                for(i = 0 ; i < app->process->proc_len ; i++) {
+                    if (res->frames[i] < 0 && res->frames[i] == res->frames[j] + 10) {
+                        if(ioctl(app->fd, VIDIOC_QBUF, line->lineup[i].buf) == -1) {
+                            printf("VIDIOC_QBUF: %s\n", strerror(errno));
+                            return -1;
+                        }
+                        res->frames[i] = 0;
+                        break;
+                    }
+                }
+            }
+        }
+        pthread_mutex_unlock(&res->mutex);
+    } else {
+        if(ioctl(app->fd, VIDIOC_QBUF, &line->buf) == -1) {
+            printf("VIDIOC_QBUF: %s\n", strerror(errno));
+            return -1;
+        }
+        pthread_mutex_lock(&res->mutex);
+        res->frames[line->index] = 0;
+        pthread_mutex_unlock(&res->mutex);
     }
     return 0;
 }

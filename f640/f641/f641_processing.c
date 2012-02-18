@@ -308,7 +308,7 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
     } else if (app->functions == 2 && (line->frame % app->recording_perst == 0)) {
         *((long*)(app->process->grid2->sky + app->size)) = 0L + 1000L * line->tv00.tv_sec + line->tv00.tv_usec / 1000L;
         write(app->fd_stream, app->process->grid2->sky, app->size * sizeof(uint16_t));
-    } else if (app->functions == 3 && (line->frame % app->recording_perst == 0)) {
+    } else if (app->functions == 3 && line->flaged == -1) {
 
         // RGB
         write(app->fd_stream, line->rgb->data, line->rgb->data_size);

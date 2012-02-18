@@ -243,6 +243,7 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
         {"height",          required_argument, NULL, 'H'},
         {"bwidth",          required_argument, NULL, 0xff0},
         {"bheight",         required_argument, NULL, 0xff1},
+        {"perst",           required_argument, NULL, 0xff2},
         {"path",            required_argument, NULL, 0xff10},
         {"show-all",        no_argument,       NULL, 'A'},
         {"show-caps",       no_argument,       NULL, 'P'},
@@ -352,6 +353,9 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
             case 0xff1:
                 appli->broadcast_height = atoi(optarg);
                 break;
+            case 0xff2:
+                appli->recording_perst = atoi(optarg);
+                break;
             case 0xff10:
                 strcpy(appli->file_path, optarg);
                 break;
@@ -422,7 +426,7 @@ int f641_v4l2(int argc, char *argv[]) {
     appli.size   = appli.width * appli.height;
     appli.frames_pers = 5;
     appli.recording_rate = 24;
-    appli.recording_perst = 32;
+    appli.recording_perst = appli.frames_pers;
     appli.viewing_rate = 24;
     appli.max_frame = 0xFFFFFFFFFFFFFFL;
     appli.threshold = 1024;
@@ -469,13 +473,13 @@ int f641_v4l2(int argc, char *argv[]) {
         proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
         proc_data.broadcast_height = appli.height - 70;
         proc_data.broadcast_width  = appli.width * proc_data.broadcast_height / appli.height;
-        appli.recording_perst = appli.frames_pers;
+//        appli.recording_perst = appli.frames_pers;
     } else if (appli.functions == 3) {
         appli.width  = 544;
         appli.height = 288;
         appli.process->decoded_format = PIX_FMT_YUYV422;
 //        appli.frames_pers = 5;
-        appli.recording_perst = 5;
+//        appli.recording_perst = 5;
         proc_data.broadcast_format = PIX_FMT_GRAY8;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
         proc_data.broadcast_width  = 544;
         proc_data.broadcast_height = 288;
@@ -760,7 +764,11 @@ int f641_v4l2(int argc, char *argv[]) {
     // FILL FIRST QUEUE
     usleep(100*1000);
     for(i = 0 ; i < proc_data.proc_len ; i++) {
-        f640_enqueue(released, 0, i, F641_RELEASED);
+        lineup[i].buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        lineup[i].buf.memory = V4L2_MEMORY_MMAP;
+        lineup[i].buf.index  = i;
+
+        f640_enqueue(logged, 0, i, F641_RELEASED);
     }
     printf("%d Buffers ready\n", proc_data.proc_len);
     usleep(300*1000);
