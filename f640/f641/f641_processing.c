@@ -268,11 +268,11 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
     // FB
     if (res && (app->functions == 0 || app->functions == 10) ) {
         if (res->start) {
-            memcpy(res->start, line->rgb->data, 4 * app->width * app->process->broadcast_height);
+            memcpy(res->start, line->rgb->data, 4 * 1024 * 500);
             //ioctl(res->fd_fb, FBIOBLANK, FB_BLANK_UNBLANK);
         } else if (res->fd_fb > 0) {
             lseek(res->fd_fb, 0, SEEK_SET);
-            write(res->fd_fb, line->rgb->data, 4 * app->width * app->process->broadcast_height);
+            write(res->fd_fb, line->rgb->data, 4 * 1024 * 500);
         }
     } else if (app->functions == 1) {
         // Grid

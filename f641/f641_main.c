@@ -471,7 +471,7 @@ int f641_v4l2(int argc, char *argv[]) {
     proc_data.decoded_format = PIX_FMT_YUVJ422P;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
     if (appli.functions == 0 || appli.functions == 10) {
         proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
-        proc_data.broadcast_height = appli.height - 70;
+        proc_data.broadcast_height = 500;
         proc_data.broadcast_width  = appli.width * proc_data.broadcast_height / appli.height;
 //        appli.recording_perst = appli.frames_pers;
     } else if (appli.functions == 3) {
@@ -1083,7 +1083,7 @@ int f641_v4l2(int argc, char *argv[]) {
 }
 
 
-void f641_pi(int len) {
+void f641_pi(int len, int to_be_saved) {
     int i = 0;
     int prec;
     int *d2 = calloc(len, sizeof(int));
@@ -1093,7 +1093,7 @@ void f641_pi(int len) {
     int *d3 = calloc(len, sizeof(int));
     int step = 1;
     int dist[10];
-    struct timeval tv0, tv1;
+    struct timeval tv00, tv0, tv1;
     uint8_t *save = calloc(4 + 2 * len, sizeof(uint8_t));
 
     //
@@ -1106,11 +1106,19 @@ void f641_pi(int len) {
 
     //
     gettimeofday(&tv0, NULL);
-    int *d2end = d2 + len - 1;
-    for(step = 2 ; step < 5000000 ; step++) {
-        int den = 2 * step + 1;
-        int r = 0;
-        int s = 0;
+    int stepm = 333 * len / 100;
+    int len1 = len - 1;
+    int den = 3;
+    int r = 0;
+    int s = 0;
+    int div = 0;
+    int fl = 2;
+
+    gettimeofday(&tv00, NULL);
+    for(step = 2 ; step < stepm ; step++) {
+        den += 2;
+        r = 0;
+        s = 0;  // < 10 * step
 
         // Multiply
         for(i = len - 1 ; i > sigm ; i--) {
@@ -1125,8 +1133,7 @@ void f641_pi(int len) {
         }
 
         // Divide
-        int div = d2[0];
-
+        div = d2[sigd - 1];
         for(i = sigd ; i < len ; i++) {
             if (div >= den) {
                 d2[i-1] = div / den;
@@ -1136,6 +1143,8 @@ void f641_pi(int len) {
                 div = 10 * div + d2[i];
             }
         }
+        if (div >= den) d2[len1] = div / den;
+        else d2[len1] = 0;
 
         // Add
         r = 0;
@@ -1150,10 +1159,12 @@ void f641_pi(int len) {
             }
         }
 
+
         if (step > 12 && step % 10 == 0) {
             sigm += 3;
             sigd += 3;
             siga += 3;
+            fl = floor(log10(step)) + 1;
 
             if (step % 1500 == 0) {
                 int sig = 0;
@@ -1164,32 +1175,36 @@ void f641_pi(int len) {
                     if (d2[sig] != 0) break;
                 }
 
-                printf("Last %lu.%06ld (%f) : %d.%d%d%d", tv0.tv_sec, tv0.tv_usec, 3500000. / 1500. * (tv0.tv_sec + tv0.tv_usec/1000000.) / 3600., d3[0], d3[1], d3[2], d3[3]);
-//                for(i = 4 ; i < 25 ; i++) printf("%d", d3[i]);
-                printf(" - sig = %d / %d | ", sigm, sig);
+                if (to_be_saved) {
+                    printf("Last %lu.%06ld (%f) : %d.%d%d%d", tv0.tv_sec, tv0.tv_usec, 3500000. / 1500. * (tv0.tv_sec + tv0.tv_usec/1000000.) / 3600., d3[0], d3[1], d3[2], d3[3]);
+    //                for(i = 4 ; i < 25 ; i++) printf("%d", d3[i]);
+                    printf(" - sig = %d / %d | ", sigm, sig);
+                }
 
                 sigm = sig - log10(step) - 3;
                 sigd = sigm + 2;
                 siga = sigm;
 
-                memset(dist, 0, 40);
-                for(i = higm ; i < sigm ; i++) dist[d3[i]]++;
-                printf("Dist : ");
-                for(i = 0 ; i < 10 ; i++) printf("%d: %02.1f|", i, 1. * (sigm - higm) / (dist[i] + 0.001));
-                printf("\n");
+                if (to_be_saved) {
+                    memset(dist, 0, 40);
+                    for(i = higm ; i < sigm ; i++) dist[d3[i]]++;
+                    printf("Dist : ");
+                    for(i = 0 ; i < 10 ; i++) printf("%d: %02.1f|", i, 1. * (sigm - higm) / (dist[i] + 0.001));
+                    printf("\n");
 
-                *((int*)save) = step;
-                for(i = 0 ; i < len ; i++) {
-                    save[4 + i] = d2[i];
+                    *((int*)save) = step;
+                    for(i = 0 ; i < len ; i++) {
+                        save[4 + i] = d2[i];
+                    }
+                    for(i = 0 ; i < len ; i++) {
+                        save[4 + len + i] = d3[i];
+                    }
+                    FILE *filp;
+                    filp = fopen("pi1.dat", "wb");
+                    fwrite(save, 4 + 2 * len, 1, filp);
+                    fflush(filp);
+                    fclose(filp);
                 }
-                for(i = 0 ; i < len ; i++) {
-                    save[4 + len + i] = d3[i];
-                }
-                FILE *filp;
-                filp = fopen("pi.dat", "wb");
-                fwrite(save, 4 + 2 * len, 1, filp);
-                fflush(filp);
-                fclose(filp);
 
                 higm = sigm;
                 gettimeofday(&tv0, NULL);
@@ -1197,13 +1212,403 @@ void f641_pi(int len) {
         }
     }
     gettimeofday(&tv1, NULL);
-    timersub(&tv1, &tv0, &tv0);
+    timersub(&tv1, &tv00, &tv00);
 
-    printf("Last %lu.%06ld : %d.", tv0.tv_sec, tv0.tv_usec, d3[0]);
-    for(i = 1 ; i < 100 ; i++) printf("%d", d3[i]);
+    printf("Last %lu.%06ld : %d.", tv00.tv_sec, tv00.tv_usec, d3[0]);
+    for(i = 1 ; i < 50 ; i++) printf("%d", d3[i]);
+    printf(" - ");
+    for(i = len - 50 ; i < len ; i++) printf("%d", d3[i]);
     printf("\n");
 
+    *((int*)save) = step;
+    for(i = 0 ; i < len ; i++) {
+        save[4 + i] = d2[i];
+    }
+    for(i = 0 ; i < len ; i++) {
+        save[4 + len + i] = d3[i];
+    }
+    FILE *filp;
+    filp = fopen("pi1.dat", "wb");
+    fwrite(save, 4 + 2 * len, 1, filp);
+    fflush(filp);
+    fclose(filp);
+
+    free(d2);
+    free(d3);
+    free(save);
 }
+
+void f641_pi_(int len, int to_be_saved) {
+    int i = 0;
+    int prec;
+    int *d2 = calloc(len, sizeof(int));
+    int sigm = 0, higm = 0;
+    int sigd = 0;
+    int siga = 0;
+    int *d3 = calloc(len, sizeof(int));
+    int step = 1;
+    int dist[10];
+    struct timeval tv00, tv0, tv1;
+    uint8_t *save = calloc(4 + 2 * len, sizeof(uint8_t));
+
+    //
+    d2[0] = 0;
+    d2[1] = 0;
+    d2[2] = 2;
+    d3[0] = 0;
+    d3[1] = 2;
+    d3[2] = 9;
+    for(i = 3 ; i < len ; i++) {
+        d2[i] = 6;
+        d3[i] = 3;
+    }
+
+    //
+    gettimeofday(&tv0, NULL);
+    int len1 = len - 1;
+    int den = 5;
+    int r = 0;
+    int s = 0;
+    int div = 0;
+    int fl = 3;
+
+    gettimeofday(&tv00, NULL);
+    for(step = 3 ; step < INT_MAX ; step++) {
+        den += 2;
+        r = 0;
+        s = 0;  // < 10 * step
+
+        // Multiply
+        while(sigm < len1 && d2[sigm] == 0) sigm++;
+        if (sigm == len1) break;
+        sigm -= fl;
+
+        for(i = len - 1 ; i > sigm ; i--) {
+            s = r + step * d2[i];
+            if (s > 9) {
+                r = s / 10;
+                d2[i] = s % 10;
+            } else {
+                r = 0;
+                d2[i] = s;
+            }
+        }
+
+        // Divide
+        div = d2[sigm++];
+        for(i = sigm ; i < len ; i++) {
+            if (div >= den) {
+                d2[i-1] = div / den;
+                div = 10 * (div % den) + d2[i];
+            } else {
+                d2[i-1] = 0;
+                div = 10 * div + d2[i];
+            }
+        }
+        if (div >= den) d2[len1] = div / den;
+        else d2[len1] = 0;
+
+        // Add
+        r = 0;
+        for(i = len - 1 ; i > sigm ; i--) {
+            s = r + d2[i] + d3[i];
+            if (s < 10) {
+                r = 0;
+                d3[i] = s;
+            } else {
+                r = 1;
+                d3[i] = s - 10;
+            }
+        }
+
+
+        if (step > 12 && step % 100 == 0) {
+            fl = floor(log10(step)) + 3;
+
+            if (step % 1500 == 0) {
+                gettimeofday(&tv1, NULL);
+                timersub(&tv1, &tv0, &tv0);
+
+                if (to_be_saved) {
+                    printf("Last %lu.%06ld (%f) : %d.%d%d%d", tv0.tv_sec, tv0.tv_usec, 3500000. / 1500. * (tv0.tv_sec + tv0.tv_usec/1000000.) / 3600., d3[0], d3[1], d3[2], d3[3]);
+    //                for(i = 4 ; i < 25 ; i++) printf("%d", d3[i]);
+                    printf(" - sig = %d | ", sigm);
+                }
+
+                if (to_be_saved) {
+//                    memset(dist, 0, 40);
+//                    for(i = higm ; i < sigm ; i++) dist[d3[i]]++;
+//                    printf("Dist : ");
+//                    for(i = 0 ; i < 10 ; i++) printf("%d: %02.1f|", i, 1. * (sigm - higm) / (dist[i] + 0.001));
+                    printf("\n");
+
+                    *((int*)save) = step;
+                    for(i = 0 ; i < len ; i++) {
+                        save[4 + i] = d2[i];
+                    }
+                    for(i = 0 ; i < len ; i++) {
+                        save[4 + len + i] = d3[i];
+                    }
+                    FILE *filp;
+                    filp = fopen("pi1.dat", "wb");
+                    fwrite(save, 4 + 2 * len, 1, filp);
+                    fflush(filp);
+                    fclose(filp);
+                }
+                gettimeofday(&tv0, NULL);
+            }
+        }
+    }
+    gettimeofday(&tv1, NULL);
+    timersub(&tv1, &tv00, &tv00);
+
+    printf("Last %lu.%06ld for %d iter : %d.", tv00.tv_sec, tv00.tv_usec, step, d3[1]);
+    for(i = 2 ; i < 50 ; i++) printf("%d", d3[i]);
+    printf(" - ");
+    for(i = len - 50 ; i < len ; i++) printf("%d", d3[i]);
+    printf("\n");
+
+    *((int*)save) = step;
+    for(i = 0 ; i < len ; i++) {
+        save[4 + i] = d2[i];
+    }
+    for(i = 0 ; i < len ; i++) {
+        save[4 + len + i] = d3[i];
+    }
+    FILE *filp;
+    filp = fopen("pi1.dat", "wb");
+    fwrite(save, 4 + 2 * len, 1, filp);
+    fflush(filp);
+    fclose(filp);
+
+    // Compare
+    free(save);
+    filp = fopen("/home/greg/t509/t508-java/pi1000k.dat", "rb");
+    save = calloc(4 + 2 * 1024 * 1024, sizeof(uint8_t));
+    fread(save, 4 + 2 * 1024*1024, 1, filp);
+    fclose(filp);
+
+    for(i = 0 ; i < len ; i++) {
+        if (d3[i+1] != save[4 + 1024*1024 + i]) break;
+    }
+    printf("Compare : %d sigs\n", i);
+
+    free(d2);
+    free(d3);
+    free(save);
+}
+
+void f641_e1(int len, int to_be_saved) {
+    int i = 0;
+    int prec;
+    int *d2 = calloc(len, sizeof(int));
+    int sigd =  0;
+    int siga = -1;
+    int *d3 = calloc(len, sizeof(int));
+    int step = 1;
+    int dist[10];
+    struct timeval tv00, tv0, tv1;
+    uint8_t *save = calloc(4 + 2 * len, sizeof(uint8_t));
+
+    //
+    d2[0] = 0;
+    d2[1] = 5;
+    d3[0] = 2;
+    d3[1] = 5;
+    for(i = 2 ; i < len ; i++) {
+        d2[i] = 0;
+        d3[i] = 0;
+    }
+
+    //
+    gettimeofday(&tv0, NULL);
+    int stepm = 333 * len / 100;
+    int len1 = len - 1;
+    int r = 0;
+    int s = 0;
+    int div = 0;
+
+    gettimeofday(&tv00, NULL);
+    for(step = 3 ; step < 100000000 ; step++) {
+        r = 0;
+        s = 0;
+
+        // Divide
+        while(sigd < len && d2[sigd] == 0) sigd++;
+        if (sigd == len) break;
+        div = d2[sigd];
+        for(i = sigd+1 ; i < len ; i++) {
+            if (div >= step) {
+                d2[i-1] = div / step;
+                div = 10 * (div % step) + d2[i];
+            } else {
+                d2[i-1] = 0;
+                div = 10 * div + d2[i];
+            }
+        }
+        if (div >= step) d2[len1] = div / step;
+        else d2[len1] = 0;
+
+        // Add
+        r = 0;
+        sigd--;
+        for(i = len - 1 ; i > sigd ; i--) {
+            s = r + d2[i] + d3[i];
+            if (s < 10) {
+                r = 0;
+                d3[i] = s;
+            } else {
+                r = 1;
+                d3[i] = s - 10;
+            }
+        }
+
+        if ( sigd % 500 == 0 ) {
+            gettimeofday(&tv1, NULL);
+            timersub(&tv1, &tv0, &tv0);
+
+            printf("Last %lu.%06ld for %d : e = %d.", tv0.tv_sec, tv0.tv_usec, step, d3[0]);
+            for(i = 1 ; i < 50 ; i++) printf("%d", d3[i]);
+            printf(" - ");
+            for(i = len - 50 ; i < len ; i++) printf("%d", d3[i]);
+            printf("\n");
+            gettimeofday(&tv0, NULL);
+        }
+    }
+    gettimeofday(&tv1, NULL);
+    timersub(&tv1, &tv00, &tv00);
+
+    printf("Last %lu.%06ld for %d : e = %d.", tv00.tv_sec, tv00.tv_usec, step, d3[0]);
+    for(i = 1 ; i < 50 ; i++) printf("%d", d3[i]);
+    printf(" - ");
+    for(i = len - 50 ; i < len ; i++) printf("%d", d3[i]);
+    printf("\n");
+
+    *((int*)save) = step;
+    for(i = 0 ; i < len ; i++) {
+        save[4 + i] = d2[i];
+    }
+    for(i = 0 ; i < len ; i++) {
+        save[4 + len + i] = d3[i];
+    }
+    FILE *filp;
+    filp = fopen("e1.dat", "wb");
+    fwrite(save, 4 + 2 * len, 1, filp);
+    fflush(filp);
+    fclose(filp);
+
+    free(d2);
+    free(d3);
+    free(save);
+}
+
+void f641_pi4(int len, int to_be_saved) {
+    int i = 0;
+    int prec = len + floor(log10(len)) + 2;
+    int sigm = floor(log10(len)) + 2;
+    int sigd =  floor(log10(len)) + 3;
+    int *d3 = calloc(prec, sizeof(int));
+    int step = 333 * (len+1) / 100;
+    int dist[10];
+    struct timeval tv00, tv0, tv1;
+    uint8_t *save = calloc(4 + len, sizeof(uint8_t));
+
+    len++;
+    //
+    d3[0] = 2;
+    d3[1] = 5;
+    for(i = 2 ; i < prec ; i++) {
+        d3[i] = 0;
+    }
+
+    //
+    gettimeofday(&tv0, NULL);
+    int den = 2 * step + 3;
+    int r = 0;
+    int s = 0;
+    int div = 0;
+    int it = 0;
+    gettimeofday(&tv00, NULL);
+    for(; step > 0 ; step--) {
+
+        // Divide
+        den -= 2;
+        div  = d3[0];
+        for(i = 1 ; i < sigd ; i++) {
+            if (div >= den) {
+                d3[i-1] = div / den;
+                div = 10 * (div % den) + d3[i];
+            } else {
+                d3[i-1] = 0;
+                div = 10 * div + d3[i];
+            }
+        }
+
+        // Multiply
+        r = 0;
+        s = 0;
+        for(i = sigm ; i > -1 ; i--) {
+            s = r + step * d3[i];
+            if (s > 9) {
+                r = s / 10;
+                d3[i] = s % 10;
+            } else {
+                r = 0;
+                d3[i] = s;
+            }
+        }
+
+        //
+        d3[0] += 2;
+
+        it++;
+        if (it % 10 == 0) {
+            sigd += 3;
+            sigm += 3;
+            if (sigd > prec) sigd = prec;
+            if (sigm >= prec) sigm = prec - 1;
+
+            gettimeofday(&tv1, NULL);
+            timersub(&tv1, &tv0, &tv1);
+            if (to_be_saved && tv1.tv_sec > 60) {
+                printf("it = %d, prec = %d\n", it, sigd);
+                gettimeofday(&tv0, NULL);
+
+                *((int*)save) = it;
+                for(i = 0 ; i < prec ; i++) {
+                    save[4 + i] = d3[i];
+                }
+                FILE *filp;
+                filp = fopen("pi4.dat", "wb");
+                fwrite(save, 4 + prec, 1, filp);
+                fflush(filp);
+                fclose(filp);
+            }
+        }
+    }
+    gettimeofday(&tv1, NULL);
+    timersub(&tv1, &tv00, &tv00);
+
+    printf("Last %lu.%06ld : %d.", tv00.tv_sec, tv00.tv_usec, d3[0]);
+    for(i = 1 ; i < 50 ; i++) printf("%d", d3[i]);
+    printf(" - ");
+    for(i = len - 50 ; i < len ; i++) printf("%d", d3[i]);
+    printf("\n");
+
+    *((int*)save) = 333 * (len+1) / 100;
+    for(i = 0 ; i < prec ; i++) {
+        save[4 + i] = d3[i];
+    }
+    FILE *filp;
+    filp = fopen("pi4.dat", "wb");
+    fwrite(save, 4 + prec, 1, filp);
+    fflush(filp);
+    fclose(filp);
+
+    free(d3);
+    free(save);
+}
+
 
 void f641_pi3(int len) {
     int i = 0;
@@ -1413,8 +1818,19 @@ void f641_pi2(int len) {
 int main(int argc, char *argv[]) {
     int r;
 
-    f641_pi(1024*1024);
-    return 0;
+//    f641_pi_(1024*1024 + 64, 1);
+//    //f641_e1(1024*1024 + 64, 1);
+//    return 0;
+//
+//    for(r = 1000 ; r < 10000 ; r += 1000) {
+//        f641_pi_(r, 0);
+//    }
+//
+//    for(r = 10000 ; r < 20000 ; r += 1000) {
+//        f641_e1(r, 0);
+//    }
+//
+//    return 0;
 
     f641_v4l2(argc, argv);
 

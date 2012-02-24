@@ -215,7 +215,7 @@ struct f640_line* f640_make_lineup(v4l2_buffer_t *buffers, int nbuffers, struct 
             case PIX_FMT_ARGB :
             case PIX_FMT_BGRA :
             case PIX_FMT_RGBA :
-                lineup[i].rgb  = f640_create_rgba_image(grid->width, grid->height);
+                lineup[i].rgb  = f640_create_rgba_image(1024, 500);
                 break;
         }
 

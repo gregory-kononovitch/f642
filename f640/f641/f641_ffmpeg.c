@@ -297,7 +297,11 @@ static void* f641_init_converting_torgb(void *appli) {
     res->origin->format = app->process->decoded_format;
 
     // Scaled Picture
-    r = avpicture_alloc(&res->scaled, app->process->broadcast_format, app->width, app->height);
+    if (app->functions != 0) {
+        r = avpicture_alloc(&res->scaled, app->process->broadcast_format, app->width, app->height);
+    } else {
+        r = avpicture_alloc(&res->scaled, app->process->broadcast_format, 1024, 500);
+    }
     if (r < 0) {
         printf("PB allocating origin picture in converting, returning\n");
         avpicture_free((AVPicture*)res->origin);
@@ -329,6 +333,36 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
         res->origin->linesize[0] = 2 * line->yuv->width;
         res->scaled.data[0] = line->rgb->data;
         sws_scale(res->swsCtxt, (const uint8_t**)res->origin->data, res->origin->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
+    } else if (app->functions == 0) {
+        res->scaled.data[0] = line->rgb->data;
+        sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
+
+        if (app->functions == 0) {
+            int x = 0, y = 0, i = 0;
+            uint8_t *img = line->rgb->data, cmax;
+            for(y = 0 ; y < 500 ; y++) {
+                for(x = 0 ; x < 1024 ; x++) {
+                    cmax = img[0] > img[1] ? img[0] : img[1];
+                    cmax = img[2] > cmax ? img[2] : cmax;
+                    if (cmax % 16 == 1) {
+                        if (cmax < 86) {
+                            img[0] = 255;
+                            img[1] = 3 * cmax;
+                            img[2] = 0;
+                        } else if (cmax < 171) {
+                            img[0] = 0;
+                            img[1] = 255;
+                            img[2] = 3 * (cmax - 85);
+                        } else {
+                            img[0] = 0;
+                            img[1] = 255 - 3 * (cmax - 170);
+                            img[2] = 255;
+                        }
+                    }
+                    img += 4;
+                }
+            }
+        }
     } else {
         res->scaled.data[0] = line->rgb->data;
         //res->origin->data[0] = line->yuv->data;
