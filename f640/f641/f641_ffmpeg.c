@@ -337,7 +337,7 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
         res->scaled.data[0] = line->rgb->data;
         sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
 
-        if (app->functions == 0) {
+        if (app->functions == -1) {
             int x = 0, y = 0, i = 0;
             uint8_t *img = line->rgb->data, cmax;
             for(y = 0 ; y < 500 ; y++) {
