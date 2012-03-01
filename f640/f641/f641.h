@@ -47,9 +47,12 @@ struct f641_process_data {
 
     // Decoding
     int decoded_format;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
+    int t030;
     int broadcast_format;               // PIX_FMT_BGR24, PIX_FMT_GRAY8
     int broadcast_width;
     int broadcast_height;
+    int screen_width;
+    int screen_height;
 
     // Grid
     struct f640_grid        *grid;
@@ -61,6 +64,16 @@ struct f641_process_data {
     long recorded_frames;
     struct timeval tvr;
 
+    // O params
+    int showColor;
+    int showMire;
+    int showAngles;
+    int showIsos;
+    int showRules;
+
+    // 0 record
+    int norecord;
+    int flag_photo;
 };
 
 
@@ -73,6 +86,8 @@ struct f641_appli {
     int width;
     int height;
     int size;
+
+    uint32_t palette;
 
     int broadcast_width;
     int broadcast_height;

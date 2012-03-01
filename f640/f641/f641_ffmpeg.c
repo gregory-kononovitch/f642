@@ -248,6 +248,12 @@ struct f641_convert_torgb_ressources {
     struct SwsContext   *swsCtxt;
     AVFrame             *origin;
     AVPicture           scaled;
+    // Mires
+    int indexm1;
+    int indexm2;
+    int indexa1;
+    int indexa2;
+    int *ix;
 };
 
 //
@@ -300,7 +306,7 @@ static void* f641_init_converting_torgb(void *appli) {
     if (app->functions != 0) {
         r = avpicture_alloc(&res->scaled, app->process->broadcast_format, app->width, app->height);
     } else {
-        r = avpicture_alloc(&res->scaled, app->process->broadcast_format, 1024, 500);
+        r = avpicture_alloc(&res->scaled, app->process->broadcast_format, app->process->screen_width, app->process->screen_height);
     }
     if (r < 0) {
         printf("PB allocating origin picture in converting, returning\n");
@@ -312,6 +318,141 @@ static void* f641_init_converting_torgb(void *appli) {
     }
     avpicture_free(&res->scaled);
     printf("Converse : scaled.linesize = (%d , %d , %d , %d)\n", res->scaled.linesize[0], res->scaled.linesize[1], res->scaled.linesize[2], res->scaled.linesize[3]);
+
+    // Mires
+    if (app->functions == 0) {
+        int indexm1;
+        int indexm2;
+        int indexa1;
+        int indexa2;
+        uint8_t *rgb = calloc(app->process->screen_width * app->process->screen_height, sizeof(uint8_t));
+        int xi = 0, yi = 0, x = 0, y = 0, i = 0, ind = -1;
+        double xa = 0, ya = 0, da = 0;
+        uint8_t *img = rgb;
+
+        //
+        memset(rgb, 0, app->process->screen_width * app->process->screen_height);
+        img = rgb;
+        int xm = app->process->broadcast_width;
+        int ym = app->process->broadcast_height;
+        for(yi = 0 ; yi < app->process->screen_height ; yi++) {
+            for(xi = 0 ; xi < app->process->screen_width ; xi++) {
+                ind++;
+                if (xi > xm) continue;
+                x = xi - xm/2;
+                y = yi - ym/2;
+                xa = 0.5 + x;
+                ya = 0.5 + y;
+                da = sqrt(xa * xa + ya * ya);
+
+                i = 0;
+                // Axes
+                if ( (x == -1 || x == 0) && (y < -4 || y > 3) ) {
+                    i = 1;
+                } else if ( (y == -1 || y == 0) && (x < -4 || x > 3)) {
+                    i = 1;
+                }
+                // Center
+                else if (y == -100 && x > -101 && x < 100) {
+                    i = 1;
+                } else if (y == -99 && x > -101 && x < 100) {
+                    i = 1;
+                } else if (y == 99 && x > -101 && x < 100) {
+                    i = 1;
+                } else if (y == 100 && x > -101 && x < 100) {
+                    i = 1;
+                } else if (x == -100 && y > -101 && y < 100) {
+                    i = 1;
+                } else if (x == -99 && y > -101 && y < 100) {
+                    i = 1;
+                } else if (x == 99 && y > -101 && y < 100) {
+                    i = 1;
+                } else if (x == 100 && y > -101 && y < 100) {
+                    i = 1;
+                }
+                // cadre
+                else if (yi == 0 || yi == 1) {
+                    i = 1;
+                } else if (yi == ym-1 || yi == ym-2) {
+                    i = 1;
+                } else if (xi == 0 || xi == 1) {
+                    i = 1;
+                } else if (xi == xm-1 || xi == xm-2) {
+                    i = 1;
+                }
+                // Angles
+                else if ( x == y+1  && da > 25) {
+                    i = 1;
+                } else if ( x == y  && da > 25) {
+                    i = 1;
+                } else if ( x == y-1  && da > 25) {
+                    i = 1;
+                } else if ( x == -(y+1)  && da > 25) {
+                    i = 1;
+                } else if ( x == -y  && da > 25) {
+                    i = 1;
+                } else if ( x == +(y+1)  && da > 25) {
+                    i = 1;
+                } else if ( 2 * x == y && da > 25) {
+                    i = 1;
+                } else if ( 2 * x == y+1 && da > 25) {
+                    i = 1;
+                } else if ( 2 * x == y-1 && da > 25) {
+                    i = 1;
+                } else if ( 2 * x == -y && da > 25) {
+                    i = 1;
+                } else if ( 2 * x == -(y+1) && da > 25) {
+                    i = 1;
+                } else if ( 2 * x == -(y-1) && da > 25) {
+                    i = 1;
+                } else if ( x == 2 * y && da > 25) {
+                    i = 1;
+                } else if ( x+1 == 2 * y && da > 25) {
+                    i = 1;
+                } else if ( x-1 == 2 * y && da > 25) {
+                    i = 1;
+                } else if ( x == -2 * y && da > 25) {
+                    i = 1;
+                } else if ( x-1 == -2 * y && da > 25) {
+                    i = 1;
+                } else if ( x+1 == -2 * y && da > 25) {
+                    i = 1;
+                }
+                if (i) {
+                    img[ind] = 1;
+                }
+            }
+        }
+        //
+        indexm1 = 0;
+        indexm2 = 0;
+        img = rgb;
+        for(y = 0 ; y < app->process->screen_height ; y++) {
+            for(x = 0 ; x < app->process->screen_width ; x++) {
+                if (*img) indexm2++;
+                img++;
+            }
+        }
+        res->indexm1 = 0;
+        res->indexm2 = indexm2;
+        res->ix = calloc(indexm2, sizeof(int));
+
+        indexm1 = 0;
+        indexm2 = 0;
+        img = rgb;
+        int pixw = app->process->t030 ? 3 : 4;
+        for(y = 0 ; y < app->process->screen_height ; y++) {
+            for(x = 0 ; x < app->process->screen_width ; x++) {
+                if (*img) {
+                    res->ix[indexm2] = indexm1 * pixw;
+                    indexm2++;
+                }
+                indexm1++;
+                img++;
+            }
+        }
+        free(rgb);
+    }
 
     return res;
 }
@@ -334,14 +475,16 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
         res->scaled.data[0] = line->rgb->data;
         sws_scale(res->swsCtxt, (const uint8_t**)res->origin->data, res->origin->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
     } else if (app->functions == 0) {
-        res->scaled.data[0] = line->rgb->data;
+        res->scaled.data[0]     = line->rgb->data;
+        res->scaled.linesize[0] = (app->process->t030 ? 3 : 4) * app->process->screen_width;
         sws_scale(res->swsCtxt, (const uint8_t**)line->yuvp->data, line->yuvp->linesize, 0, app->height, res->scaled.data, res->scaled.linesize);
 
-        if (app->functions == -1) {
+        int pixw = app->process->t030 ? 3 : 4;
+        if (app->process->showIsos) {
             int x = 0, y = 0, i = 0;
             uint8_t *img = line->rgb->data, cmax;
-            for(y = 0 ; y < 500 ; y++) {
-                for(x = 0 ; x < 1024 ; x++) {
+            for(y = 0 ; y < app->process->screen_height ; y++) {
+                for(x = 0 ; x < app->process->screen_width ; x++) {
                     cmax = img[0] > img[1] ? img[0] : img[1];
                     cmax = img[2] > cmax ? img[2] : cmax;
                     if (cmax % 16 == 1) {
@@ -359,7 +502,34 @@ static int f641_exec_converting_torgb(void *appli, void* ressources, struct f640
                             img[2] = 255;
                         }
                     }
-                    img += 4;
+                    img += pixw;
+                }
+            }
+        }
+        if (app->process->showMire || app->process->showAngles) {
+            int i;
+            uint8_t *img = line->rgb->data;
+            for(i = res->indexm1 ; i < res->indexm2 ; i++) {
+                if (app->process->showColor == 0) {
+                    img[res->ix[i] + 2] = 0;
+                    img[res->ix[i] + 1] = 0;
+                    img[res->ix[i] + 0] = 0;
+                } else if (app->process->showColor == 1) {
+                    img[res->ix[i] + 2] = 255;
+                    img[res->ix[i] + 1] = 0;
+                    img[res->ix[i] + 0] = 0;
+                } else if (app->process->showColor == 2) {
+                    img[res->ix[i] + 2] = 0;
+                    img[res->ix[i] + 1] = 255;
+                    img[res->ix[i] + 0] = 0;
+                } else if (app->process->showColor == 3) {
+                    img[res->ix[i] + 2] = 0;
+                    img[res->ix[i] + 1] = 0;
+                    img[res->ix[i] + 0] = 255;
+                } else if (app->process->showColor == 4) {
+                    img[res->ix[i] + 2] = 255;
+                    img[res->ix[i] + 1] = 255;
+                    img[res->ix[i] + 0] = 255;
                 }
             }
         }
@@ -972,6 +1142,10 @@ static int f641_exec_recording(void *appli, void* ressources, struct f640_stone 
             res->pkt.data = line->buffers[line->actual].start;
             res->pkt.size = line->buf.bytesused;
         }
+        if (app->functions == 0) {
+            app->process->flag_photo = 0;
+        }
+
         res->pkt.pts  = app->process->recorded_frames;
         res->pkt.dts  = res->pkt.pts;
         res->pkt.duration = 1;

@@ -110,7 +110,17 @@ static int f641_exec_tagging(void *appli, void *ressources, struct f640_stone *s
 
     if (app->functions == 0 || app->functions == 10) {
         line->flaged = 0;
-        if (line->frame % app->recording_perst == 0) line->flaged = 1;
+        if (app->process->norecord) {
+            if (app->process->flag_photo) {
+                line->flaged = 1;
+            }
+        } else {
+            if (line->frame % app->recording_perst == 0) {
+                line->flaged = 1;
+            } else if (app->process->flag_photo) {
+                line->flaged = 1;
+            }
+        }
     } else if (app->functions == 1) {
         //    pthread_mutex_lock(&app->process->grid->mutex_coefs);
         line->flaged = 0;
@@ -236,19 +246,22 @@ static void* f641_init_broadcasting(void *appli) {
     struct f641_broadcast_ressources *res = calloc(1, sizeof(struct f641_broadcast_ressources));
 
     if (app->functions == 0 || app->functions == 10) {
-        res->fd_fb = open("/dev/fb0", O_RDWR);
-        if (res->fd_fb < 1) return res;
-        struct fb_fix_screeninfo fix;
-        memset(&fix, 0, sizeof(fix));
-        r = ioctl(res->fd_fb, FBIOGET_FSCREENINFO, &fix);
-        if (r < 0) return res;
-        res->start = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, res->fd_fb, 0);
-        if (res->start == MAP_FAILED) {
-            res->start = NULL;
-            return res;
-        }
-        printf("MMAP return %p\n", res->start);
+        if (app->process->t030) {
 
+        } else {
+            res->fd_fb = open("/dev/fb0", O_RDWR);
+            if (res->fd_fb < 1) return res;
+            struct fb_fix_screeninfo fix;
+            memset(&fix, 0, sizeof(fix));
+            r = ioctl(res->fd_fb, FBIOGET_FSCREENINFO, &fix);
+            if (r < 0) return res;
+            res->start = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, res->fd_fb, 0);
+            if (res->start == MAP_FAILED) {
+                res->start = NULL;
+                return res;
+            }
+            printf("MMAP return %p\n", res->start);
+        }
     } else if (app->functions == 2) {
         res->fd_sky = open("/dev/t030/t030-15", O_WRONLY);
     } else {
@@ -267,12 +280,16 @@ static int f641_exec_broadcasting(void *appli, void *ressources, struct f640_sto
 
     // FB
     if (res && (app->functions == 0 || app->functions == 10) ) {
-        if (res->start) {
-            memcpy(res->start, line->rgb->data, 4 * 1024 * 500);
-            //ioctl(res->fd_fb, FBIOBLANK, FB_BLANK_UNBLANK);
-        } else if (res->fd_fb > 0) {
-            lseek(res->fd_fb, 0, SEEK_SET);
-            write(res->fd_fb, line->rgb->data, 4 * 1024 * 500);
+        if (app->process->t030) {
+            write(app->fd_stream, line->rgb->data, line->rgb->data_size);
+        } else {
+            if (res->start) {
+                memcpy(res->start, line->rgb->data, 4 * app->process->screen_width * app->process->screen_height);
+                //ioctl(res->fd_fb, FBIOBLANK, FB_BLANK_UNBLANK);
+            } else if (res->fd_fb > 0) {
+                lseek(res->fd_fb, 0, SEEK_SET);
+                write(res->fd_fb, line->rgb->data, 4 * app->process->screen_width * app->process->screen_height);
+            }
         }
     } else if (app->functions == 1) {
         // Grid

@@ -245,6 +245,7 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
         {"bheight",         required_argument, NULL, 0xff1},
         {"perst",           required_argument, NULL, 0xff2},
         {"path",            required_argument, NULL, 0xff10},
+        {"t030",            no_argument,       NULL, 0xff20},
         {"show-all",        no_argument,       NULL, 'A'},
         {"show-caps",       no_argument,       NULL, 'P'},
         {"show-inputs",     no_argument,       NULL, 'I'},
@@ -284,9 +285,9 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
 //                v4l2 = 0;
 //                recording = 0;
 //                break;
-//            case 'r':
-//                recording = 0;
-//                break;
+            case 'r':
+                appli->process->norecord = 1;
+                break;
 //            case 's':
 //                stream_no = atoi(optarg);
 //                printf("Stream : %d\n", stream_no);
@@ -335,12 +336,12 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
                 appli->threshold = atoi(optarg);
                 printf("Threshold : %d\n", appli->threshold);
                 break;
-//            case 'y':
-//                switch(atoi(optarg)) {
-//                    case 0 : palette = 0x56595559; break;
-//                    case 1 : palette = 0x47504A4D; break;
-//                }
-//                break;
+            case 'y':
+                switch(atoi(optarg)) {
+                    case 0 : appli->palette = 0x56595559; break;
+                    case 1 : appli->palette = 0x47504A4D; break;
+                }
+                break;
             case 'W':
                 appli->width = atoi(optarg);
                 break;
@@ -358,6 +359,9 @@ static int f640_getopts(struct f641_appli *appli, int argc, char *argv[])
                 break;
             case 0xff10:
                 strcpy(appli->file_path, optarg);
+                break;
+            case 0xff20:
+                appli->process->t030 = 1;
                 break;
 //            case 'A':
 //                show_all = 1;
@@ -424,6 +428,7 @@ int f641_v4l2(int argc, char *argv[]) {
     appli.width  = 1024;
     appli.height = 576;
     appli.size   = appli.width * appli.height;
+    appli.palette = 0;
     appli.frames_pers = 5;
     appli.recording_rate = 24;
     appli.recording_perst = appli.frames_pers;
@@ -470,10 +475,24 @@ int f641_v4l2(int argc, char *argv[]) {
     proc_data.tv0;
     proc_data.decoded_format = PIX_FMT_YUVJ422P;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
     if (appli.functions == 0 || appli.functions == 10) {
-        proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
-        proc_data.broadcast_height = 500;
-        proc_data.broadcast_width  = appli.width * proc_data.broadcast_height / appli.height;
-//        appli.recording_perst = appli.frames_pers;
+        if (appli.palette == 0x56595559) {
+            proc_data.decoded_format = PIX_FMT_YUYV422;
+        } else {
+            proc_data.decoded_format = PIX_FMT_YUVJ422P;
+        }
+        if (proc_data.t030) {
+            proc_data.broadcast_format = PIX_FMT_BGR24;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+            proc_data.broadcast_height = appli.height;
+            proc_data.broadcast_width  = appli.width;       // 889
+            proc_data.screen_height = appli.height;
+            proc_data.screen_width  = appli.width;
+        } else {
+            proc_data.broadcast_format = PIX_FMT_BGRA;               // PIX_FMT_BGR24, PIX_FMT_GRAY8, PIX_FMT_BGRA
+            proc_data.broadcast_height = 500;
+            proc_data.broadcast_width  = round(1. * appli.width * proc_data.broadcast_height / appli.height);       // 889
+            proc_data.screen_height = 500;
+            proc_data.screen_width  = 1024;
+        }
     } else if (appli.functions == 3) {
         appli.width  = 544;
         appli.height = 288;
@@ -510,6 +529,14 @@ int f641_v4l2(int argc, char *argv[]) {
     if (appli.functions < 10) {
         if (appli.functions == 2 || appli.functions == 3) {
             v4l2 = f641_init_v4l2(&appli, 0x56595559);      //0x47504A4D;   // 0x56595559
+        } else if (appli.functions == 1) {
+            v4l2 = f641_init_v4l2(&appli, 0x47504A4D);      //0x47504A4D;   // 0x56595559
+        } else if (appli.functions == 0){
+            if (appli.palette) {
+                v4l2 = f641_init_v4l2(&appli, appli.palette);
+            } else {
+                v4l2 = f641_init_v4l2(&appli, 0x47504A4D);      //0x47504A4D;   // 0x56595559
+            }
         } else {
             v4l2 = f641_init_v4l2(&appli, 0x47504A4D);      //0x47504A4D;   // 0x56595559
         }
@@ -783,18 +810,6 @@ int f641_v4l2(int argc, char *argv[]) {
 
     // LAUNCH
     gettimeofday(&appli.process->tv0, NULL);
-//    // snap
-//    pthread_create(&groups[0]->group[0].id, NULL, f641_loop2,   (void *)(&groups[0]->group[0]));
-//    // decode
-//    pthread_create(&groups[1]->group[0].id, NULL, f641_loop2,   (void *)(&groups[1]->group[0]));
-//    pthread_create(&groups[1]->group[1].id, NULL, f641_loop2,   (void *)(&groups[1]->group[1]));
-//    pthread_create(&groups[1]->group[2].id, NULL, f641_loop2,   (void *)(&groups[1]->group[2]));
-//    pthread_create(&groups[1]->group[3].id, NULL, f641_loop2,   (void *)(&groups[1]->group[3]));
-//    // watch
-//    pthread_create(&groups[2]->group[0].id, NULL, f641_loop2,   (void *)(&groups[2]->group[0]));
-//    pthread_create(&groups[2]->group[1].id, NULL, f641_loop2,   (void *)(&groups[2]->group[1]));
-//    pthread_create(&groups[2]->group[2].id, NULL, f641_loop2,   (void *)(&groups[2]->group[2]));
-//    pthread_create(&groups[2]->group[3].id, NULL, f641_loop2,   (void *)(&groups[2]->group[3]));
     i = 0;
     while(groups[i] != NULL) {
         for(j = 0 ; j < groups[i]->group_size ; j++) {
@@ -874,6 +889,20 @@ int f641_v4l2(int argc, char *argv[]) {
             } else if (ch == KEY_RIGHT && selected) {
                 value += v4l2->controls[ctrl].step;
                 if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
+            } else if (ch == KEY_PPAGE && selected) {
+                if (v4l2->controls[ctrl].step > 0) {
+                    int tmp = (v4l2->controls[ctrl].maximum - v4l2->controls[ctrl].minimum) / (12 * v4l2->controls[ctrl].step);
+                    if (tmp == 0) tmp = v4l2->controls[ctrl].step;
+                    value -= tmp;
+                    if (value < v4l2->controls[ctrl].minimum) value = v4l2->controls[ctrl].minimum;
+                }
+            } else if (ch == KEY_NPAGE && selected) {
+                if (v4l2->controls[ctrl].step > 0) {
+                    int tmp = (v4l2->controls[ctrl].maximum - v4l2->controls[ctrl].minimum) / (12 * v4l2->controls[ctrl].step);
+                    if (tmp == 0) tmp = v4l2->controls[ctrl].step;
+                    value += tmp;
+                    if (value > v4l2->controls[ctrl].maximum) value = v4l2->controls[ctrl].maximum;
+                }
             } else if (ch == KEY_UP) {
                 selected = 0;
                 if (ctrl) ctrl--;
@@ -922,6 +951,20 @@ int f641_v4l2(int argc, char *argv[]) {
                     if (appli.recording_perst > 1) appli.recording_perst--;
                     else appli.recording_perst = 1;
                 }
+            } else if (ch == 'i') {     // Iso
+                proc_data.showIsos = proc_data.showIsos ? 0 : 1;
+            } else if (ch == 'm') {     // Mire
+                proc_data.showMire = proc_data.showMire ? 0 : 1;
+            } else if (ch == 'a') {     // Angles
+                proc_data.showAngles = proc_data.showAngles ? 0 : 1;
+            } else if (ch == 'r') {     // Rules
+                proc_data.showRules = proc_data.showRules ? 0 : 1;
+            } else if (ch == 'c') {     // Colors
+                proc_data.showColor = (proc_data.showColor + 1) % 5;
+            } else if (ch == KEY_F(5)) {     // Record
+                proc_data.norecord = proc_data.norecord ? 0 : 1;
+            } else if (ch == 'p') {     // Photo
+                proc_data.flag_photo = 1;
             } else {
                 move(rows - 1, 2);
                 printw("%c typed", ch);

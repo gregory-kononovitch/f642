@@ -37,29 +37,29 @@ struct f640_rgb_image {
  */
 static int f640_draw_hline(struct f640_image *image, int index, int w, int dir) {
     //memset(&image->pixels[index], 0, 4);
-    image->data[(index << 2) + 0] = 0xFF;   // Alpha
+    image->data[(index << 2) + 0] = 0;   // Alpha
     image->data[(index << 2) + 1] = 0;      // Blue
-    image->data[(index << 2) + 2] = 0;      // Green
+    image->data[(index << 2) + 2] = 0xFF;      // Green
     image->data[(index << 2) + 3] = 0;      // Red
     while( --w ) {
         index += dir;
-        image->data[(index << 2) + 0] = 0xFF;
+        image->data[(index << 2) + 0] = 0;
         image->data[(index << 2) + 1] = 0;
-        image->data[(index << 2) + 2] = 0;
+        image->data[(index << 2) + 2] = 0xFF;
         image->data[(index << 2) + 3] = 0;
     }
     return index;
 }
 static int f640_draw_vline(struct f640_image *image, int index, int h, int dir) {
-    image->data[(index << 2) + 0] = 0xFF;
+    image->data[(index << 2) + 0] = 0;
     image->data[(index << 2) + 1] = 0;
-    image->data[(index << 2) + 2] = 0;
+    image->data[(index << 2) + 2] = 0xFF;
     image->data[(index << 2) + 3] = 0;
     while( --h ) {
         index += dir * image->width;
-        image->data[(index << 2) + 0] = 0xFF;
+        image->data[(index << 2) + 0] = 0;
         image->data[(index << 2) + 1] = 0;
-        image->data[(index << 2) + 2] = 0;
+        image->data[(index << 2) + 2] = 0xFF;
         image->data[(index << 2) + 3] = 0;
     }
     return index;
