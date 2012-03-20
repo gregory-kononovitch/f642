@@ -604,7 +604,7 @@ int f641_v4l2(int argc, char *argv[]) {
         long actsn[2] = {F641_DECODED, -1};
         snapped = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actsn, 0, 0, 5);
 
-        long actde[2] = {F641_CONVERTED, -1};
+        long actde[3] = {F641_CONVERTED, -1};
         decoded = queues[i++] = f640_make_queue(stones, proc_data.proc_len, actde, 0, 0, 5);
 
         long actpr[2] = {F641_TAGGED, -1};

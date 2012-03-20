@@ -43,7 +43,7 @@ struct f641_process_data {
     struct f640_stone *stones;
 
     //
-    struct timeval tv0;     // start
+    struct timeval tv0;                 // start
 
     // Decoding
     int decoded_format;                 // YUV : PIX_FMT_YUYV422, MJPEG : PIX_FMT_YUVJ422P, MPEG : PIX_FMT_YUV420P
@@ -55,8 +55,8 @@ struct f641_process_data {
     int screen_height;
 
     // Grid
-    struct f640_grid        *grid;
-    struct f640_grid2       *grid2;
+    struct f640_grid *grid;
+    struct f640_grid2 *grid2;
 
     // Recording
     enum CodecID recording_codec;       // CODEC_ID_MJPEG, CODEC_ID_RAWVIDEO, CODEC_ID_MPEG1VIDEO, CODEC_ID_MPEG4
