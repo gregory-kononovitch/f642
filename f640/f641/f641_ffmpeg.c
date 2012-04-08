@@ -748,7 +748,8 @@ static int f641_exec_skying_422_2(void *appli, void *ressources, struct f640_sto
     gettimeofday(&line->tve0, NULL);
 
     if (line->frame > app->recording_perst) {
-        c = (line->frame & 0x1F) >> 4;
+        //c = (line->frame & 0x1F) >> 4;
+        c = (line->frame & 0x0F) >> 3;
         pix = line->buffers[line->buf.index].start;
 
         sum  = (int8_t*)app->process->grid2->acc;
@@ -762,7 +763,7 @@ static int f641_exec_skying_422_2(void *appli, void *ressources, struct f640_sto
             pix += 2;
         }
 
-        if (line->frame % app->recording_perst == 0) {
+        if (line->frame % app->recording_perst == (app->recording_perst - 1)) {
             memcpy(app->process->grid2->sky, app->process->grid2->acc, app->size * sizeof(uint16_t));
             memset(app->process->grid2->acc, 0x8080, app->size * sizeof(uint16_t));
         }

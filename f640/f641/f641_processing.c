@@ -175,17 +175,15 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
 
     gettimeofday(&tv, NULL);
 
-    if ( (app->functions == 2) && ( (line->frame % app->recording_perst) == 0) ) {
+    if ( (app->functions == 2) && ( (line->frame % app->recording_perst) == (app->recording_perst - 1)) && (!app->process->norecord)) {
         char fname[128];
         FILE *filp;
-        if ( (size>>10)  < 15100000L) {
-            sprintf(fname, "/bak/test/snap/sky50-%ld.raw", nb++);
-        } else if ( (size>>10) < 21300000L) {
-            sprintf(fname, "/mnt/test/snap/sky50-%ld.raw", nb++);
-        } else if ( (size>>10) < 25250000L) {
-            sprintf(fname, "/base/test/snap/sky50-%ld.raw", nb++);
-        } else if ( (size>>10) < 26800000L) {
-            sprintf(fname, "/doc/test/snap/sky50-%ld.raw", nb++);
+        if ( (size>>10)  < 2850000L) {
+            sprintf(fname, "/bak/test/snap/sky65-%ld.raw", nb++);
+        } else if ( (size>>10) < 3800000L) {
+            sprintf(fname, "/work/test/snap/sky65-%ld.raw", nb++);
+        } else if ( (size>>10) < 5000000L) {
+            sprintf(fname, "/test/snap/sky65-%ld.raw", nb++);
         } else {
             printf("ENOSIZE\n");
             return 0;
@@ -196,7 +194,8 @@ static int f641_exec_saving(void *appli, void *ressources, struct f640_stone *st
             return 0;
         }
         r = fwrite(app->process->grid2->sky, 1, app->size * sizeof(uint16_t), filp);
-        fwrite(&tv.tv_sec, 1, sizeof(long), filp);
+        long ll = 1000L * tv.tv_sec + tv.tv_usec / 1000;
+        fwrite(&ll, 1, sizeof(long), filp);
         fflush(filp);
         fclose(filp);
         size += app->size * sizeof(uint16_t) + 4096;
