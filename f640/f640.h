@@ -39,11 +39,11 @@
 /*
  *
  */
-typedef struct {
-    void *start;
-    size_t length;
-} v4l2_buffer_t;
-
+//typedef struct {
+//    void *start;
+//    size_t length;
+//} v4l2_buffer_t;
+#include "f641/f641_v4l2.h"
 
 #include "../../f610-equa/f611/f611_common.h"
 

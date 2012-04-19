@@ -1163,7 +1163,6 @@ static int f641_exec_recording(void *appli, void* ressources, struct f640_stone 
     if (DEBUG) printf("\t\t\t\t\t\tRECORD  : enqueue %d, frame %lu\n", line->index, line->frame);
     gettimeofday(&line->tvr1, NULL);
 
-
     return 0;
 }
 
