@@ -136,7 +136,7 @@ void f640_dump_queue(struct f640_queue *queue) {
     int q, i;
     printf("----------- QUEUE ------------\n");
     for(q = 0 ; q < queue->outs ; q++) {
-        printf("Out %X (%ld < %ld) :", queue->foractions ? queue->foractions[q] : 0, queue->queues[q].mini,queue->queues[q].maxi);
+        printf("Out %lX (%ld < %ld) :", queue->foractions ? queue->foractions[q] : 0, queue->queues[q].mini,queue->queues[q].maxi);
         for(i = 0 ; i < queue->length ; i++) {
             if (queue->queues[q].tab[i] > -1) printf(" %d (%ld)", queue->queues[q].tab[i], queue->stones[queue->queues[q].tab[i]].frame);
             else break;
@@ -157,7 +157,7 @@ void f640_dump_queue(struct f640_queue *queue) {
  *
  */
 int f640_enqueue(struct f640_queue *queue, int block, int key, long action) {
-    int q, i;
+    int q, i = 0;
     pthread_mutex_lock(&queue->mutex);
     pthread_spin_lock(&queue->stones[key].spin);
     if ( (queue->constraints & queue->stones[key].status) != queue->constraints ) {
@@ -175,10 +175,10 @@ int f640_enqueue(struct f640_queue *queue, int block, int key, long action) {
 }
 
 
-static int debug_dequeue = 0;
+int f640_debug_dequeue = 0;
 int f640_dequeue(struct f640_queue *queue, int block, long foraction) {
     int i;
-    if (debug_dequeue) printf("\tDeQueue (blocking %d) for %X action / %d tabs\n", block, foraction, queue->outs);
+    if (f640_debug_dequeue) printf("\tDeQueue (blocking %d) for %lX action / %d tabs\n", block, foraction, queue->outs);
     pthread_mutex_lock(&queue->mutex);
     if (queue->outs > 1) {
         for(i = 0 ; i < queue->outs ; i++) {
@@ -194,10 +194,10 @@ int f640_dequeue(struct f640_queue *queue, int block, long foraction) {
     } else {
         foraction = 0;
     }
-    if (debug_dequeue) printf("\tDeQueue tab[%d / %d]\n", foraction, queue->outs);
+    if (f640_debug_dequeue) printf("\tDeQueue tab[%ld / %d]\n", foraction, queue->outs);
     while(1) {
         i = 0;
-        if (debug_dequeue) printf("\t\tDeQueue tab[%d][0] = %d\n", foraction, queue->queues[foraction].tab[i]);
+        if (f640_debug_dequeue) printf("\t\tDeQueue tab[%ld][0] = %d\n", foraction, queue->queues[foraction].tab[i]);
         while( queue->queues[foraction].tab[i] > -1 ) {
             struct f640_stone *st = &queue->stones[queue->queues[foraction].tab[i]];
             if (queue->nn_1 == 1) {
@@ -269,7 +269,7 @@ wait:
 
 
 void f640_backtrack(struct f640_queue *queue, int block, int key) {
-    int q, i;
+    int q;
     if ( queue->back_diff < 1) return;
 
     pthread_mutex_lock(&queue->mutex);
@@ -339,7 +339,7 @@ void *f640_loop(void* th) {
         if (times) timersub(&tve2, &tve1, &tve1);
         if (times) timeradd(&tve3, &tve1, &tve3);
 
-        if (debug_loop) printf("%s : EnQueue '%X' %d (%ld) : %s (%X / %X)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
+        if (debug_loop) printf("%s : EnQueue '%lX' %d (%ld) : %s (%lX / %lX)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
 
         if (debug_loop) f640_dump_queue(thread->queue_in);
         if (debug_loop) f640_dump_queue(thread->queue_out);
@@ -401,7 +401,7 @@ void *f641_loop2(void* th) {
             if (times) timersub(&tve2, &tve1, &tve1);
             if (times) timeradd(&tve3, &tve1, &tve3);
 
-            if (debug_loop2) printf("%s : EnQueue '%X' %d (%ld) : %s (%X / %X)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
+            if (debug_loop2) printf("%s : EnQueue '%lX' %d (%ld) : %s (%lX / %lX)\n", thread->name, thread->action, key, stone->frame, r ? "failed" : "succeed", stone->status, thread->queue_out->constraints);
         }
 
 //        if (debug_loop2) f640_dump_queue(thread->queue_in);

@@ -33,7 +33,7 @@
 struct f640_stone {
     int key;
     struct f640_stone   *stones;
-
+    int type;
     long                frame;
     long                status;
     pthread_spinlock_t  spin;
