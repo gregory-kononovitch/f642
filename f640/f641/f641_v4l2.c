@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <stddef.h>
@@ -18,7 +19,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/mman.h>
-
 #include <sys/ioctl.h>
 
 #include "f641_v4l2.h"
@@ -88,7 +88,7 @@ int f641_set_input(struct f641_v4l2_parameters *prm)
         printf("--- Available inputs :\n");
         inpt.index = count;
         while(!ioctl(prm->fd, VIDIOC_ENUMINPUT, &inpt)) {
-            printf("%i: \"%s\" : std-0x%X : type %u : status 0x%X\n", count, inpt.name, inpt.std, inpt.type, inpt.status);
+//            printf("%i: \"%s\" : std-0x%X : type %u : status 0x%X\n", count, inpt.name, inpt.std, inpt.type, inpt.status);
             inpt.index = ++count;
         }
     }
@@ -316,10 +316,9 @@ static int f640_set_control(struct f641_v4l2_parameters *prm, struct v4l2_queryc
             ioctl(prm->fd, VIDIOC_S_CTRL, &control);
             break;
         default:
-            if (!prm->quiet) printf("Not setting unknown control type %i (%s).\n", queryctrl->name);
+            if (!prm->quiet) printf("Not setting unknown control type (%s).\n", queryctrl->name);
             break;
     }
-
     return 0;
 }
 
@@ -544,7 +543,7 @@ int f641_set_parm(struct f641_v4l2_parameters *prm)
                         printf("| %u/%u |", fps.discrete.numerator, fps.discrete.denominator);
                 } else {
                     if ( prm->show_all || prm->show_framsize )
-                        printf("%u < %u < %u (stepwise)", fps.stepwise.min, fps.stepwise.step, fps.stepwise.max);
+                        printf("%u/%u < %u/%u < %u/%u (stepwise)", fps.stepwise.min.numerator, fps.stepwise.min.denominator, fps.stepwise.step.numerator, fps.stepwise.step.denominator, fps.stepwise.max.numerator, fps.stepwise.max.denominator);
                 }
                 memset(&fps, 0, sizeof(fps));
                 fps.index = ++indf;
@@ -573,7 +572,6 @@ int f641_set_parm(struct f641_v4l2_parameters *prm)
  *
  */
 int f641_set_mmap(struct f641_v4l2_parameters *prm, int nb_buffers) {
-    enum v4l2_buf_type type;
     uint32_t i, b;
 
     prm->memory = V4L2_MEMORY_MMAP;
@@ -594,12 +592,12 @@ int f641_set_mmap(struct f641_v4l2_parameters *prm, int nb_buffers) {
 
     if(ioctl(prm->fd, VIDIOC_REQBUFS, &prm->req) == -1) {
         if (!prm->quiet) printf("Error requesting %d buffers for memory map.\n", nb_buffers);
-        if (errno == -EINVAL)
+        if (errno == -EINVAL) {
             if (!prm->quiet)
                 printf ("Video capturing or mmap-streaming is not supported: %s\n", strerror(errno));
-        else if (!prm->quiet)
+        } else if (!prm->quiet) {
             printf("VIDIOC_REQBUFS: %s\n", strerror(errno));
-
+        }
         return -1;
     }
 
@@ -625,10 +623,10 @@ int f641_set_mmap(struct f641_v4l2_parameters *prm, int nb_buffers) {
             printf("VIDIOC_QUERYBUF: %s\n", strerror(errno));
             return -1;
         }
-        printf("QueryBuf : index = %u, len = %u, input = %u, offset = %u, ptr = %p", buf.index, buf.length, buf.input, buf.m.offset, buf.m.userptr);
+//        if (!prm->quiet) printf("QueryBuf : index = %u, len = %u, input = %u, offset = %u, ptr = %lX", buf.index, buf.length, buf.input, buf.m.offset, buf.m.userptr);
         prm->buffers[b].start = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, prm->fd, buf.m.offset);
         prm->buffers[b].length = buf.length;
-        printf(", mmap = %p\n", prm->buffers[b].start);
+//        if (!prm->quiet) printf(", mmap = %p\n", prm->buffers[b].start);
 
         if(prm->buffers[b].start == MAP_FAILED) {
             printf("Error mapping buffer %i\n", b);
@@ -641,29 +639,31 @@ int f641_set_mmap(struct f641_v4l2_parameters *prm, int nb_buffers) {
         if ( prm->verbose ) printf("%i length=%d\n", b, buf.length);
     }
 
-//    for(b = 0; b < prm->req.count; b++) {
-//        memset(&prm->buf, 0, sizeof(prm->buf));
-//
-//        prm->buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//        prm->buf.memory = V4L2_MEMORY_MMAP;
-//        prm->buf.index  = b;
-//
-//        if(ioctl(prm->fd, VIDIOC_QBUF, &prm->buf) == -1) {
-//            printf("VIDIOC_QBUF: %s\n", strerror(errno));
-//            for(i = 0; i < prm->req.count; i++) munmap(prm->buffers[i].start, prm->buffers[i].length);
-//            return -1;
-//        }
-//        printf("QBuf : index = %u, len = %u, input = %u, offset = %u, ptr = %p\n", prm->buf.index, prm->buf.length, prm->buf.input, prm->buf.m.offset, prm->buf.m.userptr);
-//    }
     return 0;
 }
 
+int f641_prepare_buffers(struct f641_v4l2_parameters *prm) {
+    int b, i;
+    for(b = 0; b < prm->req.count; b++) {
+        memset(&prm->buf, 0, sizeof(prm->buf));
+
+        prm->buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        prm->buf.memory = V4L2_MEMORY_MMAP;
+        prm->buf.index  = b;
+
+        if(ioctl(prm->fd, VIDIOC_QBUF, &prm->buf) == -1) {
+            printf("VIDIOC_QBUF: %s\n", strerror(errno));
+            for(i = 0; i < prm->req.count; i++) munmap(prm->buffers[i].start, prm->buffers[i].length);
+            return -1;
+        }
+    }
+    return 0;
+}
 
 /*
  *
  */
 int f641_set_uptr(struct f641_v4l2_parameters *prm, int nb_buffers) {
-    enum v4l2_buf_type type;
     uint32_t i, b;
 
     prm->memory = V4L2_MEMORY_USERPTR;
@@ -715,7 +715,7 @@ int f641_set_uptr(struct f641_v4l2_parameters *prm, int nb_buffers) {
             printf("VIDIOC_QBUF: %s\n", strerror(errno));
             return -1;
         }
-        printf("QBuf : index = %u, len = %u, input = %u, offset = %u, ptr = %p\n", prm->buf.index, prm->buf.length, prm->buf.input, prm->buf.m.offset, prm->buf.m.userptr);
+        printf("QBuf : index = %u, len = %u, input = %u, offset = %u, ptr = %lX\n", prm->buf.index, prm->buf.length, prm->buf.input, prm->buf.m.offset, prm->buf.m.userptr);
     }
     return 0;
 }
@@ -837,3 +837,59 @@ int f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int
     return 0;
 }
 
+void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *device, int width, int height, int palette, int rate, int buffers) {
+    int r;
+
+    if (!prm) {
+        printf("No v4l2 parameters, returning\n");
+        return;
+    }
+    prm->DEBUG = 0;
+    snprintf(prm->dev, sizeof(prm->dev), device);
+    prm->fd  = open(prm->dev, O_RDWR);
+    snprintf(prm->source, sizeof(prm->source), device);
+    prm->width       = width;
+    prm->height      = height;
+    prm->frames_pers = rate;
+    prm->palette     = palette;   //0x47504A4D;   // 0x56595559
+    prm->capture         = 1;
+    prm->verbose         = 1;
+    prm->quiet           = 0;
+    prm->debug           = 1;
+    prm->show_all        = 1;
+    prm->show_caps       = 1;
+    prm->show_inputs     = 1;
+    prm->show_controls   = 1;
+    prm->show_formats    = 1;
+    prm->show_framsize   = 1;
+    prm->show_framints   = 1;
+    prm->show_vidstds    = 1;
+
+    printf("V4L2 prm calloced\n");
+
+    // Capabilities
+    if ( f641_get_capabilities(prm) < 0 ) {
+        printf("Capabilities KO\n");
+        return;
+    }
+    printf("Capabilities ok\n");
+
+    // Input
+    r = f641_set_input(prm);
+
+    // Controls
+    r = f641_list_controls(prm);
+
+    // Format
+    r = f641_set_pix_format(prm);
+
+    // Parm
+    r = f641_set_parm(prm);
+
+    // Map
+    prm->memory = V4L2_MEMORY_MMAP;
+    if ( prm->capture ) {
+        if (prm->memory == V4L2_MEMORY_MMAP) r = f641_set_mmap(prm, buffers);
+        else if (prm->memory == V4L2_MEMORY_USERPTR) r = f641_set_uptr(prm, buffers);
+    }
+}
