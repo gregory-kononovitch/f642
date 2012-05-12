@@ -240,87 +240,87 @@ static int f640_show_control(struct f641_v4l2_parameters *prm, struct v4l2_query
 /*
  *
  */
-static int f640_set_control(struct f641_v4l2_parameters *prm, struct v4l2_queryctrl *queryctrl)
-{
-    struct v4l2_control control;
-    struct v4l2_querymenu querymenu;
-    char *sv;
-    int iv;
-
-    if(queryctrl->flags & V4L2_CTRL_FLAG_DISABLED) {
-        if (!prm->quiet) printf("Control \"%s\" disabled, don't update it.\n", queryctrl->name);
-        return 0;
-    }
-
-    memset(&querymenu, 0, sizeof(querymenu));
-    memset(&control, 0, sizeof(control));
-
-    control.id = queryctrl->id;
-
-    switch(queryctrl->type)
-    {
-        case V4L2_CTRL_TYPE_INTEGER:
-
-            /* Convert the value to an integer. */
-            iv = atoi(sv);
-            /* Is the value a precentage? */
-            if(strchr(sv, '%')) {
-                /* Adjust the precentage to fit the controls range. */
-                iv = SCALE(queryctrl->minimum, queryctrl->maximum, 0, 100, iv);
-            }
-            if (!prm->quiet) printf("Setting %s to %i (%i%%).\n"
-                    , queryctrl->name, iv, SCALE(0, 100, queryctrl->minimum, queryctrl->maximum, iv));
-
-            if(iv < queryctrl->minimum || iv > queryctrl->maximum)
-                if (!prm->quiet) printf("Value is out of range. Setting anyway.\n");
-
-            control.value = iv;
-            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
-            break;
-
-        case V4L2_CTRL_TYPE_BOOLEAN:
-            iv = -1;
-            if(!strcasecmp(sv, "1") || !strcasecmp(sv, "true")) iv = 1;
-            if(!strcasecmp(sv, "0") || !strcasecmp(sv, "false")) iv = 0;
-
-            if(iv == -1) {
-                if (!prm->quiet) printf("Unknown boolean value '%s' for %s.\n", sv, queryctrl->name);
-                return -1;
-            }
-            if (!prm->quiet) printf("Setting %s to %s (%i).\n", queryctrl->name, sv, iv);
-            control.value = iv;
-            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
-            break;
-        case V4L2_CTRL_TYPE_MENU:
-            /* Scan for a matching value. */
-            querymenu.id = queryctrl->id;
-            for(iv = queryctrl->minimum; iv <= queryctrl->maximum; iv++)
-            {
-                querymenu.index = iv;
-                if(ioctl(prm->fd, VIDIOC_QUERYMENU, &querymenu)) {
-                    printf("Error querying menu.\n");
-                    continue;
-                }
-                if(!strncasecmp((char *) querymenu.name, sv, 32)) break;
-            }
-            if(iv > queryctrl->maximum) {
-                if (!prm->quiet) printf("Unknown value '%s' for %s.\n", sv, queryctrl->name);
-                return -1;
-            }
-            if (!prm->quiet) printf("Setting %s to %s (%i).\n", queryctrl->name, querymenu.name, iv);
-            control.value = iv;
-            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
-            break;
-        case V4L2_CTRL_TYPE_BUTTON:
-            if (!prm->quiet) printf("Triggering %s control.\n", queryctrl->name);
-            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
-            break;
-        default:
-            if (!prm->quiet) printf("Not setting unknown control type (%s).\n", queryctrl->name);
-            break;
-    }
-    return 0;
-}
+//static int f640_set_control(struct f641_v4l2_parameters *prm, struct v4l2_queryctrl *queryctrl)
+//{
+//    struct v4l2_control control;
+//    struct v4l2_querymenu querymenu;
+//    char *sv;
+//    int iv;
+//
+//    if(queryctrl->flags & V4L2_CTRL_FLAG_DISABLED) {
+//        if (!prm->quiet) printf("Control \"%s\" disabled, don't update it.\n", queryctrl->name);
+//        return 0;
+//    }
+//
+//    memset(&querymenu, 0, sizeof(querymenu));
+//    memset(&control, 0, sizeof(control));
+//
+//    control.id = queryctrl->id;
+//
+//    switch(queryctrl->type)
+//    {
+//        case V4L2_CTRL_TYPE_INTEGER:
+//
+//            /* Convert the value to an integer. */
+//            iv = atoi(sv);
+//            /* Is the value a precentage? */
+//            if(strchr(sv, '%')) {
+//                /* Adjust the precentage to fit the controls range. */
+//                iv = SCALE(queryctrl->minimum, queryctrl->maximum, 0, 100, iv);
+//            }
+//            if (!prm->quiet) printf("Setting %s to %i (%i%%).\n"
+//                    , queryctrl->name, iv, SCALE(0, 100, queryctrl->minimum, queryctrl->maximum, iv));
+//
+//            if(iv < queryctrl->minimum || iv > queryctrl->maximum)
+//                if (!prm->quiet) printf("Value is out of range. Setting anyway.\n");
+//
+//            control.value = iv;
+//            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+//            break;
+//
+//        case V4L2_CTRL_TYPE_BOOLEAN:
+//            iv = -1;
+//            if(!strcasecmp(sv, "1") || !strcasecmp(sv, "true")) iv = 1;
+//            if(!strcasecmp(sv, "0") || !strcasecmp(sv, "false")) iv = 0;
+//
+//            if(iv == -1) {
+//                if (!prm->quiet) printf("Unknown boolean value '%s' for %s.\n", sv, queryctrl->name);
+//                return -1;
+//            }
+//            if (!prm->quiet) printf("Setting %s to %s (%i).\n", queryctrl->name, sv, iv);
+//            control.value = iv;
+//            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+//            break;
+//        case V4L2_CTRL_TYPE_MENU:
+//            /* Scan for a matching value. */
+//            querymenu.id = queryctrl->id;
+//            for(iv = queryctrl->minimum; iv <= queryctrl->maximum; iv++)
+//            {
+//                querymenu.index = iv;
+//                if(ioctl(prm->fd, VIDIOC_QUERYMENU, &querymenu)) {
+//                    printf("Error querying menu.\n");
+//                    continue;
+//                }
+//                if(!strncasecmp((char *) querymenu.name, sv, 32)) break;
+//            }
+//            if(iv > queryctrl->maximum) {
+//                if (!prm->quiet) printf("Unknown value '%s' for %s.\n", sv, queryctrl->name);
+//                return -1;
+//            }
+//            if (!prm->quiet) printf("Setting %s to %s (%i).\n", queryctrl->name, querymenu.name, iv);
+//            control.value = iv;
+//            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+//            break;
+//        case V4L2_CTRL_TYPE_BUTTON:
+//            if (!prm->quiet) printf("Triggering %s control.\n", queryctrl->name);
+//            ioctl(prm->fd, VIDIOC_S_CTRL, &control);
+//            break;
+//        default:
+//            if (!prm->quiet) printf("Not setting unknown control type (%s).\n", queryctrl->name);
+//            break;
+//    }
+//    return 0;
+//}
 
 
 /*
