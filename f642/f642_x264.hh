@@ -64,6 +64,7 @@ namespace f642 {
         int setQP(int qp);
         int setQP(int qpmin, int qpmax, int qpstep);
         int setParam(const char *name, const char *value);
+        int setNbThreads(int nb);
         int addFrame(uint8_t *rgb);
         int close();
 

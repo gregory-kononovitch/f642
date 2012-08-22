@@ -35,23 +35,23 @@ static int f640_draw_hline(struct f640_image *image, int index, int w, int dir) 
     //memset(&image->pixels[index], 0, 3);
     image->data[3 * index + 0] = 0;
     image->data[3 * index + 1] = 0;
-    image->data[3 * index + 2] = 0;
+    image->data[3 * index + 2] = 0xFF;
     while( --w ) {
         index += dir;
         image->data[3 * index + 0] = 0;
         image->data[3 * index + 1] = 0;
-        image->data[3 * index + 2] = 0;
+        image->data[3 * index + 2] = 0xFF;
     }
     return index;
 }
 static int f640_draw_vline(struct f640_image *image, int index, int h, int dir) {
     image->data[3 * index + 0] = 0;
-    image->data[3 * index + 1] = 0;
+    image->data[3 * index + 1] = 0xFF;
     image->data[3 * index + 2] = 0;
     while( --h ) {
         index += dir * image->width;
         image->data[3 * index + 0] = 0;
-        image->data[3 * index + 1] = 0;
+        image->data[3 * index + 1] = 0xFF;
         image->data[3 * index + 2] = 0;
     }
     return index;
@@ -62,9 +62,9 @@ static int f640_draw_vline(struct f640_image *image, int index, int h, int dir) 
  *
  */
 struct f640_image *f640_create_rgb_image(int width, int height) {
-    struct f640_rgb_image* im = calloc(1, sizeof(struct f640_rgb_image));
+    struct f640_rgb_image* im = (struct f640_rgb_image*)calloc(1, sizeof(struct f640_rgb_image));
     if (im) {
-        im->data = calloc(3, width * height);
+        im->data = (uint8_t*)calloc(3, width * height);
         im->pixels = (pixel*)im->data;
         if (im->data) {
             im->width   = width;

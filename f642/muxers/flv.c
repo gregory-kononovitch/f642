@@ -228,7 +228,7 @@ static int write_frame( hnd_t handle, uint8_t *p_nalu, int i_size, x264_picture_
     {
         p_flv->i_delay_time = p_picture->i_dts * -1;
         if( !p_flv->b_dts_compress && p_flv->i_delay_time )
-            fprintf(stderr, "initial delay %ld / ld ms\n",
+            fprintf(stderr, "initial delay %ld ms\n",
                           convert_timebase_ms( p_picture->i_pts + p_flv->i_delay_time, p_flv->d_timebase ) );
     }
 

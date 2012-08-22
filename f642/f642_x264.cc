@@ -39,6 +39,8 @@ t508::f642::X264::X264(int width, int height, float fps, int preset, int tune) {
     param.b_repeat_headers = 0;
     param.b_annexb = 0;
     param.b_vfr_input = 0;
+    //
+    param.i_threads = 1;
 
     r = x264_param_apply_profile(&param, "high444");
     if (logLevel) fprintf(stderr, "f-X264 x264_param_apply_profile return %d\n", r);
@@ -155,6 +157,18 @@ int t508::f642::X264::setParam(const char *name, const char *value) {
     return 1;
 }
 
+int t508::f642::X264::setNbThreads(int nb) {
+    if (!x264) {
+        param.i_threads = nb;
+        return 1;
+    }
+    // ?
+    x264_encoder_parameters(x264, &param);
+    param.i_threads = nb;
+    if (x264_encoder_reconfig(x264, &param) < 0) return -1;
+    return 1;
+}
+
 int t508::f642::X264::addFrame(uint8_t *img) {
     int r;
     if (!x264) return -1;
@@ -177,14 +191,17 @@ int t508::f642::X264::addFrame(uint8_t *img) {
         if (logLevel) fprintf(stderr, "x264_encoder_encode return %d for pts = %ld, dts = %ld\n", r, ibp.i_pts, ibp.i_dts);
     }
     if (r < 0) {
-        if (logLevel) fprintf(stderr, "Pb encoding frame\n");
+        //x264_picture_clean(&ibp);
+        if (logLevel) fprintf(stderr, "Pb encoding frame %d\n", r);
         return -1;
     } else if (r == 0) {
-        if (logLevel) fprintf(stderr, "Encoding frame return 0...\n");
+        //x264_picture_clean(&ibp);
+        if (logLevel) fprintf(stderr, "Encoding frame return 0 : buffered\n");
         return 0;
     }
     //
     r = output->write_frame(outh, nal[0].p_payload, r, &ibp);
+    //x264_picture_clean(&ibp);
     if (logLevel) fprintf(stderr, "write_frame return %d\n", r);
     if (r > 0) {
         if (ibp.i_pts > pts) {

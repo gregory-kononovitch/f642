@@ -13,6 +13,8 @@
 #include <sys/time.h>
 
 #include "f642_x264.hh"
+#include "../f640/f640_graphics.h"
+
 
 using namespace t508::f642;
 
@@ -24,22 +26,28 @@ int main(int argc, char *argv[]) {
     int r;
     int width = 600;
     int height = 400;
-    uint8_t *rgb = (uint8_t*)calloc(3, width * height);
-    memset(rgb, 0xFF, 3 * width * height);
+    f640_image *img = f640_create_rgb_image(width, height);
+//    uint8_t *rgb = (uint8_t*)calloc(3, width * height);
+//    memset(rgb, 0xFF, 3 * width * height);
     X264 *x264 = new X264(width, height, 20, 4, 1);
     //X264 *x264 = new X264(width, height, 20, 9, 0);
     fprintf(stderr, "X264 created\n");
     x264->setQP(0, 12, 2);
-    x264->setLogLevel(0);
+    x264->setNbThreads(2);
+    //x264->setLogLevel(0);
     x264->open("t.flv");
     x264->dumpConfig();
     fprintf(stderr, "X264 opened\n");
     //
-    for(int i = 0 ; i < 100 ; i++) {
-        uint8_t *t = rgb + 3 * i * width;
-        memset(t, 0x20, 30 * width);
-        r = x264->addFrame(rgb);
-        //fprintf(stderr, "Add frame return %d\n", r);
+    int off = 0;
+    for(int i = 0 ; i < 3000 ; i++) {
+        int j = (i << 3) % height;
+        if (j > height - 40) {
+            j = 0;
+            off = (off + 50) % (width - 50);
+        }
+        f640_draw_rect(img, j * width + off, 30, 30);
+        r = x264->addFrame(img->data);
         //fwrite(rgb, 1, 3*width*height, stdout);
     }
     //
