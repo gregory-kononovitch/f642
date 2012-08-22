@@ -35,13 +35,23 @@ JNIEXPORT jlong JNICALL Java_t508_u640_video_F642X264_init
 }
 
 JNIEXPORT void JNICALL Java_t508_u640_video_F642X264_free (JNIEnv *env, jobject j264, jlong peer) {
-
+    X264 *x264 = toX264(peer);
+    if (x264) {
+      fprintf(stderr,"   Freeing X264\n");
+      delete x264;
+    }
 }
 
 JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264_write_1frame (JNIEnv *env, jobject j264, jlong peer, jbyteArray rgb) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+
     return 0;
 }
 
 JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264_close (JNIEnv *env, jobject j264, jlong peer) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+
     return 0;
 }
