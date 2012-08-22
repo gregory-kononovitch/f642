@@ -141,6 +141,7 @@ void flv_rewrite_amf_be24( flv_buffer *c, unsigned length, unsigned start )
 
 int flv_flush_data( flv_buffer *c )
 {
+    //fprintf(stderr, "flv_flush : d_cur = %u / %lu\n", c->d_cur, c->d_total);
     if( !c->d_cur )
         return 0;
 

@@ -24,16 +24,23 @@ int main(int argc, char *argv[]) {
     int r;
     int width = 600;
     int height = 400;
-    uint8_t *rgb = (uint8_t*)malloc(3 * width * height);
+    uint8_t *rgb = (uint8_t*)calloc(3, width * height);
+    memset(rgb, 0xFF, 3 * width * height);
     X264 *x264 = new X264(width, height, 20, 4, 1);
+    //X264 *x264 = new X264(width, height, 20, 9, 0);
     fprintf(stderr, "X264 created\n");
+    x264->setQP(0, 12, 2);
+    x264->setLogLevel(0);
     x264->open("t.flv");
+    x264->dumpConfig();
     fprintf(stderr, "X264 opened\n");
     //
     for(int i = 0 ; i < 100 ; i++) {
-        memset(rgb + 3 * i * width, 0x20, 3 * width);
+        uint8_t *t = rgb + 3 * i * width;
+        memset(t, 0x20, 30 * width);
         r = x264->addFrame(rgb);
-        fprintf(stderr, "Add frame return %d\n", r);
+        //fprintf(stderr, "Add frame return %d\n", r);
+        //fwrite(rgb, 1, 3*width*height, stdout);
     }
     //
     x264->close();

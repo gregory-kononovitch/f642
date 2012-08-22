@@ -53,6 +53,9 @@ namespace f642 {
         int64_t pts, pts0;
         int64_t dts, dts0;
 
+        //
+        int logLevel;
+
         // Encoding
         X264(int width, int height, float fps, int preset, int tune);
         ~X264();
@@ -63,6 +66,11 @@ namespace f642 {
         int setParam(const char *name, const char *value);
         int addFrame(uint8_t *rgb);
         int close();
+
+        // Utils
+        void setLogLevel(int logLevel);
+        void dumpConfig();
+        void dumpConfig(x264_param_t *prm);
     };
 }
 }

@@ -15,10 +15,11 @@ f642: f642_x264.hh f642_x264.cc f642_j264.cc f642_test.cc
 	g++ ${LDFLAGS} ${INCL} -c muxers/flv.c
 	g++ ${LDFLAGS} ${INCL} -c muxers/flv_bytestream.c
 	g++ ${LDFLAGS} ${INCL} ${LIBS} -c f642_x264.cc
+	g++ ${LDFLAGS} ${INCL} ${LIBS} -c f642_util.cc
 	g++ ${LDFLAGS} ${INCL} ${LIBS} -c f642_j264.cc
-	g++ -Wall -fPIC -shared -o libf642-x264.so f642_x264.o f642_j264.o raw.o flv.o flv_bytestream.o -I/usr/java/jdk/include ${LIBS}
+	g++ -Wall -fPIC -shared -o libf642-x264.so f642_x264.o f642_util.o f642_j264.o raw.o flv.o flv_bytestream.o -I/usr/java/jdk/include ${LIBS}
 	g++ ${LDFLAGS} ${INCL} -c f642_test.cc
-	g++ -Wall -fPIC -o f642-test.xo f642_test.o f642_x264.o raw.o flv.o flv_bytestream.o ${LIBS}
+	g++ -Wall -fPIC -o f642-test.xo f642_test.o f642_x264.o f642_util.o raw.o flv.o flv_bytestream.o ${LIBS}
 #	g++ -Wall -fPIC -o f642-test.xo f642_test.o ${INCL} -L. -lf642-x264 ${LIBS}
 
 clean:
