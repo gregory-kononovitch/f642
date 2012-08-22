@@ -11,14 +11,18 @@
 
 #include "f642_x264.hh"
 
+//using namespace t508::f642;
 
 // Encoding
-t508::f642::X264(int width, int height, int fps, const char *path) {
-
+t508::f642::X264::X264(int width, int height, float fps, const char *path) {
+    this->width = width;
+    this->height = height;
+    this->fps = fps;
 }
 
 t508::f642::X264::~X264() {
-
+    x264_picture_clean(rgb);
+    x264_picture_clean(ibp);
 }
 //
 int t508::f642::X264::setPresets(int preset, int tune) {

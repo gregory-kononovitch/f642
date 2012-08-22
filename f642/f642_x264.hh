@@ -38,10 +38,17 @@ namespace f642 {
         uint8_t *oPlan[4];
         int     oStride[4];
         // Encoding
+        x264_t *x264;
+        x264_nal_t *pp_nal;
+        int pi_nal;
+        x264_picture_t *rgb;
+        x264_picture_t *ibp;
+
+        //
         long              frame;
 
         // Encoding
-        X264(int width, int height, int fps, const char *path);
+        X264(int width, int height, float fps, const char *path);
         ~X264();
         //
         int setPresets(int preset, int tune);

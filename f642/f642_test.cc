@@ -8,13 +8,11 @@
  * There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include <stdio.h>
-
 #include "f642_x264.hh"
 
 
 
-int main(int argc, char argv[]) {
+int main(int argc, char *argv[]) {
 
 
     return 0;
