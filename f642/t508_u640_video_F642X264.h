@@ -10,10 +10,17 @@ extern "C"
 {
 #endif
 
-JNIEXPORT jlong JNICALL Java_t508_u640_video_F642X264_init (JNIEnv *env, jobject, jint, jint, jfloat, jstring);
-JNIEXPORT void JNICALL Java_t508_u640_video_F642X264_free (JNIEnv *env, jobject, jlong);
-JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264_write_1frame (JNIEnv *env, jobject, jlong, jbyteArray);
-JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264_close (JNIEnv *env, jobject, jlong);
+JNIEXPORT jlong JNICALL Java_t508_u640_video_F642X264__1init (JNIEnv *env, jobject, jint, jint, jfloat, jint, jint);
+JNIEXPORT void JNICALL Java_t508_u640_video_F642X264__1free (JNIEnv *env, jobject, jlong);
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1open (JNIEnv *env, jobject, jlong, jstring);
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1add_1frame (JNIEnv *env, jobject, jlong, jbyteArray);
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1close (JNIEnv *env, jobject, jlong);
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1qp__JI (JNIEnv *env, jobject, jlong, jint);
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1qp__JIII (JNIEnv *env, jobject, jlong, jint, jint, jint);
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1param (JNIEnv *env, jobject, jlong, jstring, jstring);
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1nb_1threads (JNIEnv *env, jobject, jlong, jint);
+JNIEXPORT void JNICALL Java_t508_u640_video_F642X264__1set_1log_1level (JNIEnv *env, jobject, jlong, jint);
+JNIEXPORT void JNICALL Java_t508_u640_video_F642X264__1dump_1config (JNIEnv *env, jobject, jlong);
 
 #ifdef __cplusplus
 }

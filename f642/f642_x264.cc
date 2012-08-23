@@ -73,7 +73,7 @@ t508::f642::X264::~X264() {
 }
 
 //
-int t508::f642::X264::open(char *path) {
+int t508::f642::X264::open(const char *path) {
     x264_nal_t *pp_nal;
     int pi_nal;
 
@@ -85,7 +85,7 @@ int t508::f642::X264::open(char *path) {
     cli_output_opt_t opt;
     opt.use_dts_compress = 0;
     output = &flv_output;
-    output->open_file(path, &outh, &opt);
+    output->open_file((char*)path, &outh, &opt);
     output->set_param(outh, &param);
     //
     x264_encoder_headers(x264, &pp_nal, &pi_nal);

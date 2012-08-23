@@ -28,13 +28,22 @@ static X264 *toX264(jlong peer) {
 }
 
 
+JNIEXPORT jlong JNICALL Java_t508_u640_video_F642X264__1init
+(JNIEnv *env, jobject j264, jint jwidth, jint jheight, jfloat jfps, jint jpreset, jint jtune) {
+    jlong ptr;
+    X264 *peer = new X264(jwidth, jheight, jfps, jpreset, jtune);
+    if (!peer) {
+      fprintf(stderr,"Class creation pb, peer null.\n");
+      return 0;
+    }
+    __builtin_memcpy(&ptr, &peer, sizeof(void*));
 
-JNIEXPORT jlong JNICALL Java_t508_u640_video_F642X264_init
-(JNIEnv *env, jobject j264, jint jwidth, jint jheight, jfloat jfps, jstring jpath) {
-    return 0;
+    fprintf(stderr,"jx264 Init: x264 %p | width %d | height %d | fps %f |\n", peer, peer->width, peer->height, peer->fps);
+    return ptr;
 }
 
-JNIEXPORT void JNICALL Java_t508_u640_video_F642X264_free (JNIEnv *env, jobject j264, jlong peer) {
+JNIEXPORT void JNICALL Java_t508_u640_video_F642X264__1free
+(JNIEnv *env, jobject j264, jlong peer) {
     X264 *x264 = toX264(peer);
     if (x264) {
       fprintf(stderr,"   Freeing X264\n");
@@ -42,16 +51,81 @@ JNIEXPORT void JNICALL Java_t508_u640_video_F642X264_free (JNIEnv *env, jobject 
     }
 }
 
-JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264_write_1frame (JNIEnv *env, jobject j264, jlong peer, jbyteArray rgb) {
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1open
+(JNIEnv *env, jobject j264, jlong peer, jstring jpath) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+    jboolean b = 0;
+    const char *path = env->GetStringUTFChars(jpath, &b);
+
+    return x264->open(path);
+}
+
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1add_1frame
+(JNIEnv *env, jobject j264, jlong peer, jbyteArray jrgb) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+    //
+    jboolean isCopy = 0;
+    uint8_t *rgb = (uint8_t*) env->GetByteArrayElements(jrgb, &isCopy);
+    int r = x264->addFrame(rgb);
+    free(rgb);
+    return r;
+}
+
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1close
+(JNIEnv *env, jobject j264, jlong peer) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+    return x264->close();
+}
+
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1qp__JI
+(JNIEnv *env, jobject j264, jlong peer, jint jqp) {
     X264 *x264 = toX264(peer);
     if (!x264) return -1;
 
-    return 0;
+    return x264->setQP(jqp);
 }
 
-JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264_close (JNIEnv *env, jobject j264, jlong peer) {
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1qp__JIII
+(JNIEnv *env, jobject j264, jlong peer, jint jqpmin, jint jqpmax, jint jqpstep) {
     X264 *x264 = toX264(peer);
     if (!x264) return -1;
 
-    return 0;
+    return x264->setQP(jqpmin, jqpmax, jqpstep);
 }
+
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1param
+(JNIEnv *env, jobject j264, jlong peer, jstring jname, jstring jvalue) {
+    jboolean b = 0;
+    const char *name = env->GetStringUTFChars(jname, &b);
+    const char *value = env->GetStringUTFChars(jvalue, &b);
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+
+    return x264->setParam(name, value);
+}
+
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1set_1nb_1threads
+(JNIEnv *env, jobject j264, jlong peer, jint jnb) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+
+    return x264->setNbThreads(jnb);
+}
+
+JNIEXPORT void JNICALL Java_t508_u640_video_F642X264__1set_1log_1level
+(JNIEnv *env, jobject j264, jlong peer, jint jlevel) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return;
+    x264->setLogLevel(jlevel);
+}
+
+JNIEXPORT void JNICALL Java_t508_u640_video_F642X264__1dump_1config
+(JNIEnv *env, jobject j264, jlong peer) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return;
+    x264->dumpConfig();
+}
+

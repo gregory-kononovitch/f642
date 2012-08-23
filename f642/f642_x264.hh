@@ -60,7 +60,7 @@ namespace f642 {
         X264(int width, int height, float fps, int preset, int tune);
         ~X264();
         //
-        int open(char *path);
+        int open(const char *path);
         int setQP(int qp);
         int setQP(int qpmin, int qpmax, int qpstep);
         int setParam(const char *name, const char *value);
