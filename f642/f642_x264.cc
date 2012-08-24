@@ -181,7 +181,7 @@ int t508::f642::X264::addFrame(uint8_t *img) {
     int r;
     if (!x264) return -1;
     //
-    x264_picture_t ibp;
+    x264_picture_t ipb;
     x264_nal_t *nal;
     int i_nal;
     if (img) {
@@ -191,33 +191,33 @@ int t508::f642::X264::addFrame(uint8_t *img) {
         if (logLevel) fprintf(stderr, "SwScale return %d\n", r);
         if (r < height) return -3;
         yuv.i_pts = frame++;
-        r = x264_encoder_encode(x264, &nal, &i_nal, &yuv, &ibp );
-        if (logLevel) fprintf(stderr, "Encode return %d for pts = %ld, dts = %ld / pts = %ld, dts = %ld\n", r, ibp.i_pts, ibp.i_dts, yuv.i_pts, yuv.i_dts);
+        r = x264_encoder_encode(x264, &nal, &i_nal, &yuv, &ipb );
+        if (logLevel) fprintf(stderr, "Encode return %d for pts = %ld, dts = %ld / pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts, yuv.i_pts, yuv.i_dts);
     } else {
         //
-        r = x264_encoder_encode(x264, &nal, &i_nal, NULL, &ibp);
-        if (logLevel) fprintf(stderr, "x264_encoder_encode return %d for pts = %ld, dts = %ld\n", r, ibp.i_pts, ibp.i_dts);
+        r = x264_encoder_encode(x264, &nal, &i_nal, NULL, &ipb);
+        if (logLevel) fprintf(stderr, "x264_encoder_encode return %d for pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts);
     }
     if (r < 0) {
-        //x264_picture_clean(&ibp);
+        //x264_picture_clean(&ipb);
         if (logLevel) fprintf(stderr, "Pb encoding frame %d\n", r);
         return -1;
     } else if (r == 0) {
-        //x264_picture_clean(&ibp);
+        //x264_picture_clean(&ipb);
         if (logLevel) fprintf(stderr, "Encoding frame return 0 : buffered\n");
         return 0;
     }
     //
-    r = output->write_frame(outh, nal[0].p_payload, r, &ibp);
-    //x264_picture_clean(&ibp);
+    r = output->write_frame(outh, nal[0].p_payload, r, &ipb);
+    //x264_picture_clean(&ipb);
     if (logLevel) fprintf(stderr, "write_frame return %d\n", r);
     if (r > 0) {
-        if (ibp.i_pts > pts) {
+        if (ipb.i_pts > pts) {
             if (pts > pts0) pts0 = pts;
-            pts  = ibp.i_pts;
+            pts  = ipb.i_pts;
         }
-        if (ibp.i_pts > pts0 && ibp.i_pts < pts) {
-            pts0  = ibp.i_pts;
+        if (ipb.i_pts > pts0 && ipb.i_pts < pts) {
+            pts0  = ipb.i_pts;
         }
     }
     return r;
