@@ -28,6 +28,7 @@
  * 2) Frames nal[0].p_payload
  *
  * => The 0th nal[2].p_payload contains X264 parameters {(name, value)}
+ * ? sps & pps : before [2], seems codec tags
  */
 
 
