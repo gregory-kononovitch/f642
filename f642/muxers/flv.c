@@ -198,7 +198,7 @@ static int write_headers( hnd_t handle, x264_nal_t *p_nal )
     flv_put_byte( c, sps[2] ); // profile
     flv_put_byte( c, sps[3] ); // level
     flv_put_byte( c, 0xff );   // 6 bits reserved (111111) + 2 bits nal size length - 1 (11)
-    flv_put_byte( c, 0xe1 );   // 3 bits reserved (111) + 5 bits number of sps (00001)
+    flv_put_byte( c, 0xe1 );   // 3 bits reserved (111) + 5 bits number of sps (00001) - byte 210
 
     flv_put_be16( c, sps_size - 4 );
     flv_append_data( c, sps, sps_size - 4 );
