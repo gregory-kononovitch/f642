@@ -72,7 +72,7 @@ JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1open
     return x264->open(path);
 }
 
-JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1add_1frame
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1add_1frame__J_3B
 (JNIEnv *env, jobject j264, jlong peer, jbyteArray jrgb) {
     X264 *x264 = toX264(peer);
     if (!x264) return -1;
