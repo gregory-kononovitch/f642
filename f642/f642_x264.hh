@@ -35,10 +35,6 @@ namespace f642 {
         float fps;
         // SwScale
         struct SwsContext *swsCtxt;
-//        uint8_t *iPlan[8];
-//        int     iStride[8];
-//        uint8_t *oPlan[8];
-//        int     oStride[8];
         x264_picture_t rgb;
         x264_picture_t yuv;
         // Encoding
@@ -57,7 +53,7 @@ namespace f642 {
         int logLevel;
 
         // Encoding
-        X264(int width, int height, float fps, int preset, int tune);
+        X264(int width, int height, enum PixelFormat pixin, float fps, int preset, int tune);
         ~X264();
         //
         int open(const char *path);

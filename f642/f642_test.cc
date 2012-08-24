@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     f640_image *img = f640_create_rgb_image(width, height);
 //    uint8_t *rgb = (uint8_t*)calloc(3, width * height);
 //    memset(rgb, 0xFF, 3 * width * height);
-    X264 *x264 = new X264(width, height, 20, 4, 1);
+    X264 *x264 = new X264(width, height, PIX_FMT_BGR24, 20, 4, 1);
     //X264 *x264 = new X264(width, height, 20, 9, 0);
     fprintf(stderr, "X264 created\n");
     x264->setQP(0, 12, 2);

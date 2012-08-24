@@ -27,11 +27,22 @@ static X264 *toX264(jlong peer) {
   return x264;
 }
 
-
 JNIEXPORT jlong JNICALL Java_t508_u640_video_F642X264__1init
-(JNIEnv *env, jobject j264, jint jwidth, jint jheight, jfloat jfps, jint jpreset, jint jtune) {
+(JNIEnv *env, jobject j264, jint jwidth, jint jheight, jint pixin, jfloat jfps, jint jpreset, jint jtune) {
     jlong ptr;
-    X264 *peer = new X264(jwidth, jheight, jfps, jpreset, jtune);
+    X264 *peer = NULL;
+    switch(pixin) {
+        case 1 :
+            peer = new X264(jwidth, jheight, PIX_FMT_BGRA, jfps, jpreset, jtune);
+            break;
+        case 2 :
+            peer = new X264(jwidth, jheight, PIX_FMT_BGRA, jfps, jpreset, jtune);
+            break;
+        case 5 :
+            peer = new X264(jwidth, jheight, PIX_FMT_BGR24, jfps, jpreset, jtune);
+            break;
+    }
+
     if (!peer) {
       fprintf(stderr,"Class creation pb, peer null.\n");
       return 0;
@@ -70,6 +81,18 @@ JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1add_1frame
     uint8_t *rgb = (uint8_t*) env->GetByteArrayElements(jrgb, &isCopy);
     int r = x264->addFrame(rgb);
     free(rgb);
+    return r;
+}
+
+JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1add_1frame__J_3I
+(JNIEnv *env, jobject j164, jlong peer, jintArray jargb) {
+    X264 *x264 = toX264(peer);
+    if (!x264) return -1;
+    //
+    jboolean isCopy = 0;
+    uint8_t *argb = (uint8_t*) env->GetIntArrayElements(jargb, &isCopy);
+    int r = x264->addFrame(argb);
+    free(argb);
     return r;
 }
 

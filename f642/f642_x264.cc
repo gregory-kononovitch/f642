@@ -15,7 +15,7 @@
 //using namespace t508::f642;
 
 // Encoding
-t508::f642::X264::X264(int width, int height, float fps, int preset, int tune) {
+t508::f642::X264::X264(int width, int height, enum PixelFormat pix_in, float fps, int preset, int tune) {
     int r;
     this->width = width;
     this->height = height;
@@ -45,21 +45,29 @@ t508::f642::X264::X264(int width, int height, float fps, int preset, int tune) {
     r = x264_param_apply_profile(&param, "high444");
     if (logLevel) fprintf(stderr, "f-X264 x264_param_apply_profile return %d\n", r);
     //
-    r = x264_picture_alloc(&rgb, X264_CSP_BGR, width, height);
-    if (logLevel) fprintf(stderr, "f-X264 iStride = %d\n", rgb.img.i_stride[0]);
+    if (pix_in == PIX_FMT_BGR24) {
+            r = x264_picture_alloc(&rgb, X264_CSP_BGR, width, height);
+            swsCtxt = sws_getCachedContext(NULL,
+                        width, height, PIX_FMT_BGR24,
+                        width, height, PIX_FMT_YUV420P,
+                        SWS_BICUBIC, NULL, NULL, NULL
+            );
+    } else if (pix_in == PIX_FMT_BGRA) {
+            r = x264_picture_alloc(&rgb, X264_CSP_BGRA, width, height);
+            swsCtxt = sws_getCachedContext(NULL,
+                        width, height, PIX_FMT_BGRA,
+                        width, height, PIX_FMT_YUV420P,
+                        SWS_BICUBIC, NULL, NULL, NULL
+            );
+    }
     free(rgb.img.plane[0]);
     rgb.img.plane[0] = NULL;
+    if (logLevel) fprintf(stderr, "f-X264 stride in : %d\n", rgb.img.i_stride[0]);
+    if (logLevel) fprintf(stderr, "f-X264 sws_getCachedContext return %p\n", swsCtxt);
     if (logLevel) fprintf(stderr, "f-X264 x264_picture_alloc return %d\n", r);
     r = x264_picture_alloc(&yuv, X264_CSP_I420, width, height);
     if (logLevel) fprintf(stderr, "f-X264 oStride = %d , %d, %d, %d\n", yuv.img.i_stride[0], yuv.img.i_stride[1], yuv.img.i_stride[2], yuv.img.i_stride[3]);
     if (logLevel) fprintf(stderr, "f-X264 x264_picture_alloc return %d\n", r);
-    //
-    swsCtxt = sws_getCachedContext(NULL,
-                width, height, PIX_FMT_BGR24,
-                width, height, PIX_FMT_YUV420P,
-                SWS_BICUBIC, NULL, NULL, NULL
-    );
-    if (logLevel) fprintf(stderr, "f-X264 sws_getCachedContext return %p\n", swsCtxt);
     //
     x264 = NULL;
     frame = 0;
