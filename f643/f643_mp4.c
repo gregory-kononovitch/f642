@@ -95,7 +95,7 @@ int f643_setup_x264_codec(struct f643 *f643) {
     return 0;
 }
 
-static long temp = 155;
+static long temp = 255;
 int f643_add_x264_frame(struct f643 *f643) {
     x264_picture_t ipb;
     x264_nal_t *nal;
@@ -103,11 +103,9 @@ int f643_add_x264_frame(struct f643 *f643) {
     FOG("Starting");
     if (temp > 0) {
         //
-        //f643->rgb.img.plane[0] = malloc(3 * f643->width * f643->height);
         memset(f643->rgb.img.plane[0], temp, 3 * f643->width * f643->height);
         int r = sws_scale(f643->swsCtxt, (const uint8_t **const)f643->rgb.img.plane, f643->rgb.img.i_stride, 0, f643->height, f643->yuv.img.plane, f643->yuv.img.i_stride);
         FOG("SwScale return %d", r);
-        //free(f643->rgb.img.plane[0]);
         if (r < f643->height) return -3;
         f643->yuv.i_pts = f643->frame++;
         i_coded_bytes = x264_encoder_encode(f643->x264, &nal, &i_nal, &f643->yuv, &ipb );
@@ -140,14 +138,14 @@ int f643_add_x264_frame(struct f643 *f643) {
         uint8_t *tmp = malloc(f643->lsei + i_coded_bytes);
         memcpy(tmp, f643->sei, f643->lsei);
         memcpy(tmp + f643->lsei, nal[0].p_payload, i_coded_bytes);
-        bool b = MP4WriteSample(f643->handle, f643->x264_track, tmp, f643->lsei + i_coded_bytes, 4500, 4500 * (ipb.i_pts - ipb.i_dts), true);
+        bool b = MP4WriteSample(f643->handle, f643->x264_track, tmp, f643->lsei + i_coded_bytes, 0, 0, true);
         FOG("MP4WriteSample0 return %d", b);
         free(tmp);
         free(f643->sei);
         f643->sei  = NULL;
         f643->lsei = 0;
     } else {
-        bool b = MP4WriteSample(f643->handle, f643->x264_track, nal[0].p_payload, i_coded_bytes, 4500, 4500 * (ipb.i_pts - ipb.i_dts), true);
+        bool b = MP4WriteSample(f643->handle, f643->x264_track, nal[0].p_payload, i_coded_bytes, 1000, 1000 * (ipb.i_pts - ipb.i_dts), true);
         FOG("MP4WriteSample return %d", b);
     }
 
@@ -195,7 +193,7 @@ int f643_open_x264_track(struct f643 *f643) {
     x264_nal_t *p_nal;
     int i_nal;
     x264_encoder_headers(f643->x264, &p_nal, &i_nal);
-    // From matroska & flv
+    // From matroska & flv of x264
     uint8_t *sps = p_nal[0].p_payload + 4 ; int lsps = p_nal[0].i_payload - 4;
     uint8_t *pps = p_nal[1].p_payload + 4 ; int lpps = p_nal[1].i_payload - 4;
     uint8_t *sei = p_nal[2].p_payload ;     int lsei = p_nal[2].i_payload;
@@ -263,11 +261,11 @@ int f643_open_x264_track(struct f643 *f643) {
 
 int f643_close_file(struct f643 *f643) {
     //
-    bool b = MP4MakeIsmaCompliant(MP4GetFilename(f643->handle), true);
-    FOG("MP4MakeIsmaCompliant %d", b);
-    //
     MP4Close(f643->handle, 0);
     FOG("MP4Close");
+    //
+    bool b = MP4MakeIsmaCompliant("tst.mp4", true);
+    FOG("MP4MakeIsmaCompliant %d", b);
     //
     return 0;
 }
