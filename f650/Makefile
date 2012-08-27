@@ -16,6 +16,7 @@ INSTALL_DIR_OPTS = -m 755
 
 # Options
 EXTENSION=.c
+ASM_EXTENSION=.asm
 
 ifeq (yes,$(DEBUG))
 DEBUGFLAGS=-g -DDEBUG
@@ -23,8 +24,9 @@ endif
 
 CWD=$(shell pwd)
 
-SRC_DIR=$(CWD)/f650
-INCLUDE_DIR=$(CWD)/f650
+SRC_DIR=$(CWD)/
+ASM_DIR=$(CWD)/asm/
+INCLUDE_DIR=$(CWD)/
 
 # Librarires
 INCLUDE=
@@ -38,12 +40,14 @@ LIBRARY_SO_VER=libf650.so.0.1
 
 # source-files
 sources:=$(wildcard ${SRC_DIR}*$(EXTENSION))
+sources_asm:=$(wildcard ${ASM_DIR}*$(ASM_EXTENSION))
 
 # header files; replace .c extension with .h
 headers:=$(patsubst %$(EXTENSION),%.h,$(sources))
 
 # object files; replace .c extension with .o
 objects:=$(patsubst %$(EXTENSION),%.o,$(sources))
+objects_ao:=$(patsubst %.asm,%.ao,$(sources_asm))
 objects_so:=$(patsubst %$(EXTENSION),%.lo,$(sources))
 
 WARNINGFLAGS=-Wall
@@ -63,6 +67,9 @@ lib:
 	@false
 
 # Build rules
+%.ao: %.asm
+	yasm -f elf64 -a x86 -m amd64 -o $@ $<
+
 %.o: %$(EXTENSION)
 	gcc -c $(COMPILEFLAGS) $(INCLUDE) -o $@ $<
 
@@ -70,7 +77,8 @@ lib:
 	gcc -c $(COMPILEFLAGS) $(INCLUDE) -fPIC -o $@ $<
 
 $(EXEC): $(objects)
-	gcc -o $(EXEC) $(objects) $(LIBS)
+#	@echo "ASM ${ASM_DIR} : $(objects_ao)"
+	gcc -o $(EXEC) $(objects) $(objects_ao) $(LIBS)
 	
 $(LIBRARY): $(objects)
 	ar rcvu $@ $(objects)
@@ -82,7 +90,7 @@ $(LIBRARY_SO): $(objects_so)
 	ln -s $(LIBRARY_SO_VER) $(LIBRARY_SO)
 
 clean:
-	rm -f $(objects) $(objects_so)
+	rm -f $(objects) $(objects_ao) $(objects_so)
 	rm -f $(LIBRARY)
 	rm -f $(LIBRARY_SO)
 	rm -f $(LIBRARY_SO_VER)
