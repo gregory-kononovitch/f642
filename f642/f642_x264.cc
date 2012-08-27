@@ -81,7 +81,7 @@ t508::f642::X264::~X264() {
 }
 
 //
-int t508::f642::X264::open(const char *path) {
+int t508::f642::X264::open(const char *path, int muxer) {
     x264_nal_t *pp_nal;
     int pi_nal;
 
@@ -92,7 +92,19 @@ int t508::f642::X264::open(const char *path) {
     //
     cli_output_opt_t opt;
     opt.use_dts_compress = 0;
-    output = &flv_output;
+    switch(muxer) {
+        case 0 :
+            output = &raw_output;
+            break;
+        case 1 :
+            output = &mkv_output;
+            break;
+        case 2 :
+            output = &flv_output;
+            break;
+        default :
+            output = &raw_output;
+    }
     output->open_file((char*)path, &outh, &opt);
     output->set_param(outh, &param);
     //

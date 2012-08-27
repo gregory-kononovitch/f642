@@ -9,6 +9,10 @@
  */
 
 
+/*
+ * This "wrapper" is fully based on libx264 library @@@TODO
+ */
+
 #ifndef F642_X264_HH_
 #define F642_X264_HH_
 
@@ -22,6 +26,10 @@ extern "C" {
 #include "muxers/output.h"
 }
 
+// Muxers
+#define RAW_MUXER = 0
+#define MKV_MUXER = 1
+#define FLV_MUXER = 2
 /*
  *
  */
@@ -56,7 +64,7 @@ namespace f642 {
         X264(int width, int height, enum PixelFormat pixin, float fps, int preset, int tune);
         ~X264();
         //
-        int open(const char *path);
+        int open(const char *path, int muxer);
         int setQP(int qp);
         int setQP(int qpmin, int qpmax, int qpstep);
         int setParam(const char *name, const char *value);

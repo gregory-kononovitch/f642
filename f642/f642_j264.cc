@@ -63,13 +63,13 @@ JNIEXPORT void JNICALL Java_t508_u640_video_F642X264__1free
 }
 
 JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1open
-(JNIEnv *env, jobject j264, jlong peer, jstring jpath) {
+(JNIEnv *env, jobject j264, jlong peer, jstring jpath, jint jmuxer) {
     X264 *x264 = toX264(peer);
     if (!x264) return -1;
     jboolean b = 0;
     const char *path = env->GetStringUTFChars(jpath, &b);
 
-    return x264->open(path);
+    return x264->open(path, jmuxer);
 }
 
 JNIEXPORT jint JNICALL Java_t508_u640_video_F642X264__1add_1frame__J_3B

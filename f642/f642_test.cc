@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     x264->setQP(0, 12, 2);
     x264->setNbThreads(2);
     //x264->setLogLevel(0);
-    x264->open("t.flv");
+    x264->open("t.mkv", 1);
     x264->dumpConfig();
     fprintf(stderr, "X264 opened\n");
     //
