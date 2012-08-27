@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 //
 #include <stdint.h>
 #define INT64_SUPPORTED
@@ -42,11 +44,16 @@ uint64_t ReadTSC(void);                                     // Read microprocess
 void cpuid_ex (int abcd[4], int eax, int ecx);                 // call CPUID instruction
 static inline void cpuid_abcd (int abcd[4], int eax) { cpuid_ex(abcd, eax, 0); }
 
-int main(int argc, char *argv[]) {
+int tst_lib() {
     long l1, l2;
     //
     double d = 4.52524634624134;
     int r;
+    //
+    printf("InstructionSet = %d\n", InstructionSet());
+//    printf("DataCacheSize 1 = %lu\n", DataCacheSize(1));
+//    printf("DataCacheSize 2 = %lu\n", DataCacheSize(2));
+//    printf("DataCacheSize 3 = %lu\n", DataCacheSize(3));
     //
     l1 = ReadTSC();
     r  = (int)(d + 0.5);
@@ -61,6 +68,47 @@ int main(int argc, char *argv[]) {
     l1 = ReadTSC();
     l2 = ReadTSC();
     printf("TSC in %ld\n", (l2 - l1));
+
+    return 0;
+
+}
+
+
+
+
+double faxpb(double x, double a, double b);
+
+int main(int argc, char *argv[]) {
+    long l1, l2;
+    double a = 9.6789066;
+    double b = -8.6578;
+    double x = 0.46346764321;
+    double y = 0;
+    struct timeval tv1, tv2;
+
+    //
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+    for(x = -1 ; x < 1 ; x += 1e-7) {
+        y += faxpb(x, a, b);
+    }
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+
+    printf("y = %f in %ld (%ld / %f)\n", y, l2 - l1, tv2.tv_usec, 1. * (l2 - l1) / 1.6e9);
+
+    //
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+    for(x = -1 ; x < 1 ; x += 1e-7) {
+        y += a * x + b;
+    }
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+
+    printf("y = %f in %ld (%ld / %f)\n", y, l2 - l1, tv2.tv_usec, 1. * (l2 - l1) / 1.6e9);
 
     return 0;
 }
