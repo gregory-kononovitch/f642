@@ -27,20 +27,20 @@ PX:		; prepar : x = sx * (x - x0) + width / 2
 		movsd			xmm4, [rdi + 16]	; x0 -> xmm4
 		subsd			xmm0, xmm4			; x1 = x1 - x0
 		subsd			xmm2, xmm4			; x2 = x2 - x0
-		movsd			xmm5, [rdi + 32]	; sx -> xmm5
+		movsd			xmm5, qword [rdi + 32]	; sx -> xmm5
 		mulsd			xmm0, xmm5			; x1 = sx * x1
 		mulsd			xmm2, xmm5			; x2 = sx * x2
 		xor				rax, rax
 		mov				ax, [rdi + 8]		; ax = width
 		cvtsi2sd		xmm10, eax			; width -> xmm10
 		movsd			xmm4, xmm10			; width -> xmm4
-		movsd			xmm5, QWORD [HALF]	; .5 -> xmm5
-		mulsd			xmm4, QWORD [HALF]			; w2 -> xmm4
+		movsd			xmm5, qword [HALF]	; .5 -> xmm5
+		mulsd			xmm4, xmm5			; w2 -> xmm4
 		addsd			xmm0, xmm4			; x1 = x1 + w2
 		addsd			xmm2, xmm4			; x2 = x2 + w2
 		; tests
-		movsd			[rdi + 48], xmm0
-		movsd			[rdi + 64], xmm2
+		movsd			[rdi + 48], xmm0	;@@@
+		movsd			[rdi + 64], xmm2	;@@@
 
 		; tests x
 TX1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
@@ -55,9 +55,9 @@ TX11:
 		seta			al
 		test			al, al
 		je				TX2					; xmm2 >= 0
-		jmp				TESTKO				; xmm2 < 0
+		jmp				NOPIX				; xmm2 < 0
 
-TX2:		; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
+TX2:	; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
 		movsd			xmm4, xmm10			; width -> xmm4
 		ucomisd			xmm4, xmm0
 		seta			al
@@ -68,7 +68,7 @@ TX21:
 		ucomisd			xmm4, xmm2
 		seta			al
 		test			al, al
-		je				TESTKO
+		je				NOPIX
 
 PY:		; prepar : y = height / 2 - sy * (y - y0)
 		movsd			xmm4, [rdi + 24]	; y0 -> xmm4
@@ -81,17 +81,16 @@ PY:		; prepar : y = height / 2 - sy * (y - y0)
 		mov				ax, [rdi + 10]		; ax = height
 		cvtsi2sd		xmm11, eax			; height -> xmm11
 		movsd			xmm4, xmm11
-		mov				eax, 2
-		cvtsi2sd		xmm5, eax			; 2 -> xmm5
-		divsd			xmm4, xmm5			; h2 -> xmm4
+		movsd			xmm5, qword [HALF]
+		mulsd			xmm4, xmm5			; h2 -> xmm4
 		movsd			xmm5, xmm4			; h2 -> xmm5
 		subsd			xmm4, xmm1			; xmm4 = h2 - y1
 		movsd			xmm1, xmm4			;
 		subsd			xmm5, xmm3			; xmm5 = h2 - y2
 		movsd			xmm3, xmm5
 		; tests
-		movsd			[rdi + 56], xmm1
-		movsd			[rdi + 72], xmm3
+		movsd			[rdi + 56], xmm1	;@@@
+		movsd			[rdi + 72], xmm3	;@@@
 
 		; tests x
 TY1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
@@ -106,7 +105,7 @@ TY11:
 		seta			al
 		test			al, al
 		je				TY2					; xmm3 >= 0
-		jmp				TESTKO				; xmm3 < 0
+		jmp				NOPIX				; xmm3 < 0
 
 TY2:	; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
 		movsd			xmm4, xmm11			; height -> xmm4
@@ -119,7 +118,7 @@ TY21:
 		ucomisd			xmm4, xmm3
 		seta			al
 		test			al, al
-		je				TESTKO
+		je				NOPIX
 
 ABSX:	; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5
 		movsd			xmm4, xmm2
@@ -173,12 +172,12 @@ SWPX:	; swap x1, x2 & y1, y2
 XLINE:
 		movsd			xmm8, xmm6			; xmm8 = y2 - y1
 		divsd			xmm8, xmm4			; a = xmm8 = (y2 - y1) / (x2 - x1)
-		movsd			[rdi + 80], xmm8	; store a for tests
+		movsd			[rdi + 80], xmm8	;@@@ store a for tests
 		movsd			xmm5, xmm8			; a
 		mulsd			xmm5, xmm0			; a * x1
 		movsd			xmm9, xmm1			; y1
 		subsd			xmm9, xmm5			; b = y1 - a * x1
-		movsd			[rdi + 88], xmm9
+		movsd			[rdi + 88], xmm9	;@@@
 WX1:	; if (x1 < 0) { x1 = 0 ; y1 = b;}
 		xorpd			xmm4, xmm4
 		ucomisd			xmm4, xmm0
@@ -201,29 +200,37 @@ WX22:	movsd			xmm2, xmm10			; x2 = width
 		movsd			xmm3, xmm4			; y2 =
 
 TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
-		movsd			xmm6, QWORD [PAS]	; xmm6 = 0.65
+		movsd			xmm6, qword [PAS]	; xmm6 = 0.65
+		mov				r10d, [rdi + 100]	; color
+		xor				r11, r11
+		mov				r11w, [rdi + 8]		; width - r9w/d
+		xorpd			xmm12, xmm12		; xmm12 = 0
 LOOPX:	; loop
 		; xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
 		mulsd			xmm5, xmm8			; y = a * x
 		addsd			xmm5, xmm9			; y = y + b
-		; if (y < 0 || y >= h) continue;
+TI1:	; if (y < 0) continue;
+		ucomisd			xmm12, xmm5
+		seta			al
+		test			al, al
+		je				TI2					; y >= 0
+		jmp				COOPX
+TI2:	; if (y >= h) continue;
+		ucomisd			xmm11, xmm5
+		seta			al
+		test			al, al
+		je				COOPX				; y >= h
 
 		; index
 		cvttsd2si		r8d, xmm5			; (int)y -> r8d
-		xor				r9, r9
-		mov				r9w, [rdi + 8]		; width - r9w/d
-		imul			r8d, r9d			; width * (int)y
-		xor				r9, r9
+		imul			r8d, r11d			; width * (int)y
 		cvttsd2si		r9d, xmm4			; (int)x -> r9d
 		add				r8d, r9d			; index
-		mov				[rdi + 96], r8d		; @@@ test
-		mov				rax, [rdi]			;
-		shl				r8, 2				;
+		shl				r8, 2				; index << 2
+		mov				rax, qword [rdi]	;
 		add				rax, r8				;
-		mov				r9d, [rdi + 100]
-		mov				[rax], r9d			;
-;		mov				[rax], DWORD [rdi + 100]
+		mov				[rax], dword r10d	;
 
 COOPX:	;
 		addsd			xmm4, xmm6			; x += 0.65
@@ -257,13 +264,11 @@ YLINE:
 		jmp				RETOK
 
 RETOK:
-		xor				rdi, rdi
-		cvtsi2sd		xmm0, rdi			; temp for tests
+		xor				rax, rax
 		ret
 
-TESTKO:	;
-		mov				rdi, -1
-		cvtsi2sd		xmm0, rdi			; temp for tests
+NOPIX:	;
+		mov				rax, -1
 		ret
 
 ;a650_draw_line  ENDP

@@ -59,8 +59,8 @@ int f650_img_compare(image *img1, image *img2);
 void t650_clear_test(image *img);
 
 // Draw line
-int    f650_draw_line(image *img, double x1, double y1, double x2, double y2);
-double a650_draw_line(image *img, double x1, double y1, double x2, double y2);
+int f650_draw_line(image *img, double x1, double y1, double x2, double y2);
+int a650_draw_line(image *img, double x1, double y1, double x2, double y2);
 
 
 #endif /* F650_H_ */
