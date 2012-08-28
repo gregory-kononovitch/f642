@@ -65,13 +65,13 @@ int main() {
     // x' = x + 156 / y' = 344 - y      OK:
     f650_img_origin(&img1, 0, 0);
     t650_clear_test(&img1);
-    x = a650_draw_line(&img1, -10, 20, 100, 30);
+    x = a650_draw_line(&img1, 100, 20, -10, 30);
     printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f i %d\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b, img1.index);
     printf("data[%d] = %d\n", img1.index, img1.data[img1.index]);
 
     f650_img_origin(&img2, 0, 0);
     t650_clear_test(&img2);
-    x = f650_draw_line(&img2, -10, 20, 100, 30);
+    x = f650_draw_line(&img2, 100, 20, -10, 30);
     printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f, i %d\n", x, img2.x1, img2.y1, img2.x2, img2.y2, img2.a, img2.b, img2.index);
 
     printf("img1 / img2 = %d\n", f650_img_compare(&img1, &img2));

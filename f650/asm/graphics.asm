@@ -201,7 +201,7 @@ WX22:	movsd			xmm2, xmm10			; x2 = width
 TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
 		mov				rax, 65
 		cvtsi2sd		xmm6, rax
-		mov				rax, 10
+		mov				rax, 100
 		cvtsi2sd		xmm7, rax
 		divsd			xmm6, xmm7			; xmm6 = 0.65
 LOOPX:	; loop
