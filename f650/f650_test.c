@@ -31,7 +31,7 @@ int main() {
     img.sx     = 1.;
     img.sy     = 1.;
     // x' = x - 100 + 256
-    x = a650_draw_line(&img, 1., 1., -2., 4.5);
+    x = a650_draw_line(&img, 356.000001, -157., 356, 4.5);
     printf("res = %f, x1 = %f, y1 = %f, x2 = %f, y2 = %f\n", x, img.x1, img.y1, img.x2, img.y2);
 
 
