@@ -23,6 +23,7 @@ SECTION .text  align=16
 ; h  -> xmm11
 ; x0 -
 a650_draw_line:
+		xor				rcx, rcx
 PX:		; prepar : x = sx * (x - x0) + width / 2
 		movsd			xmm4, [rdi + 16]	; x0 -> xmm4
 		subsd			xmm0, xmm4			; x1 = x1 - x0
@@ -38,9 +39,6 @@ PX:		; prepar : x = sx * (x - x0) + width / 2
 		mulsd			xmm4, xmm5			; w2 -> xmm4
 		addsd			xmm0, xmm4			; x1 = x1 + w2
 		addsd			xmm2, xmm4			; x2 = x2 + w2
-		; tests
-		movsd			[rdi + 48], xmm0	;@@@
-		movsd			[rdi + 64], xmm2	;@@@
 
 		; tests x
 TX1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
@@ -88,9 +86,6 @@ PY:		; prepar : y = height / 2 - sy * (y - y0)
 		movsd			xmm1, xmm4			;
 		subsd			xmm5, xmm3			; xmm5 = h2 - y2
 		movsd			xmm3, xmm5
-		; tests
-		movsd			[rdi + 56], xmm1	;@@@
-		movsd			[rdi + 72], xmm3	;@@@
 
 		; tests x
 TY1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
@@ -172,12 +167,10 @@ SWPX:	; swap x1, x2 & y1, y2
 XLINE:
 		movsd			xmm8, xmm6			; xmm8 = y2 - y1
 		divsd			xmm8, xmm4			; a = xmm8 = (y2 - y1) / (x2 - x1)
-		movsd			[rdi + 80], xmm8	;@@@ store a for tests
 		movsd			xmm5, xmm8			; a
 		mulsd			xmm5, xmm0			; a * x1
 		movsd			xmm9, xmm1			; y1
 		subsd			xmm9, xmm5			; b = y1 - a * x1
-		movsd			[rdi + 88], xmm9	;@@@
 WX1:	; if (x1 < 0) { x1 = 0 ; y1 = b;}
 		xorpd			xmm4, xmm4
 		ucomisd			xmm4, xmm0
@@ -195,13 +188,13 @@ WX2:	; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;}
 		je				WX22				; x2 >= width
 		jmp				TX
 WX22:	movsd			xmm2, xmm10			; x2 = width
-		mulsd			xmm4, xmm8			; a * width
-		addsd			xmm4, xmm9			; + b
-		movsd			xmm3, xmm4			; y2 =
+		movsd			xmm3, xmm10			; y2 =
+		mulsd			xmm3, xmm8			; a * width
+		addsd			xmm3, xmm9			; + b
 
 TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
 		movsd			xmm6, qword [PAS]	; xmm6 = 0.65
-		mov				r10d, [rdi + 100]	; color
+		mov				r10, rsi			; color
 		xor				r11, r11
 		mov				r11w, [rdi + 8]		; width - r9w/d
 		xorpd			xmm12, xmm12		; xmm12 = 0
@@ -221,6 +214,7 @@ TIX2:	; if (y >= h) continue;
 		seta			al
 		test			al, al
 		je				COOPX				; y >= h
+		inc				rcx
 
 		; index
 		cvttsd2si		r8d, xmm5			; (int)y -> r8d
@@ -255,12 +249,10 @@ SWPY:	; swap x1, x2 & y1, y2
 YLINE:
 		movsd			xmm8, xmm4			; xmm8 = x2 - x1
 		divsd			xmm8, xmm6			; a = xmm8 = (x2 - x1) / (y2 - y1)
-		movsd			[rdi + 80], xmm8	;@@@ store a for tests
 		movsd			xmm5, xmm8			; a
 		mulsd			xmm5, xmm1			; a * y1
 		movsd			xmm9, xmm0			; x1
 		subsd			xmm9, xmm5			; b = x1 - a * y1
-		movsd			[rdi + 88], xmm9	;@@@
 
 		; @@@ case x1 ~= x2 / y1 ~= y2
 
@@ -288,7 +280,7 @@ WY22:	movsd			xmm2, xmm10			; x2 = width
 
 TY:		movsd			xmm4, xmm1			; xmm4 = x = x1
 		movsd			xmm6, qword [PAS]	; xmm6 = 0.65
-		mov				r10d, [rdi + 100]	; color
+		mov				r10, rsi			; color
 		xor				r11, r11
 		mov				r11w, [rdi + 8]		; width - r9w/d
 		xorpd			xmm12, xmm12		; xmm12 = 0
@@ -301,13 +293,14 @@ TIY1:	; if (x < 0) continue;
 		ucomisd			xmm12, xmm5
 		seta			al
 		test			al, al
-		je				TIY2					; x >= 0
+		je				TIY2				; x >= 0
 		jmp				COOPY
 TIY2:	; if (x >= w) continue;
 		ucomisd			xmm10, xmm5
 		seta			al
 		test			al, al
 		je				COOPY				; y >= w
+		inc				rcx
 
 		; index
 		cvttsd2si		r8d, xmm4			; (int)y -> r8d
@@ -329,11 +322,11 @@ COOPY:	;
 
 
 RETOK:
-		xor				rax, rax
+		mov				rax, rcx
 		ret
 
 NOPIX:	;
-		mov				rax, -1
+		mov				rax, 0
 		ret
 
 ;a650_draw_line  ENDP

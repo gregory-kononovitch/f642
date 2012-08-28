@@ -12,6 +12,6 @@
 #include "f650.h"
 
 static double pas = 0.65;
-void f650_test_asm(image *img, double x) {
+void f650_test_asm(bgra650 *img, double x) {
     x += pas;
 }

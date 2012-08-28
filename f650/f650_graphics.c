@@ -17,9 +17,9 @@
 /*
  *
  */
-int f650_new_image(image *img, int width, int height) {
+int f650_alloc_image(bgra650 *img, int width, int height) {
     if (!img) return -1;
-    memset(img, 0, sizeof(image));
+    memset(img, 0, sizeof(bgra650));
     img->data   = calloc(width * height, sizeof(int32_t));
     img->width  = width;
     img->height = height;
@@ -31,25 +31,29 @@ int f650_new_image(image *img, int width, int height) {
     return img->data == NULL;
 }
 
-void f650_img_origin(image *img, double x0, double y0) {
+void f650_img_origin(bgra650 *img, double x0, double y0) {
     img->x0 = x0;
     img->y0 = y0;
 }
 
-void f650_img_scale(image *img, double sx, double sy) {
+void f650_img_scale(bgra650 *img, double sx, double sy) {
     img->sx = sx;
     img->sy = sy;
 }
 
-void t650_clear_test(image *img) {
+void f650_img_clear(bgra650 *img) {
     memset(img->data, 0, 4 * img->size);
-    img->x1 = img->x2 = img->y1 = img->y2 = img->a = img->b = img->index = 0;
+}
+
+void f650_img_fill(bgra650 *img, uint32_t color) {
+    int i;
+    for(i = 0 ; i < img->size ; i++) img->data[i] = color;
 }
 
 /*
  * a650_draw_line(&img1, 100, 20, -10, 30) != a650_draw_line(&img1, -10, 20, 100, 30) 110 pixels / 111 pixels
  */
-int f650_img_compare(image *img1, image *img2) {
+int f650_img_compare(bgra650 *img1, bgra650 *img2) {
     if (img1->width != img2->width || img1->height != img2->height) return -1;
     int32_t *p1 = img1->data;
     int32_t *p2 = img2->data;
@@ -58,7 +62,8 @@ int f650_img_compare(image *img1, image *img2) {
 
     for(i = 0 ; i < img1->size ; i++) {
         if (*p1 == *p2) {
-            if (*p1 != 0) equ++;
+            //if (*p1 != 0) equ++;
+            equ++;
         } else {
             dif++;
         }
@@ -73,17 +78,17 @@ int f650_img_compare(image *img1, image *img2) {
 /*
  *
  */
-int f650_draw_line(image *img, double x1, double y1, double x2, double y2) {
+int f650_draw_line(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color) {
     double a, b, x, y;
     int i = 0;
     //
-    img->x1 = x1 = img->sx * (x1 - img->x0) + 0.5 * img->width;
-    img->x2 = x2 = img->sx * (x2 - img->x0) + 0.5 * img->width;
+    x1 = img->sx * (x1 - img->x0) + 0.5 * img->width;
+    x2 = img->sx * (x2 - img->x0) + 0.5 * img->width;
     if (x1 < 0 && x2 < 0) return -1;    // voir x1>= 0 || x2 >= 0
     if (x1 >= img->width && x2 >= img->width) return -1;    // idem
     //
-    img->y1 = y1 = .5 * img->height - img->sy * (y1 - img->y0);
-    img->y2 = y2 = .5 * img->height - img->sy * (y2 - img->y0);
+    y1 = .5 * img->height - img->sy * (y1 - img->y0);
+    y2 = .5 * img->height - img->sy * (y2 - img->y0);
     if (y1 < 0 && y2 < 0) return -1;
     if (y1 >= img->height && y2 >= img->height) return -1;
     //
@@ -92,16 +97,15 @@ int f650_draw_line(image *img, double x1, double y1, double x2, double y2) {
             a = x1 ; x1 = x2 ; x2 = a;
             a = y1 ; y1 = y2 ; y2 = a;
         }
-        img->a = a = (y2 - y1) / (x2 - x1);
-        img->b = b = y1 - a * x1;
+        a = (y2 - y1) / (x2 - x1);
+        b = y1 - a * x1;
         if (x1 < 0) { x1 = 0 ; y1 = b;}
         if (x2 >= img->width) { x2 = img->width ; y2 = a * x2 + b;}
         //
-        img->index = (int)x1 + img->width * ((int)(a*x1 + b));   // @@@test
         for(x = x1 ; x <= x2 ; x += .65) {
             y = a * x + b;
             if (y < 0 || y >= img->height) continue;
-            img->data[(int)x + img->width * ((int)y)] = img->color;
+            img->data[(int)x + img->width * ((int)y)] = color;
         }
     } else {//if (Math.abs(x2 - x1) < Math.abs(y2 - y1)) {
         if (y1 > y2) {
@@ -110,15 +114,15 @@ int f650_draw_line(image *img, double x1, double y1, double x2, double y2) {
         } else if (y1 == y2) {
             return -1;
         }
-        img->a = a = (x2 - x1) / (y2 - y1);
-        img->b = b = x1 - a * y1;
+        a = (x2 - x1) / (y2 - y1);
+        b = x1 - a * y1;
         if (y1 < 0) { y1 = 0 ; x1 = b;}
         if (y2 >= img->height) { y2 = img->height ; x2 = a * y2 + b;}
         //
         for(y = y1 ; y <= y2 ; y += .65) {
             x = a * y + b;
             if (x < 0 || x >= img->width) continue;
-            img->data[(int)x + img->width * ((int)y)] = img->color;
+            img->data[(int)x + img->width * ((int)y)] = color;
         }
     }
     return i;
