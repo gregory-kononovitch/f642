@@ -22,7 +22,14 @@ int main() {
     double x = 0.1, a = 6.335544, b = -7.332;
     struct timeval tv1, tv2;
 
-    x = a650_draw_line(NULL, 1., 1., -2., 4.5);
+    image img;
+    img.width  = 512;
+    img.height = 288;
+    img.x0     = 100;
+    img.y0     = 200;
+    img.sx     = 1.;
+    img.sy     = 1.;
+    x = a650_draw_line(&img, 1., 1., -2., 4.5);
     printf("res = %f\n", x);
 
 
