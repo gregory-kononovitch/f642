@@ -13,5 +13,6 @@
 
 
 void f650_test_asm(image *img, double x) {
-    *(img->data + 10) = 0;
+    int i = 100000;
+    *(img->data + i) = 0;
 }
