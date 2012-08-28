@@ -13,8 +13,8 @@
 
 
 
-int f650_test_asm(image *img, double x) {
-    return (int)x;
+void f650_test_asm(image *img, double x) {
+    *(img->data + 10) = 0;
 }
 
 /*

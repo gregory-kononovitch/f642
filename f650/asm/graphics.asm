@@ -178,7 +178,7 @@ XLINE:
 		subsd			xmm9, xmm5			; b = y1 - a * x1
 		movsd			[rdi + 88], xmm9
 WX1:	; if (x1 < 0) { x1 = 0 ; y1 = b;}
-		xorp			xmm4, xmm4
+		xorpd			xmm4, xmm4
 		ucomisd			xmm4, xmm0
 		seta			al
 		test			al, al
@@ -206,12 +206,12 @@ LOOPX:	; loop
 		; if (y < 0 || y >= h) continue;
 
 		; index
-		cvtsd2si		r8d, xmm5			; y -> r8d
+		cvttsd2si		r8d, xmm5			; (int)y -> r8d
 		xor				r9, r9
 		mov				r9w, [rdi + 8]		; width - r9w/d
 		imul			r8d, r9d			; width * (int)y
 		xor				r9, r9
-		cvtsd2si		r9d, xmm4			; x -> r9d
+		cvttsd2si		r9d, xmm4			; (int)x -> r9d
 		add				r8d, r9d			; index
 		mov				[rdi + 4 * r8d], -1	; set color (@@@ color)
 
