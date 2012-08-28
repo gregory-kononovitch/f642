@@ -11,8 +11,7 @@
 
 #include "f650.h"
 
-
+static double pas = 0.65;
 void f650_test_asm(image *img, double x) {
-    int i = 100000;
-    *(img->data + i) = 0;
+    x += pas;
 }

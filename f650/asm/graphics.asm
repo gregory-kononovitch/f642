@@ -199,7 +199,13 @@ WX22:	movsd			xmm2, xmm10			; x2 = width
 		movsd			xmm3, xmm4			; y2 =
 
 TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
+		mov				rax, 65
+		cvtsi2sd		xmm6, rax
+		mov				rax, 10
+		cvtsi2sd		xmm7, rax
+		divsd			xmm6, xmm7			; xmm6 = 0.65
 LOOPX:	; loop
+		; xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
 		mulsd			xmm5, xmm8			; y = a * x
 		addsd			xmm5, xmm9			; y = y + b
@@ -214,8 +220,18 @@ LOOPX:	; loop
 		cvttsd2si		r9d, xmm4			; (int)x -> r9d
 		add				r8d, r9d			; index
 		mov				[rdi + 96], r8d		; @@@ test
-;		mov			[rdi + 4 * r8d], -1	; set color (@@@ color)
+		mov				rax, [rdi]			;
+		shl				r8, 2				;
+		add				rax, r8				;
+		mov				r9d, [rdi + 100]
+		mov				[rax], r9d			; set color (@@@ color)
 
+COOPX:	;
+		addsd			xmm4, xmm6			; x += 0.65
+		ucomisd			xmm4, xmm2
+		seta			al
+		test			al, al
+		je				LOOPX				; xmm2 >= xmm4
 		jmp				RETOK
 
 YAXIS:
