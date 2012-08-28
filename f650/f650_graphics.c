@@ -9,24 +9,12 @@
  */
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
+#include "f650.h"
 
 
-typedef struct f650_int_rgb {
-    int32_t     *img;
-    int         width;
-    int         height;
-    int         size;
-} image;
 
-double f650_line(double x) {
-    if (x < 0) {
+double f650_line(image *img, double x) {
+    if (x > img->width) {
         x = -x;
     }
     return x;
