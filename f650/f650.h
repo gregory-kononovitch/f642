@@ -52,6 +52,9 @@ int  f650_new_image(image *img, int width, int height);
 void f650_img_origin(image *img, double x0, double y0);
 void f650_img_scale(image *img, double sx, double sy);
 
+// Util
+int f650_img_compare(image *img1, image *img2);
+
 // For testing
 void t650_clear_test(image *img);
 

@@ -45,6 +45,28 @@ void t650_clear_test(image *img) {
     memset(img->data, 0, 4 * img->size);
     img->x1 = img->x2 = img->y1 = img->y2 = img->a = img->b = img->index = 0;
 }
+
+int f650_img_compare(image *img1, image *img2) {
+    if (img1->width != img2->width || img1->height != img2->height) return -1;
+    int32_t *p1 = img1->data;
+    int32_t *p2 = img2->data;
+    int i, equ = 0, dif = 0;
+    int pix1 = 0, pix2 = 0;
+
+    for(i = 0 ; i < img1->size ; i++) {
+        if (*p1 == *p2) {
+            if (*p1 != 0) equ++;
+        } else {
+            dif++;
+        }
+        if (*p1 != 0) pix1++;
+        if (*p2 != 0) pix2++;
+        p1++;
+        p2++;
+    }
+    printf("ImgCompare : equal = %d ; different = %d ; img1 = %d ; img2 = %d\n", equ, dif, pix1, pix2);
+    return dif != 0;
+}
 /*
  *
  */
