@@ -22,16 +22,22 @@
 
 
 typedef struct {
-    int32_t     *data;
-    int16_t     width;
-    int16_t     height;
-    int32_t     size;
+    int32_t     *data;          // 0
+    int16_t     width;          // 8
+    int16_t     height;         // 10
+    int32_t     size;           // 12
     //
-    double      x0;
-    double      y0;
-    double      sx;
-    double      sy;
+    double      x0;             // 16
+    double      y0;             // 24
+    double      sx;             // 32
+    double      sy;             // 40
     //
+    double      x1;             // 48
+    double      y1;             // 56
+    double      x2;             // 64
+    double      y2;             // 72
+    double      a;              // 80
+    double      b;              // 88
 } image;
 
 // asm

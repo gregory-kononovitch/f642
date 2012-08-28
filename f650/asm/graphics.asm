@@ -20,7 +20,7 @@ SECTION .text  align=16
 ; h  -> xmm11
 ; x0 -
 a650_draw_line:
-		; prepar : x = sx * (x - x0) + width / 2
+P1:		; prepar : x = sx * (x - x0) + width / 2
 		movsd			xmm4, [rdi + 16]	; x0 -> xmm4
 		subsd			xmm0, xmm4			; x1 = x1 - x0
 		subsd			xmm2, xmm4			; x2 = x2 - x0
@@ -35,6 +35,9 @@ a650_draw_line:
 		divsd			xmm4, xmm5			; w2 -> xmm4
 		addsd			xmm0, xmm4			; x1 = x1 + w2
 		addsd			xmm2, xmm4			; x2 = x2 + w2
+		; tests
+		movsd			[rdi + 48], xmm0
+		movsd			[rdi + 56], xmm1
 
 		; tests x
 T1:		; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
@@ -42,17 +45,32 @@ T1:		; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
 		ucomisd			xmm4, xmm0
 		seta			al
 		test			al, al
-		je				T11
-		jmp				T2
+		je				T2
+
 T11:
 		xorpd			xmm4, xmm4
 		ucomisd			xmm4, xmm2
 		seta			al
 		test			al, al
-		je				TESTKO
+		je				T2
+		jmp				TESTKO
 
-T2:
-		; prepar : y = height / 2 - sy * (y - y0)
+T2:		; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
+;		xor				rax, rax
+;		mov				ax, [rdi + 8]		; ax = width
+;		cvtsi2sd		xmm4, eax			; width -> xmm4
+;		ucomisd			xmm0, xmm4
+;		setae			al
+;		test			al, al
+;		je				T21
+;		jmp				P2
+;T21:
+;		ucomisd			xmm2, xmm4
+;		setae			al
+;		test			al, al
+;		je				TESTKO
+
+P2:		; prepar : y = height / 2 - sy * (y - y0)
 		movsd			xmm4, [rdi + 24]	; y0 -> xmm4
 		subsd			xmm1, xmm4			; y1 = y1 - y0
 		subsd			xmm3, xmm4			; y2 = y2 - y0
@@ -70,12 +88,9 @@ T2:
 		movsd			xmm1, xmm4			;
 		subsd			xmm5, xmm3			; xmm5 = h2 - y2
 		movsd			xmm3, xmm5
-
-
-TESTKO:	;
-		mov				rdi, -1
-		cvtsi2sd		xmm5, rdi			; temp for tests
-		ret
+		; tests
+		movsd			[rdi + 64], xmm2
+		movsd			[rdi + 72], xmm3
 
 ABSX:	; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm6
 		movsd			xmm4, xmm2
@@ -115,10 +130,23 @@ CMPdXdY:
 		jmp				YAXIS
 
 XAXIS:	; abs(x2 - x1) > abs(y2 - y1)
-		movsd			xmm0, xmm3
+		movsd			[rdi + 80], xmm8
+		movsd			[rdi + 88], xmm9
 		ret
 
 YAXIS:
-		movsd			xmm0, xmm3
+		movsd			[rdi + 80], xmm8
+		movsd			[rdi + 88], xmm9
         ret
+
+RETOK:
+		xor				rdi, rdi
+		cvtsi2sd		xmm0, rdi			; temp for tests
+		ret
+
+TESTKO:	;
+		mov				rdi, -1
+		cvtsi2sd		xmm0, rdi			; temp for tests
+		ret
+
 ;a650_draw_line  ENDP

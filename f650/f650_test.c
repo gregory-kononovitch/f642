@@ -23,14 +23,16 @@ int main() {
     struct timeval tv1, tv2;
 
     image img;
+    memset(&img, 0, sizeof(image));
     img.width  = 512;
     img.height = 288;
     img.x0     = 100;
     img.y0     = 200;
     img.sx     = 1.;
     img.sy     = 1.;
+    // x' = x - 100 + 256
     x = a650_draw_line(&img, 1., 1., -2., 4.5);
-    printf("res = %f\n", x);
+    printf("res = %f, x1 = %f, y1 = %f, x2 = %f, y2 = %f\n", x, img.x1, img.y1, img.x2, img.y2);
 
 
 //    //
