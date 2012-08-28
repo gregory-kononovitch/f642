@@ -35,6 +35,23 @@ a650_draw_line:
 		divsd			xmm4, xmm5			; w2 -> xmm4
 		addsd			xmm0, xmm4			; x1 = x1 + w2
 		addsd			xmm2, xmm4			; x2 = x2 + w2
+
+		; tests x
+T1:		; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
+		xorpd			xmm4, xmm4
+		ucomisd			xmm4, xmm0
+		seta			al
+		test			al, al
+		je				T11
+		jmp				T2
+T11:
+		xorpd			xmm4, xmm4
+		ucomisd			xmm4, xmm2
+		seta			al
+		test			al, al
+		je				TESTKO
+
+T2:
 		; prepar : y = height / 2 - sy * (y - y0)
 		movsd			xmm4, [rdi + 24]	; y0 -> xmm4
 		subsd			xmm1, xmm4			; y1 = y1 - y0
@@ -53,6 +70,13 @@ a650_draw_line:
 		movsd			xmm1, xmm4			;
 		subsd			xmm5, xmm3			; xmm5 = h2 - y2
 		movsd			xmm3, xmm5
+
+
+TESTKO:	;
+		mov				rdi, -1
+		cvtsi2sd		xmm5, rdi			; temp for tests
+		ret
+
 ABSX:	; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm6
 		movsd			xmm4, xmm2
 		subsd			xmm4, xmm0	; xmm4 = x2 - x1
