@@ -68,3 +68,26 @@ double vectf650(vect650 *u, vect650 *v, vect650 *w) {
     w->z = u->x * v->y - u->y * v->x;
     return w->z;
 }
+
+vect650 *change_vectf650(ref650 *ref, vect650 *u) {
+    double x = ref->xAxis.x * u->x + ref->xAxis.y * u->y + ref->xAxis.z * u->z;
+    double y = ref->yAxis.x * u->x + ref->yAxis.y * u->y + ref->yAxis.z * u->z;
+    double z = ref->zAxis.x * u->x + ref->zAxis.y * u->y + ref->zAxis.z * u->z;
+    u->x = x;
+    u->y = y;
+    u->z = z;
+    return u;
+}
+
+vect650 *change_pointf650(ref650 *ref, vect650 *p) {
+    p->x -= ref->origin.x;
+    p->y -= ref->origin.y;
+    p->z -= ref->origin.z;
+    double x = ref->xAxis.x * p->x + ref->xAxis.y * p->y + ref->xAxis.z * p->z;
+    double y = ref->yAxis.x * p->x + ref->yAxis.y * p->y + ref->yAxis.z * p->z;
+    double z = ref->zAxis.x * p->x + ref->zAxis.y * p->y + ref->zAxis.z * p->z;
+    p->x = x;
+    p->y = y;
+    p->z = z;
+    return p;
+}

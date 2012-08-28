@@ -181,8 +181,21 @@ typedef union {
     };
 } ref650;
 
-vect650 *change_vecta650(vect650 *u);
-vect650 *change_pointa650(vect650 *p);
+vect650 *change_vecta650(ref650 *ref, vect650 *u);
+vect650 *change_vectf650(ref650 *ref, vect650 *u);
+#ifdef ASM650
+#define change_vect650(ref, u) change_vecta650(ref, u)
+#else
+#define change_vect650(ref, u) change_vectf650(ref, u)
+#endif
+
+vect650 *change_pointa650(ref650 *ref, vect650 *p);
+vect650 *change_pointf650(ref650 *ref, vect650 *p);
+#ifdef ASM650
+#define change_point650(ref, u) change_pointa650(ref, u)
+#else
+#define change_point650(ref, u) change_pointf650(ref, u)
+#endif
 
 // asm
 int64_t ReadTSC();
