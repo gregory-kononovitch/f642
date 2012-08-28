@@ -35,25 +35,6 @@ typedef struct {
 } bgra650;
 
 
-typedef union {
-    struct {
-        double x;
-        double y;
-        double z;
-        double t;
-    };
-    struct {
-        double array[4];
-    };
-    struct {
-        double r;
-        double a;
-        double z;
-        double t;
-    } cyl;
-} vect650;
-
-
 #define BLACK650    0xff000000
 #define WHITE650    0xffffffff
 #define RED650      0xffff0000
@@ -74,8 +55,48 @@ typedef union {
 } color650;
 
 
+typedef union {
+    struct {
+        double x;
+        double y;
+        double z;
+        double t;
+    };
+    struct {
+        double array[4];
+    };
+    struct {
+        double r;
+        double a;
+        double z;
+        double t;
+    } cyl;
+} vect650;
 
 
+void random650(vect650 *u);
+
+double norma650(vect650 *u);
+double normf650(vect650 *u);
+#define norm650(u) norma650(u)
+
+double unita650(vect650 *u);
+double unitf650(vect650 *u);
+#define unit650(u) unita650(u)
+
+void adda650(vect650 *u, vect650 *v);
+#define add650(u) adda650(u)
+
+void add_mula650(vect650 *u, double a, vect650 *v);
+#define add_mul650(u, a, v) add_mula650(u, a, v)
+
+double scala650(vect650 *u, vect650 *v);
+double scalf650(vect650 *u, vect650 *v);
+#define scal650(u, v) scala650(u, v)
+
+double vecta650(vect650 *u, vect650 *v, vect650 *w);
+double vectf650(vect650 *u, vect650 *v, vect650 *w);
+#define vect650(u, v, w) vecta650(u, v, w)
 
 
 

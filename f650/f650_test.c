@@ -16,7 +16,7 @@
 
 
 
-int main() {
+int test_line650() {
     int i, r;
     long l1, l2;
     double x = 0.1, a = 6.335544, b = -7.332;
@@ -178,5 +178,105 @@ int main() {
     timersub(&tv2, &tv1, &tv2);
     printf("Last %lus.%06luµs for %ld µops : img1 / img2 = %d for %ld pixels\n", tv2.tv_sec, tv2.tv_usec, l2 - l1, f650_img_compare(&img1, &img2), cpt);
 
+    return 0;
+}
+
+
+
+int test_geo1() {
+    int i;
+    long l1, l2;
+    double d;
+    struct timeval tv1, tv2;
+    vect650 u, v, w;
+
+    //
+    u.x = 12.443 ; u.y = 6.33234 ; u.z = -8.733;
+    v.x = 1.683  ; v.y = -6.3434 ; v.z = -2.733;
+    w.x = -1.443 ; w.y = 0.9034  ; w.z = 5.733;
+    //
+    printf("|u| = %f / %f\n", norma650(&u), normf650(&u));
+    printf("|v| = %f / %f\n", norma650(&v), normf650(&v));
+    printf("|w| = %f / %f\n", norma650(&w), normf650(&w));
+    //
+    l1 = ReadTSC();
+    d = norma650(&u);
+    l2 = ReadTSC();
+    printf("A norm : %ld\n", l2 - l1);
+    //
+    l1 = ReadTSC();
+    d = normf650(&u);
+    l2 = ReadTSC();
+    printf("C norm : %ld\n", l2 - l1);
+
+    //
+    l1 = ReadTSC();
+    d = unita650(&u);
+    l2 = ReadTSC();
+    printf("A unit : %ld = %f\n", l2 - l1, u.x);
+    //
+    l1 = ReadTSC();
+    d = unitf650(&u);
+    l2 = ReadTSC();
+    printf("C unit : %ld = %f\n", l2 - l1, u.x);
+
+//    //
+//    gettimeofday(&tv1, NULL);
+//    l1 = ReadTSC();
+//    for(i = 0 ; i < 1000000 ; i++) {
+//        random650(&u);
+//        d = unita650(&u);
+//    }
+//    l2 = ReadTSC();
+//    gettimeofday(&tv2, NULL);
+//    timersub(&tv2, &tv1, &tv2);
+//    printf("A unit = %lds.%06luµs for %ld\n", tv2.tv_sec, tv2.tv_usec, l2 - l1);
+//
+//    //
+//    gettimeofday(&tv1, NULL);
+//    l1 = ReadTSC();
+//    for(i = 0 ; i < 1000000 ; i++) {
+//        random650(&u);
+//        d = unitf650(&u);
+//    }
+//    l2 = ReadTSC();
+//    gettimeofday(&tv2, NULL);
+//    timersub(&tv2, &tv1, &tv2);
+//    printf("C unit = %lds.%06luµs for %ld\n", tv2.tv_sec, tv2.tv_usec, l2 - l1);
+
+    //
+    l1 = ReadTSC();
+    d = scala650(&u, &v);
+    l2 = ReadTSC();
+    printf("A scal : %ld = %f\n", l2 - l1, d);
+    //
+    l1 = ReadTSC();
+    d  = scalf650(&u, &v);
+    l2 = ReadTSC();
+    printf("C scal : %ld = %f\n", l2 - l1, d);
+
+    //
+    l1 = ReadTSC();
+    d  = vecta650(&u, &v, &w);
+    l2 = ReadTSC();
+    printf("A vect : %ld = %f\n", l2 - l1, d);
+    //
+    l1 = ReadTSC();
+    d  = vectf650(&u, &v, &w);
+    l2 = ReadTSC();
+    printf("C vect : %ld = %f\n", l2 - l1, d);
+    //
+    l1 = ReadTSC();
+    d  = vect650(&u, &v, &w);
+    l2 = ReadTSC();
+    printf("? vect : %ld = %f\n", l2 - l1, d);
+
+    return 0;
+}
+
+
+int main() {
+    //test_line650();
+    test_geo1();
     return 0;
 }
