@@ -213,7 +213,8 @@ LOOPX:	; loop
 		xor				r9, r9
 		cvttsd2si		r9d, xmm4			; (int)x -> r9d
 		add				r8d, r9d			; index
-		mov				[rdi + 4 * r8d], -1	; set color (@@@ color)
+		mov				[rdi + 96], r8d		; @@@ test
+;		mov			[rdi + 4 * r8d], -1	; set color (@@@ color)
 
 		jmp				RETOK
 

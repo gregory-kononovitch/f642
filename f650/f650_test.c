@@ -55,6 +55,15 @@ int main() {
     x = f650_draw_line(&img, 250, 195, 200.000001, 204.5);
     printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
 
+    // x' = x + 156 / y' = 344 - y      OK:
+    f650_img_origin(&img, 0, 0);
+    t650_clear_test(&img);
+    x = a650_draw_line(&img, -10, 20, 100, 100);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f i %d\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b, img.index);
+    t650_clear_test(&img);
+    x = f650_draw_line(&img, -10, 20, 100, 100);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f, i %d\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b, img.index);
+
 
 //    //
 //    x = 0.1;

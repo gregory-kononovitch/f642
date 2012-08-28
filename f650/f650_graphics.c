@@ -13,9 +13,6 @@
 
 
 
-void f650_test_asm(image *img, double x) {
-    *(img->data + 10) = 0;
-}
 
 /*
  *
@@ -46,7 +43,7 @@ void f650_img_scale(image *img, double sx, double sy) {
 
 void t650_clear_test(image *img) {
     memset(img->data, 0, 4 * img->size);
-    img->x1 = img->x2 = img->y1 = img->y2 = img->a = img->b = 0;
+    img->x1 = img->x2 = img->y1 = img->y2 = img->a = img->b = img->index = 0;
 }
 /*
  *
@@ -75,6 +72,7 @@ int f650_draw_line(image *img, double x1, double y1, double x2, double y2) {
         if (x1 < 0) { x1 = 0 ; y1 = b;}
         if (x2 >= img->width) { x2 = img->width ; y2 = a * x2 + b;}
         //
+        img->index = (int)x1 + img->width * ((int)(a*x1 + b));   // @@@test
         for(x = x1 ; x <= x2 ; x += .65) {
             y = a * x + b;
             if (y < 0 || y >= img->height) continue;

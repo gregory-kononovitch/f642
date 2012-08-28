@@ -39,8 +39,9 @@ typedef struct {
     double      y2;             // 72
     double      a;              // 80
     double      b;              // 88
+    int         index;          // 96
     //
-    int         color;          // 96
+    int         color;          // 100
 } image;
 
 // asm
