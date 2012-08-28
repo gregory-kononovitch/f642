@@ -164,14 +164,20 @@ XAXIS:	; abs(x2 - x1) > abs(y2 - y1)
 		test			al, al
 		je				XLINE				; xmm2 >= xmm1
 SWPX:	; swap x1, x2 & y1, y2
-		movsd			xmm4, xmm0
+		movsd			xmm8, xmm0
 		movsd			xmm0, xmm2
-		movsd			xmm2, xmm4
-		movsd			xmm4, xmm1
+		movsd			xmm2, xmm8
+		movsd			xmm8, xmm1
 		movsd			xmm1, xmm3
-		movsd			xmm3, xmm4
+		movsd			xmm3, xmm8
 XLINE:
-		movsd			[rdi + 80], xmm8
+		movsd			xmm8, xmm6			; xmm8 = y2 - y1
+		divsd			xmm8, xmm4			; a = xmm8 = (y2 - y1) / (x2 - x1)
+		movsd			[rdi + 80], xmm8	; store a for tests
+		movsd			xmm5, xmm8			; a
+		mulsd			xmm5, xmm0			; a * x1
+		movsd			xmm9, xmm1			; y1
+		subsd			xmm9, xmm5			; b = y1 - a * y1
 		movsd			[rdi + 88], xmm9
 		jmp				RETOK
 

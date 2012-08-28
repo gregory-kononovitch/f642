@@ -20,6 +20,7 @@
 #include <sys/time.h>
 #include <stdint.h>
 
+#include <math.h>
 
 typedef struct {
     int32_t     *data;          // 0
@@ -31,17 +32,22 @@ typedef struct {
     double      y0;             // 24
     double      sx;             // 32
     double      sy;             // 40
-    //
+    // For ASM test
     double      x1;             // 48
     double      y1;             // 56
     double      x2;             // 64
     double      y2;             // 72
     double      a;              // 80
     double      b;              // 88
+    //
+    int         color;          // 96
 } image;
 
 // asm
 int64_t ReadTSC();
+
+// Draw line
+int    f650_draw_line(image *img, double x1, double y1, double x2, double y2);
 double a650_draw_line(image *img, double x1, double y1, double x2, double y2);
 
 

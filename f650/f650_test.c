@@ -17,7 +17,7 @@
 
 
 int main() {
-    int i;
+    int i, r;
     long l1, l2;
     double x = 0.1, a = 6.335544, b = -7.332;
     struct timeval tv1, tv2;
@@ -32,7 +32,10 @@ int main() {
     img.sy     = 1.;
     // x' = x - 100 + 256
     x = a650_draw_line(&img, 356.000001, -157., 356, 4.5);
-    printf("res = %f, x1 = %f, y1 = %f, x2 = %f, y2 = %f\n", x, img.x1, img.y1, img.x2, img.y2);
+    printf("res = %f, x1 = %f, y1 = %f, x2 = %f, y2 = %f, a = %f, b = %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+    r = f650_draw_line(&img, 356.000001, -157., 356, 4.5);
+    printf("res = %f, x1 = %f, y1 = %f, x2 = %f, y2 = %f, a = %f, b = %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+
 
 
 //    //
