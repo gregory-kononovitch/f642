@@ -210,13 +210,13 @@ LOOPX:	; loop
 		movsd			xmm5, xmm4			; xmm5 = y = x
 		mulsd			xmm5, xmm8			; y = a * x
 		addsd			xmm5, xmm9			; y = y + b
-TI1:	; if (y < 0) continue;
+TIX1:	; if (y < 0) continue;
 		ucomisd			xmm12, xmm5
 		seta			al
 		test			al, al
-		je				TI2					; y >= 0
+		je				TIX2				; y >= 0
 		jmp				COOPX
-TI2:	; if (y >= h) continue;
+TIX2:	; if (y >= h) continue;
 		ucomisd			xmm11, xmm5
 		seta			al
 		test			al, al
@@ -301,7 +301,7 @@ TIY1:	; if (x < 0) continue;
 		ucomisd			xmm12, xmm5
 		seta			al
 		test			al, al
-		je				TI2					; x >= 0
+		je				TIY2					; x >= 0
 		jmp				COOPY
 TIY2:	; if (x >= w) continue;
 		ucomisd			xmm10, xmm5
@@ -324,7 +324,7 @@ COOPY:	;
 		ucomisd			xmm4, xmm3
 		seta			al
 		test			al, al
-		je				LOOPX				; xmm3 >= xmm4
+		je				LOOPY				; xmm3 >= xmm4
 		jmp				RETOK
 
 
