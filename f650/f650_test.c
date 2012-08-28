@@ -23,19 +23,37 @@ int main() {
     struct timeval tv1, tv2;
 
     image img;
-    memset(&img, 0, sizeof(image));
-    img.width  = 512;
-    img.height = 288;
-    img.x0     = 100;
-    img.y0     = 200;
-    img.sx     = 1.;
-    img.sy     = 1.;
-    // x' = x - 100 + 256
-    x = a650_draw_line(&img, 356.000001, -157., 356, 4.5);
-    printf("res = %f, x1 = %f, y1 = %f, x2 = %f, y2 = %f, a = %f, b = %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
-    r = f650_draw_line(&img, 356.000001, -157., 356, 4.5);
-    printf("res = %f, x1 = %f, y1 = %f, x2 = %f, y2 = %f, a = %f, b = %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+    f650_new_image(&img, 512, 288);
+    f650_img_origin(&img, 100, 200);
+    f650_img_scale(&img, 1., 1.);
 
+    // x' = x + 156 / y' = 344 - y      KO: x
+    t650_clear_test(&img);
+    x = a650_draw_line(&img, 356.000001, -157., 356, 4.5);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+    t650_clear_test(&img);
+    x = f650_draw_line(&img, 356.000001, -157., 356, 4.5);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+
+    printf("\n");
+
+    // x' = x + 156 / y' = 344 - y      OK:
+    t650_clear_test(&img);
+    x = a650_draw_line(&img, 200.000001, 195, 250, 204.5);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+    t650_clear_test(&img);
+    x = f650_draw_line(&img, 200.000001, 195, 250, 204.5);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+
+    printf("\n");
+
+    // x' = x + 156 / y' = 344 - y      OK:
+    t650_clear_test(&img);
+    x = a650_draw_line(&img, 250, 195, 200.000001, 204.5);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
+    t650_clear_test(&img);
+    x = f650_draw_line(&img, 250, 195, 200.000001, 204.5);
+    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img.x1, img.y1, img.x2, img.y2, img.a, img.b);
 
 
 //    //

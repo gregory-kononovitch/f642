@@ -46,6 +46,14 @@ typedef struct {
 // asm
 int64_t ReadTSC();
 
+// init
+int  f650_new_image(image *img, int width, int height);
+void f650_img_origin(image *img, double x0, double y0);
+void f650_img_scale(image *img, double sx, double sy);
+
+// For testing
+void t650_clear_test(image *img);
+
 // Draw line
 int    f650_draw_line(image *img, double x1, double y1, double x2, double y2);
 double a650_draw_line(image *img, double x1, double y1, double x2, double y2);

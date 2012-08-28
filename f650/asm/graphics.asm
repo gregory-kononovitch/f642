@@ -29,7 +29,8 @@ PX:		; prepar : x = sx * (x - x0) + width / 2
 		mulsd			xmm2, xmm5			; x2 = sx * x2
 		xor				rax, rax
 		mov				ax, [rdi + 8]		; ax = width
-		cvtsi2sd		xmm4, eax			; width -> xmm4
+		cvtsi2sd		xmm10, eax			; width -> xmm10
+		movsd			xmm4, xmm10
 		mov				eax, 2
 		cvtsi2sd		xmm5, eax			; 2 -> xmm5
 		divsd			xmm4, xmm5			; w2 -> xmm4
@@ -55,9 +56,7 @@ TX11:
 		jmp				TESTKO				; xmm2 < 0
 
 TX2:		; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
-		xor				rax, rax
-		mov				ax, [rdi + 8]		; ax = width
-		cvtsi2sd		xmm4, eax			; width -> xmm4
+		movsd			xmm4, xmm10			; width -> xmm4
 		ucomisd			xmm4, xmm0
 		seta			al
 		test			al, al
@@ -78,7 +77,8 @@ PY:		; prepar : y = height / 2 - sy * (y - y0)
 		mulsd			xmm3, xmm5			; y2 = sy * y2
 		xor				rax, rax
 		mov				ax, [rdi + 10]		; ax = height
-		cvtsi2sd		xmm4, eax			; height -> xmm4
+		cvtsi2sd		xmm11, eax			; height -> xmm11
+		movsd			xmm4, xmm11
 		mov				eax, 2
 		cvtsi2sd		xmm5, eax			; 2 -> xmm5
 		divsd			xmm4, xmm5			; h2 -> xmm4
@@ -107,9 +107,7 @@ TY11:
 		jmp				TESTKO				; xmm3 < 0
 
 TY2:	; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
-		xor				rax, rax
-		mov				ax, [rdi + 10]		; ax = height
-		cvtsi2sd		xmm4, eax			; height -> xmm4
+		movsd			xmm4, xmm11			; height -> xmm4
 		ucomisd			xmm4, xmm1
 		seta			al
 		test			al, al
@@ -162,7 +160,7 @@ XAXIS:	; abs(x2 - x1) > abs(y2 - y1)
 		ucomisd			xmm0, xmm2
 		seta			al
 		test			al, al
-		je				XLINE				; xmm2 >= xmm1
+		je				XLINE				; xmm2 >= xmm0
 SWPX:	; swap x1, x2 & y1, y2
 		movsd			xmm8, xmm0
 		movsd			xmm0, xmm2
@@ -177,14 +175,70 @@ XLINE:
 		movsd			xmm5, xmm8			; a
 		mulsd			xmm5, xmm0			; a * x1
 		movsd			xmm9, xmm1			; y1
-		subsd			xmm9, xmm5			; b = y1 - a * y1
+		subsd			xmm9, xmm5			; b = y1 - a * x1
 		movsd			[rdi + 88], xmm9
+WX1:	; if (x1 < 0) { x1 = 0 ; y1 = b;}
+		xorp			xmm4, xmm4
+		ucomisd			xmm4, xmm0
+		seta			al
+		test			al, al
+		je				WX2					; x1 >= 0
+		movsd			xmm0, xmm4			; x1 = 0
+		movsd			xmm1, xmm9			; y1 = b
+
+WX2:	; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;}
+		movsd			xmm4, xmm10
+		ucomisd			xmm4, xmm2
+		seta			al
+		test			al, al
+		je				WX22				; x2 >= width
+		jmp				TX
+WX22:	movsd			xmm2, xmm10			; x2 = width
+		mulsd			xmm4, xmm8			; a * width
+		addsd			xmm4, xmm9			; + b
+		movsd			xmm3, xmm4			; y2 =
+
+TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
+LOOPX:	; loop
+		movsd			xmm5, xmm4			; xmm5 = y = x
+		mulsd			xmm5, xmm8			; y = a * x
+		addsd			xmm5, xmm9			; y = y + b
+		; if (y < 0 || y >= h) continue;
+
+		; index
+		cvtsd2si		r8d, xmm5			; y -> r8d
+		xor				r9, r9
+		mov				r9w, [rdi + 8]		; width - r9w/d
+		imul			r8d, r9d			; width * (int)y
+		xor				r9, r9
+		cvtsd2si		r9d, xmm4			; x -> r9d
+		add				r8d, r9d			; index
+		mov				[rdi + 4 * r8d], -1	; set color (@@@ color)
+
 		jmp				RETOK
 
 YAXIS:
-		movsd			[rdi + 80], xmm8
+		ucomisd			xmm1, xmm3
+		seta			al
+		test			al, al
+		je				YLINE				; xmm3 >= xmm1
+SWPY:	; swap x1, x2 & y1, y2
+		movsd			xmm8, xmm0
+		movsd			xmm0, xmm2
+		movsd			xmm2, xmm8
+		movsd			xmm8, xmm1
+		movsd			xmm1, xmm3
+		movsd			xmm3, xmm8
+YLINE:
+		movsd			xmm8, xmm4			; xmm8 = x2 - x1
+		divsd			xmm8, xmm6			; a = xmm8 = (x2 - x1) / (y2 - y1)
+		movsd			[rdi + 80], xmm8	; store a for tests
+		movsd			xmm5, xmm8			; a
+		mulsd			xmm5, xmm1			; a * y1
+		movsd			xmm9, xmm0			; x1
+		subsd			xmm9, xmm5			; b = x1 - a * y1
 		movsd			[rdi + 88], xmm9
-        jmp				RETOK
+		jmp				RETOK
 
 RETOK:
 		xor				rdi, rdi

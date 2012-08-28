@@ -23,6 +23,37 @@ double f650_test_asm(image *img, double x) {
 /*
  *
  */
+int f650_new_image(image *img, int width, int height) {
+    if (!img) return -1;
+    memset(img, 0, sizeof(image));
+    img->data   = calloc(width * height, sizeof(int32_t));
+    img->width  = width;
+    img->height = height;
+    img->size   = width * height;
+    img->x0 = 0;
+    img->y0 = 0;
+    img->sx = 1;
+    img->sy = 1;
+    return img->data == NULL;
+}
+
+void f650_img_origin(image *img, double x0, double y0) {
+    img->x0 = x0;
+    img->y0 = y0;
+}
+
+void f650_img_scale(image *img, double sx, double sy) {
+    img->sx = sx;
+    img->sy = sy;
+}
+
+void t650_clear_test(image *img) {
+    memset(img->data, 0, 4 * img->size);
+    img->x1 = img->x2 = img->y1 = img->y2 = img->a = img->b = 0;
+}
+/*
+ *
+ */
 int f650_draw_line(image *img, double x1, double y1, double x2, double y2) {
     double a, b, x, y;
     int i = 0;
