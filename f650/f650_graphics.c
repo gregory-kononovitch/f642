@@ -46,6 +46,9 @@ void t650_clear_test(image *img) {
     img->x1 = img->x2 = img->y1 = img->y2 = img->a = img->b = img->index = 0;
 }
 
+/*
+ * a650_draw_line(&img1, 100, 20, -10, 30) != a650_draw_line(&img1, -10, 20, 100, 30) 110 pixels / 111 pixels
+ */
 int f650_img_compare(image *img1, image *img2) {
     if (img1->width != img2->width || img1->height != img2->height) return -1;
     int32_t *p1 = img1->data;

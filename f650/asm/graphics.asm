@@ -5,6 +5,9 @@ default rel
 
 global a650_draw_line: function
 
+SECTION .data
+HALF	dq				0.5
+PAS		dq				0.65
 
 SECTION .text  align=16
 
@@ -30,10 +33,9 @@ PX:		; prepar : x = sx * (x - x0) + width / 2
 		xor				rax, rax
 		mov				ax, [rdi + 8]		; ax = width
 		cvtsi2sd		xmm10, eax			; width -> xmm10
-		movsd			xmm4, xmm10
-		mov				eax, 2
-		cvtsi2sd		xmm5, eax			; 2 -> xmm5
-		divsd			xmm4, xmm5			; w2 -> xmm4
+		movsd			xmm4, xmm10			; width -> xmm4
+		movsd			xmm5, QWORD [HALF]	; .5 -> xmm5
+		mulsd			xmm4, QWORD [HALF]			; w2 -> xmm4
 		addsd			xmm0, xmm4			; x1 = x1 + w2
 		addsd			xmm2, xmm4			; x2 = x2 + w2
 		; tests
@@ -199,11 +201,7 @@ WX22:	movsd			xmm2, xmm10			; x2 = width
 		movsd			xmm3, xmm4			; y2 =
 
 TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
-		mov				rax, 65
-		cvtsi2sd		xmm6, rax
-		mov				rax, 100
-		cvtsi2sd		xmm7, rax
-		divsd			xmm6, xmm7			; xmm6 = 0.65
+		movsd			xmm6, QWORD [PAS]	; xmm6 = 0.65
 LOOPX:	; loop
 		; xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
@@ -224,7 +222,8 @@ LOOPX:	; loop
 		shl				r8, 2				;
 		add				rax, r8				;
 		mov				r9d, [rdi + 100]
-		mov				[rax], r9d			; set color (@@@ color)
+		mov				[rax], r9d			;
+;		mov				[rax], DWORD [rdi + 100]
 
 COOPX:	;
 		addsd			xmm4, xmm6			; x += 0.65
