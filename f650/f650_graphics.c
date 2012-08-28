@@ -14,8 +14,8 @@
 
 
 double f650_line(image *img, double x) {
-    if (x > img->width) {
-        x = -x;
+    if (x > img->x0) {
+        x = img->width;
     }
     return x;
 }

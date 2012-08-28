@@ -26,6 +26,12 @@ typedef struct {
     int16_t     width;
     int16_t     height;
     int32_t     size;
+    //
+    double      x0;
+    double      y0;
+    double      sx;
+    double      sy;
+    //
 } image;
 
 // asm
