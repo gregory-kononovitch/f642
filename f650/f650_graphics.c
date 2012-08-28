@@ -13,11 +13,8 @@
 
 
 
-double f650_test_asm(image *img, double x) {
-    if (x >= 0) {
-        x = img->width;
-    }
-    return x;
+int f650_test_asm(image *img, double x) {
+    return (int)x;
 }
 
 /*
