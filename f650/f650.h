@@ -56,7 +56,9 @@ typedef union {
     };
 } color650;
 
-typedef union {
+typedef union _vect650_ vect650;
+
+union _vect650_ {
     struct {
         double x;
         double y;
@@ -76,7 +78,7 @@ typedef union {
         double x;
         double y;
         double z;
-        void *next;
+        vect650 *next;
     } nist;
     struct {
         double x1;
@@ -88,15 +90,15 @@ typedef union {
         double x;
         double y;
         double z;
-        void *u;
+        vect650 *u;
     } line;
     struct {
         double x;
         double y;
         double z;
-        void *n;
+        vect650 *n;
     } plan;
-} vect650;
+};
 
 
 void random650(vect650 *u);

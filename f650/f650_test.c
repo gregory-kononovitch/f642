@@ -274,6 +274,13 @@ int test_geo1() {
     return 0;
 }
 
+int test_geo2() {
+    vect650 plan;
+    vect650 n;
+
+    plan.plan.n = &n;
+
+}
 
 int main() {
     //test_line650();
