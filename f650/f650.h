@@ -22,6 +22,8 @@
 
 #include <math.h>
 
+#define ASM650
+
 typedef struct {
     uint32_t    *data;          // 0
     int16_t     width;          // 8
@@ -54,7 +56,6 @@ typedef union {
     };
 } color650;
 
-
 typedef union {
     struct {
         double x;
@@ -71,6 +72,30 @@ typedef union {
         double z;
         double t;
     } cyl;
+    struct {
+        double x;
+        double y;
+        double z;
+        void *next;
+    } nist;
+    struct {
+        double x1;
+        double y1;
+        double x2;
+        double y2;
+    } seg2d;
+    struct {
+        double x;
+        double y;
+        double z;
+        void *u;
+    } line;
+    struct {
+        double x;
+        double y;
+        double z;
+        void *n;
+    } plan;
 } vect650;
 
 
@@ -78,29 +103,84 @@ void random650(vect650 *u);
 
 double norma650(vect650 *u);
 double normf650(vect650 *u);
+#ifdef ASM650
 #define norm650(u) norma650(u)
+#else
+#define norm650(u) normf650(u)
+#endif
 
 double unita650(vect650 *u);
 double unitf650(vect650 *u);
+#ifdef ASM650
 #define unit650(u) unita650(u)
+#else
+#define unit650(u) unitf650(u)
+#endif
 
 void adda650(vect650 *u, vect650 *v);
+void addf650(vect650 *u, vect650 *v);
+#ifdef ASM650
 #define add650(u) adda650(u)
+#else
+#define add650(u) addf650(u)
+#endif
 
-void add_mula650(vect650 *u, double a, vect650 *v);
-#define add_mul650(u, a, v) add_mula650(u, a, v)
+void suba650(vect650 *u, vect650 *v);
+void subf650(vect650 *u, vect650 *v);
+#ifdef ASM650
+#define sub650(u) suba650(u)
+#else
+#define sub650(u) subf650(u)
+#endif
+
+void mul_and_adda650(vect650 *u, double a, vect650 *v);
+void mul_and_addf650(vect650 *u, double a, vect650 *v);
+#ifdef ASM650
+#define mul_and_add650(u, a, v) mul_and_adda650(u, a, v)
+#else
+#define mul_and_add650(u, a, v) mul_and_addf650(u, a, v)
+#endif
+
+void mul_and_suba650(vect650 *u, double a, vect650 *v);
+void mul_and_subf650(vect650 *u, double a, vect650 *v);
+#ifdef ASM650
+#define mul_and_sub650(u, a, v) mul_and_suba650(u, a, v)
+#else
+#define mul_and_sub650(u, a, v) mul_and_subf650(u, a, v)
+#endif
 
 double scala650(vect650 *u, vect650 *v);
 double scalf650(vect650 *u, vect650 *v);
+#ifdef ASM650
 #define scal650(u, v) scala650(u, v)
+#else
+#define scal650(u, v) scalf650(u, v)
+#endif
 
 double vecta650(vect650 *u, vect650 *v, vect650 *w);
 double vectf650(vect650 *u, vect650 *v, vect650 *w);
+#ifdef ASM650
 #define vect650(u, v, w) vecta650(u, v, w)
+#else
+#define vect650(u, v, w) vectf650(u, v, w)
+#endif
 
 
+//
+typedef union {
+    struct {
+        vect650 origin;
+        vect650 xAxis;
+        vect650 yAxis;
+        vect650 zAxis;
+    };
+    struct {
+        double array[16];
+    };
+} ref650;
 
-
+vect650 *change_vecta650(vect650 *u);
+vect650 *change_pointa650(vect650 *p);
 
 // asm
 int64_t ReadTSC();

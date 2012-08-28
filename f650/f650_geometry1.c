@@ -33,6 +33,31 @@ double unitf650(vect650 *u) {
     return n;
 }
 
+void addf650(vect650 *u, vect650 *v) {
+    u->x += v->x;
+    u->y += v->y;
+    u->z += v->z;
+}
+
+void subf650(vect650 *u, vect650 *v) {
+    u->x -= v->x;
+    u->y -= v->y;
+    u->z -= v->z;
+}
+
+void mul_and_addf650(vect650 *u, double a, vect650 *v) {
+    u->x += a * v->x;
+    u->y += a * v->y;
+    u->z += a * v->z;
+}
+
+void mul_and_subf650(vect650 *u, double a, vect650 *v) {
+    u->x -= a * v->x;
+    u->y -= a * v->y;
+    u->z -= a * v->z;
+}
+
+
 double scalf650(vect650 *u, vect650 *v) {
     return u->x * v->x + u->y * v->y + u->z * v->z;
 }
