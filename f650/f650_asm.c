@@ -12,13 +12,13 @@
 #include "f650.h"
 
 static double pas = 0.65;
-int f650_test_asm(int i) {
-    double j = 0;
-    if (j == 0) {
-        j += 1.;
-    }
-    if (j < 0) {
-        j += 1.;
+static uint16_t u = 18;
+int f650_test_asm(uint16_t i) {
+    int s = 0;
+    uint16_t j = 0;
+
+    if (s < 0) {
+        s = s + i;
     }
     return j;
 }

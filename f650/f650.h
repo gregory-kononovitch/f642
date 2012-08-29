@@ -289,6 +289,11 @@ int64_t ReadTSC();
 /*
  * asm tests
  */
+//
+int adda050(uint16_t *number1, uint16_t *number2, int len);
+int mula050(uint8_t *number1, int len1, uint32_t fac);
+int diva050(uint8_t *number1, int len1, uint32_t div);
+//
 double polya650(double *coe, int len, double x);
 int ax2bxca650(double a, double b, double c, double *res);
 
