@@ -476,7 +476,9 @@ int main() {
     printf("p(%f) = %f for %ld µops\n", 0.5, y, l2 - l1);
 
     l1 = ReadTSC();
-    i  = ax2bxca650(1., -3., 2., d);
+    for(i = 0 ; i < 997 ; i++) {
+        i += ax2bxca650(d[i], d[i+1], d[i+2], d);
+    }
     l2 = ReadTSC();
     printf("%d racines [%f ; %f]for %ld µops\n", i, d[0], d[1], l2 - l1);
 

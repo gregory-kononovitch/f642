@@ -17,5 +17,8 @@ int f650_test_asm(int i) {
     if (j == 0) {
         j += 1.;
     }
+    if (j < 0) {
+        j += 1.;
+    }
     return j;
 }
