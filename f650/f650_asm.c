@@ -13,9 +13,9 @@
 
 static double pas = 0.65;
 int f650_test_asm(int i) {
-    int j = 0;
-    if (j < i) {
-        j++;
+    double j = 0;
+    if (j == 0) {
+        j += 1.;
     }
     return j;
 }

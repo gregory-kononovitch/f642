@@ -290,6 +290,6 @@ int64_t ReadTSC();
  * asm tests
  */
 double polya650(double *coe, int len, double x);
-
+int ax2bxca650(double a, double b, double c, double *res);
 
 #endif /* F650_H_ */
