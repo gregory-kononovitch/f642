@@ -223,7 +223,7 @@ void setup_persp650(persp650 *cam, double foc, double res);
 vect650 *compute_pixa650(persp650 *cam, vect650 *rea, vect650 *pix);
 vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
 #ifdef ASM650
-#define compute_pix650(cam, r, p) compute_pixf650(cam, r, p)
+#define compute_pix650(cam, r, p) compute_pixa650(cam, r, p)
 #else
 #define compute_pix650(cam, r, p) compute_pixf650(cam, r, p)
 #endif
@@ -249,8 +249,13 @@ void f650_img_gray(bgra650 *img, uint8_t gray);
 void f650_img_fill(bgra650 *img, uint32_t color);
 
 // Draw line
-int a650_draw_line(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
-int f650_draw_line(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+#ifdef ASM650
+#define draw_line650(img, x1, y1, x2, y2, c) draw_linea650(img, x1, y1, x2, y2, c)
+#else
+#define draw_line650(img, x1, y1, x2, y2, c) draw_linef650(img, x1, y1, x2, y2, c)
+#endif
 
 
 #endif /* F650_H_ */

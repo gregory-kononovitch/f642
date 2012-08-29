@@ -3,7 +3,7 @@
 
 default rel
 
-global a650_draw_line: function
+global draw_linea650: function
 
 SECTION .data
 HALF	dq				0.5
@@ -22,7 +22,7 @@ SECTION .text  align=16
 ; w  -> xmm10
 ; h  -> xmm11
 ; x0 -
-a650_draw_line:
+draw_linea650:
 		xor				rcx, rcx
 PX:		; prepar : x = sx * (x - x0) + width / 2
 		movsd			xmm4, [rdi + 16]	; x0 -> xmm4

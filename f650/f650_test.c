@@ -34,44 +34,44 @@ int test_line650() {
 
 //    // x' = x + 156 / y' = 344 - y      KO: x
 //    f650_img_clear(&img1);
-//    x = a650_draw_line(&img1, 356.000001, -157., 356, 4.5);
+//    x = draw_linea650(&img1, 356.000001, -157., 356, 4.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
 //    f650_img_clear(&img1);
-//    x = f650_draw_line(&img1, 356.000001, -157., 356, 4.5);
-//    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
-//
-//    printf("\n");
-//
-//    // x' = x + 156 / y' = 344 - y      OK:
-//    f650_img_clear(&img1);
-//    x = a650_draw_line(&img1, 200.000001, 195, 250, 204.5);
-//    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
-//    f650_img_clear(&img1);
-//    x = f650_draw_line(&img1, 200.000001, 195, 250, 204.5);
+//    x = draw_linef650(&img1, 356.000001, -157., 356, 4.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
 //
 //    printf("\n");
 //
 //    // x' = x + 156 / y' = 344 - y      OK:
 //    f650_img_clear(&img1);
-//    x = a650_draw_line(&img1, 250, 195, 200.000001, 204.5);
+//    x = draw_linea650(&img1, 200.000001, 195, 250, 204.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
 //    f650_img_clear(&img1);
-//    x = f650_draw_line(&img1, 250, 195, 200.000001, 204.5);
+//    x = draw_linef650(&img1, 200.000001, 195, 250, 204.5);
+//    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
+//
+//    printf("\n");
+//
+//    // x' = x + 156 / y' = 344 - y      OK:
+//    f650_img_clear(&img1);
+//    x = draw_linea650(&img1, 250, 195, 200.000001, 204.5);
+//    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
+//    f650_img_clear(&img1);
+//    x = draw_linef650(&img1, 250, 195, 200.000001, 204.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
 
     // x' = x + 156 / y' = 344 - y      OK:
     f650_img_origin(&img1, 0, 0);
     f650_img_clear(&img1);
     l1 = ReadTSC();
-    x = a650_draw_line(&img1, 100, 20, -10, 30, WHITE650);
+    x = draw_linea650(&img1, 100, 20, -10, 30, WHITE650);
     l2 = ReadTSC();
     printf("tsca = %ld\n", l2 - l1);
 
     f650_img_origin(&img2, 0, 0);
     f650_img_clear(&img2);
     l1 = ReadTSC();
-    x = f650_draw_line(&img2, 100, 20, -10, 30, WHITE650);
+    x = draw_linef650(&img2, 100, 20, -10, 30, WHITE650);
     l2 = ReadTSC();
     printf("tscc = %ld\n", l2 - l1);
 
@@ -82,14 +82,14 @@ int test_line650() {
     f650_img_origin(&img1, 0, 0);
     f650_img_clear(&img1);
     l1 = ReadTSC();
-    x = a650_draw_line(&img1, -10, 20, -30, 30, WHITE650);
+    x = draw_linea650(&img1, -10, 20, -30, 30, WHITE650);
     l2 = ReadTSC();
     printf("tsca = %ld\n", l2 - l1);
 
     f650_img_origin(&img2, 0, 0);
     f650_img_clear(&img2);
     l1 = ReadTSC();
-    x = f650_draw_line(&img2, -10, 20, -30, 30, WHITE650);
+    x = draw_linef650(&img2, -10, 20, -30, 30, WHITE650);
     l2 = ReadTSC();
     printf("tscc = %ld\n", l2 - l1);
 
@@ -101,14 +101,14 @@ int test_line650() {
     f650_img_origin(&img1, 0, 0);
     f650_img_clear(&img1);
     l1 = ReadTSC();
-    x = a650_draw_line(&img1, -10, 20, -30, 60, WHITE650);
+    x = draw_linea650(&img1, -10, 20, -30, 60, WHITE650);
     l2 = ReadTSC();
     printf("tsca = %ld\n", l2 - l1);
 
     f650_img_origin(&img2, 0, 0);
     f650_img_clear(&img2);
     l1 = ReadTSC();
-    x = f650_draw_line(&img2, -10, 20, -30, 60, WHITE650);
+    x = draw_linef650(&img2, -10, 20, -30, 60, WHITE650);
     l2 = ReadTSC();
     printf("tscc = %ld\n", l2 - l1);
 
@@ -120,7 +120,7 @@ int test_line650() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 200000 ; i++) {
-        a650_draw_line(&img1
+        draw_linea650(&img1
                 , 1. * rand() / INT32_MAX * img1.width
                 , 1. * rand() / INT32_MAX * img1.height
                 , 1. * rand() / INT32_MAX * img1.width
@@ -139,7 +139,7 @@ int test_line650() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 200000 ; i++) {
-        f650_draw_line(&img1
+        draw_linef650(&img1
                 , 1. * rand() / RAND_MAX * img1.width
                 , 1. * rand() / RAND_MAX * img1.height
                 , 1. * rand() / RAND_MAX * img1.width
@@ -170,8 +170,8 @@ int test_line650() {
         double x2 = 1. * (0.5 - 1. * rand() / RAND_MAX) * img1.width;
         double y2 = 1. * (0.5 - 1. * rand() / RAND_MAX) * img1.height;
 
-        cpt += a650_draw_line(&img1, x1, y1, x2, y2, WHITE650);
-        f650_draw_line(&img2, x1, y1, x2, y2, WHITE650);
+        cpt += draw_linea650(&img1, x1, y1, x2, y2, WHITE650);
+        draw_linef650(&img2, x1, y1, x2, y2, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -331,9 +331,24 @@ int test_ref() {
     printf("p2 = (%f, %f, %f)\n", p2.x, p2.y, p2.z);
 }
 
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <linux/fb.h>
 int test3() {
+    int i = 0;
     bgra650 img;
-    FILE *filp = fopen("/dev/fb0", "wb");
+    int fd = open("/dev/fb0", O_RDWR);
+     struct fb_fix_screeninfo fix;
+     memset(&fix, 0, sizeof(fix));
+     i = ioctl(fd, FBIOGET_FSCREENINFO, &fix);
+     if (i < 0) return -1;
+     void *start = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+     if (start == MAP_FAILED) {
+         printf("MMAP failed, exiting\n");
+         return -1;
+     }
+
     double t0, t;
     struct timeval tv0, tv;
     persp650 cam;
@@ -361,29 +376,28 @@ int test3() {
         t = 1. * tv.tv_sec + 0.000001 * tv.tv_usec;
         //
         f650_img_gray(&img, 0x40);
+        i++;
         //
-        pos.x = 4.5 * t;
+        pos.x = +4.5 * t;
         pos.y = -2.0;
         pos.z = +0.3;
-        double h = pos.x - 10. * round(pos.x / 10);
         cam.ecran.origin.x = pos.x;
+        double h = pos.x - 10. * round(pos.x / 10.);
+
         //
         p1.x = pos.x + h ; p1.y = pos.y - 0.5 ; p1.z = 0;
         compute_pix650(&cam, &p1, &q1);
         p2.x = pos.x + h ; p2.y = pos.y - 0.5 ; p2.z = 1.05;
         compute_pix650(&cam, &p2, &q2);
-        f650_draw_line(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
+        draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         p1.x = pos.x + h ; p1.y = pos.y + 0.5 ; p1.z = 1.05;
         compute_pix650(&cam, &p1, &q1);
-        f650_draw_line(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
+        draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         p2.x = pos.x + h ; p2.y = pos.y + 0.5 ; p2.z = 0;
         compute_pix650(&cam, &p2, &q2);
-        f650_draw_line(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
+        draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         //
-        f650_draw_line(&img, -100, -100, +100, +100, WHITE650);
-        f650_draw_line(&img, -100, +100, +100, -100, WHITE650);
-        fwrite(img.data, 4, img.size, filp);
-//        printf("x = %f / h = %f\n", pos.x, h);
+        memcpy(start, img.data, img.size << 2);
         usleep(50000);
     }
 
@@ -393,7 +407,7 @@ int test3() {
 int main() {
     //test_line650();
     //test_geo1();
-    test_ref();
-    //test3();
+    //test_ref();
+    test3();
     return 0;
 }

@@ -82,7 +82,7 @@ int f650_img_compare(bgra650 *img1, bgra650 *img2) {
 /*
  *
  */
-int f650_draw_line(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color) {
+int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color) {
     double a, b, x, y;
     int i = 0;
     //
