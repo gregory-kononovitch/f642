@@ -1,5 +1,6 @@
 default rel
 
+; Vector
 global norma650: function
 global unita650: function
 global scala650: function
@@ -8,9 +9,11 @@ global adda650: function
 global suba650: function
 global mul_and_adda650: function
 global mul_and_suba650: function
+; Referentiel
 global change_vecta650: function
 global change_pointa650: function
-
+; Perspective
+global compute_pixa650: function
 
 SECTION .data
 ONE		dq			1.0
@@ -271,4 +274,74 @@ change_pointa650:
 		movsd		[rsi + 16], xmm1
 		;
 		mov			rax, rsi
+		ret
+
+; vect650 *compute_pixa650(persp650 *cam, vect650 *rea, vect650 *pix)
+compute_pixa650:
+		; pix = orig - rea
+		movsd		xmm10, [rdi + 0]
+		movsd		xmm0, [rsi + 0]
+		subsd		xmm10, xmm0			; pix.x
+		;
+		movsd		xmm11, [rdi + 8]
+		movsd		xmm0, [rsi + 8]
+		subsd		xmm11, xmm0			; pix.y
+		;
+		movsd		xmm12, [rdi + 16]
+		movsd		xmm0, [rsi + 16]
+		subsd		xmm12, xmm0			; pix.z
+
+		; change pix into cam
+		; pix.z = xmm15
+		movsd		xmm1, [rdi + 96]
+		mulsd		xmm1, xmm10
+		movsd		xmm2, [rdi + 104]
+		mulsd		xmm2, xmm11
+		addsd		xmm1, xmm2
+		movsd		xmm2, [rdi + 112]
+		mulsd		xmm2, xmm12
+		addsd		xmm1, xmm2
+		; if pix.z >= 0, point behind cam
+		xorpd			xmm2, xmm2
+		ucomisd			xmm2, xmm1
+		seta			al
+		test			al, al
+		je				NONE					; xmm1 >= 0
+		movsd			xmm15, xmm1				;
+		xorpd			xmm9, xmm9
+		subsd			xmm9, xmm1				; for later use in painter (close hides far)
+
+		; xmm13 = pix.x
+		movsd		xmm1, [rdi + 32]
+		mulsd		xmm1, xmm10
+		movsd		xmm2, [rdi + 40]
+		mulsd		xmm2, xmm11
+		addsd		xmm1, xmm2
+		movsd		xmm2, [rdi + 48]
+		mulsd		xmm2, xmm12
+		addsd		xmm1, xmm2
+		movsd		xmm13, xmm1
+		; xmm14 = pix.y
+		movsd		xmm1, [rdi + 64]
+		mulsd		xmm1, xmm10
+		movsd		xmm2, [rdi + 72]
+		mulsd		xmm2, xmm11
+		addsd		xmm1, xmm2
+		movsd		xmm2, [rdi + 80]
+		mulsd		xmm2, xmm12
+		addsd		xmm1, xmm2
+		movsd		xmm14, xmm1
+
+		;
+		movsd		xmm1, [rdi + 128]		; coef = res *
+		mulsd		xmm15, xmm1
+		mulsd		xmm13, xmm15			; x = x *
+		mulsd		xmm14, xmm15			; y = y *
+		movsd		[rdx + 0], xmm13
+		movsd		[rdx + 8], xmm14
+		movsd		[rdx + 16], xmm9
+		mov			rax, rdx
+		ret
+
+NONE:	xor			rax, rax
 		ret

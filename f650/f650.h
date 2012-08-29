@@ -197,6 +197,27 @@ vect650 *change_pointf650(ref650 *ref, vect650 *p);
 #define change_point650(ref, u) change_pointf650(ref, u)
 #endif
 
+
+/*
+ *
+ */
+typedef struct {
+    ref650 ecran;
+    double foc;     // focale
+//    double tiq;     // point
+//    double res;     // pix / m (ex 1600 / fac)
+    double coef;    // (tiq = -foc * len / (len - foc)  |  = tiq * 1600 / fac = tiq * res
+} persp650;
+
+void setup_persp650(persp650 *cam, double foc, double res);
+
+vect650 *compute_pixa650(persp650 *cam, vect650 *rea, vect650 *pix);
+vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
+
+
+
+
+
 // asm
 int64_t ReadTSC();
 

@@ -91,3 +91,11 @@ vect650 *change_pointf650(ref650 *ref, vect650 *p) {
     p->z = z;
     return p;
 }
+
+
+/*
+ *
+ */
+void setup_persp650(persp650 *cam, double foc, double res) {
+    cam->coef = -foc * res;     // infi
+}
