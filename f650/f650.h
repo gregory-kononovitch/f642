@@ -285,27 +285,11 @@ vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
 // asm
 int64_t ReadTSC();
 
-// init
-int  bgra_alloc650(bgra650 *img, int width, int height);
-void bgra_origin650(bgra650 *img, double x0, double y0);
-void bgra_scale650(bgra650 *img, double sx, double sy);
 
-// Util
-int bgra_compare650(bgra650 *img1, bgra650 *img2);
-
-// For testing
-void bgra_clear650(bgra650 *img);
-void bgra_gray650(bgra650 *img, uint8_t gray);
-void bgra_fill650(bgra650 *img, uint32_t color);
-
-// Draw line
-int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
-int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
-#ifdef ASM650
-#define draw_line650(img, x1, y1, x2, y2, c) draw_linea650(img, x1, y1, x2, y2, c)
-#else
-#define draw_line650(img, x1, y1, x2, y2, c) draw_linef650(img, x1, y1, x2, y2, c)
-#endif
+/*
+ * asm tests
+ */
+double polya650(double *coe, int len, double x);
 
 
 #endif /* F650_H_ */

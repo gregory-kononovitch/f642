@@ -12,6 +12,10 @@
 #include "f650.h"
 
 static double pas = 0.65;
-void f650_test_asm(vect650 *v) {
-    v->x = pas;
+int f650_test_asm(int i) {
+    int j = 0;
+    if (j < i) {
+        j++;
+    }
+    return j;
 }

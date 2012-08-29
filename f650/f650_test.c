@@ -459,9 +459,25 @@ int test3() {
 }
 
 int main() {
+    int i;
+    long l1, l2;
+    double d[1000], y;
+
+    l1 = ReadTSC();
+    for(i = 0 ; i < 1000 ; i++) {
+        d[i] = sin(i);
+    }
+    l2 = ReadTSC();
+    printf("sin = %f for %ld µops\n", d[999], (l2 - l1) / 1000);
+
+    l1 = ReadTSC();
+    y  = polya650(d, 1000, 0.5);
+    l2 = ReadTSC();
+    printf("p(%f) = %f for %ld µops\n", 0.5, y, l2 - l1);
+
     //test_line650();
     //test_geo1();
     //test_ref();
-    test3();
+    //test3();
     return 0;
 }
