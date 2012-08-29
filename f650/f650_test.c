@@ -337,20 +337,21 @@ int test_ref() {
 #include <linux/fb.h>
 int test3() {
     int i = 0;
+    long l1, l2;
     bgra650 img;
     int fd = open("/dev/fb0", O_RDWR);
-     struct fb_fix_screeninfo fix;
-     memset(&fix, 0, sizeof(fix));
-     i = ioctl(fd, FBIOGET_FSCREENINFO, &fix);
-     if (i < 0) return -1;
-     void *start = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-     if (start == MAP_FAILED) {
-         printf("MMAP failed, exiting\n");
-         return -1;
-     }
+    struct fb_fix_screeninfo fix;
+    memset(&fix, 0, sizeof(fix));
+    i = ioctl(fd, FBIOGET_FSCREENINFO, &fix);
+    if (i < 0) return -1;
+    void *start = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (start == MAP_FAILED) {
+     printf("MMAP failed, exiting\n");
+     return -1;
+    }
 
     double t0, t;
-    struct timeval tv0, tv;
+    struct timeval tv0, tv, tv1, tv2, tvt;
     persp650 cam;
     vect650 pos, qos, p1, p2, q1, q2;
 
@@ -367,15 +368,40 @@ int test3() {
     unit650(&cam.ecran.xAxis);
     vect650(&cam.ecran.zAxis, &cam.ecran.xAxis, &cam.ecran.yAxis);
     //
+    random650(&p1);
+    p1.x *= 10;
+    p1.x += pos.x;
+    p1.y *= 5;
+    p1.z *= 2;
+    compute_pix650(&cam, &p1, &q1);
+    random650(&p2);
+    p2.x *= 10;
+    p2.x += pos.x;
+    p2.y *= 5;
+    p2.z *= 2;
+    l1 = ReadTSC();
+    compute_pix650(&cam, &p2, &q2);
+    l2 = ReadTSC();
+    printf("compute_pix650 = %ld\n", l2 - l1);
 
+    int col = rand();
+    l1 = ReadTSC();
+    i = draw_line650(&img, q1.x, q1.y, q2.x, q2.y, col);
+    l2 = ReadTSC();
+    printf("draw_line650 = %ld for %d\n", l2 - l1, i);
+
+    return 0;
     //
+    long n = 0, nb =0, nbw = 0;
     gettimeofday(&tv0, NULL);
+    tv1.tv_sec  = tv0.tv_sec;
+    tv1.tv_usec = tv0.tv_usec;
     while(1) {
         gettimeofday(&tv, NULL);
         timersub(&tv, &tv0, &tv);
         t = 1. * tv.tv_sec + 0.000001 * tv.tv_usec;
         //
-        f650_img_gray(&img, 0x40);
+        f650_img_gray(&img, 0x40);    // 2.5ms
         i++;
         //
         pos.x = +4.5 * t;
@@ -397,8 +423,36 @@ int test3() {
         compute_pix650(&cam, &p2, &q2);
         draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         //
-        memcpy(start, img.data, img.size << 2);
-        usleep(50000);
+        for(i = 0 ; i < 10000 ; i++) {  // 28kHz
+            random650(&p1);
+            p1.x *= 10;
+            p1.x += pos.x;
+            p1.y *= 5;
+            p1.z *= 2;
+            compute_pix650(&cam, &p1, &q1);
+            random650(&p2);
+            p2.x *= 10;
+            p2.x += pos.x;
+            p2.y *= 5;
+            p2.z *= 2;
+            compute_pix650(&cam, &p2, &q2);
+            draw_line650(&img, q1.x, q1.y, q2.x, q2.y, rand());
+        }
+        //
+        //memcpy(start, img.data, img.size << 2);
+        //
+        nb += 50000;
+        gettimeofday(&tv2, NULL);
+        timersub(&tv2, &tv1, &tvt);
+        tv1.tv_sec  = tv2.tv_sec;
+        tv1.tv_usec = tv2.tv_usec;
+//        if (tvt.tv_usec < 45000) {
+//            usleep(50000 - tvt.tv_usec);
+//            nbw += 50000 - tvt.tv_usec;
+//        }
+        nbw += tvt.tv_usec;
+        n++;
+        if (n % 20 == 0) printf("time = %.2f\n", 1. * nbw / n);
     }
 
     return 0;
