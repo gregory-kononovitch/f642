@@ -46,6 +46,11 @@ typedef struct {
 #define YELLOW650   0xffffff00
 #define CYAN650     0xff00ffff
 #define MAGENTA650  0xffff00ff
+
+#define DGRAY650    0xff404040
+#define GRAY650     0xff808080
+#define LGRAY650    0xffC0C0C0
+
 typedef union {
     uint32_t value;
     struct {
@@ -100,6 +105,10 @@ union _vect650_ {
     } plan;
 };
 
+extern vect650 O650;
+extern vect650 I650;
+extern vect650 J650;
+extern vect650 K650;
 
 void random650(vect650 *u);
 
