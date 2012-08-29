@@ -3,7 +3,8 @@
 
 default rel
 
-global draw_linea650: function
+global draw_linea650: 	function
+global draw_zlinea650: 	function
 
 SECTION .data
 HALF	dq				0.5
@@ -11,7 +12,7 @@ PAS		dq				0.65
 
 SECTION .text  align=16
 
-; double a650_draw_line(image *img, double x1, double y1, double x2, double y2)
+; double a650_draw_line(image *img, double x1, double y1, double x2, double y2, uint32_t color)
 ; x1 -> xmm0
 ; y1 -> xmm1
 ; x2 -> xmm2
@@ -328,5 +329,11 @@ RETOK:
 NOPIX:	;
 		mov				rax, 0
 		ret
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;a650_draw_line  ENDP
+; @@@ z1 & z2 mess all indices / draw_linea650
+; double draw_zlinea650(image *img, double x1, double y1, double z1, double x2, double y2, double z2, uint32_t color)
+draw_zlinea650:
+		jmp				draw_linea650
+		ret
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

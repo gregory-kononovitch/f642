@@ -36,7 +36,57 @@ typedef struct {
     double      sy;             // 40
 } bgra650;
 
+typedef struct {
+    uint32_t    *data;          // 0
+    int16_t     width;          // 8
+    int16_t     height;         // 10
+    int32_t     size;           // 12
+    //
+    double      x0;             // 16
+    double      y0;             // 24
+    double      sx;             // 32
+    double      sy;             // 40
+    //
+    double      *zi;            // 48
+    void        *res;           // 64
+} bgraz650;
 
+// init
+int  bgra_alloc650(bgra650 *img, int width, int height);
+int  bgraz_alloc650(bgraz650 *img, int width, int height);
+void bgra_origin650(bgra650 *img, double x0, double y0);
+void bgra_scale650(bgra650 *img, double sx, double sy);
+
+// Util
+int bgra_compare650(bgra650 *img1, bgra650 *img2);
+
+//
+void bgra_clear650(bgra650 *img);
+void bgra_gray650(bgra650 *img, uint8_t gray);
+void bgra_fill650(bgra650 *img, uint32_t color);
+void bgraz_gray650(bgraz650 *img, uint8_t gray);
+
+// Draw line
+int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+#ifdef ASM650
+#define draw_line650(img, x1, y1, x2, y2, c) draw_linea650(img, x1, y1, x2, y2, c)
+#else
+#define draw_line650(img, x1, y1, x2, y2, c) draw_linef650(img, x1, y1, x2, y2, c)
+#endif
+
+// Draw zline
+int draw_zlinea650(bgraz650 *img, double x1, double y1, double z1, double x2, double y2, double z2, uint32_t color);
+int draw_zlinef650(bgraz650 *img, double x1, double y1, double z1, double x2, double y2, double z2, uint32_t color);
+#ifdef ASM650
+#define draw_zline650(img, x1, y1, z1, x2, y2, z2, c) draw_zlinea650(img, x1, y1, z1, x2, y2, z2, c)
+#else
+#define draw_zline650(img, x1, y1, z1, x2, y2, z2, c) draw_zlinef650(img, x1, y1, z1, x2, y2, z2, c)
+#endif
+
+/*
+ *
+ */
 #define BLACK650    0xff000000
 #define WHITE650    0xffffffff
 #define RED650      0xffff0000
@@ -236,17 +286,17 @@ vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
 int64_t ReadTSC();
 
 // init
-int  f650_alloc_image(bgra650 *img, int width, int height);
-void f650_img_origin(bgra650 *img, double x0, double y0);
-void f650_img_scale(bgra650 *img, double sx, double sy);
+int  bgra_alloc650(bgra650 *img, int width, int height);
+void bgra_origin650(bgra650 *img, double x0, double y0);
+void bgra_scale650(bgra650 *img, double sx, double sy);
 
 // Util
-int f650_img_compare(bgra650 *img1, bgra650 *img2);
+int bgra_compare650(bgra650 *img1, bgra650 *img2);
 
 // For testing
-void f650_img_clear(bgra650 *img);
-void f650_img_gray(bgra650 *img, uint8_t gray);
-void f650_img_fill(bgra650 *img, uint32_t color);
+void bgra_clear650(bgra650 *img);
+void bgra_gray650(bgra650 *img, uint8_t gray);
+void bgra_fill650(bgra650 *img, uint32_t color);
 
 // Draw line
 int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);

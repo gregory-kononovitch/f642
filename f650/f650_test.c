@@ -23,96 +23,96 @@ int test_line650() {
     struct timeval tv1, tv2;
     //
     bgra650 img1;
-    f650_alloc_image(&img1, 512, 288);
-    f650_img_origin(&img1, 100, 200);
-    f650_img_scale(&img1, 1., 1.);
+    bgra_alloc650(&img1, 512, 288);
+    bgra_origin650(&img1, 100, 200);
+    bgra_scale650(&img1, 1., 1.);
     //
     bgra650 img2;
-    f650_alloc_image(&img2, 512, 288);
-    f650_img_origin(&img2, 100, 200);
-    f650_img_scale(&img2, 1., 1.);
+    bgra_alloc650(&img2, 512, 288);
+    bgra_origin650(&img2, 100, 200);
+    bgra_scale650(&img2, 1., 1.);
 
 //    // x' = x + 156 / y' = 344 - y      KO: x
-//    f650_img_clear(&img1);
+//    bgra_clear650(&img1);
 //    x = draw_linea650(&img1, 356.000001, -157., 356, 4.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
-//    f650_img_clear(&img1);
+//    bgra_clear650(&img1);
 //    x = draw_linef650(&img1, 356.000001, -157., 356, 4.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
 //
 //    printf("\n");
 //
 //    // x' = x + 156 / y' = 344 - y      OK:
-//    f650_img_clear(&img1);
+//    bgra_clear650(&img1);
 //    x = draw_linea650(&img1, 200.000001, 195, 250, 204.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
-//    f650_img_clear(&img1);
+//    bgra_clear650(&img1);
 //    x = draw_linef650(&img1, 200.000001, 195, 250, 204.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
 //
 //    printf("\n");
 //
 //    // x' = x + 156 / y' = 344 - y      OK:
-//    f650_img_clear(&img1);
+//    bgra_clear650(&img1);
 //    x = draw_linea650(&img1, 250, 195, 200.000001, 204.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
-//    f650_img_clear(&img1);
+//    bgra_clear650(&img1);
 //    x = draw_linef650(&img1, 250, 195, 200.000001, 204.5);
 //    printf("r %f, x1 %f, y1 %f, x2 %f, y2 %f, a %f, b %f\n", x, img1.x1, img1.y1, img1.x2, img1.y2, img1.a, img1.b);
 
     // x' = x + 156 / y' = 344 - y      OK:
-    f650_img_origin(&img1, 0, 0);
-    f650_img_clear(&img1);
+    bgra_origin650(&img1, 0, 0);
+    bgra_clear650(&img1);
     l1 = ReadTSC();
     x = draw_linea650(&img1, 100, 20, -10, 30, WHITE650);
     l2 = ReadTSC();
     printf("tsca = %ld\n", l2 - l1);
 
-    f650_img_origin(&img2, 0, 0);
-    f650_img_clear(&img2);
+    bgra_origin650(&img2, 0, 0);
+    bgra_clear650(&img2);
     l1 = ReadTSC();
     x = draw_linef650(&img2, 100, 20, -10, 30, WHITE650);
     l2 = ReadTSC();
     printf("tscc = %ld\n", l2 - l1);
 
-    printf("img1 / img2 = %d\n", f650_img_compare(&img1, &img2));
+    printf("img1 / img2 = %d\n", bgra_compare650(&img1, &img2));
 
     //////////////////////////////////////////////
     // x' = x + 156 / y' = 344 - y      OK:
-    f650_img_origin(&img1, 0, 0);
-    f650_img_clear(&img1);
+    bgra_origin650(&img1, 0, 0);
+    bgra_clear650(&img1);
     l1 = ReadTSC();
     x = draw_linea650(&img1, -10, 20, -30, 30, WHITE650);
     l2 = ReadTSC();
     printf("tsca = %ld\n", l2 - l1);
 
-    f650_img_origin(&img2, 0, 0);
-    f650_img_clear(&img2);
+    bgra_origin650(&img2, 0, 0);
+    bgra_clear650(&img2);
     l1 = ReadTSC();
     x = draw_linef650(&img2, -10, 20, -30, 30, WHITE650);
     l2 = ReadTSC();
     printf("tscc = %ld\n", l2 - l1);
 
-    printf("img1 / img2 = %d\n", f650_img_compare(&img1, &img2));
+    printf("img1 / img2 = %d\n", bgra_compare650(&img1, &img2));
 
 
     //////////////////////////////////////////////
     // x' = x + 156 / y' = 344 - y      OK:
-    f650_img_origin(&img1, 0, 0);
-    f650_img_clear(&img1);
+    bgra_origin650(&img1, 0, 0);
+    bgra_clear650(&img1);
     l1 = ReadTSC();
     x = draw_linea650(&img1, -10, 20, -30, 60, WHITE650);
     l2 = ReadTSC();
     printf("tsca = %ld\n", l2 - l1);
 
-    f650_img_origin(&img2, 0, 0);
-    f650_img_clear(&img2);
+    bgra_origin650(&img2, 0, 0);
+    bgra_clear650(&img2);
     l1 = ReadTSC();
     x = draw_linef650(&img2, -10, 20, -30, 60, WHITE650);
     l2 = ReadTSC();
     printf("tscc = %ld\n", l2 - l1);
 
-    printf("img1 / img2 = %d\n", f650_img_compare(&img1, &img2));
+    printf("img1 / img2 = %d\n", bgra_compare650(&img1, &img2));
 
     /*
      *
@@ -156,10 +156,10 @@ int test_line650() {
     /*
      *
      */
-    f650_img_origin(&img1, 0, 0);
-    f650_img_clear(&img1);
-    f650_img_origin(&img2, 0, 0);
-    f650_img_clear(&img2);
+    bgra_origin650(&img1, 0, 0);
+    bgra_clear650(&img1);
+    bgra_origin650(&img2, 0, 0);
+    bgra_clear650(&img2);
     long cpt = 0;
 
     gettimeofday(&tv1, NULL);
@@ -176,7 +176,7 @@ int test_line650() {
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
     timersub(&tv2, &tv1, &tv2);
-    printf("Last %lus.%06luµs for %ld µops : img1 / img2 = %d for %ld pixels\n", tv2.tv_sec, tv2.tv_usec, l2 - l1, f650_img_compare(&img1, &img2), cpt);
+    printf("Last %lus.%06luµs for %ld µops : img1 / img2 = %d for %ld pixels\n", tv2.tv_sec, tv2.tv_usec, l2 - l1, bgra_compare650(&img1, &img2), cpt);
 
     return 0;
 }
@@ -356,7 +356,7 @@ int test3() {
     vect650 pos, qos, p1, p2, q1, q2;
 
     //
-    f650_alloc_image(&img, 1024, 600);
+    bgra_alloc650(&img, 1024, 600);
     //
     setup_persp650(&cam, 0.05, 1600. / 0.15);
     cam.ecran.origin.x = 0 ; cam.ecran.origin.y = -9 ; cam.ecran.origin.z = +3;
@@ -401,7 +401,7 @@ int test3() {
         timersub(&tv, &tv0, &tv);
         t = 1. * tv.tv_sec + 0.000001 * tv.tv_usec;
         //
-        f650_img_gray(&img, 0x40);    // 2.5ms
+        bgra_gray650(&img, 0x40);    // 2.5ms
         i++;
         //
         pos.x = +4.5 * t;

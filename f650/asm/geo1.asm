@@ -302,16 +302,16 @@ compute_pixa650:
 		addsd		xmm1, xmm2
 		movsd		xmm2, [rdi + 112]
 		mulsd		xmm2, xmm12
-		addsd		xmm1, xmm2
+		addsd		xmm1, xmm2				; xmm1 = ray.z / cam
+		xorpd		xmm9, xmm9
+		subsd		xmm9, xmm1				; -ray.z for later use in painter (close hides far)
 		; if pix.z >= 0, point behind cam
 		xorpd			xmm2, xmm2
 		ucomisd			xmm2, xmm1
 		seta			al
 		test			al, al
-		je				NONE					; xmm1 >= 0
-		movsd			xmm15, xmm1				;
-		xorpd			xmm9, xmm9
-		subsd			xmm9, xmm12				; for later use in painter (close hides far)
+		je				NONE				; xmm1 >= 0
+		movsd			xmm15, xmm1			;
 
 		; xmm13 = pix.x
 		movsd		xmm1, [rdi + 32]
