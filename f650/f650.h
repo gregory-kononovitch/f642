@@ -222,6 +222,11 @@ void setup_persp650(persp650 *cam, double foc, double res);
 
 vect650 *compute_pixa650(persp650 *cam, vect650 *rea, vect650 *pix);
 vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
+#ifdef ASM650
+#define compute_pix650(cam, r, p) compute_pixf650(cam, r, p)
+#else
+#define compute_pix650(cam, r, p) compute_pixf650(cam, r, p)
+#endif
 
 
 
@@ -240,6 +245,7 @@ int f650_img_compare(bgra650 *img1, bgra650 *img2);
 
 // For testing
 void f650_img_clear(bgra650 *img);
+void f650_img_gray(bgra650 *img, uint8_t gray);
 void f650_img_fill(bgra650 *img, uint32_t color);
 
 // Draw line

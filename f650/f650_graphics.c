@@ -45,6 +45,10 @@ void f650_img_clear(bgra650 *img) {
     memset(img->data, 0, 4 * img->size);
 }
 
+void f650_img_gray(bgra650 *img, uint8_t gray) {
+    memset(img->data, gray, 4 * img->size);
+}
+
 void f650_img_fill(bgra650 *img, uint32_t color) {
     int i;
     for(i = 0 ; i < img->size ; i++) img->data[i] = color;

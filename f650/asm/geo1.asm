@@ -309,7 +309,7 @@ compute_pixa650:
 		je				NONE					; xmm1 >= 0
 		movsd			xmm15, xmm1				;
 		xorpd			xmm9, xmm9
-		subsd			xmm9, xmm1				; for later use in painter (close hides far)
+		subsd			xmm9, xmm12				; for later use in painter (close hides far)
 
 		; xmm13 = pix.x
 		movsd		xmm1, [rdi + 32]
@@ -333,10 +333,10 @@ compute_pixa650:
 		movsd		xmm14, xmm1
 
 		;
-		movsd		xmm1, [rdi + 128]		; coef = res *
-		mulsd		xmm15, xmm1
-		mulsd		xmm13, xmm15			; x = x *
-		mulsd		xmm14, xmm15			; y = y *
+		movsd		xmm1, [rdi + 136]		; coef = res *
+		divsd		xmm1, xmm15
+		mulsd		xmm13, xmm1				; x = x *
+		mulsd		xmm14, xmm1				; y = y *
 		movsd		[rdx + 0], xmm13
 		movsd		[rdx + 8], xmm14
 		movsd		[rdx + 16], xmm9

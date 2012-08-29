@@ -103,3 +103,19 @@ vect650 *change_pointf650(ref650 *ref, vect650 *p) {
 void setup_persp650(persp650 *cam, double foc, double res) {
     cam->coef = -foc * res;     // infi
 }
+
+vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix) {
+    pix->x = cam->ecran.origin.x - rea->x;
+    pix->y = cam->ecran.origin.y - rea->y;
+    pix->z = cam->ecran.origin.z - rea->z;
+    double pixz = cam->ecran.zAxis.x * pix->x + cam->ecran.zAxis.y * pix->y + cam->ecran.zAxis.z * pix->z;
+    if (pixz >= 0) {
+        pix->x = 0 ; pix->y = 0 ; pix->z = 0;
+        return pix;
+    }
+    pixz  = cam->coef / pixz;
+    double pixx = cam->ecran.xAxis.x * pix->x + cam->ecran.xAxis.y * pix->y + cam->ecran.xAxis.z * pix->z;
+    pix->y = pixz * (cam->ecran.yAxis.x * pix->x + cam->ecran.yAxis.y * pix->y + cam->ecran.yAxis.z * pix->z);
+    pix->x = pixz * pixx;
+    pix->z = -pix->z;
+}

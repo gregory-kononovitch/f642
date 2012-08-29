@@ -281,6 +281,55 @@ int test_geo2() {
     plan.plan.n = &n;
 }
 
+int test_ref() {
+    persp650 cam;
+    vect650 pos, qos, p1, p2, q1, q2;
+
+    //
+    setup_persp650(&cam, 0.05, 1600. / 0.15);
+    cam.ecran.origin.x = 0.5 ; cam.ecran.origin.y = -9 ; cam.ecran.origin.z = +3;
+    cam.ecran.zAxis.x = -cam.ecran.origin.x;
+    cam.ecran.zAxis.y = -cam.ecran.origin.y;
+    cam.ecran.zAxis.z = -cam.ecran.origin.z;
+    unit650(&cam.ecran.zAxis);
+    vect650(&cam.ecran.zAxis, &K650, &cam.ecran.xAxis);
+    unit650(&cam.ecran.xAxis);
+    vect650(&cam.ecran.zAxis, &cam.ecran.xAxis, &cam.ecran.yAxis);
+
+    //
+    p1.x = 0 ; p1.y = - 0.5 ; p1.z = 0;
+    compute_pix650(&cam, &p1, &q1);
+    p2.x = 0 ; p2.y = - 0.5 ; p2.z = 1.05;
+    compute_pix650(&cam, &p2, &q2);
+    //
+    printf("q1 = (%f, %f, %f)\n", q1.x, q1.y, q1.z);
+    printf("q2 = (%f, %f, %f)\n", q2.x, q2.y, q2.z);
+    //
+    p1.x = 0 ; p1.y = - 0.5 ; p1.z = 0;
+    compute_pixa650(&cam, &p1, &q1);
+    p2.x = 0 ; p2.y = - 0.5 ; p2.z = 1.05;
+    compute_pixa650(&cam, &p2, &q2);
+    //
+    printf("q1 = (%f, %f, %f)\n", q1.x, q1.y, q1.z);
+    printf("q2 = (%f, %f, %f)\n", q2.x, q2.y, q2.z);
+
+    //
+    p1.x = 1. ; p1.y = -0.5 ; p1.z = 0;
+    change_vectf650(&cam.ecran, &p1);
+    p2.x = 1. ; p2.y = -0.5 ; p2.z = 1.05;
+    change_vectf650(&cam.ecran, &p2);
+    //
+    printf("p1 = (%f, %f, %f)\n", p1.x, p1.y, p1.z);
+    printf("p2 = (%f, %f, %f)\n", p2.x, p2.y, p2.z);
+    //
+    p1.x = 1. ; p1.y = -0.5 ; p1.z = 0;
+    change_vecta650(&cam.ecran, &p1);
+    p2.x = 1. ; p2.y = -0.5 ; p2.z = 1.05;
+    change_vecta650(&cam.ecran, &p2);
+    //
+    printf("p1 = (%f, %f, %f)\n", p1.x, p1.y, p1.z);
+    printf("p2 = (%f, %f, %f)\n", p2.x, p2.y, p2.z);
+}
 
 int test3() {
     bgra650 img;
@@ -311,27 +360,30 @@ int test3() {
         timersub(&tv, &tv0, &tv);
         t = 1. * tv.tv_sec + 0.000001 * tv.tv_usec;
         //
-        f650_img_fill(&img, GRAY650);
+        f650_img_gray(&img, 0x40);
         //
         pos.x = 4.5 * t;
         pos.y = -2.0;
         pos.z = +0.3;
-        cam.ecran.origin.x = pos.x;
         double h = pos.x - 10. * round(pos.x / 10);
+        cam.ecran.origin.x = pos.x;
         //
         p1.x = pos.x + h ; p1.y = pos.y - 0.5 ; p1.z = 0;
-        compute_pixa650(&cam, &p1, &q1);
-        p2.x = pos.x + h ; p1.y = pos.y - 0.5 ; p1.z = 1.05;
-        compute_pixa650(&cam, &p2, &q2);
+        compute_pix650(&cam, &p1, &q1);
+        p2.x = pos.x + h ; p2.y = pos.y - 0.5 ; p2.z = 1.05;
+        compute_pix650(&cam, &p2, &q2);
         f650_draw_line(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         p1.x = pos.x + h ; p1.y = pos.y + 0.5 ; p1.z = 1.05;
-        compute_pixa650(&cam, &p1, &q1);
+        compute_pix650(&cam, &p1, &q1);
         f650_draw_line(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         p2.x = pos.x + h ; p2.y = pos.y + 0.5 ; p2.z = 0;
-        compute_pixa650(&cam, &p2, &q2);
+        compute_pix650(&cam, &p2, &q2);
         f650_draw_line(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         //
+        f650_draw_line(&img, -100, -100, +100, +100, WHITE650);
+        f650_draw_line(&img, -100, +100, +100, -100, WHITE650);
         fwrite(img.data, 4, img.size, filp);
+//        printf("x = %f / h = %f\n", pos.x, h);
         usleep(50000);
     }
 
@@ -340,8 +392,8 @@ int test3() {
 
 int main() {
     //test_line650();
-   // test_geo1();
-
-    test3();
+    //test_geo1();
+    test_ref();
+    //test3();
     return 0;
 }
