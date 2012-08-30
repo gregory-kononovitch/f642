@@ -20,38 +20,20 @@ SECTION .text  align=16
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; int adda050(uint8_t *number1, uint8_t *number2, int len)
 ; cf movsx and movzx
-; cd mpsadbw
+; cf movdqa paddb
 adda050:
-		sub				rdx, 1
-		shl				rdx, 1
-		add				rdi, rdx
-		add				rsi, rdx
-		shr				rdx, 1
-		xor				rax, rax
-		mov				ax, [NINE]
-		xor				rcx, rcx
-LOOP0:
-		add				cx, [rdi]
-		add				cx, [rsi]
-		cmp				cx, ax
-		jbe				L9
-		sub				cx, 10
-		mov				[rdi], cx
-		mov				rcx, 1
-		jmp				COOP0
+			mov			rcx, rdx
+			shr			rcx, 4			;
+			jrcxz		_end0
+			mov			rax, rdi
+			mov			rdx, rsi
+_lp0_0:		; loop 16
+			movdqa		xmm0, [rax]
+			paddb		xmm0, [rdx]
+			movdqa		[rbp - 16], xmm0
+_cn0_:
 
-L9		; <= 9
-		mov				[rdi], word cx
-		xor				rcx, rcx
-COOP0:
-		sub				rdx, 1
-		cmp				rdx, 0
-		jns				END0
-		;
-		sub				rdi, 2
-		sub				rsi, 2
-		jmp				LOOP0
-END0:
+_end0:
 		ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
