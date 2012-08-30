@@ -672,6 +672,7 @@ int ax2f() {
 int std1() {
     int i;
     long l1, l2;
+    struct timeval tv1, tv2;
     void *p;
     bgra650 img;
     bgra_alloc650(&img, 1024, 576);
@@ -681,18 +682,26 @@ int std1() {
     printf("%08X %08X %08X %08X\n", img.data[0], img.data[1], img.data[2], img.data[3]);
     //
     printf("memseta :\n");
+    gettimeofday(&tv1, NULL);
+    i = 1000;
     l1 = ReadTSC();
-    p = memseta650(img.data, 0, img.size << 4);
+    while (i-- > 0) p = memseta650(img.data, ORANGE650, img.size << 2);
     l2 = ReadTSC();
-    printf("memseta : %ld µops (%p - %p = %lu)\n", l2 - l1, img.data, p, (uint64_t)p - (uint64_t)img.data);
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("memseta : %ld µops (%p - %p = %lu) for %lds.%06luµs\n", l2 - l1, img.data, p, (uint64_t)p - (uint64_t)img.data, tv2.tv_sec, tv2.tv_usec);
     printf("%08X %08X %08X %08X\n", img.data[0], img.data[1], img.data[2], img.data[3]);
 
     //
     printf("memset  :\n");
+    gettimeofday(&tv1, NULL);
+    i = 1000;
     l1 = ReadTSC();
-    memset(img.data, 0, img.size << 4);
+    while (i-- > 0) p = memset(img.data, 0, img.size << 2);
     l2 = ReadTSC();
-    printf("memset  : %ld µops\n", l2 - l1);
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("memset  : %ld µops for %lds.%06luµs\n", l2 - l1, tv2.tv_sec, tv2.tv_usec);
 
     return 0;
 }
