@@ -289,14 +289,43 @@ int64_t ReadTSC();
 /*
  * asm tests
  */
+double fx(double x);
+
+// Sqrt !! longer
+double sqrta050(double val);
+#ifdef ASM650
+#define sqrt650(x) sqrt(x)
+#else
+#define sqrt650(x) sqrt(x)
+#endif
+
+double sqrta050f(double val, void *p);
 // Trig
 double cosa050(double rad);
+#ifdef ASM650
+#define cos650(x) cosa050(x)
+#else
+#define cos650(x) cos(x)
+#endif
+
 float cosa050f(float rad);
 //
 double sina050(double rad);
+#ifdef ASM650
+#define sin650(x) sina050(x)
+#else
+#define sin650(x) sin(x)
+#endif
+
 float sina050f(float rad);
 // return sin
 double cossina050(double rad, double *res);
+#ifdef ASM650
+#define cossin650(x, res) cossina050(x, res)
+#else
+#define cossin650(x, res)  cossina050(x, res)
+#endif
+
 float cossina050f(float rad, float *res);
 
 
@@ -308,5 +337,15 @@ double polya650(double *coe, int len, double x);
 //
 int ax2bxca650(double a, double b, double c, double *res);
 int ax2bxca650f(float a, float b, float c, float *res);
+
+
+
+
+
+
+/*
+ *
+ */
+void memseta650(void *p, size_t size, uint32_t v);
 
 #endif /* F650_H_ */

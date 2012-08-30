@@ -7,6 +7,10 @@ global sina050:		function
 global sina050f:	function
 global cossina050:	function
 global cossina050f:	function
+;
+global sqrta050:	function
+global sqrta050f:	function
+
 
 SECTION .data
 
@@ -90,3 +94,32 @@ cossina050f:
 		movss			dword [rdi + 4], xmm0
 		ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+sqrta050:
+		xorpd			xmm10, xmm10
+		ucomisd			xmm0, xmm10
+		jb				Pb0_1
+		movsd			[rbp - 8], xmm0
+		fld				qword [rbp - 8]
+		fsqrt
+		fstp			qword [rbp - 8]
+		movsd			xmm0, [rbp - 8]
+		ret
+
+Pb0_1:	; < 0
+		ret
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+sqrta050f:
+;		call			rdi
+		xorpd			xmm10, xmm10
+		ucomisd			xmm0, xmm10
+		jb				Pb0_2
+		movsd			[rbp - 8], xmm0
+		fld				qword [rbp - 8]
+		fsqrt
+		fstp			qword [rbp - 8]
+		movsd			xmm0, [rbp - 8]
+		ret
+
+Pb0_2:	; < 0
+		ret

@@ -489,6 +489,8 @@ int math1() {
     return 0;
 }
 
+double fx(double x) {return 3*x + 1;}
+
 int trig() {
     int N = 1000000;
     long l1, l2;
@@ -520,14 +522,14 @@ int trig() {
     r1 = r2 = 0;
     l1 = ReadTSC();
     for(d = 0. ; d < 1000. ; d += 1.) {
-        r1 += cosa050(d);
+        r1 += sqrta050f(d, &fx);
     }
     l2 = ReadTSC();
     printf("cosa : %ld\n", (l2 - l1) / 1000);
 
     l1 = ReadTSC();
     for(d = 0. ; d < 1000. ; d += 1.) {
-        r2 += cos(d);
+        r2 += sqrt(d);
     }
     l2 = ReadTSC();
     printf("cos  : %ld\n", (l2 - l1) / 1000);

@@ -163,6 +163,23 @@ scala650:
 		addsd		xmm0, xmm1
 		ret
 
+; double scal2a650(vect650 *u, vect650 *v) @@@
+scal2a650:
+		movapd		xmm0, [rdi]
+		movapd		xmm1, [rsi]
+		mulpd		xmm0, xmm1
+		;
+		movsd		xmm1, [rdi + 8]
+		movsd		xmm2, [rsi + 8]
+		mulsd		xmm1, xmm2
+		addsd		xmm0, xmm1
+		;
+		movsd		xmm1, [rdi + 16]
+		movsd		xmm2, [rsi + 16]
+		mulsd		xmm1, xmm2
+		addsd		xmm0, xmm1
+		ret
+
 ; double vecta650(vect650 *u, vect650 *v, vect650 *w) : RDI, RSI, RDX
 vecta650:
 		movsd		xmm0, [rdi + 8]
