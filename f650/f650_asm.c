@@ -17,7 +17,7 @@ int f650_test_asm(uint16_t i) {
     int s = 0;
     uint16_t j = 0;
 
-    if (s < 0) {
+    while (s != 0) {
         s = s + i;
     }
     return j;

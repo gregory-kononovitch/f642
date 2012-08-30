@@ -489,8 +489,73 @@ int math1() {
     return 0;
 }
 
+int trig() {
+    int N = 1000000;
+    long l1, l2;
+    double d, r1 = 0, r2 = 0, F, d2[2];
+    float df, rf1 = 0, rf2 = 0;
+    struct timeval tv1, tv2;
 
-int main() {
+    // Double cossin
+    r1 = r2 = 0;
+    l1 = ReadTSC();
+    for(d = 0. ; d < 1000. ; d += 1.) {
+        r1 += cossina050(d, d2);
+        r1 += d2[0];
+    }
+    l2 = ReadTSC();
+    printf("cossina : %ld\n", (l2 - l1) / 1000);
+
+    l1 = ReadTSC();
+    for(d = 0. ; d < 1000. ; d += 1.) {
+        r2 += cos(d);
+        r2 += sin(d);
+    }
+    l2 = ReadTSC();
+    printf("cossin  : %ld\n", (l2 - l1) / 1000);
+
+    printf("cossina = %f  | cossin = %f\n", r1, r2);
+
+    // Double cos
+    r1 = r2 = 0;
+    l1 = ReadTSC();
+    for(d = 0. ; d < 1000. ; d += 1.) {
+        r1 += cosa050(d);
+    }
+    l2 = ReadTSC();
+    printf("cosa : %ld\n", (l2 - l1) / 1000);
+
+    l1 = ReadTSC();
+    for(d = 0. ; d < 1000. ; d += 1.) {
+        r2 += cos(d);
+    }
+    l2 = ReadTSC();
+    printf("cos  : %ld\n", (l2 - l1) / 1000);
+
+    printf("cosa = %f  | cos = %f\n", r1, r2);
+
+    // Float
+    l1 = ReadTSC();
+    for(df = 0.f ; df < 1000.f ; df += 1.f) {
+        rf1 += cosa050f(df);
+    }
+    l2 = ReadTSC();
+    printf("cosa050f : %ld\n", (l2 - l1) / 1000);
+
+    l1 = ReadTSC();
+    for(df = 0.f ; df < 1000.f ; df += 1.f) {
+        rf2 += cosf(df);
+    }
+    l2 = ReadTSC();
+    printf("cosf  : %ld\n", (l2 - l1) / 1000);
+
+    printf("cosa050f = %f  | cosf = %f\n", rf1, rf2);
+
+
+    return 0;
+}
+
+int pi() {
     uint16_t n1[10] = {6, 8, 0, 1, 4, 5, 3, 8, 4, 0};
     uint16_t n2[10] = {1, 6, 4, 7, 4, 8, 2, 9, 8, 6};
     printf("n1 = {%u, %u, %u, %u, %u, %u, %u, %u, %u, %u}\n", n1[0], n1[1], n1[2], n1[3], n1[4], n1[5], n1[6], n1[7], n1[8], n1[9]);
@@ -499,4 +564,115 @@ int main() {
     adda050(n1, n2, 10);
     printf("------------------------------------------------------------------\n");
     printf("n1 = {%u, %u, %u, %u, %u, %u, %u, %u, %u, %u}\n", n1[0], n1[1], n1[2], n1[3], n1[4], n1[5], n1[6], n1[7], n1[8], n1[9]);
+
+    return 0;
+}
+
+int ax2() {
+    int i, n = 0, N = 1000000;
+    long l1, l2;
+    struct timeval tv1, tv2;
+    double *di = calloc(N, sizeof(double)), F;
+    double ci[5 * 6] = {
+              1., -3., 2., 1., 2.
+            , -1., 3., -2., 1., 2.
+            , 1., -2., 1., 1., 0
+            , 1., -2., 5., 0, 0
+            , 0., -1., 1., 1., 0
+            , 0., 0., 1.
+    };
+    int ni[6] = {2, 2, 1, 0, 1, 0};
+
+    printf("TEST ax2bxc :\n");
+    for(i = 0 ; i < 6 ; i++) {
+        n = ax2bxca650(ci[5*i + 0], ci[5*i + 1], ci[5*i + 2], di);
+        if (n != ni[i]) printf("KO : nb != : %d / %d\n", n, ni[i]);
+        else if (ni[i] == 2 && (ci[5*i + 3] != di[0] || ci[5*i + 4] != di[1])) printf("KO : %f != %f  | %f != %f\n", ci[5*i + 3], di[0], ci[5*i + 4], di[1]);
+        else if (ni[i] == 1 && ci[5*i + 3] != di[0]) printf("KO : %f != %f\n", ci[5*i + 3], di[0]);
+        else printf("OK : test %d\n", i);
+
+    }
+
+    l1 = ReadTSC();
+    for(i = 0 ; i < N ; i += 1) {
+        di[i] = cos(i);
+    }
+    l2 = ReadTSC();
+    printf("cos : %ld\n", (l2 - l1) / N);
+
+    //
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+    for(i = 0 ; i < N ; i++) {
+        n += ax2bxca650(di[i], di[i+1], di[i+2], di);
+    }
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    F = 1. * tv2.tv_sec + 1e-6 * tv2.tv_usec;
+    F = N / F;
+    printf("ax2bxc : %ld for %d (%f) racines = %.2fkHz\n", (l2 - l1) / N, n, 1. / N * n, F / 1000.);
+
+    free(di);
+    return 0;
+}
+
+int ax2f() {
+    int i, n = 0, N = 1000000;
+    long l1, l2;
+    struct timeval tv1, tv2;
+    float *di = calloc(N, sizeof(float));
+    double F;
+    float ci[5 * 6] = {
+              1., -3., 2., 1., 2.
+            , -1., 3., -2., 1., 2.
+            , 1., -2., 1., 1., 0
+            , 1., -2., 5., 0, 0
+            , 0., -1., 1., 1., 0
+            , 0., 0., 1.
+    };
+    int ni[6] = {2, 2, 1, 0, 1, 0};
+
+    printf("TEST ax2bxc :\n");
+    for(i = 0 ; i < 6 ; i++) {
+        n = ax2bxca650f(ci[5*i + 0], ci[5*i + 1], ci[5*i + 2], di);
+        if (n != ni[i]) printf("KO : nb != : %d / %d\n", n, ni[i]);
+        else if (ni[i] == 2 && (ci[5*i + 3] != di[0] || ci[5*i + 4] != di[1])) printf("KO : %f != %f  | %f != %f\n", ci[5*i + 3], di[0], ci[5*i + 4], di[1]);
+        else if (ni[i] == 1 && ci[5*i + 3] != di[0]) printf("KO : %f != %f\n", ci[5*i + 3], di[0]);
+        else printf("OK : test %d\n", i);
+
+    }
+
+    l1 = ReadTSC();
+    for(i = 0 ; i < N ; i += 1) {
+        di[i] = cos(i);
+    }
+    l2 = ReadTSC();
+    printf("cos : %ld\n", (l2 - l1) / N);
+
+    //
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+    for(i = 0 ; i < N ; i++) {
+        n += ax2bxca650f(di[i], di[i+1], di[i+2], di);
+    }
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    F = 1. * tv2.tv_sec + 1e-6 * tv2.tv_usec;
+    F = N / F;
+    printf("ax2bxc : %ld for %d (%f) racines = %.2fkHz\n", (l2 - l1) / N, n, 1. / N * n, F / 1000.);
+
+    free(di);
+    return 0;
+}
+
+
+int main() {
+//    ax2();
+//    ax2f();
+
+    trig();
+
+    return 0;
 }

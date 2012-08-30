@@ -289,12 +289,24 @@ int64_t ReadTSC();
 /*
  * asm tests
  */
+// Trig
+double cosa050(double rad);
+float cosa050f(float rad);
 //
+double sina050(double rad);
+float sina050f(float rad);
+// return sin
+double cossina050(double rad, double *res);
+float cossina050f(float rad, float *res);
+
+
 int adda050(uint16_t *number1, uint16_t *number2, int len);
 int mula050(uint8_t *number1, int len1, uint32_t fac);
 int diva050(uint8_t *number1, int len1, uint32_t div);
 //
 double polya650(double *coe, int len, double x);
+//
 int ax2bxca650(double a, double b, double c, double *res);
+int ax2bxca650f(float a, float b, float c, float *res);
 
 #endif /* F650_H_ */
