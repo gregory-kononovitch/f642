@@ -669,12 +669,41 @@ int ax2f() {
     return 0;
 }
 
+int std1() {
+    int i;
+    long l1, l2;
+    void *p;
+    bgra650 img;
+    bgra_alloc650(&img, 1024, 576);
+
+    //
+    memset(img.data, 0xFF, 10);
+    printf("%08X %08X %08X %08X\n", img.data[0], img.data[1], img.data[2], img.data[3]);
+    //
+    printf("memseta :\n");
+    l1 = ReadTSC();
+    p = memseta650(img.data, 0, img.size << 4);
+    l2 = ReadTSC();
+    printf("memseta : %ld µops (%p - %p = %lu)\n", l2 - l1, img.data, p, (uint64_t)p - (uint64_t)img.data);
+    printf("%08X %08X %08X %08X\n", img.data[0], img.data[1], img.data[2], img.data[3]);
+
+    //
+    printf("memset  :\n");
+    l1 = ReadTSC();
+    memset(img.data, 0, img.size << 4);
+    l2 = ReadTSC();
+    printf("memset  : %ld µops\n", l2 - l1);
+
+    return 0;
+}
 
 int main() {
 //    ax2();
 //    ax2f();
 
-    trig();
+//    trig();
+
+    std1();
 
     return 0;
 }

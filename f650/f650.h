@@ -346,6 +346,6 @@ int ax2bxca650f(float a, float b, float c, float *res);
 /*
  *
  */
-void memseta650(void *p, size_t size, uint32_t v);
+void *memseta650(void *p, uint32_t v, size_t size);
 
 #endif /* F650_H_ */
