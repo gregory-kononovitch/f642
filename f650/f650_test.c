@@ -877,7 +877,7 @@ int poly2() {
         //
         p0.x = -2;
         p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
-        for(p.x = -2. ; p.x <= 2. ; p.x += .001) {
+        for(p.x = -2. ; p.x <= 2. ; p.x += .25) {
             p.y = polya650(co1, sizeof(co1) / 8, sin650(p.x));
 //            p0.x = p.x;
 //            p0.y = polya650(co2, sizeof(co2) / 8, p0.x);

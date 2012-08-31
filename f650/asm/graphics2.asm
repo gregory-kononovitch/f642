@@ -118,64 +118,52 @@ PX:			; prepar : x = sx * (x - x0) + width / 2
 
 xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			ucomisd			xmm2, xmm0
-			ja				XLINE				; xmm2 >= xmm0
-SWPX:	; swap x1, x2 & y1, y2
-		movsd			xmm8, xmm0
-		movsd			xmm0, xmm2
-		movsd			xmm2, xmm8
-		movsd			xmm8, xmm1
-		movsd			xmm1, xmm3
-		movsd			xmm3, xmm8
-XLINE:
-		movsd			xmm8, xmm6			; xmm8 = y2 - y1
-		divsd			xmm8, xmm4			; a = xmm8 = (y2 - y1) / (x2 - x1)
-		movsd			xmm5, xmm8			; a
-		mulsd			xmm5, xmm0			; a * x1
-		movsd			xmm9, xmm1			; y1
-		subsd			xmm9, xmm5			; b = y1 - a * x1
-WX1:	; if (x1 < 0) { x1 = 0 ; y1 = b;}
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm0
-		seta			al
-		test			al, al
-		je				WX2					; x1 >= 0
-		movsd			xmm0, xmm4			; x1 = 0
-		movsd			xmm1, xmm9			; y1 = b
+			ja				.xline				; xmm2 > xmm0
+.swapx:		; swap x1, x2 & y1, y2
+			movsd			xmm8, xmm0
+			movsd			xmm0, xmm2
+			movsd			xmm2, xmm8
+			movsd			xmm8, xmm1
+			movsd			xmm1, xmm3
+			movsd			xmm3, xmm8
+.xline:		; y = a.x + b
+			movsd			xmm8, xmm6			; xmm8 = y2 - y1
+			divsd			xmm8, xmm4			; a = xmm8 = (y2 - y1) / (x2 - x1)
+			movsd			xmm5, xmm8			; a
+			mulsd			xmm5, xmm0			; a * x1
+			movsd			xmm9, xmm1			; y1
+			subsd			xmm9, xmm5			; b = y1 - a * x1
+.tst1:		; if (x1 < 0) { x1 = 0 ; y1 = b;}
+			ucomisd			xmm0, [ZERO]
+			jae				.tst2				; x1 >= 0
+			xorpd			xmm0, xmm0			; x1 = 0
+			movsd			xmm1, xmm9			; y1 = b
 
-WX2:	; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;}
-		movsd			xmm4, xmm10
-		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				WX22				; x2 >= width
-		jmp				TX
-WX22:	movsd			xmm2, xmm10			; x2 = width
-		movsd			xmm3, xmm10			; y2 =
-		mulsd			xmm3, xmm8			; a * width
-		addsd			xmm3, xmm9			; + b
+.tst2:		; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;}
+			ucomisd			xmm2, xmm10
+			jb				.prepax				; x2 >= width
 
-TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
-		movsd			xmm6, qword [PAS]	; xmm6 = 0.65
-		mov				r10, rsi			; color
-		xor				r11, r11
-		mov				r11w, [rdi + 8]		; width - r9w/d
-		xorpd			xmm12, xmm12		; xmm12 = 0
-LOOPX:	; loop
-		; xi, yi
+.windx:		movsd			xmm2, xmm10			; x2 = width
+			movsd			xmm3, xmm10			; y2 =
+			mulsd			xmm3, xmm8			; a * width
+			addsd			xmm3, xmm9			; + b
+
+.prepax:	movsd			xmm4, xmm0			; xmm4 = x = x1
+			movsd			xmm6, qword [PAS]	; xmm6 = 0.65
+			mov				r10, rsi			; color
+			xor				r11, r11
+			mov				r11w, [rdi + 8]		; width - r9w/d
+
+LOOPX:	; loop xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
 		mulsd			xmm5, xmm8			; y = a * x
 		addsd			xmm5, xmm9			; y = y + b
 TIX1:	; if (y < 0) continue;
-		ucomisd			xmm12, xmm5
-		seta			al
-		test			al, al
-		je				TIX2				; y >= 0
-		jmp				COOPX
+		ucomisd			xmm5, [ZERO]
+		jb				COOPX				; y < 0
 TIX2:	; if (y >= h) continue;
-		ucomisd			xmm11, xmm5
-		seta			al
-		test			al, al
-		je				COOPX				; y >= h
+		ucomisd			xmm5, xmm11
+		jae				COOPX				; y >= h
 		inc				rcx
 
 		; index
@@ -196,6 +184,7 @@ COOPX:	;
 		je				LOOPX				; xmm2 >= xmm4
 		jmp				RETOK
 
+; -------------------------------------------------------------------
 yaxis:
 		ucomisd			xmm1, xmm3
 		seta			al
