@@ -64,8 +64,7 @@ void bgraz_gray650(bgraz650 *img, uint8_t gray) {
 }
 
 void bgra_fill650(bgra650 *img, uint32_t color) {
-    int i;
-    for(i = 0 ; i < img->size ; i++) img->data[i] = color;
+    memseta650(img->data, color, img->size << 4);
 }
 
 /*

@@ -823,9 +823,27 @@ int poly2() {
     }
 
     //
-    for(x = -10. ; x < 0. ; x += 0.25) {
-        printf("x = %f -> %f\n", x, polya650(co, sizeof(co) / 8, x));
+    vect650 p, p0;
+    bgra650 img;
+    bgra_alloc650(&img, 1024, 600);
+    bgra_origin650(&img, 0, 0);
+    bgra_scale650(&img, 1024. / 2., 600. / 2.);
+    bgra_fill650(&img, 0xff804020);
+    draw_line650(&img, -10., 0., +10., 0., MAGENTA650);
+    draw_line650(&img, 0., -10., 0., +10., MAGENTA650);
+    //
+    p0.x = -1;
+    p0.y = polya650(co, sizeof(co) / 8, p0.x);
+    for(p.x = -1. ; p.x <= 1. ; p.x += 2. / 2000.) {
+        p.y = polya650(co, sizeof(co) / 8, p.x);
+        draw_line650(&img, p0.x, p0.y, p.x, p.y, GREEN650);
+        p0.x = p.x;
+        p0.y = p.y;
     }
+    //
+    fb650 *fb = fb_open650();
+    fb_draw650(fb, &img);
+    fb_close650(&fb);
 
     //
     return 0;

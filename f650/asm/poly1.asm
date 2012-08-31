@@ -41,6 +41,7 @@ _ed0:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; double polya650(double *coe, int len2, double x)
+;		KO (first call ok, others ko)
 poly2a650:
 			mov			rcx, rsi
 			shr			rcx, 1

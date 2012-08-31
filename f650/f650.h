@@ -280,8 +280,18 @@ vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
 #endif
 
 
+/*
+ *      fb0
+ */
+typedef struct {
+    void    *start;
+    int     fd;
+    int     len;
+} fb650;
 
-
+fb650   *fb_open650();
+void    fb_close650(fb650 **fb);
+int     fb_draw650(fb650 *fb, bgra650 *img);
 
 // asm
 int64_t ReadTSC();
