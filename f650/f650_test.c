@@ -619,6 +619,50 @@ int pi() {
     return 0;
 }
 
+void init_lnum(uint64_t *n, int len) {
+    int i;
+    for(i = 0 ; i < len ; i++) {
+        double d = 1. * rand() / RAND_MAX;
+        n[i] = (uint64_t)(d * 9.999999999999e10);
+        if (i < 6) printf("%ld\n", n[i]);
+    }
+}
+
+void dump_lnum(uint64_t *n, int len, int nb) {
+    int i = 0;
+    uint64_t k;
+    printf("n =");
+    while(i < nb) {
+        int j = i / 11;
+        if (i % 11 == 0) {
+            k = 1;
+            printf(" |");
+        }
+        else k *= 10;
+        printf(" %ld", (n[j] % (10 * k)) / k);
+        i++;
+    }
+    printf("\n");
+}
+
+int pi2() {
+    int i, len = 96 * 1024;
+    long l1, l2, l;
+    uint64_t *n1 = malloc(len * sizeof(uint64_t));
+
+    //
+    init_lnum(n1, len);
+    dump_lnum(n1, len, 40);
+    //
+    l1 = ReadTSC();
+    void *p = mulla050(n1, len , 2);
+    l2 = ReadTSC();
+    dump_lnum(n1, len, 40);
+    printf("p = %p / %p = %lu = %lu\n", p, n1, (uint64_t)p - (uint64_t)n1, (uint64_t)p);
+    printf("    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
+    printf("For %ld µops\n", l2 -l1);
+}
+
 int ax2() {
     int i, n = 0, N = 1000000;
     long l1, l2;
@@ -763,7 +807,7 @@ int main() {
 
 //    std1();
 
-    pi();
+    pi2();
 
 //    test_geo1();
     return 0;

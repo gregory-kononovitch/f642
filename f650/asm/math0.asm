@@ -17,6 +17,7 @@ TWO		dq				2.0
 FOUR	dq				4.0
 HALF	dq				0.5
 PAS		dq				0.65
+Ue12	dq				1000000000000
 
 SECTION .text  align=16
 
@@ -252,7 +253,7 @@ diva050:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; void *mulla050(uint64_t *number1, uint64_t fac, int len);
+; void *mulla050(uint64_t *number1, int len1, uint64_t fac
 ; [-8  ;  0[  : 1 000 000 000 000
 ; [-16 ; -8[  : values
 ; [-20 ; -16[ : 10
@@ -262,27 +263,32 @@ diva050:
 mulla050:
 			mov			rcx, rsi
 			jrcxz		_2end0
-			mov			qword [rbp - 8], 1000000000000	; 10
-			mov			qword [rbp - 16], rdx	; fac
-			mov			qword [rbp - 24], 0		; quot
-			jmp			_2lp0
-
-_2end0:		ret
+;			push		rbp
+;			mov			rbp, rsp
+;			sub			rsp, +32
+;			and			rsp, -16
+			;
+			mov			r8, 0xE8D4A51000		; qword [Ue12]		; 10e12
+			mov			r9, rdx					; fac
+			mov			r10, 0					; quot
 
 _2lp0:
 			mov			rax, qword [rdi]
 			xor			rdx, rdx				; div
-			mul			qword [rbp - 16]		; * fac
-			add			rax, qword [rbp - 24]	; rem
-			div			qword [rbp - 8]			; / 10e12
-			mov			qword [rbp - 24], rax 	; quotient
-			mov			qword [rdi], rdx
+			mul			r9						; * fac
+			add			rax, r10				; rem
+			div			r8						; / 10e12
+			mov			qword [rdi], rdx		; rem
+			mov			r10, rax 				; quotient
 _2ct0:		;
 			add			rdi, 8
 			loop		_2lp0
 
+;			pop			rbp
+			mov			rax, rdi
 			ret
 
+_2end0:		ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; void *mulla050(uint64_t *number1, int len1, uint64_t fac);
