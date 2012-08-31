@@ -8,7 +8,9 @@ global draw_line2a650: 	function
 SECTION .data
 ZERO	dq				0.0
 HALF	dq				0.5
+HALFf	dd				0.5
 PAS		dq				0.65
+FOURf	dd				4.0
 
 SECTION .text  align=16
 
@@ -148,41 +150,84 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			mulsd			xmm3, xmm8			; a * width
 			addsd			xmm3, xmm9			; + b
 
-.prepax:	movsd			xmm4, xmm0			; xmm4 = x = x1
-			movsd			xmm6, qword [PAS]	; xmm6 = 0.65
+.prepax:	;
+			cvttsd2si		edx, xmm0
+			cvtsi2ss		xmm12, edx			; X0
+			cvttsd2si		eax, xmm2
+			sub				eax, edx
+			add				eax, 1				; nb xi
+			mov				edx, eax			; dist
+			cmp				eax, 4
+			ja				.i4
+			xor				eax, eax
+.i4			shr				eax, 2
+			add				eax, 1
+			mov				ecx, eax			; cpt loop
+			shl				eax, 2				; nb4 xi
+			;
+			cvtsi2ss		xmm13, edx			; dist
+			cvtsi2ss		xmm14, eax
+			divss			xmm13, xmm14		; PAS
+			; 4 * xi
+			addss			xmm12, [HALFf]
+			movss			dword [rbp - 16], xmm12
+			addss			xmm12, xmm13
+			movss			dword [rbp - 12], xmm12
+			addss			xmm12, xmm13
+			movss			dword [rbp - 8], xmm12
+			addss			xmm12, xmm13
+			movss			dword [rbp - 4], xmm12
+			movdqa			xmm12, oword [rbp - 16]
+			; 4 * 4pas
+			mulss			xmm13, [FOURf]
+			movss			dword [rbp - 16], xmm13
+			movss			dword [rbp - 12], xmm13
+			movss			dword [rbp - 8], xmm13
+			movss			dword [rbp - 4], xmm13
+			movdqa			xmm13, oword [rbp - 16]
+			; 4 * a
+			cvtsd2ss		xmm8, xmm8
+			movss			dword [rbp - 16], xmm8
+			movss			dword [rbp - 12], xmm8
+			movss			dword [rbp - 8], xmm8
+			movss			dword [rbp - 4], xmm8
+			movdqa			xmm8, oword [rbp - 16]
+			; 4 * b
+			cvtsd2ss		xmm9, xmm9
+			movss			dword [rbp - 16], xmm9
+			movss			dword [rbp - 12], xmm9
+			movss			dword [rbp - 8], xmm9
+			movss			dword [rbp - 4], xmm9
+			movdqa			xmm9, oword [rbp - 16]
+			;
 			mov				r10, rsi			; color
 			xor				r11, r11
-			mov				r11w, [rdi + 8]		; width - r9w/d
+			mov				r11w, [rdi + 8]		; width = r9w
 
-LOOPX:	; loop xi, yi
-		movsd			xmm5, xmm4			; xmm5 = y = x
-		mulsd			xmm5, xmm8			; y = a * x
-		addsd			xmm5, xmm9			; y = y + b
-TIX1:	; if (y < 0) continue;
-		ucomisd			xmm5, [ZERO]
-		jb				COOPX				; y < 0
-TIX2:	; if (y >= h) continue;
-		ucomisd			xmm5, xmm11
-		jae				COOPX				; y >= h
-		inc				rcx
+.loopx:		; loop xi, yi
+			movdqa			xmm14, xmm13		; xi
+			movdqa			xmm15, xmm13		; yi = xi
+			mulps			xmm15, xmm8			; a . xi
+			addps			xmm15, xmm9			; + b
 
-		; index
-		cvttsd2si		r8d, xmm5			; (int)y -> r8d
-		imul			r8d, r11d			; width * (int)y
-		cvttsd2si		r9d, xmm4			; (int)x -> r9d
-		add				r8d, r9d			; index
-		shl				r8, 2				; index << 2
-		mov				rax, qword [rdi]	;
-		add				rax, r8				;
-		mov				[rax], dword r10d	;
+;			; if (y < 0) continue;
+;			ucomisd			xmm5, [ZERO]
+;			jb				.coopx				; y < 0
+;			; if (y >= h) continue;
+;			ucomisd			xmm5, xmm11
+;			jae				.coopx				; y >= h
 
-COOPX:	;
-		addsd			xmm4, xmm6			; x += 0.65
-		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				LOOPX				; xmm2 >= xmm4
-		jmp				RETOK
+			; index
+			cvttps2dq		xmm14, xmm14		; xif -> xi
+			cvttps2dq		xmm15, xmm15		; yif -> yi
+			; pmuludq
+
+
+.coopx:		;
+			paddd			xmm12, xmm13
+			loop			.coopx
+
+
 
 ; -------------------------------------------------------------------
 yaxis:
