@@ -15,10 +15,10 @@ memseta650:
 		shr			rcx, 4
 		jrcxz		END0
 		mov			rax, rsi
-		mov			[rbp - 4], eax
-		mov			[rbp - 8], eax
-		mov			[rbp - 12], eax
-		mov			[rbp - 16], eax
+		mov			dword [rbp - 4], eax
+		mov			dword [rbp - 8], eax
+		mov			dword [rbp - 12], eax
+		mov			dword [rbp - 16], eax
 		movdqa		xmm0, oword [rbp - 16]
 		mov			rax, rdi
 

@@ -826,9 +826,10 @@ int poly2() {
     vect650 p, p0;
     bgra650 img;
     bgra_alloc650(&img, 1024, 600);
-    bgra_origin650(&img, 0, 0);
+    bgra_origin650(&img, 0., 0.);
     bgra_scale650(&img, 1024. / 2., 600. / 2.);
-    bgra_fill650(&img, 0xff804020);
+    //bgra_fill650(&img, 0xff804020);
+    printf("img init ok\n");
     draw_line650(&img, -10., 0., +10., 0., MAGENTA650);
     draw_line650(&img, 0., -10., 0., +10., MAGENTA650);
     //
@@ -840,6 +841,7 @@ int poly2() {
         p0.x = p.x;
         p0.y = p.y;
     }
+    printf("img drawn\n");
     //
     fb650 *fb = fb_open650();
     fb_draw650(fb, &img);
