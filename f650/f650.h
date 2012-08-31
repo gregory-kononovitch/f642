@@ -68,7 +68,7 @@ void bgraz_gray650(bgraz650 *img, uint8_t gray);
 
 // Draw line
 int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
-void *draw_line2a650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+long draw_line2a650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 #ifdef ASM650
 #define draw_line650(img, x1, y1, x2, y2, c) draw_line2a650(img, x1, y1, x2, y2, c)

@@ -894,15 +894,33 @@ int poly2() {
 }
 
 int geo2() {
+    int i;
     long l1, l2;
-    bgra650 img;
+    double d;
+    bgra650 img1, img2;
 
-    bgra_alloc650(&img, 1024, 600);
+    bgra_alloc650(&img1, 1024, 600);
+    bgra_alloc650(&img2, 1024, 600);
 
     l1 = ReadTSC();
-    draw_line2a650(&img, -100., -50., +100., +50., WHITE650);
+    draw_linea650(&img1, -100., -50., +100., +50., WHITE650);
     l2 = ReadTSC();
-    printf("draw2 : %ld\n", l2 - l1);
+    printf("draw  : %ld\n", l2 - l1);
+
+    l1 = ReadTSC();
+    d = draw_line2a650(&img2, -100., -50., +100., +50., WHITE650);
+    l2 = ReadTSC();
+    printf("draw2 : %ld = %f\n", l2 - l1, d);
+
+    //
+    printf("compare : %d\n", bgra_compare650(&img1, &img2));
+    //
+    for(i = 0 ; i < 52 ; i++)
+        printf("%d : %u = (%u, %u) - %.6f\n", i
+                , img2.data[i]
+                , (img2.data[i]) % 1024, (img2.data[i]) / 1024
+                , ((float*)img2.data)[i]
+        );
 }
 
 int main() {
