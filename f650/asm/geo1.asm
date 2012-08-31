@@ -6,6 +6,7 @@ default rel
 global norma650: function
 global unita650: function
 global scala650: function
+global scal2a650: function
 global vecta650: function
 global adda650: function
 global suba650: function

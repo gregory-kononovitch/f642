@@ -252,16 +252,41 @@ diva050:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; void *addla050(uint64_t *number1, char *uint64_t, int len);
-addla050:
+; void *mulla050(uint64_t *number1, uint64_t fac, int len);
+; [-8  ;  0[  : 1 000 000 000 000
+; [-16 ; -8[  : values
+; [-20 ; -16[ : 10
+; [-24 ; -20[ : fac
+; [-28 ; -24[ : remainder
+; [-32 ; -28[ : ecx (loop 0)
+mulla050:
+			mov			rcx, rsi
+			jrcxz		_2end0
+			mov			qword [rbp - 8], 1000000000000	; 10
+			mov			qword [rbp - 16], rdx	; fac
+			mov			qword [rbp - 24], 0		; quot
+			jmp			_2lp0
 
+_2end0:		ret
 
+_2lp0:
+			mov			rax, qword [rdi]
+			xor			rdx, rdx				; div
+			mul			qword [rbp - 16]		; * fac
+			add			rax, qword [rbp - 24]	; rem
+			div			qword [rbp - 8]			; / 10e12
+			mov			qword [rbp - 24], rax 	; quotient
+			mov			qword [rdi], rdx
+_2ct0:		;
+			add			rdi, 8
+			loop		_2lp0
 
 			ret
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; void *mulla050(uint64_t *number1, int len1, uint64_t fac);
-mulla050:
+addla050:
 
 
 			ret

@@ -211,6 +211,7 @@ void mul_and_subf650(vect650 *u, double a, vect650 *v);
 #endif
 
 double scala650(vect650 *u, vect650 *v);
+double scal2a650(vect650 *u, vect650 *v);
 double scalf650(vect650 *u, vect650 *v);
 #ifdef ASM650
 #define scal650(u, v) scala650(u, v)

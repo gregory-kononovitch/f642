@@ -249,6 +249,13 @@ int test_geo1() {
     d = scala650(&u, &v);
     l2 = ReadTSC();
     printf("A scal : %ld = %f\n", l2 - l1, d);
+
+//    //
+//    l1 = ReadTSC();
+//    d = scal2a650(&u, &v);
+//    l2 = ReadTSC();
+//    printf("A scal2 : %ld = %f\n", l2 - l1, d);
+
     //
     l1 = ReadTSC();
     d  = scalf650(&u, &v);
@@ -758,5 +765,6 @@ int main() {
 
     pi();
 
+//    test_geo1();
     return 0;
 }
