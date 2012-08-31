@@ -209,19 +209,51 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movdqa			xmm15, xmm13		; yi = xi
 			mulps			xmm15, xmm8			; a . xi
 			addps			xmm15, xmm9			; + b
-
+			;
+			; index
+			cvttps2dq		xmm14, xmm14		; xif -> xi
+			cvttps2dq		xmm15, xmm15		; yif -> yi
+			; pmuludq
+			;
+			movdqa			oword [rbp - 16], xmm14	; xi
+			movdqa			oword [rbp - 32], xmm15	; yi
+			;
+			xor				rdx, rdx
+			;
 ;			; if (y < 0) continue;
 ;			ucomisd			xmm5, [ZERO]
 ;			jb				.coopx				; y < 0
 ;			; if (y >= h) continue;
 ;			ucomisd			xmm5, xmm11
 ;			jae				.coopx				; y >= h
-
-			; index
-			cvttps2dq		xmm14, xmm14		; xif -> xi
-			cvttps2dq		xmm15, xmm15		; yif -> yi
-			; pmuludq
-
+			;
+			mov				eax, r11d				; width
+			mov				r8d, dword [rbp - 32]	; yi
+			mul				r8d						; *
+			add				eax, dword [rbp - 16]	; + xi
+			shl				eax, 2
+			mov				dword [rdi + rax], r10d
+			;
+			mov				eax, r11d				; width
+			mov				r8d, dword [rbp - 28]	; yi
+			mul				r8d						; *
+			add				eax, dword [rbp - 12]	; + xi
+			shl				eax, 2
+			mov				dword [rdi + rax], r10d
+			;
+			mov				eax, r11d				; width
+			mov				r8d, dword [rbp - 24]	; yi
+			mul				r8d						; *
+			add				eax, dword [rbp - 8]	; + xi
+			shl				eax, 2
+			mov				dword [rdi + rax], r10d
+			;
+			mov				eax, r11d				; width
+			mov				r8d, dword [rbp - 20]	; yi
+			mul				r8d						; *
+			add				eax, dword [rbp - -4]	; + xi
+			shl				eax, 2
+			mov				dword [rdi + rax], r10d
 
 .coopx:		;
 			paddd			xmm12, xmm13

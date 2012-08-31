@@ -893,6 +893,18 @@ int poly2() {
     return 0;
 }
 
+int geo2() {
+    long l1, l2;
+    bgra650 img;
+
+    bgra_alloc650(&img, 1024, 600);
+
+    l1 = ReadTSC();
+    draw_line2a650(&img, -100., -50., +100., +50., WHITE650);
+    l2 = ReadTSC();
+    printf("draw2 : %ld\n", l2 - l1);
+}
+
 int main() {
 //    ax2();
 //    ax2f();
@@ -905,7 +917,9 @@ int main() {
 
 //    test_geo1();
 
-    poly2();
+//    poly2();
+
+    geo2();
 
     return 0;
 }
