@@ -430,7 +430,7 @@ int test3() {
         compute_pix650(&cam, &p2, &q2);
         draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         //
-        for(i = 0 ; i < 10000 ; i++) {  // 28kHz
+        for(i = 0 ; i < 50 ; i++) {  // 28kHz
             random650(&p1);
             p1.x *= 10;
             p1.x += pos.x;
@@ -446,7 +446,7 @@ int test3() {
             draw_line650(&img, q1.x, q1.y, q2.x, q2.y, rand());
         }
         //
-        //memcpy(start, img.data, img.size << 2);
+        memcpy(start, img.data, img.size << 2);
         //
         nb += 50000;
         gettimeofday(&tv2, NULL);
@@ -897,6 +897,7 @@ int geo2() {
     int i;
     long l1, l2;
     double d;
+    struct timeval tv1, tv2;
     bgra650 img1, img2;
 
     bgra_alloc650(&img1, 1024, 600);
@@ -904,15 +905,25 @@ int geo2() {
     bgra_alloc650(&img2, 1024, 600);
     bgra_clear650(&img2);
 
+    gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
-    draw_linea650(&img1, -100., -50., +100., +50., WHITE650);
+    for(i = 0 ; i < 30000 ; i++) {
+        draw_linea650(&img1, -100., -50., +100., +50., WHITE650);
+    }
     l2 = ReadTSC();
-    printf("draw  : %ld\n", l2 - l1);
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("draw  : %ld for %lds.%06luµs\n", l2 - l1, tv2.tv_sec, tv2.tv_usec);
 
+    gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
-    d = draw_line2a650(&img2, -100., -50., +100., +50., WHITE650);
+    for(i = 0 ; i < 30000 ; i++) {
+        draw_line2a650(&img2, -100., -50., +100., +50., WHITE650);
+    }
     l2 = ReadTSC();
-    printf("draw2 : %ld = %f\n", l2 - l1, d);
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("draw2 : %ld for %lds.%06luµs\n", l2 - l1, tv2.tv_sec, tv2.tv_usec);
 
     //
     printf("compare : %d\n", bgra_compare650(&img1, &img2));
