@@ -83,53 +83,42 @@ PX:			; prepar : x = sx * (x - x0) + width / 2
 
 .tst2:		; if (y1 >= h && y2 >= h) return (opt : if (y1 < h || y2 < h) ok)
 			ucomisd			xmm1, xmm11
-			jb				ABSX
+			jb				.absx
 			;
 			ucomisd			xmm3, xmm11
 			jae				NOPIX
 
-ABSX:	; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5
-		movsd			xmm4, xmm2
-		subsd			xmm4, xmm0	; xmm4 = x2 - x1
-		xorpd			xmm5, xmm5
-		ucomisd			xmm5, xmm4
-		seta			al
-		test			al, al
-		je				XPOS
-		xorpd			xmm5, xmm5
-		subsd			xmm5, xmm4
-		jmp				ABSY
+.absx:		; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5
+			movsd			xmm4, xmm2
+			subsd			xmm4, xmm0	; xmm4 = x2 - x1
+			ucomisd			xmm4, [ZERO]
+			jae				.xpos
+			xorpd			xmm5, xmm5
+			subsd			xmm5, xmm4	; xmm5 = abs
+			jmp				.absy
 
-XPOS:	; xmm4 = x2 - x1 = xmm5 > 0
-		movsd			xmm5, xmm4
+.xpos:		; xmm4 = x2 - x1 = xmm5 > 0
+			movsd			xmm5, xmm4
 
-ABSY:	; y2 - y1 -> xmm6 / abs(y2 - y1) -> xmm7
-		movsd			xmm6, xmm3
-		subsd			xmm6, xmm1	; xmm4 = x2 - x1
-		xorpd			xmm7, xmm7
-		ucomisd			xmm7, xmm6
-		seta			al
-		test			al, al
-		je				YPOS
-		xorpd			xmm7, xmm7
-		subsd			xmm7, xmm6
-		jmp				CMPdXdY
+.absy:		; y2 - y1 -> xmm6 / abs(y2 - y1) -> xmm7
+			movsd			xmm6, xmm3
+			subsd			xmm6, xmm1	; xmm6 = y2 - y1
+			ucomisd			xmm6, [ZERO]
+			jae				.ypos
+			xorpd			xmm7, xmm7
+			subsd			xmm7, xmm6
+			jmp				.cmpdxdy
 
-YPOS:	; xmm6 = x2 - x1 > 0
-		movsd			xmm7, xmm6
+.ypos:		; xmm6 = x2 - x1 > 0
+			movsd			xmm7, xmm6
 
-CMPdXdY:
-		ucomisd			xmm7, xmm5
-		seta			al
-		test			al, al
-		je				XAXIS
-		jmp				YAXIS
+.cmpdxdy:
+			ucomisd			xmm5, xmm7
+			jbe				yaxis
 
-XAXIS:	; abs(x2 - x1) > abs(y2 - y1)
-		ucomisd			xmm0, xmm2
-		seta			al
-		test			al, al
-		je				XLINE				; xmm2 >= xmm0
+xaxis:		; abs(x2 - x1) > abs(y2 - y1)
+			ucomisd			xmm2, xmm0
+			ja				XLINE				; xmm2 >= xmm0
 SWPX:	; swap x1, x2 & y1, y2
 		movsd			xmm8, xmm0
 		movsd			xmm0, xmm2
@@ -207,7 +196,7 @@ COOPX:	;
 		je				LOOPX				; xmm2 >= xmm4
 		jmp				RETOK
 
-YAXIS:
+yaxis:
 		ucomisd			xmm1, xmm3
 		seta			al
 		test			al, al
