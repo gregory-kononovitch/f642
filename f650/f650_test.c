@@ -853,6 +853,7 @@ int poly2() {
     co2[0] = -0.4;
     //
     fb650 *fb = fb_open650();
+    double pas = 5e-3;
     while(1) {
         fb_draw650(fb, &img);
         //
@@ -862,25 +863,28 @@ int poly2() {
             random650(&p);
             //
             //co1[i] = sin650(p.x * M_PI);
-            if (p.x < 0) co1[i] += 1.5e-3;
-            else co1[i] -= 1.5e-3;
-            if (p.y < 0) co2[i] += 1.5e-3;
-            else co2[i] -= 1.5e-3;
+            if (p.x < 0) co1[i] += pas;
+            else co1[i] -= pas;
+            if (p.y < 0) co2[i] += pas;
+            else co2[i] -= pas;
         }
-        co1[0] = +0.4;
+        co1[0] = +0.1;
         co2[0] = -0.4;
         //
         bgra_clear650(&img);
         draw_line650(&img, -10., 0., +10., 0., MAGENTA650);
         draw_line650(&img, 0., -10., 0., +10., MAGENTA650);
         //
-        p0.x = -1;
+        p0.x = -2;
         p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
-        for(p.x = -1. ; p.x <= 1. ; p.x += 2. / 2000.) {
-            p.y = polya650(co1, sizeof(co1) / 8, p.x);
-            p0.x = p.x;
-            p0.y = polya650(co2, sizeof(co1) / 8, p.x);
+        for(p.x = -2. ; p.x <= 2. ; p.x += .001) {
+            p.y = polya650(co1, sizeof(co1) / 8, sin650(p.x));
+//            p0.x = p.x;
+//            p0.y = polya650(co2, sizeof(co2) / 8, p0.x);
+            if ((p.y < -2 || p.y > 2) && (p0.y < -2 || p0.y > 2)) continue;
             draw_line650(&img, p0.x, p0.y, p.x, p.y, GREEN650);
+            p0.x = p.x;
+            p0.y = p.y;
         }
     }
     fb_close650(&fb);
