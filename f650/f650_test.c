@@ -951,8 +951,8 @@ int main() {
 
 //    poly2();
 
-//    geo2();
-    test3();
+    geo2();
+//    test3();
 
     return 0;
 }
