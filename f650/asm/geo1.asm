@@ -167,7 +167,7 @@ scala650:
 scal2a650:
 		movapd		xmm0, [rdi]
 		movapd		xmm1, [rsi]
-		mulpd		xmm0, xmm1
+		dppd		xmm0, xmm1, 49		; 110001b
 
 		;
 		movsd		xmm1, [rdi + 16]
