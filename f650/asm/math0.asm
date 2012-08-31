@@ -4,6 +4,10 @@ default rel
 global adda050:		function
 global mula050:		function
 global diva050:		function
+;
+global addla050:	function
+global mulla050:	function
+global divla050:	function
 
 SECTION .data
 NINE	dw				9
@@ -244,4 +248,27 @@ diva050:
 
 
 
-		ret
+			ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; void *addla050(uint64_t *number1, char *uint64_t, int len);
+addla050:
+
+
+
+			ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; void *mulla050(uint64_t *number1, int len1, uint64_t fac);
+mulla050:
+
+
+			ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; void *divla050(uint64_t *number1, int len1, uint64_t div);
+divla050:
+
+
+			ret

@@ -328,10 +328,15 @@ double cossina050(double rad, double *res);
 
 float cossina050f(float rad, float *res);
 
-
+// PI / digit
 void *adda050(char *number1, char *number2, int len);
 void *mula050(char *number1, int len1, uint32_t fac);
 void *diva050(char *number1, int len1, uint32_t div);
+// PI / ulong
+void *addla050(uint64_t *number1, char *uint64_t, int len);
+void *mulla050(uint64_t *number1, int len1, uint64_t fac);
+void *divla050(uint64_t *number1, int len1, uint64_t div);
+
 //
 double polya650(double *coe, int len, double x);
 //
