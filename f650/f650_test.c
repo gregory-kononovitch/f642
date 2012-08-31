@@ -557,15 +557,57 @@ int trig() {
     return 0;
 }
 
-int pi() {
-    uint16_t n1[10] = {6, 8, 0, 1, 4, 5, 3, 8, 4, 0};
-    uint16_t n2[10] = {1, 6, 4, 7, 4, 8, 2, 9, 8, 6};
-    printf("n1 = {%u, %u, %u, %u, %u, %u, %u, %u, %u, %u}\n", n1[0], n1[1], n1[2], n1[3], n1[4], n1[5], n1[6], n1[7], n1[8], n1[9]);
-    printf("n2 = {%u, %u, %u, %u, %u, %u, %u, %u, %u, %u}\n", n2[0], n2[1], n2[2], n2[3], n2[4], n2[5], n2[6], n2[7], n2[8], n2[9]);
+static void dump(char *n, int i0, int i1, const char *name) {
+    int i = 0;
+    printf("%s = {", name);
+    printf("%d", n[i0++]);
+    for(i = i0 ; i < i1 ; i++) printf(", %d", n[i]);
+    printf("}\n");
+}
 
-    adda050(n1, n2, 10);
-    printf("------------------------------------------------------------------\n");
-    printf("n1 = {%u, %u, %u, %u, %u, %u, %u, %u, %u, %u}\n", n1[0], n1[1], n1[2], n1[3], n1[4], n1[5], n1[6], n1[7], n1[8], n1[9]);
+static char *cand(int len) {
+    int i;
+    char *p = malloc(len);
+    for(i = 0 ; i < len ; i++) {
+        p[i] = (char)(10L * rand() / RAND_MAX);
+    }
+    return p;
+}
+
+int pi() {
+    int len = 1024 * 1024;
+    long l1, l2;
+    struct timeval tv1, tv2;
+//    char n1[32] = {6, 8, 0, 1, 4, 5, 3, 8, 4, 0, 4, 8, 2, 9, 8, 6, 8, 2, 9, 8, 6, 6, 8, 0, 4, 0, 4, 8, 2, 9, 8, 6};
+//    char n2[32] = {1, 6, 4, 7, 4, 8, 2, 9, 8, 6, 6, 8, 0, 1, 4, 5, 8, 0, 1, 4, 5, 3, 8, 4, 8, 2, 9, 8, 6, 6, 8, 0};
+    char *n1 = cand(len);
+    char *n2 = cand(len);
+    //
+    dump(n1, 0, 32, "n1");
+    dump(n2, 0, 32, "n2");
+
+    // Add
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+    void *p = adda050(n1, n2, len);
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("---------------------------  ADD  -----------------------------\n");
+    dump(n1, 0, 32, "n1");
+    printf("n1 = %p for %ld µops and %lds.%06luµs\n", n1, l2 - l1, tv2.tv_sec, tv2.tv_usec);
+
+    // Mul
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+    p = mula050(n1, len, 3);
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("------------------------------  MUL  -------------------------------\n");
+    dump(n1, 0, 32, "n1");
+
+    printf("n1 = %p / %p for %ld µops and %lds.%06luµs\n", n1, p, l2 - l1, tv2.tv_sec, tv2.tv_usec);
 
     return 0;
 }
@@ -712,7 +754,9 @@ int main() {
 
 //    trig();
 
-    std1();
+//    std1();
+
+    pi();
 
     return 0;
 }
