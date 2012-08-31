@@ -163,14 +163,12 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			sub				eax, edx
 			add				eax, 1				; nb xi
 			mov				edx, eax			; dist
-			mov				dword[rdi + 56], edx
 			cmp				eax, 4
 			ja				.i4
 			xor				eax, eax
 .i4			shr				eax, 2
 			add				eax, 1
 			mov				ecx, eax			; cpt loop
-			mov				dword[rdi + 52], eax
 			shl				eax, 2				; nb4 xi
 			;
 			cvtsi2ss		xmm13, edx			; dist
@@ -208,7 +206,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movss			dword [rbp - 4], xmm9
 			movdqa			xmm9, oword [rbp - 16]
 
-			mov rcx, 2
+;			mov rcx, 2
 			xor				rdx, rdx
 
 .loopx:		; loop xi, yi
@@ -216,13 +214,15 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movdqa			xmm15, xmm12		; yi = xi
 			mulps			xmm15, xmm8			; a . xi
 			addps			xmm15, xmm9			; + b
-			movdqa			oword[rdi + 44], xmm14
-			movdqa			oword[rdi + 28], xmm15
+;			movdqa			oword[rdi + 128], xmm14
+;			movdqa			oword[rdi + 112], xmm15
 
 			;
 			; index
 			cvttps2dq		xmm14, xmm14		; xif -> xi
 			cvttps2dq		xmm15, xmm15		; yif -> yi
+;			movdqa			oword[rdi + 96], xmm14
+;			movdqa			oword[rdi + 80], xmm15
 			; pmuludq
 			;
 			movdqa			oword [rbp - 16], xmm14	; xi
@@ -252,19 +252,21 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			mov				r8d, dword [rbp - 24]	; yi
 			mul				r8d						; *
 			add				eax, dword [rbp - 8]	; + xi
-			mov				dword[rdi + 4 * rcx + 4 * rcx], eax
+;			mov				dword[rdi + 4 * rcx + 4 * rcx], eax
 			mov				dword [rdi + 4*rax], r10d
 			;
-;			mov				eax, r11d				; width
-;			mov				r8d, dword [rbp - 20]	; yi
-;			mul				r8d						; *
-;			add				eax, dword [rbp - -4]	; + xi
+			mov				eax, r11d				; width
+			mov				r8d, dword [rbp - 20]	; yi
+			mul				r8d						; *
+			add				eax, dword [rbp - -4]	; + xi
 ;			mov				dword[rdi + 4 * rcx + 4 * rcx + 4], eax
-;			mov				dword [rdi + 4*rax], r10d
+			mov				dword [rdi + 4*rax], r10d
 
 .coopx:		;
-			paddd			xmm12, xmm13
-			mov				dword[rdi + 4 * rcx], eax
+			addps			xmm12, xmm13
+;			movdqa			oword[rdi + 64], xmm12
+;			movdqa			oword[rdi + 48], xmm13
+;			mov				dword[rdi + 4 * rcx], eax
 			loop			.loopx
 
 			ret
