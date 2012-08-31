@@ -202,37 +202,122 @@ _1lp0:
 			mov			rax, qword [rdi]
 			mov			qword [rbp - 16], rax	; digits
 			mov			qword [rbp - 64], 0		; mul digits
+			mov			r9, 0
 			mov			dword [rbp - 32], ecx	; save ecx
-			mov			r9, 8
+			mov			rcx, 2
 			mov			r8, rbp
 			sub			r8, 16					; digit
 			mov			cl, 0					; shift
-
-_1lp1:
-			mov			eax, dword [r8]
+;------------------------------------
+;_1lp1:
+;			mov			eax, dword [r8]
+;			and			rax, 0xFF				; digit
+;			add			eax, dword [rbp - 28]	; rem
+;			xor			rdx, rdx				; div
+;			mul			dword [rbp - 24]		; * fac
+;			div			dword [rbp - 20]		; / 10
+;			mov			dword [rbp - 28], eax 	; quotient
+;			shl			edx, cl
+;			add			[rbp - 64], edx
+;
+;_1ct1:		;
+;			inc			r8
+;			add			cl, 8
+;			loop		_1lp1
+;-------------------------------------
+			mov			eax, dword [rbp - 16]
 			and			rax, 0xFF				; digit
 			xor			rdx, rdx				; div
 			mul			dword [rbp - 24]		; * fac
 			add			eax, dword [rbp - 28]	; rem
 			div			dword [rbp - 20]		; / 10
 			mov			dword [rbp - 28], eax 	; quotient
-			shl			rdx, cl
-			add			qword [rbp - 64], rdx
+;			shl			edx, 0
+			add			[rbp - 64], edx
+;
+			mov			eax, dword [rbp - 15]
+			and			rax, 0xFF				; digit
+			xor			rdx, rdx				; div
+			mul			dword [rbp - 24]		; * fac
+			add			eax, dword [rbp - 28]	; rem
+			div			dword [rbp - 20]		; / 10
+			mov			dword [rbp - 28], eax 	; quotient
+			shl			edx, 8
+			add			[rbp - 64], edx
+;
+			mov			eax, dword [rbp - 14]
+			and			rax, 0xFF				; digit
+			xor			rdx, rdx				; div
+			mul			dword [rbp - 24]		; * fac
+			add			eax, dword [rbp - 28]	; rem
+			div			dword [rbp - 20]		; / 10
+			mov			dword [rbp - 28], eax 	; quotient
+			shl			edx, 16
+			add			[rbp - 64], edx
+;
+			mov			eax, dword [rbp - 13]
+			and			rax, 0xFF				; digit
+			xor			rdx, rdx				; div
+			mul			dword [rbp - 24]		; * fac
+			add			eax, dword [rbp - 28]	; rem
+			div			dword [rbp - 20]		; / 10
+			mov			dword [rbp - 28], eax 	; quotient
+			shl			edx, 24
+			add			[rbp - 64], edx
 
-_1ct1:		;
-			inc			r8
-			add			cl, 8
-			dec			r9
-			cmp			r9, 0
-			jnz			_1lp1
+			mov			rax, qword [rbp - 64]
+			ret
 
+;
+			mov			eax, dword [rbp - 12]
+			and			rax, 0xFF				; digit
+			xor			rdx, rdx				; div
+			mul			dword [rbp - 24]		; * fac
+			add			eax, dword [rbp - 28]	; rem
+			div			dword [rbp - 20]		; / 10
+			mov			dword [rbp - 28], eax 	; quotient
+			shl			edx, 32
+			add			[rbp - 64], edx
+;
+			mov			eax, dword [rbp - 11]
+			and			rax, 0xFF				; digit
+			xor			rdx, rdx				; div
+			mul			dword [rbp - 24]		; * fac
+			add			eax, dword [rbp - 28]	; rem
+			div			dword [rbp - 20]		; / 10
+			mov			dword [rbp - 28], eax 	; quotient
+			shl			edx, 40
+			add			[rbp - 64], edx
+;
+			mov			eax, dword [rbp - 10]
+			and			rax, 0xFF				; digit
+			xor			rdx, rdx				; div
+			mul			dword [rbp - 24]		; * fac
+			add			eax, dword [rbp - 28]	; rem
+			div			dword [rbp - 20]		; / 10
+			mov			dword [rbp - 28], eax 	; quotient
+			shl			edx, 48
+			add			[rbp - 64], edx
+;
+			mov			eax, dword [rbp - 9]
+			and			rax, 0xFF				; digit
+			xor			rdx, rdx				; div
+			mul			dword [rbp - 24]		; * fac
+			add			eax, dword [rbp - 28]	; rem
+			div			dword [rbp - 20]		; / 10
+			mov			dword [rbp - 28], eax 	; quotient
+			shl			edx, 56
+			add			[rbp - 64], edx
+
+			mov			rax, qword [rbp - 64]
+			ret
+;-------------------------------------
 _1ct0:		;
 			mov			rax, qword [rbp - 64]
-			mov			qword [rdi], rax
-			mov			ecx, [rbp - 32]
+			movbe		qword [rdi], rax
+			mov			rcx, [rbp - 32]
 			add			rdi, 8
-			mov			rax, rcx
-			loop		_1lp0
+;			loop		_1lp0
 
 			mov			rax, rdi
 			ret
