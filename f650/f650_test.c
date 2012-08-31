@@ -408,7 +408,7 @@ int test3() {
         timersub(&tv, &tv0, &tv);
         t = 1. * tv.tv_sec + 0.000001 * tv.tv_usec;
         //
-        bgra_gray650(&img, 0x40);    // 2.5ms
+        bgra_gray650(&img, 0x20);    // 2.5ms
         i++;
         //
         pos.x = +4.5 * t;
@@ -430,7 +430,7 @@ int test3() {
         compute_pix650(&cam, &p2, &q2);
         draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         //
-        for(i = 0 ; i < 50 ; i++) {  // 28kHz
+        for(i = 0 ; i < 10000 ; i++) {  // 28kHz
             random650(&p1);
             p1.x *= 10;
             p1.x += pos.x;
@@ -459,7 +459,8 @@ int test3() {
 //        }
         nbw += tvt.tv_usec;
         n++;
-        if (n % 20 == 0) printf("time = %.2f\n", 1. * nbw / n);
+        //if (n % 20 == 0) printf("time = %.2f\n", 1. * nbw / n);
+        if (n % 50 == 0) printf("time = %.2f\n", t);
     }
 
     return 0;
