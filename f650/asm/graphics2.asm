@@ -74,18 +74,18 @@ PX:			; prepar : x = sx * (x - x0) + width / 2
 			movsd			xmm3, xmm5
 
 			; tests y
-			; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
+			; if (y1 < 0 && y2 < 0) return (opt : if (y1 >= 0 || y2 >= 0) ok)
 			ucomisd			xmm1, [ZERO]
 			jae				.tst2				; xmm1 >= 0
 			; y2
 			ucomisd			xmm3, [ZERO]
 			jb				NOPIX				; xmm3 < 0
 
-.tst2:		; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
+.tst2:		; if (y1 >= h && y2 >= h) return (opt : if (y1 < h || y2 < h) ok)
 			ucomisd			xmm1, xmm11
 			jb				ABSX
 			;
-			ucomisd			xmm1, xmm11
+			ucomisd			xmm3, xmm11
 			jae				NOPIX
 
 ABSX:	; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5
