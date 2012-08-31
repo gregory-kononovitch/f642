@@ -799,6 +799,11 @@ int std1() {
     return 0;
 }
 
+
+int poly2() {
+    double poly2a650(double *coe, int len2, double x);
+}
+
 int main() {
 //    ax2();
 //    ax2f();

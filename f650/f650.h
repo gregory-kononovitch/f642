@@ -339,12 +339,13 @@ void *mulla050(uint64_t *number1, int len1, uint64_t fac);
 void *divla050(uint64_t *number1, int len1, uint64_t div);
 
 //
-double polya650(double *coe, int len, double x);
-//
 int ax2bxca650(double a, double b, double c, double *res);
 int ax2bxca650f(float a, float b, float c, float *res);
 
 
+//
+double polya650(double *coe, int len, double x);
+double poly2a650(double *coe, int len2, double x);
 
 
 
