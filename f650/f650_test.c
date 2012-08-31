@@ -801,7 +801,34 @@ int std1() {
 
 
 int poly2() {
-    double poly2a650(double *coe, int len2, double x);
+    int i;
+    long l1, l2;
+    double co[22] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
+    double x, y;
+
+    x = 0.;
+
+    for(i = 0 ; i < 1 ; i++) {
+        //
+        l1 = ReadTSC();
+        y = polya650(co, sizeof(co) / 8, x);
+        l2 = ReadTSC();
+        printf("polya  : p(%f) = %f for %ldµos\n", x, y, l2 - l1);
+
+        //
+        l1 = ReadTSC();
+        y = poly2a650(co, sizeof(co) / 8, x);
+        l2 = ReadTSC();
+        printf("poly2a : p(%f) = %f for %ldµos\n", x, y, l2 - l1);
+    }
+
+    //
+    for(x = -10. ; x < 0. ; x += 0.25) {
+        printf("x = %f -> %f\n", x, polya650(co, sizeof(co) / 8, x));
+    }
+
+    //
+    return 0;
 }
 
 int main() {
@@ -812,8 +839,11 @@ int main() {
 
 //    std1();
 
-    pi2();
+//    pi2();
 
 //    test_geo1();
+
+    poly2();
+
     return 0;
 }
