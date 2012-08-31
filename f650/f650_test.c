@@ -397,7 +397,7 @@ int test3() {
     l2 = ReadTSC();
     printf("draw_line650 = %ld for %d\n", l2 - l1, i);
 
-    return 0;
+//    return 0;
     //
     long n = 0, nb =0, nbw = 0;
     gettimeofday(&tv0, NULL);
@@ -900,7 +900,9 @@ int geo2() {
     bgra650 img1, img2;
 
     bgra_alloc650(&img1, 1024, 600);
+    bgra_clear650(&img1);
     bgra_alloc650(&img2, 1024, 600);
+    bgra_clear650(&img2);
 
     l1 = ReadTSC();
     draw_linea650(&img1, -100., -50., +100., +50., WHITE650);
@@ -915,12 +917,12 @@ int geo2() {
     //
     printf("compare : %d\n", bgra_compare650(&img1, &img2));
     //
-    for(i = 0 ; i < 52 ; i++)
-        printf("%d : %u = (%u, %u) - %.6f\n", i
-                , img2.data[i]
-                , (img2.data[i]) % 1024, (img2.data[i]) / 1024
-                , ((float*)img2.data)[i]
-        );
+//    for(i = 0 ; i < 52 ; i++)
+//        printf("%d : %u = (%u, %u) - %.6f\n", i
+//                , img2.data[i]
+//                , (img2.data[i]) % 1024, (img2.data[i]) / 1024
+//                , ((float*)img2.data)[i]
+//        );
 }
 
 int main() {
@@ -937,7 +939,8 @@ int main() {
 
 //    poly2();
 
-    geo2();
+//    geo2();
+    test3();
 
     return 0;
 }
