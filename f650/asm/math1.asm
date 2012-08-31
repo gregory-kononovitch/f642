@@ -1,7 +1,5 @@
 default rel
 
-extern sin
-global polya650: 	function
 global ax2bxca650:	function
 global ax2bxca650f:	function
 
