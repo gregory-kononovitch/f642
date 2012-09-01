@@ -9,7 +9,7 @@ global draw_zlinea650: 	function
 SECTION .data
 ZERO	dq				0.0
 HALF	dq				0.5
-PAS		dq				0.65
+PAS		dq				0.9
 
 SECTION .text  align=16
 

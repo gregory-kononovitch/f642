@@ -430,17 +430,18 @@ int test3() {
         compute_pix650(&cam, &p2, &q2);
         draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         //
-        for(i = 0 ; i < 10000 ; i++) {  // 28kHz
+        for(i = 0 ; i < 50 ; i++) {  // 28kHz
             random650(&p1);
-            p1.x *= 10;
-            p1.x += pos.x;
+//            p1.x *= 10;
+            p1.x += pos.x - 6;
             p1.y *= 5;
             p1.z *= 2;
             compute_pix650(&cam, &p1, &q1);
             random650(&p2);
-            p2.x *= 10;
-            p2.x += pos.x;
-            p2.y *= 5;
+//            p2.x *= 10;
+            p2.x += pos.x + 6;
+//            p2.y *= 5;
+            p2.y = -5 * p1.y;
             p2.z *= 2;
             compute_pix650(&cam, &p2, &q2);
             draw_line650(&img, q1.x, q1.y, q2.x, q2.y, rand());
@@ -950,9 +951,9 @@ int main() {
 
 //    test_geo1();
 
-    poly2();
+//    poly2();
 
-//    geo2();
+    geo2();
 //    test3();
 
     return 0;

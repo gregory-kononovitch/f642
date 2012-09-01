@@ -216,7 +216,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			cvttps2dq		xmm14, xmm14		; xif -> xi
 			cvttps2dq		xmm15, xmm15		; yif -> yi
 			; prep
-			movdqa			oword [rbp - 32], xmm15	; yi
+			movdqa			oword [rbp - 32], xmm15	; yi, temp
 			;
 			pmuludq			xmm15, xmm10
 			movdqa			oword [rbp - 16], xmm15	; w.yi
