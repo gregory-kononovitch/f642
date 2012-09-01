@@ -7,6 +7,8 @@ global draw_line2a650: 	function
 
 SECTION .data
 ZERO	dq				0.0
+ZEROf	dd				0.0
+ONE		dq				1.0
 HALF	dq				0.5
 HALFf	dd				0.5
 PAS		dq				0.65
@@ -85,35 +87,16 @@ draw_line2a650:
 
 .tst2:		; if (y1 >= h && y2 >= h) return (opt : if (y1 < h || y2 < h) ok)
 			ucomisd			xmm1, xmm11
-			jb				.absx
+			jb				.abs
 			;
 			ucomisd			xmm3, xmm11
 			jae				NOPIX
 
-.absx:		; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5
+.abs:		; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5 ; 6, 7 for y
 			movsd			xmm4, xmm2
 			subsd			xmm4, xmm0	; xmm4 = x2 - x1
-;			ucomisd			xmm4, [ZERO]
-;			jae				.xpos
-;			xorpd			xmm5, xmm5
-;			subsd			xmm5, xmm4	; xmm5 = abs
-;			jmp				.absy
-;
-;.xpos:		; xmm4 = x2 - x1 = xmm5 > 0
-;			movsd			xmm5, xmm4
-
-;.absy:		; y2 - y1 -> xmm6 / abs(y2 - y1) -> xmm7
 			movsd			xmm6, xmm3
 			subsd			xmm6, xmm1	; xmm6 = y2 - y1
-;			ucomisd			xmm6, [ZERO]
-;			jae				.ypos
-;			xorpd			xmm7, xmm7
-;			subsd			xmm7, xmm6
-;			jmp				.cmpdxdy
-
-;.ypos:		; xmm6 = x2 - x1 > 0
-;			movsd			xmm7, xmm6
-
 			; hack abs
 			xorpd			xmm8, xmm8
 			cmppd			xmm8, xmm8, 0	; 1 in all
@@ -147,27 +130,25 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			mulsd			xmm5, xmm0			; a * x1
 			movsd			xmm9, xmm1			; y1
 			subsd			xmm9, xmm5			; b = y1 - a * x1
-.tst1:		; if (x1 < 0) { x1 = 0 ; y1 = b;}
-			ucomisd			xmm0, [ZERO]
-			jae				.tst2				; x1 >= 0
-			xorpd			xmm0, xmm0			; x1 = 0
-			movsd			xmm1, xmm9			; y1 = b
+			; if (x1 < 0) { x1 = 0 ; y1 = b;} -> if (x1 < 1) x1 = 0.5
+			ucomisd			xmm0, qword [ONE]
+			jae				.tw2				; x1 >= 1
+			movsd			xmm0, qword [HALF]	; x1 = 0.5
 
-.tst2:		; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;}
-			ucomisd			xmm2, xmm10
-			jb				.prepax				; x2 >= width
+.tw2:		; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;} -> if (x2 >= w1) x2 = w - 0.5
+			movsd			xmm12, xmm10
+			subsd			xmm12, qword [ONE]
+			ucomisd			xmm2, xmm12
+			jb				.prepax				; x2 < w1
 
 .windx:		movsd			xmm2, xmm10			; x2 = width
-			movsd			xmm3, xmm10			; y2 =
-			mulsd			xmm3, xmm8			; a * width
-			addsd			xmm3, xmm9			; + b
+			subsd			xmm2, qword [HALF]	; -.5
 
 .prepax:	;
-			;
 			mov				r10, rsi			; color
 			xor				r11, r11
 			mov				r11w, [rdi + 8]		; width = r9w
-			mov				rdi, [rdi]
+			mov				rdi, [rdi]			;
 			;
 			cvttsd2si		edx, xmm0
 			cvtsi2ss		xmm12, edx			; X0
@@ -225,8 +206,6 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movdqa			xmm15, xmm12		; yi = xi
 			mulps			xmm15, xmm8			; a . xi
 			addps			xmm15, xmm9			; + b
-
-			;
 			; index
 			cvttps2dq		xmm14, xmm14		; xif -> xi
 			cvttps2dq		xmm15, xmm15		; yif -> yi
@@ -235,32 +214,24 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movdqa			oword [rbp - 16], xmm14	; xi
 			movdqa			oword [rbp - 32], xmm15	; yi
 			;
-			;
-;			; if (y < 0) continue;
-;			ucomisd			xmm5, [ZERO]
-;			jb				.coopx				; y < 0
-;			; if (y >= h) continue;
-;			ucomisd			xmm5, xmm11
-;			jae				.coopx				; y >= h
-			;
-			mov				eax, r11d				; width
+.pv0		mov				eax, r11d				; width
 			mov				r8d, dword [rbp - 32]	; yi
 			mul				r8d						; *
 			add				eax, dword [rbp - 16]	; + xi
 			mov				dword [rdi + 4*rax], r10d
 			;
-			mov				eax, r11d				; width
+.pv1		mov				eax, r11d				; width
 			mov				r8d, dword [rbp - 28]	; yi
 			mul				r8d						; *
 			add				eax, dword [rbp - 12]	; + xi
 			mov				dword [rdi + 4*rax], r10d
-			;
+.pv2		;
 			mov				eax, r11d				; width
 			mov				r8d, dword [rbp - 24]	; yi
 			mul				r8d						; *
 			add				eax, dword [rbp - 8]	; + xi
 			mov				dword [rdi + 4*rax], r10d
-			;
+.pv3		;
 			mov				eax, r11d				; width
 			mov				r8d, dword [rbp - 20]	; yi
 			mul				r8d						; *
@@ -271,6 +242,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			addps			xmm12, xmm13
 			loop			.loopx
 
+.donex		;
 			ret
 
 
