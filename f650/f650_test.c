@@ -881,8 +881,8 @@ int poly2() {
         co2[0] = -0.4;
         //
         bgra_clear650(&img);
-        draw_line650(&img, -10., 0., +10., 0., MAGENTA650);
-        draw_line650(&img, 0., -10., 0., +10., MAGENTA650);
+        draw_line650(&img, -1.9, 0., +1.9, 0., MAGENTA650);
+        draw_line650(&img, 0., -1.9, 0., +1.9, MAGENTA650);
         //
         draw_line2a650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
         draw_linea650(&img, p1.x, p1.y - .25, p2.x, p2.y - .25, RED650);
@@ -915,10 +915,10 @@ int geo2() {
     vect650 p1, p2;
     bgra650 img1, img2;
     //
-    p1.x = +100;
-    p1.y = -50;
-    p2.x = +100;
-    p2.y = +50;
+    p1.x = +250.5;
+    p1.y = +250.5;
+    p2.x = -250.5;
+    p2.y = +252.5;
 
     //
     bgra_alloc650(&img1, 1024, 600);
@@ -969,9 +969,14 @@ int main() {
 
 //    test_geo1();
 
-    poly2();
+//    poly2();
 
-//    geo2();
+    double i = 250.5;
+    printf("i = %f -> %d\n", i, (int)i);
+    i = -250.5;
+    printf("i = %f -> %d\n", i, (int)i);
+
+    geo2();
 //    test3();
 
     return 0;

@@ -90,12 +90,17 @@ draw_line2a650:
 
 .tst2:		; if (y1 >= h && y2 >= h) return (opt : if (y1 < h || y2 < h) ok)
 			ucomisd			xmm1, xmm11
-			jb				.abs
+			jb				.hvp
 			;
 			ucomisd			xmm3, xmm11
 			jae				NOPIX
+
 			; ---------------------------
-			; test hline, vline, point
+.hvp		; test hline, vline, point
+			xor				r8, r8
+			xor				r9, r9
+			xor				r10, r10
+			xor				r11, r11
 			cvttsd2si		r9, xmm1
 			cvttsd2si		r11, xmm3
 			cmp				r9, r11
@@ -373,14 +378,14 @@ hline:
 			xor			rdx, rdx
 			mov			rax, r12		; width
 			mul			r9				; * y1 = y2 E [0, h[
-			add			r8
+			add			rax, r8			; + x1
 			shl			rax, 2			; * 4
 			add			rdi, rax		; rdi = point 0
 			mov			rcx, r10
 			sub			rcx, r8
 			add			rcx, 1			; rcx
 			mov			rax, rcx		; return
-			mov			rdx, rsi
+			mov			rdx, rsi		; color
 			;
 .loop
 			mov			dword [rdi], edx
@@ -396,31 +401,32 @@ vline:
 			mov			r12w, word [rdi + 10]	; height
 			;
 			cmp			r11, r9
-			jns			.hpos
+			jns			.vpos
 			; hneg
 			mov			rdx, r11
 			mov			r11, r9
 			mov			r9, rdx
 			;
-.hpos
+.vpos
 			cmp			r9, 0
-			js			.hpn		; y1 < 0
-			jmp			.hpo
+			js			.vpn		; y1 < 0
+			jmp			.vpo
 
-.hpn		; y1 < 0
+.vpn		; y1 < 0
 			xor			r9, r9
-.hpo		;
+.vpo		;
 			cmp			r11, r12
-			js			.hgo
+			js			.vgo
 			mov			r11, r12		; y2 >= h
 			sub			r11, 1
 
-.hgo		; r9 = min >= 0 && r11 = max < h
+.vgo		; r9 = min >= 0 && r11 = max < h
 			xor			rdx, rdx
+			xor			r12, r12
 			mov			r12w, word [rdi + 8]	; width
 			mov			rax, r12		; width
 			mul			r9				; * x1 = x2 E [0, w[
-			add			r8
+			add			rax, r8
 			shl			rax, 2			; * 4
 			mov			rdi, [rdi]
 			add			rdi, rax		; rdi = point 0
