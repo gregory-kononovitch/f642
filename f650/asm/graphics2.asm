@@ -350,15 +350,14 @@ hline:
 			;
 			cmp			r10, r8
 			jns			.hpos
-			mov			ecx, r8
-			sub			ecx, r10
-			add			ecx, 1
-			mov			r8, r10
-			jmp 		.hgo
+			; hneg
+			mov			rdx, r10
+			mov			r10, r8
+			mov			r8, rdx
 			;
 .hpos
 			cmp			r8, 0
-			js			.hpn
+			js			.hpn		; x1 < 0
 			jmp			.hpo
 
 .hpn		; x1 < 0
@@ -366,17 +365,29 @@ hline:
 .hpo		;
 			cmp			r10, r12
 			js			.hgo
-			mov			r10, r12	; x2 >= w
+			mov			r10, r12		; x2 >= w
 			sub			r10, 1
 
 .hgo		; r8 = min >= 0 && r10 = max < w
 			mov			rdi, [rdi]
+			xor			rdx, rdx
+			mov			rax, r12		; width
+			mul			r9				; * y1 = y2 E [0, h[
+			shl			rax, 2			; * 4
+			add			rdi, rax		; rdi = point 0
 			mov			rcx, r10
-			ad			rcx, 1
+			sub			rcx, r8
+			add			rcx, 1			; rcx
+			mov			rax, rcx		; return
+			mov			rdx, rsi
+			;
+.loop
+			mov			dword [rdi], edx
+			add			rdi, 4
+			loop		.loop
 
-
+			;
 			ret
-
 
 ;;;;;;;;;;;
 vline:
