@@ -187,10 +187,8 @@ COOPX:	;
 		jmp				RETOK
 
 YAXIS:
-		ucomisd			xmm1, xmm3
-		seta			al
-		test			al, al
-		je				YLINE				; xmm3 >= xmm1
+		ucomisd			xmm3, xmm1
+		jae				YLINE				; xmm3 >= xmm1
 SWPY:	; swap x1, x2 & y1, y2
 		movsd			xmm8, xmm0
 		movsd			xmm0, xmm2
@@ -209,21 +207,14 @@ YLINE:
 		; @@@ case x1 ~= x2 / y1 ~= y2
 
 WY1:	; if (y1 < 0) { y1 = 0 ; x1 = b;}
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm1
-		seta			al
-		test			al, al
-		je				WY2					; y1 >= 0
+		ucomisd			xmm1, [ZERO]
+		jae				WY2					; y1 >= 0
 		movsd			xmm1, xmm4			; y1 = 0
 		movsd			xmm0, xmm9			; x1 = b
 
 WY2:	; if (y2 >= img->height) { y2 = img->height ; x2 = a * y2 + b;}
-		movsd			xmm4, xmm11
-		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				WY22				; y2 >= height
-		jmp				TY
+		ucomisd			xmm3, xmm11
+		jb				TY					; y2 < height
 
 WY22:	movsd			xmm2, xmm10			; x2 = width
 		mulsd			xmm2, xmm8			; a * width
@@ -242,16 +233,11 @@ LOOPY:	; loop
 		mulsd			xmm5, xmm8			; x = a * y
 		addsd			xmm5, xmm9			; x = x + b
 TIY1:	; if (x < 0) continue;
-		ucomisd			xmm12, xmm5
-		seta			al
-		test			al, al
-		je				TIY2				; x >= 0
-		jmp				COOPY
+		ucomisd			xmm5, [ZERO]
+		jbe				COOPY				; x < 0
 TIY2:	; if (x >= w) continue;
-		ucomisd			xmm10, xmm5
-		seta			al
-		test			al, al
-		je				COOPY				; y >= w
+		ucomisd			xmm5, xmm10
+		jae				COOPY				; y >= w
 		inc				rcx
 
 		; index
@@ -267,9 +253,7 @@ TIY2:	; if (x >= w) continue;
 COOPY:	;
 		addsd			xmm4, xmm6			; y += 0.65
 		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				LOOPY				; xmm3 >= xmm4
+		jbe				LOOPY				; xmm3 >= xmm4
 		jmp				RETOK
 
 
