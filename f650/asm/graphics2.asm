@@ -263,9 +263,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 ; -------------------------------------------------------------------
 yaxis:
 		ucomisd			xmm1, xmm3
-		seta			al
-		test			al, al
-		je				YLINE				; xmm3 >= xmm1
+		jbe				YLINE				; xmm3 >= xmm1
 SWPY:	; swap x1, x2 & y1, y2
 		movsd			xmm8, xmm0
 		movsd			xmm0, xmm2
@@ -284,21 +282,14 @@ YLINE:
 		; @@@ case x1 ~= x2 / y1 ~= y2
 
 WY1:	; if (y1 < 0) { y1 = 0 ; x1 = b;}
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm1
-		seta			al
-		test			al, al
-		je				WY2					; y1 >= 0
-		movsd			xmm1, xmm4			; y1 = 0
+		ucomisd			xmm1, [ZERO]
+		jae				WY2					; y1 >= 0
+		xorpd			xmm1, xmm1			; y1 = 0
 		movsd			xmm0, xmm9			; x1 = b
 
 WY2:	; if (y2 >= img->height) { y2 = img->height ; x2 = a * y2 + b;}
-		movsd			xmm4, xmm11
-		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				WY22				; y2 >= height
-		jmp				TY
+		ucomisd			xmm3, xmm11
+		jb				TY					; y2 < height
 
 WY22:	movsd			xmm2, xmm10			; x2 = width
 		mulsd			xmm2, xmm8			; a * width
@@ -310,23 +301,18 @@ TY:		movsd			xmm4, xmm1			; xmm4 = x = x1
 		mov				r10, rsi			; color
 		xor				r11, r11
 		mov				r11w, [rdi + 8]		; width - r9w/d
-		xorpd			xmm12, xmm12		; xmm12 = 0
+		mov				rdi, [rdi]
 LOOPY:	; loop
 		; xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
 		mulsd			xmm5, xmm8			; x = a * y
 		addsd			xmm5, xmm9			; x = x + b
 TIY1:	; if (x < 0) continue;
-		ucomisd			xmm12, xmm5
-		seta			al
-		test			al, al
-		je				TIY2				; x >= 0
-		jmp				COOPY
+		ucomisd			xmm5, [ZERO]
+		jb				COOPY				; x < 0
 TIY2:	; if (x >= w) continue;
-		ucomisd			xmm10, xmm5
-		seta			al
-		test			al, al
-		je				COOPY				; y >= w
+		ucomisd			xmm5, xmm10
+		jae				COOPY				; y >= w
 		inc				rcx
 
 		; index
@@ -334,17 +320,12 @@ TIY2:	; if (x >= w) continue;
 		imul			r8d, r11d			; width * (int)y
 		cvttsd2si		r9d, xmm5			; (int)x -> r9d
 		add				r8d, r9d			; index
-		shl				r8, 2				; index << 2
-		mov				rax, qword [rdi]	;
-		add				rax, r8				;
-		mov				[rax], dword r10d	;
+		mov				[rdi + 4*r8], dword r10d	;
 
 COOPY:	;
 		addsd			xmm4, xmm6			; y += 0.65
 		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				LOOPY				; xmm3 >= xmm4
+		jbe				LOOPY				; xmm3 >= xmm4
 		jmp				RETOK
 
 
