@@ -94,7 +94,25 @@ draw_line2a650:
 			;
 			ucomisd			xmm3, xmm11
 			jae				NOPIX
-
+			; ---------------------------
+			; test hline, vline, point
+			cvttsd2si		r9, xmm1
+			cvttsd2si		r11, xmm3
+			cmp				r9, r11
+			jz				.hl
+			; y1 != y2
+			cvttsd2si		r8, xmm0
+			cvttsd2si		r10, xmm2
+			cmp				r8, r10
+			jz				vline
+			jmp				.abs
+.hl			; y1 == y2
+			cvttsd2si		r8, xmm0
+			cvttsd2si		r10, xmm2
+			cmp				r8, r10
+			jnz				hline
+			jz				point
+			; ---------------------------
 .abs:		; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5 ; 6, 7 for y
 			movsd			xmm4, xmm2
 			subsd			xmm4, xmm0	; xmm4 = x2 - x1
@@ -152,7 +170,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movzx			r11, word[rdi + 8]	; width = r11w
 			mov				rdi, [rdi]			;
 			;
-			cvttsd2si		edx, xmm0
+			cvttsd2si		edx, xmm0			; @@@ ready in ri
 			cvtsi2ss		xmm12, edx			; X0
 			cvttsd2si		eax, xmm2
 			sub				eax, edx
@@ -327,6 +345,35 @@ COOPY:	;
 
 ;;;;;;;;;;;
 hline:
+			xor			r12, r12
+			mov			r12w, word [rdi + 8]
+			;
+			cmp			r10, r8
+			jns			.hpos
+			mov			ecx, r8
+			sub			ecx, r10
+			add			ecx, 1
+			mov			r8, r10
+			jmp 		.hgo
+			;
+.hpos
+			cmp			r8, 0
+			js			.hpn
+			jmp			.hpo
+
+.hpn		; x1 < 0
+			xor			r8, r8
+.hpo		;
+			cmp			r10, r12
+			js			.hgo
+			mov			r10, r12	; x2 >= w
+			sub			r10, 1
+
+.hgo		; r8 = min >= 0 && r10 = max < w
+			mov			rdi, [rdi]
+			mov			rcx, r10
+			ad			rcx, 1
+
 
 			ret
 
