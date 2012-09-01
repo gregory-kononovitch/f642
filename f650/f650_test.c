@@ -876,13 +876,13 @@ int poly2() {
         draw_line650(&img, -10., 0., +10., 0., MAGENTA650);
         draw_line650(&img, 0., -10., 0., +10., MAGENTA650);
         //
-        p0.x = -2;
+        p0.x = +2;
         p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
-        for(p.x = -2. ; p.x <= 2. ; p.x += .25) {
-            p.y = polya650(co1, sizeof(co1) / 8, sin650(p.x));
+        for(p.x = +2. ; p.x >= -2. ; p.x -= .25) {
+            p.y = polya650(co1, sizeof(co1) / 8, p.x);
 //            p0.x = p.x;
 //            p0.y = polya650(co2, sizeof(co2) / 8, p0.x);
-            if ((p.y < -2 || p.y > 2) && (p0.y < -2 || p0.y > 2)) continue;
+//            if ((p.y < -2 || p.y > 2) && (p0.y < -2 || p0.y > 2)) continue;
             draw_line650(&img, p0.x, p0.y, p.x, p.y, GREEN650);
             p0.x = p.x;
             p0.y = p.y;
@@ -949,10 +949,10 @@ int main() {
 
 //    test_geo1();
 
-    poly2();
+//    poly2();
 
 //    geo2();
-//    test3();
+    test3();
 
     return 0;
 }

@@ -93,26 +93,38 @@ draw_line2a650:
 .absx:		; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5
 			movsd			xmm4, xmm2
 			subsd			xmm4, xmm0	; xmm4 = x2 - x1
-			ucomisd			xmm4, [ZERO]
-			jae				.xpos
-			xorpd			xmm5, xmm5
-			subsd			xmm5, xmm4	; xmm5 = abs
-			jmp				.absy
+;			ucomisd			xmm4, [ZERO]
+;			jae				.xpos
+;			xorpd			xmm5, xmm5
+;			subsd			xmm5, xmm4	; xmm5 = abs
+;			jmp				.absy
+;
+;.xpos:		; xmm4 = x2 - x1 = xmm5 > 0
+;			movsd			xmm5, xmm4
 
-.xpos:		; xmm4 = x2 - x1 = xmm5 > 0
-			movsd			xmm5, xmm4
-
-.absy:		; y2 - y1 -> xmm6 / abs(y2 - y1) -> xmm7
+;.absy:		; y2 - y1 -> xmm6 / abs(y2 - y1) -> xmm7
 			movsd			xmm6, xmm3
 			subsd			xmm6, xmm1	; xmm6 = y2 - y1
-			ucomisd			xmm6, [ZERO]
-			jae				.ypos
-			xorpd			xmm7, xmm7
-			subsd			xmm7, xmm6
-			jmp				.cmpdxdy
+;			ucomisd			xmm6, [ZERO]
+;			jae				.ypos
+;			xorpd			xmm7, xmm7
+;			subsd			xmm7, xmm6
+;			jmp				.cmpdxdy
 
-.ypos:		; xmm6 = x2 - x1 > 0
+;.ypos:		; xmm6 = x2 - x1 > 0
+;			movsd			xmm7, xmm6
+
+			; hack abs
+			xorpd			xmm8, xmm8
+			cmppd			xmm8, xmm8, 0	; 1 in all
+			psrlq			xmm8, 1			; 0 in 63
+			;x
+			movsd			xmm5, xmm4
+			andpd			xmm5, xmm8
+			;y
 			movsd			xmm7, xmm6
+			andpd			xmm7, xmm8
+
 
 .cmpdxdy:
 			ucomisd			xmm5, xmm7
