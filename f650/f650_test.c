@@ -827,6 +827,8 @@ int poly2() {
 
     //
     vect650 p, p0;
+    vect650 p1, p2;
+    bgra650 img1, img2;
     bgra650 img;
     bgra_alloc650(&img, 1024, 600);
     bgra_origin650(&img, 0., 0.);
@@ -854,6 +856,11 @@ int poly2() {
     co1[0] = +0.4;
     co2[0] = -0.4;
     //
+    p1.x = +461.01 / 256.;
+    p1.y = +250.99 / 150.;
+    p2.x = +261.01 / 256.;
+    p2.y = +48.01 / 150.;
+    //
     fb650 *fb = fb_open650();
     double pas = 5e-3;
     while(1) {
@@ -876,6 +883,10 @@ int poly2() {
         bgra_clear650(&img);
         draw_line650(&img, -10., 0., +10., 0., MAGENTA650);
         draw_line650(&img, 0., -10., 0., +10., MAGENTA650);
+        //
+        draw_line2a650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
+        draw_linea650(&img, p1.x, p1.y - .05, p2.x, p2.y - .05, RED650);
+
         //
         p0.x = +2;
         p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
@@ -901,8 +912,15 @@ int geo2() {
     uint64_t l;
     double d;
     struct timeval tv1, tv2;
+    vect650 p1, p2;
     bgra650 img1, img2;
+    //
+    p1.x = +100;
+    p1.y = -50;
+    p2.x = -100;
+    p2.y = +50;
 
+    //
     bgra_alloc650(&img1, 1024, 600);
     bgra_clear650(&img1);
     bgra_alloc650(&img2, 1024, 600);
@@ -911,7 +929,7 @@ int geo2() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        draw_linea650(&img1, -100., -50., +100., +50., WHITE650);
+        draw_linea650(&img1, p1.x, p1.y, p2.x, p2.y, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -921,7 +939,7 @@ int geo2() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        l = draw_line2a650(&img2, -100., -50., +100., +50., WHITE650);
+        l = draw_line2a650(&img2, p1.x, p1.y, p2.x, p2.y, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -951,9 +969,9 @@ int main() {
 
 //    test_geo1();
 
-//    poly2();
+    poly2();
 
-    geo2();
+//    geo2();
 //    test3();
 
     return 0;

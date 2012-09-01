@@ -9,7 +9,7 @@ global draw_zlinea650: 	function
 SECTION .data
 ZERO	dq				0.0
 HALF	dq				0.5
-PAS		dq				0.9
+PAS		dq				0.65
 
 SECTION .text  align=16
 
@@ -224,7 +224,7 @@ TY:		movsd			xmm4, xmm1			; xmm4 = x = x1
 		mov				r10, rsi			; color
 		xor				r11, r11
 		mov				r11w, [rdi + 8]		; width - r9w/d
-		xorpd			xmm12, xmm12		; xmm12 = 0
+		mov				rdi, [rdi]
 LOOPY:	; loop
 		; xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
@@ -243,10 +243,8 @@ TIY2:	; if (x >= w) continue;
 		imul			r8d, r11d			; width * (int)y
 		cvttsd2si		r9d, xmm5			; (int)x -> r9d
 		add				r8d, r9d			; index
-		shl				r8, 2				; index << 2
-		mov				rax, qword [rdi]	;
-		add				rax, r8				;
-		mov				[rax], dword r10d	;
+		mov				[rdi + 4*r8], dword r10d	;
+
 
 COOPY:	;
 		addsd			xmm4, xmm6			; y += 0.65
