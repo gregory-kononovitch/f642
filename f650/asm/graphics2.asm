@@ -146,8 +146,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 
 .prepax:	;
 			mov				r10, rsi			; color
-			xor				r11, r11
-			mov				r11w, [rdi + 8]		; width = r9w
+			movzx			r11, word[rdi + 8]	; width = r11w
 			mov				rdi, [rdi]			;
 			;
 			cvttsd2si		edx, xmm0
@@ -198,6 +197,13 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movss			dword [rbp - 8], xmm9
 			movss			dword [rbp - 4], xmm9
 			movdqa			xmm9, oword [rbp - 16]
+			; 2 * w
+;			xor				r8, r8
+;			mov				dword [rbp - 12], dword r8d
+;			mov				dword [rbp - 4], dword r8d
+			mov				dword [rbp - 16], dword r11d
+			mov				dword [rbp - 8], dword r11d
+			movdqa			xmm10, oword [rbp - 16]
 
 			xor				rdx, rdx
 
@@ -209,33 +215,31 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			; index
 			cvttps2dq		xmm14, xmm14		; xif -> xi
 			cvttps2dq		xmm15, xmm15		; yif -> yi
-			; pmuludq
-			;
-			movdqa			oword [rbp - 16], xmm14	; xi
+			; prep
 			movdqa			oword [rbp - 32], xmm15	; yi
 			;
-.pv0		mov				eax, r11d				; width
-			mov				r8d, dword [rbp - 32]	; yi
-			mul				r8d						; *
-			add				eax, dword [rbp - 16]	; + xi
-			mov				dword [rdi + 4*rax], r10d
+			pmuludq			xmm15, xmm10
+			movdqa			oword [rbp - 16], xmm15	; w.yi
 			;
-.pv1		mov				eax, r11d				; width
-			mov				r8d, dword [rbp - 28]	; yi
-			mul				r8d						; *
-			add				eax, dword [rbp - 12]	; + xi
+			movdqa			xmm15, oword [rbp - 28] ; yi
+			pmuludq			xmm15, xmm10
+			movdqa			oword [rbp - 32], xmm15	; w.yi
+			;
+			mov				eax, dword [rbp - 32]
+			mov				dword [rbp - 12], eax
+			mov				eax, dword [rbp - 24]
+			mov				dword [rbp - 4], eax
+			;
+			paddd			xmm14, oword [rbp - 16]
+			movdqa			oword [rbp - 16], xmm14	; i
+			;
+			mov				eax, dword [rbp - 16]
 			mov				dword [rdi + 4*rax], r10d
-.pv2		;
-			mov				eax, r11d				; width
-			mov				r8d, dword [rbp - 24]	; yi
-			mul				r8d						; *
-			add				eax, dword [rbp - 8]	; + xi
+			mov				eax, dword [rbp - 12]
 			mov				dword [rdi + 4*rax], r10d
-.pv3		;
-			mov				eax, r11d				; width
-			mov				r8d, dword [rbp - 20]	; yi
-			mul				r8d						; *
-			add				eax, dword [rbp - -4]	; + xi
+			mov				eax, dword [rbp - 8]
+			mov				dword [rdi + 4*rax], r10d
+			mov				eax, dword [rbp - 4]
 			mov				dword [rdi + 4*rax], r10d
 
 .coopx:		;
