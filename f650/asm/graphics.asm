@@ -7,6 +7,7 @@ global draw_linea650: 	function
 global draw_zlinea650: 	function
 
 SECTION .data
+ZERO	dq				0.0
 HALF	dq				0.5
 PAS		dq				0.65
 
@@ -43,31 +44,19 @@ PX:		; prepar : x = sx * (x - x0) + width / 2
 
 		; tests x
 TX1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm0
-		seta			al
-		test			al, al
-		je				TX2					; xmm0 >= 0
+		ucomisd			xmm0, [ZERO]
+		jae				TX2					; xmm0 >= 0
 
-TX11:
-		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				TX2					; xmm2 >= 0
-		jmp				NOPIX				; xmm2 < 0
+TX11:	;
+		ucomisd			xmm2, [ZERO]
+		jb				NOPIX				; xmm2 < 0
 
 TX2:	; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
-		movsd			xmm4, xmm10			; width -> xmm4
-		ucomisd			xmm4, xmm0
-		seta			al
-		test			al, al
-		je				TX21				; xmm0 >= width
-		jmp				PY
+		ucomisd			xmm0, xmm10
+		jb				PY
 TX21:
-		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				NOPIX
+		ucomisd			xmm0, xmm10
+		jae				NOPIX
 
 PY:		; prepar : y = height / 2 - sy * (y - y0)
 		movsd			xmm4, [rdi + 24]	; y0 -> xmm4
@@ -90,28 +79,17 @@ PY:		; prepar : y = height / 2 - sy * (y - y0)
 
 		; tests x
 TY1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm1
-		seta			al
-		test			al, al
-		je				TY2					; xmm1 >= 0
-
+		ucomisd			xmm1, [ZERO]
+		jae				TY2					; xmm1 >= 0
 TY11:
-		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				TY2					; xmm3 >= 0
-		jmp				NOPIX				; xmm3 < 0
+		ucomisd			xmm3, [ZERO]
+		jb				NOPIX				; xmm3 < 0
 
 TY2:	; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
-		movsd			xmm4, xmm11			; height -> xmm4
-		ucomisd			xmm4, xmm1
-		seta			al
-		test			al, al
-		je				TY21				; xmm1 >= width
-		jmp				ABSX
+		ucomisd			xmm1, xmm11
+		jb				ABSX				; y1 < h
 TY21:
-		ucomisd			xmm4, xmm3
+		ucomisd			xmm3, xmm11
 		seta			al
 		test			al, al
 		je				NOPIX

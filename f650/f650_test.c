@@ -949,9 +949,9 @@ int main() {
 
 //    test_geo1();
 
-//    poly2();
+    poly2();
 
-    geo2();
+//    geo2();
 //    test3();
 
     return 0;
