@@ -4,6 +4,8 @@
 default rel
 
 global draw_line2a650: 	function
+global asm_tst1650:		function
+
 
 SECTION .data
 ZERO	dq				0.0
@@ -16,15 +18,6 @@ FOURf	dd				4.0
 
 SECTION .text  align=16
 
-
-draw_line2t650:
-			mov			rcx, 201
-			mov			r10, rsi
-			mov			rdi, [rdi]
-.loop		;
-			mov			dword [rdi + 4*rcx], r10d
-			loop		.loop
-			ret
 
 ; double a650_draw_line(image *img, double x1, double y1, double x2, double y2, uint32_t color)
 ; x1 -> xmm0
@@ -326,14 +319,54 @@ COOPY:	;
 		addsd			xmm4, xmm6			; y += 0.65
 		ucomisd			xmm4, xmm3
 		jbe				LOOPY				; xmm3 >= xmm4
-		jmp				RETOK
 
-
-RETOK:
+		; exit
 		mov				rax, rcx
 		ret
 
+
+;;;;;;;;;;;
+hline:
+
+			ret
+
+
+;;;;;;;;;;;
+vline:
+
+			ret
+
+
+;;;;;;;;;;;
+point:
+
+			ret
+
+
+;;;;;;;;;;;
 NOPIX:	;
 		mov				rax, 0
 		ret
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;long asm_tst1650
+asm_tst1650:
+			mov			rcx, 201
+			mov			r10, rsi
+			mov			rdi, [rdi]
+			;
+			xorpd		xmm10, xmm10
+			movsd		qword [rbp - 16], xmm10
+			movsd		xmm11, [ONE]
+			movsd		qword [rbp - 24], xmm11
+.loop:		;
+			ucomisd		xmm0, qword [rbp - 16]
+			jb			.b
+			mulsd		xmm0, qword [rbp - 24]
+
+.b:
+			;
+			mov			dword [rdi + 4*rcx], r10d
+			loop		.loop
+			ret

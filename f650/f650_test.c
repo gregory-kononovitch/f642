@@ -939,7 +939,7 @@ int geo2() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        l = draw_line2a650(&img2, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        l = asm_tst1650(&img2, p1.x, p1.y, p2.x, p2.y, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -969,9 +969,9 @@ int main() {
 
 //    test_geo1();
 
-    poly2();
+//    poly2();
 
-//    geo2();
+    geo2();
 //    test3();
 
     return 0;
