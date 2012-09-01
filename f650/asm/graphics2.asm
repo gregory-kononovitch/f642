@@ -150,8 +150,8 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			subsd			xmm12, qword [ONE]
 			ucomisd			xmm2, xmm12
 			jb				.prepax				; x2 < w1
-
-.windx:		movsd			xmm2, xmm10			; x2 = width
+			;
+			movsd			xmm2, xmm10			; x2 = width
 			subsd			xmm2, qword [HALF]	; -.5
 
 .prepax:	;
@@ -163,8 +163,8 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			cvtsi2ss		xmm12, edx			; X0
 			cvttsd2si		eax, xmm2
 			sub				eax, edx
+			mov				edx, eax			; dist @@@
 			add				eax, 1				; nb xi
-			mov				edx, eax			; dist
 			cmp				eax, 4
 			ja				.i4
 			xor				eax, eax
@@ -175,7 +175,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			;
 			cvtsi2ss		xmm13, edx			; dist
 			cvtsi2ss		xmm14, eax			; nb xi
-			divss			xmm13, xmm14		; PAS
+			divss			xmm13, xmm14		; PAS @@@
 			; 4 * xi
 			addss			xmm12, dword [HALFf]
 			movss			dword [rbp - 16], xmm12

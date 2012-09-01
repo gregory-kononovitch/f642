@@ -859,7 +859,7 @@ int poly2() {
     p1.x = +461.01 / 256.;
     p1.y = +250.99 / 150.;
     p2.x = +261.01 / 256.;
-    p2.y = +48.01 / 150.;
+    p2.y = +52.01 / 150.;
     //
     fb650 *fb = fb_open650();
     double pas = 5e-3;
@@ -885,7 +885,7 @@ int poly2() {
         draw_line650(&img, 0., -10., 0., +10., MAGENTA650);
         //
         draw_line2a650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
-        draw_linea650(&img, p1.x, p1.y - .05, p2.x, p2.y - .05, RED650);
+        draw_linea650(&img, p1.x, p1.y - .25, p2.x, p2.y - .25, RED650);
 
         //
         p0.x = +2;
