@@ -221,7 +221,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			pmuludq			xmm15, xmm10
 			movdqa			oword [rbp - 16], xmm15	; w.yi
 			;
-			movdqa			xmm15, oword [rbp - 28] ; yi
+			movdqu			xmm15, oword [rbp - 28] ; yi
 			pmuludq			xmm15, xmm10
 			movdqa			oword [rbp - 32], xmm15	; w.yi
 			;

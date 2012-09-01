@@ -897,6 +897,7 @@ int poly2() {
 int geo2() {
     int i;
     long l1, l2;
+    uint64_t l;
     double d;
     struct timeval tv1, tv2;
     bgra650 img1, img2;
@@ -919,12 +920,12 @@ int geo2() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        draw_line2a650(&img2, -100., -50., +100., +50., WHITE650);
+        l = draw_line2a650(&img2, -100., -50., +100., +50., WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
     timersub(&tv2, &tv1, &tv2);
-    printf("draw2 : %ld for %lds.%06luµs\n", l2 - l1, tv2.tv_sec, tv2.tv_usec);
+    printf("draw2 : %ld for %lds.%06luµs = %lu\n", l2 - l1, tv2.tv_sec, tv2.tv_usec, l);
 
     //
     printf("compare : %d\n", bgra_compare650(&img1, &img2));
@@ -949,9 +950,9 @@ int main() {
 
 //    test_geo1();
 
-//    poly2();
+    poly2();
 
-    geo2();
+//    geo2();
 //    test3();
 
     return 0;
