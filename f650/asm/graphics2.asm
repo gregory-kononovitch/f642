@@ -27,7 +27,7 @@ SECTION .text  align=16
 ; x0 -
 draw_line2a650:
 			xor				rcx, rcx
-PX:			; prepar : x = sx * (x - x0) + width / 2
+.prepx:		; prepar : x = sx * (x - x0) + width / 2
 			movsd			xmm4, qword [rdi + 16]	; x0 -> xmm4
 			subsd			xmm0, xmm4			; x1 = x1 - x0
 			subsd			xmm2, xmm4			; x2 = x2 - x0
