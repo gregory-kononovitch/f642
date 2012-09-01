@@ -16,6 +16,16 @@ FOURf	dd				4.0
 
 SECTION .text  align=16
 
+
+draw_line2t650:
+			mov			rcx, 201
+			mov			r10, rsi
+			mov			rdi, [rdi]
+.loop		;
+			mov			dword [rdi + 4*rcx], r10d
+			loop		.loop
+			ret
+
 ; double a650_draw_line(image *img, double x1, double y1, double x2, double y2, uint32_t color)
 ; x1 -> xmm0
 ; y1 -> xmm1

@@ -156,6 +156,7 @@ TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
 		mov				r10, rsi			; color
 		xor				r11, r11
 		mov				r11w, [rdi + 8]		; width - r9w/d
+		mov				rdi, [rdi]
 
 LOOPX:	; loop
 		; xi, yi
@@ -175,10 +176,7 @@ TIX2:	; if (y >= h) continue;
 		imul			r8d, r11d			; width * (int)y
 		cvttsd2si		r9d, xmm4			; (int)x -> r9d
 		add				r8d, r9d			; index
-		shl				r8, 2				; index << 2
-		mov				rax, qword [rdi]	;
-		add				rax, r8				;
-		mov				[rax], dword r10d	;
+		mov				[rdi + 4*r8], dword r10d	;
 
 COOPX:	;
 		addsd			xmm4, xmm6			; x += 0.65
