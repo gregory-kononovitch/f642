@@ -373,6 +373,7 @@ hline:
 			xor			rdx, rdx
 			mov			rax, r12		; width
 			mul			r9				; * y1 = y2 E [0, h[
+			add			r8
 			shl			rax, 2			; * 4
 			add			rdi, rax		; rdi = point 0
 			mov			rcx, r10
@@ -391,7 +392,51 @@ hline:
 
 ;;;;;;;;;;;
 vline:
+			xor			r12, r12
+			mov			r12w, word [rdi + 10]	; height
+			;
+			cmp			r11, r9
+			jns			.hpos
+			; hneg
+			mov			rdx, r11
+			mov			r11, r9
+			mov			r9, rdx
+			;
+.hpos
+			cmp			r9, 0
+			js			.hpn		; y1 < 0
+			jmp			.hpo
 
+.hpn		; y1 < 0
+			xor			r9, r9
+.hpo		;
+			cmp			r11, r12
+			js			.hgo
+			mov			r11, r12		; y2 >= h
+			sub			r11, 1
+
+.hgo		; r9 = min >= 0 && r11 = max < h
+			xor			rdx, rdx
+			mov			r12w, word [rdi + 8]	; width
+			mov			rax, r12		; width
+			mul			r9				; * x1 = x2 E [0, w[
+			add			r8
+			shl			rax, 2			; * 4
+			mov			rdi, [rdi]
+			add			rdi, rax		; rdi = point 0
+			mov			rcx, r11
+			sub			rcx, r9
+			add			rcx, 1			; rcx
+			mov			rax, rcx		; return
+			mov			rdx, rsi		; color
+			shl			r12, 2			; linesize
+			;
+.loop
+			mov			dword [rdi], edx
+			add			rdi, r12
+			loop		.loop
+
+			;
 			ret
 
 
