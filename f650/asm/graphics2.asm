@@ -166,15 +166,46 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 
 .tw2:		; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;} -> if (x2 >= w1) x2 = w - 0.5
 			movsd			xmm12, xmm10
-			subsd			xmm12, qword [ONE]
+			subsd			xmm12, qword [ONE]	; w1
 			ucomisd			xmm2, xmm12
 			jb				.prepax				; x2 < w1
 			;
-			movsd			xmm2, xmm10			; x2 = width
+			movsd			xmm2, xmm10			; x2 = width - .5
 			subsd			xmm2, qword [HALF]	; -.5
-			movsd			xmm1, xmm0			; 0.5
-			mulsd			xmm1, xmm8			; * a
-			addsd			xmm1, xmm9			; + b (y1 = a*0.5 + b)
+			movsd			xmm3, xmm2			; 0.5
+			mulsd			xmm3, xmm8			; * a
+			addsd			xmm3, xmm9			; + b (y1 = a*0.5 + b)
+
+.tw3		; a > 0
+			ucomisd			xmm8, [ZERO]
+			jb				.twan
+			; a > 0
+			; y1 >= h nopix
+			ucomisd			xmm1, xmm11
+			jae				NOPIX
+			; y2 < 0 nopix
+			ucomisd			xmm3, [ZERO]
+			jb				NOPIX
+			; pix
+			; y1 < 0
+			ucomisd			xmm1, [ZERO]
+			jae				.twapx2
+			xorpd			xmm1, xmm1			; y1 = 0
+			xorpd			xmm0, xmm0
+			subsd			xmm0, xmm9
+			divsd			xmm0, xmm8			; x1 = (y1 - b) / a
+
+.twapx2		; a > 0, (x1, y1) inside
+			; y2 < height ok
+			ucomisd			xmm3, xmm11
+			jb				.prepax
+			; y2 >= height
+
+.twan		; a < 0
+
+
+
+
 
 .prepax:	;
 			mov				r10, rsi			; color
