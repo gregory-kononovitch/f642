@@ -115,15 +115,6 @@ int main(int argc, char *argv[]) {
     gtk_container_add(GTK_CONTAINER(window), fixed);
     printf("fixed ok\n");
 
-    // drawing area
-    area = gtk_drawing_area_new();
-    gtk_drawing_area_size(GTK_DRAWING_AREA(area), width, height);
-    printf("area ok\n");
-
-    //
-    gtk_fixed_put(GTK_FIXED(fixed), area, 0, 0);
-    printf("fixed ok\n");
-
     // Image
     GList *visuals = gdk_list_visuals();
     void tst(gpointer data, gpointer udata) {
@@ -148,6 +139,20 @@ int main(int argc, char *argv[]) {
     );
     // GdkPixbufAnimation
     //gtk_image_set_from_pixbuf
+
+    //
+    GdkColormap *dcm = gdk_colormap_new(visu, FALSE);
+    // drawing area
+    area = gtk_drawing_area_new();
+    gdk_drawable_set_colormap(window, dcm);
+    gdk_drawable_set_colormap(area, dcm);
+    gtk_drawing_area_size(GTK_DRAWING_AREA(area), width, height);
+    printf("area ok\n");
+
+    //
+    gtk_fixed_put(GTK_FIXED(fixed), area, 0, 0);
+    printf("fixed ok\n");
+
 
     //
     bgra_alloc650(&bgra, width, height);
@@ -215,7 +220,7 @@ int main(int argc, char *argv[]) {
     printf("show ok\n");
 
     // Timer
-    g_timeout_add(100, (GSourceFunc)time_handler, (gpointer)area);
+    g_timeout_add(500, (GSourceFunc)time_handler, (gpointer)area);
     printf("timer ok\n");
 
     gtk_main();
