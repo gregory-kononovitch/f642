@@ -15,8 +15,8 @@
 
 
 //
-static int          width  = 1024;
-static int          height = 576;
+static int          width  = 800;
+static int          height = 448;
 static bgra650      bgra;
 static GdkPixbuf    *img   = NULL;
 
@@ -51,6 +51,7 @@ static void destroy(GtkWidget *widget, gpointer data) {
  *
  */
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data) {
+    gdk_draw_line();
 //    gint x = widget->allocation.x;
 //    gint y = widget->allocation.y;
 //    gint w = widget->allocation.width;
@@ -88,14 +89,14 @@ static void maj() {
     bgra_fill650(&bgra, 0xff000000);
     long c;
 //    printf("bgra clear ok\n");
-    for(i = 0 ; i < 1000 ; i++) {
+    for(i = 0 ; i < 150 ; i++) {
         random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
         random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
         //dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
         //printf("bgra random ok\n");
         c = 0L + RAND_MAX + 0L + rand();
         c = ((c << 32) | 0xff000000) >> 32;
-        draw_linea650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+        draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
         //printf("bgra draw line ok\n");
     }
     //abgr

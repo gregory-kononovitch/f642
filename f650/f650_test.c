@@ -980,7 +980,7 @@ void gtk1() {
             //printf("bgra random ok\n");
             c = 0L + RAND_MAX + 0L + rand();
             c = ((c << 32) | 0xff000000) >> 32;
-            draw_linea650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+            draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
             //printf("bgra draw line ok\n");
         }
         //abgr
