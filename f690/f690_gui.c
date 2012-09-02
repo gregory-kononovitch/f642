@@ -18,27 +18,15 @@
 static int          width  = 800;
 static int          height = 448;
 static bgra650      bgra;
+static GdkImage     *ximg;
 static GdkPixbuf    *img   = NULL;
+static GdkPixmap    *pixmap= NULL;
 
 static void maj();
 
-//
-static void hello(GtkWidget *widget, gpointer data) {
-    g_print("Hello !\n");
-}
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    /* If you return FALSE in the "delete-event" signal handler,
-     * GTK will emit the "destroy" signal. Returning TRUE means
-     * you don't want the window to be destroyed.
-     * This is useful for popping up 'are you sure you want to quit?'
-     * type dialogs. */
-
-    g_print("delete event occurred\n");
-
-    /* Change TRUE to FALSE and the main window will be destroyed with
-     * a "delete-event". */
-
+    // FALSE to exit appli
     return FALSE;
 }
 
@@ -51,33 +39,23 @@ static void destroy(GtkWidget *widget, gpointer data) {
  *
  */
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data) {
-//    gint x = widget->allocation.x;
-//    gint y = widget->allocation.y;
-//    gint w = widget->allocation.width;
-//    gint h = widget->allocation.height;
-//
-//    cairo_t *g = gdk_cairo_create(widget->window);
-//    //
-////    gdk_cairo_set_source_pixbuf(g, img, 0, 0);
-////    printf("cairo_set_source\n");
-//    //
-//    cairo_select_font_face(g, "Purisa", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-//    cairo_set_font_size(g, 12);
-//    cairo_set_source_rgb(g, 0, 0, 0);
-//    //
-//    char s[16];
-//    snprintf(s, 15, "TEST (%d, %d)", x, y);
-//    cairo_move_to(g, 10, height - 1);
-//    cairo_show_text(g, s);
-//    //
-//    cairo_set_source_rgb(g, 1, 0, 1);
-//    cairo_set_line_width(g, 1);
-//    cairo_rectangle(g, 0, 0, width, height);
-//    printf("cairo drawn\n");
-//    //
-//    cairo_destroy(g);
-//    printf("cairo destroy\n");
+    printf("Ev : draw start\n");
+//    gdk_draw_image(widget->window, widget->style->black_gc
+//            , ximg
+//            , event->area.x, event->area.y
+//            , event->area.x, event->area.y
+//            , event->area.width, event->area.y
+//    );
     //
+    gdk_draw_drawable(widget->window,
+                widget->style->black_gc,
+                pixmap,
+                event->area.x, event->area.y,
+                event->area.x, event->area.y,
+                event->area.width, event->area.height);
+
+    printf("Ev : draw done\n");
+    // ok
     return FALSE;
 }
 
@@ -87,16 +65,12 @@ static void maj() {
     //
     bgra_fill650(&bgra, 0xff000000);
     long c;
-//    printf("bgra clear ok\n");
     for(i = 0 ; i < 150 ; i++) {
         random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
         random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
-        //dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
-        //printf("bgra random ok\n");
         c = 0L + RAND_MAX + 0L + rand();
         c = ((c << 32) | 0xff000000) >> 32;
-        draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
-        //printf("bgra draw line ok\n");
+        draw_linea650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
     }
     //abgr
     draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
@@ -106,18 +80,15 @@ static void maj() {
 }
 
 static gboolean time_handler(GtkWidget *widget) {
-    //
     maj();
-    gtk_widget_queue_draw(widget);
+//    printf("TH : maj   done (%p <- %p)\n", ximg->mem, bgra.data);
+//    memcpy(ximg->mem, bgra.data, bgra.size << 2);
+//    printf("TH : mcpy  done\n");
+    gtk_widget_queue_draw_area(widget, 0, 0, width, height);
+    printf("TH : queue done\n");
     return TRUE;
 }
 
-
-// typedef void (* GdkPixbufDestroyNotify) (guchar *pixels, gpointer data);
-static void pbd(guchar *pixels, gpointer data) {
-    printf("PixBuf free\n");
-    return;
-}
 
 /*
  *
@@ -126,8 +97,7 @@ int main(int argc, char *argv[]) {
     //
     GtkWidget *window;
     GtkWidget *fixed;
-    GtkWidget *darea;
-    GtkWidget  *frame;
+    GtkWidget *area;
 
     //
     gtk_init(&argc, &argv);
@@ -145,14 +115,14 @@ int main(int argc, char *argv[]) {
     gtk_container_add(GTK_CONTAINER(window), fixed);
     printf("fixed ok\n");
 
-//    // drawing area
-//    darea = gtk_drawing_area_new();
-//    gtk_drawing_area_size(GTK_DRAWING_AREA(darea), width, height);
-//    printf("area ok\n");
-//
-//    //gtk_container_add(GTK_CONTAINER(window), darea);
-//    gtk_fixed_put(GTK_FIXED(fixed), darea, 0, 0);
-//    printf("fixed ok\n");
+    // drawing area
+    area = gtk_drawing_area_new();
+    gtk_drawing_area_size(GTK_DRAWING_AREA(area), width, height);
+    printf("area ok\n");
+
+    //
+    gtk_fixed_put(GTK_FIXED(fixed), area, 0, 0);
+    printf("fixed ok\n");
 
     // Image
     GList *visuals = gdk_list_visuals();
@@ -171,63 +141,82 @@ int main(int argc, char *argv[]) {
     }
     g_list_foreach(visuals, &tst, NULL);
     GdkVisual *visu = gdk_visual_get_best_with_depth(32);
-    GdkImage  *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
-    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n"
-            , gdimg->bpp, gdimg->bpl, gdimg->bits_per_pixel
-            , gdimg->mem
+    ximg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
+    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; type %d (mem = %p)\n"
+            , ximg->bpp, ximg->bpl, ximg->bits_per_pixel
+            , ximg->type, ximg->mem
     );
-    //
-    GdkBitmap *mask = NULL;
-    GtkImage *gtimg = gtk_image_new_from_image(gdimg, mask);
-
-//    return 0;
-
     // GdkPixbufAnimation
     //gtk_image_set_from_pixbuf
+
+    //
     bgra_alloc650(&bgra, width, height);
-//    bgra.data = (uint32_t*)gdimg->mem;
     bgra_origin650(&bgra, +width/2, +height/2);
     bgra_scale650(&bgra, 1, -1);
     printf("bgra alloc ok\n");
     maj();
-    printf("bgra maj ok\n");
-
-    img = gdk_pixbuf_new_from_data(
-              (guchar*)bgra.data
-            , GDK_COLORSPACE_RGB
-            , TRUE
-            , 8
+    printf("bgra maj done, still (%p <- %p)\n", ximg->mem, bgra.data);
+//    // Ximg
+//    memcpy(ximg->mem, bgra.data, bgra.size);
+//    printf("mcpy done\n");
+    // Pixmap
+    GdkColor bg;
+    GdkColor fg;
+    fg.pixel = 0xff000000;
+    fg.red = 0;
+    fg.green = 0;
+    fg.blue = 0;
+    bg.pixel = 0xff000000;
+    bg.red = 0;
+    bg.green = 0;
+    bg.blue = 0;
+    pixmap = gdk_pixmap_create_from_data(
+            GTK_WINDOW(window)
+            , bgra.data
             , width
             , height
-            , width << 2
-            , &pbd, NULL
+            , 32
+            , &fg
+            , &bg
     );
-    printf("PixBuf new ok\n");
+
+
+//    img = gdk_pixbuf_new_from_data(
+//              (guchar*)bgra.data
+//            , GDK_COLORSPACE_RGB
+//            , TRUE
+//            , 8
+//            , width
+//            , height
+//            , width << 2
+//            , &pbd, NULL
+//    );
+//    printf("PixBuf new ok\n");
 
     //
     // Image
-    frame = gtk_image_new_from_pixbuf(img);
-//    frame = gtimg;
-    gtk_fixed_put(GTK_FIXED(fixed), frame, 0, 0);
-    printf("fixed ok\n");
-
+//    frame = gtk_image_new_from_pixbuf(img);
+////    frame = gtimg;
+//    gtk_fixed_put(GTK_FIXED(fixed), frame, 0, 0);
+//    printf("fixed ok\n");
 
 
     // Events
-//    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
-    g_signal_connect(frame, "expose-event", G_CALLBACK (on_expose_event), NULL);
+    g_signal_connect(area, "expose-event", G_CALLBACK (on_expose_event), NULL);
+//    g_signal_connect(frame, "expose-event", G_CALLBACK (on_expose_event), NULL);
     g_signal_connect(window, "delete-event", G_CALLBACK (delete_event), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK (destroy), NULL);
-
+    printf("signals ok\n");
 
     // Show
-//    gtk_widget_show(button);
-//    gtk_widget_show(darea);
+//    gtk_widget_show(area);
     gtk_widget_show(fixed);
     gtk_widget_show_all(window);
+    printf("show ok\n");
 
     // Timer
-    g_timeout_add(40, (GSourceFunc)time_handler, (gpointer)frame);
+    g_timeout_add(100, (GSourceFunc)time_handler, (gpointer)area);
+    printf("timer ok\n");
 
     gtk_main();
 
