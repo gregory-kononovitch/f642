@@ -6,8 +6,9 @@ p644:
 
 
 all:
-#	make -C f650
-#	mv f650/*.xo .
+	make -C f690
+	make -C f650
+	mv f650/*.xo .
 #	make -C f643
 #	mv f643/*.xo .
 #	mv f643/*.so .
@@ -16,8 +17,8 @@ all:
 #	mv f642/*.so .
 #	make -C f640
 #	mv f640/f640.xo .
-	make -C f641
-	mv f641/f641.xo .
+#	make -C f641
+#	mv f641/f641.xo .
 #	make -C c642
 #	mv c642/c642-brodge.ko .
 #	make -C p643

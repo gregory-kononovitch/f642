@@ -14,7 +14,10 @@ GTK_LIBS=-lgtk-x11-2.0 -lgobject-2.0 -lglib-2.0 -lcairo -lgdk-x11-2.0 -lgdk_pixb
 _gtk = gui.o
 
 gtk : $(_gtk)
-	gcc -o gtk  $(_gtk) $(BASE_LIBS) $(GTK_LIBS)
+	gcc -o gtk.xo $(_gtk) $(BASE_LIBS) $(GTK_LIBS) \
+	../f650/f650_graphics.o \
+	../f650/asm/graphics.ao ../f650/asm/graphics2.ao ../f650/asm/std1.ao \
+	
 	
 gui.o : gui.c
 	gcc -O3 -Wall -c gui.c -o gui.o $(BASE_INCLUDE) $(GTK_INCLUDE)
@@ -25,4 +28,4 @@ all : gtk
 
 .PHONY : clean
 clean :
-	rm $(_gtk) gtk
+	rm -f $(_gtk) gtk.xo
