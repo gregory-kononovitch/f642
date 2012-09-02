@@ -931,8 +931,8 @@ void *f640_record_mj(void *video_lines) {
         st->codec->coded_height  = lines->grid->height;
         st->codec->time_base.num = 1;
         st->codec->time_base.den = 30;
-        st->codec->sample_fmt = SAMPLE_FMT_S16;
-        st->codec->sample_rate = 44100;
+//        st->codec->sample_fmt = SAMPLE_FMT_S16;
+//        st->codec->sample_rate = 44100;
         r = avcodec_open2(st->codec, encoder, NULL);
         st->time_base.num = 1;
         st->time_base.den = 30;

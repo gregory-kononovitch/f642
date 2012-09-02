@@ -446,7 +446,11 @@ int f641_v4l2(int argc, char *argv[]) {
 
     //
     appli.recording = 1;
-    snprintf(appli.record_path, sizeof(appli.record_path), "/test/snap/tust.avi");
+    if (appli.file_path && appli.functions == 0) {
+        snprintf(appli.record_path, sizeof(appli.record_path), appli.file_path);
+    } else {
+        snprintf(appli.record_path, sizeof(appli.record_path), "/music/tust.avi");
+    }
 
     snprintf(appli.stream_path, sizeof(appli.stream_path), "/dev/t030/t030-%d", 1);
     appli.fd_stream = open(appli.stream_path, O_WRONLY);
