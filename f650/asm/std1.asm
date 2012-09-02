@@ -12,8 +12,8 @@ SECTION .text  align=16
 ; memseta650(void *align_x16, uint32_t fill, uin64_t size)
 memseta650:
 		mov			rcx, rdx
-		shr			rcx, 4
-		jrcxz		END0
+		shr			rcx, 6
+		jrcxz		.end
 		mov			rax, rsi
 		mov			dword [rbp - 4], eax
 		mov			dword [rbp - 8], eax
@@ -22,9 +22,9 @@ memseta650:
 		movdqa		xmm0, oword [rbp - 16]
 		mov			rax, rdi
 
-LOOP0:
-		movntdq		[rax], xmm0
+.loop:
+		movntdq		oword [rax], xmm0
 		add			rax, 16
-		loop		LOOP0
-END0:
+		loop		.loop
+.end:
 		ret

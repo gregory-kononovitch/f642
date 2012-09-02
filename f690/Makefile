@@ -15,7 +15,7 @@ _gtk = gui.o
 
 gtk : $(_gtk)
 	gcc -o gtk.xo $(_gtk) $(BASE_LIBS) $(GTK_LIBS) \
-	../f650/f650_graphics.o \
+	../f650/f650_graphics.o ../f650/f650_geometry1.o \
 	../f650/asm/graphics.ao ../f650/asm/graphics2.ao ../f650/asm/std1.ao \
 	
 	

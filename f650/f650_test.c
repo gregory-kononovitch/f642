@@ -957,6 +957,43 @@ int geo2() {
 //        );
 }
 
+void gtk1() {
+    int i, width = 1024, height = 600;
+    vect650 p1, p2;
+    bgra650 bgra;
+    //
+    bgra_alloc650(&bgra, width, height);
+    bgra_origin650(&bgra, +width/2, +height/2);
+    bgra_scale650(&bgra, 1, -1);
+
+    fb650 *fb = fb_open650();
+    //
+    bgra_fill650(&bgra, 0xff000000);
+    long c;
+//    printf("bgra clear ok\n");
+    while(1) {
+        bgra_fill650(&bgra, 0xff000000);
+        for(i = 0 ; i < 1000 ; i++) {
+            random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
+            random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
+            //dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+            //printf("bgra random ok\n");
+            c = 0L + RAND_MAX + 0L + rand();
+            c = ((c << 32) | 0xff000000) >> 32;
+            draw_linea650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+            //printf("bgra draw line ok\n");
+        }
+        //abgr
+        draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
+        draw_line650(&bgra, 0, height - 1, width, height - 1, 0xff0000ff);
+        draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
+        draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
+        //
+        fb_draw650(fb, &bgra);
+        usleep(40000);
+    }
+}
+
 int main() {
 //    ax2();
 //    ax2f();
@@ -976,8 +1013,10 @@ int main() {
     i = -250.5;
     printf("i = %f -> %d\n", i, (int)i);
 
-    geo2();
+//    geo2();
 //    test3();
+
+    gtk1();
 
     return 0;
 }

@@ -14,21 +14,15 @@
 #include "f690.h"
 
 
-static bgra650      *bgra;
-static GdkPixbuf    *img;
+//
+static int          width  = 1024;
+static int          height = 576;
+static bgra650      bgra;
+static GdkPixbuf    *img   = NULL;
 
-/*
- * 		Prototypes
- */
-static void hello(GtkWidget *widget, gpointer data);
-static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
-static void destroy(GtkWidget *widget, gpointer data);
+static void maj();
 
-/*
- *
- */
-/* This is a callback function. The data arguments are ignored
- * in this example. More on callbacks below. */
+//
 static void hello(GtkWidget *widget, gpointer data) {
     g_print("Hello !\n");
 }
@@ -57,90 +51,63 @@ static void destroy(GtkWidget *widget, gpointer data) {
  *
  */
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data) {
-    gint x = widget->allocation.x;
-    gint y = widget->allocation.y;
-    gint width = widget->allocation.width;
-    gint height = widget->allocation.height;
-
-    cairo_t *cr;
-
-    cr = gdk_cairo_create(widget->window);
-
-    cairo_set_source_rgba(cr, 0, 0, 0, 1);
-
-    static const double dashed1[] = { 4.0, 1.0 };
-    static int len1 = sizeof(dashed1) / sizeof(dashed1[0]);
-
-    static const double dashed2[] = { 4.0, 1.0, 4.0 };
-    static int len2 = sizeof(dashed2) / sizeof(dashed2[0]);
-
-    static const double dashed3[] = { 1.0 };
-
-    /*
-     *       Geometry
-     */
-    cairo_select_font_face(cr, "Purisa", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-    cairo_set_font_size(cr, 13);
-
-    char s[16];
-    snprintf(s, 15, "( %i , %i )", x, y);
-    cairo_move_to(cr, 10, height - 1);
-    cairo_show_text(cr, s);
-
-    snprintf(s, 15, "( %i , %i )", width, height);
-    cairo_move_to(cr, width / 2, height - 1);
-    cairo_show_text(cr, s);
-
-    /*
-     *         DASH
-     */
-    cairo_set_line_width(cr, 1.5);
-
-    cairo_set_dash(cr, dashed1, len1, 0);
-    cairo_move_to(cr, 40, 30);
-    cairo_line_to(cr, 200, 30);
-    cairo_stroke(cr);
-
-    cairo_set_dash(cr, dashed2, len2, 1);
-    cairo_move_to(cr, 40, 50);
-    cairo_line_to(cr, 200, 50);
-    cairo_stroke(cr);
-
-    cairo_set_dash(cr, dashed3, 1, 0);
-    cairo_move_to(cr, 40, 70);
-    cairo_line_to(cr, 200, 70);
-    cairo_stroke(cr);
-
-    //cairo_set_dash(cr, nodash, 0, 0);
-    cairo_set_dash(cr, (double[]) {}, 0, 0);
-
-    /*
-     *        Rectangles
-     */
-    cairo_set_source_rgb(cr, 0.69, 0.19, 0);
-    cairo_rectangle(cr, 30, 30, 100, 100);
-    cairo_set_line_width(cr, 14);
-    cairo_set_line_join(cr, CAIRO_LINE_JOIN_MITER);
-    cairo_stroke(cr);
-
-    cairo_set_source_rgb(cr, 0.3, 0.4, 0.6);
-    cairo_rectangle(cr, 160, 30, 100, 100);
-    cairo_set_line_width(cr, 14);
-    cairo_set_line_join(cr, CAIRO_LINE_JOIN_BEVEL);
-    cairo_stroke(cr);
-
-    cairo_set_source_rgb(cr, 0.3, 0.8, 0.2);
-    cairo_rectangle(cr, 100, 160, 100, 100);
-    cairo_set_line_width(cr, 14);
-    cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
-    cairo_stroke(cr);
-
-    cairo_destroy(cr);
-
+//    gint x = widget->allocation.x;
+//    gint y = widget->allocation.y;
+//    gint w = widget->allocation.width;
+//    gint h = widget->allocation.height;
+//
+//    cairo_t *g = gdk_cairo_create(widget->window);
+//    //
+////    gdk_cairo_set_source_pixbuf(g, img, 0, 0);
+////    printf("cairo_set_source\n");
+//    //
+//    cairo_select_font_face(g, "Purisa", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+//    cairo_set_font_size(g, 12);
+//    cairo_set_source_rgb(g, 0, 0, 0);
+//    //
+//    char s[16];
+//    snprintf(s, 15, "TEST (%d, %d)", x, y);
+//    cairo_move_to(g, 10, height - 1);
+//    cairo_show_text(g, s);
+//    //
+//    cairo_set_source_rgb(g, 1, 0, 1);
+//    cairo_set_line_width(g, 1);
+//    cairo_rectangle(g, 0, 0, width, height);
+//    printf("cairo drawn\n");
+//    //
+//    cairo_destroy(g);
+//    printf("cairo destroy\n");
+    //
     return FALSE;
 }
 
+static void maj() {
+    int i;
+    vect650 p1, p2;
+    //
+    bgra_fill650(&bgra, 0xff000000);
+    long c;
+//    printf("bgra clear ok\n");
+    for(i = 0 ; i < 1000 ; i++) {
+        random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
+        random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
+        //dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+        //printf("bgra random ok\n");
+        c = 0L + RAND_MAX + 0L + rand();
+        c = ((c << 32) | 0xff000000) >> 32;
+        draw_linea650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+        //printf("bgra draw line ok\n");
+    }
+    //abgr
+    draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
+    draw_line650(&bgra, 0, height - 1, width, height - 1, 0xff0000ff);
+    draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
+    draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
+}
+
 static gboolean time_handler(GtkWidget *widget) {
+    //
+    maj();
     gtk_widget_queue_draw(widget);
     return TRUE;
 }
@@ -148,6 +115,7 @@ static gboolean time_handler(GtkWidget *widget) {
 
 // typedef void (* GdkPixbufDestroyNotify) (guchar *pixels, gpointer data);
 static void pbd(guchar *pixels, gpointer data) {
+    printf("PixBuf free\n");
     return;
 }
 
@@ -156,13 +124,10 @@ static void pbd(guchar *pixels, gpointer data) {
  */
 int main(int argc, char *argv[]) {
     //
-    int width  = 800;
-    int height = 448;
-    //
     GtkWidget *window;
     GtkWidget *fixed;
-    GtkWidget *button;
     GtkWidget *darea;
+    GtkWidget  *frame;
 
     //
     gtk_init(&argc, &argv);
@@ -171,45 +136,86 @@ int main(int argc, char *argv[]) {
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "gui");
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-    gtk_container_set_border_width(GTK_CONTAINER (window), 0);
-    gtk_window_set_default_size(GTK_WINDOW(window), 800 + 4, height + 20 + 4);
+    gtk_container_set_border_width(GTK_CONTAINER(window), 0);
+    gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+    printf("window ok\n");
 
     // layout
     fixed = gtk_fixed_new();
     gtk_container_add(GTK_CONTAINER(window), fixed);
+    printf("fixed ok\n");
 
-    // widget
-    button = gtk_button_new_with_label("Hello !");
-    gtk_fixed_put(GTK_FIXED(fixed), button, 580, 10);
-
-    // drawing area
-    darea = gtk_drawing_area_new();
-    gtk_drawing_area_size(GTK_DRAWING_AREA(darea), width, height);
-
-    //gtk_container_add(GTK_CONTAINER(window), darea);
-    gtk_fixed_put(GTK_FIXED(fixed), darea, 0, 0);
+//    // drawing area
+//    darea = gtk_drawing_area_new();
+//    gtk_drawing_area_size(GTK_DRAWING_AREA(darea), width, height);
+//    printf("area ok\n");
+//
+//    //gtk_container_add(GTK_CONTAINER(window), darea);
+//    gtk_fixed_put(GTK_FIXED(fixed), darea, 0, 0);
+//    printf("fixed ok\n");
 
     // Image
+    GList *visuals = gdk_list_visuals();
+    void tst(gpointer data, gpointer udata) {
+        if (((GdkVisual*)data)->depth == 32)
+        printf("visual :\n\ttype = %d\n\ttype = %d\n\tdepth = %d\n\tbits/rgb = %d\n\torder = %d\n\tred = %08X\n\tgreen = %08X\n\tblue = %08X\n"
+                , ((GdkVisual*)data)->type
+                , ((GdkVisual*)data)->colormap_size
+                , ((GdkVisual*)data)->depth
+                , ((GdkVisual*)data)->bits_per_rgb
+                , ((GdkVisual*)data)->byte_order
+                , ((GdkVisual*)data)->red_mask
+                , ((GdkVisual*)data)->green_mask
+                , ((GdkVisual*)data)->blue_mask
+        );
+    }
+    g_list_foreach(visuals, &tst, NULL);
+    GdkVisual *visu = gdk_visual_get_best_with_depth(32);
+    GdkImage  *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
+    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n"
+            , gdimg->bpp, gdimg->bpl, gdimg->bits_per_pixel
+            , gdimg->mem
+    );
+    //
+    GdkBitmap *mask = NULL;
+    GtkImage *gtimg = gtk_image_new_from_image(gdimg, mask);
+
+//    return 0;
+
     // GdkPixbufAnimation
-    bgra = bgra_alloc650(&bgra, width, height);
+    //gtk_image_set_from_pixbuf
+    bgra_alloc650(&bgra, width, height);
+//    bgra.data = (uint32_t*)gdimg->mem;
+    bgra_origin650(&bgra, +width/2, +height/2);
+    bgra_scale650(&bgra, 1, -1);
+    printf("bgra alloc ok\n");
+    maj();
+    printf("bgra maj ok\n");
 
     img = gdk_pixbuf_new_from_data(
-              bgra->data
+              (guchar*)bgra.data
             , GDK_COLORSPACE_RGB
             , TRUE
             , 8
             , width
             , height
-            , 0
+            , width << 2
             , &pbd, NULL
     );
+    printf("PixBuf new ok\n");
+
+    //
+    // Image
+    frame = gtk_image_new_from_pixbuf(img);
+//    frame = gtimg;
+    gtk_fixed_put(GTK_FIXED(fixed), frame, 0, 0);
+    printf("fixed ok\n");
 
 
 
     // Events
-    g_signal_connect(button, "clicked", G_CALLBACK (hello), NULL);
-    g_signal_connect_swapped(button, "clicked", G_CALLBACK (gtk_widget_destroy), window);
-    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
+//    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
+    g_signal_connect(frame, "expose-event", G_CALLBACK (on_expose_event), NULL);
     g_signal_connect(window, "delete-event", G_CALLBACK (delete_event), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK (destroy), NULL);
 
@@ -221,7 +227,7 @@ int main(int argc, char *argv[]) {
     gtk_widget_show_all(window);
 
     // Timer
-    g_timeout_add(40, (GSourceFunc)time_handler, (gpointer)darea);
+    g_timeout_add(40, (GSourceFunc)time_handler, (gpointer)frame);
 
     gtk_main();
 

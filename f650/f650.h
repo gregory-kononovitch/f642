@@ -164,6 +164,9 @@ extern vect650 I650;
 extern vect650 J650;
 extern vect650 K650;
 
+#define set650(u, x, y, z) do{ (u)->x = x ; (u)->y = y ; (u)->z = z; } while(0)
+#define dump650(s1, u, s2) do {printf(s1 "(%.3f, %.3f, %.3f)" s2, (u)->x, (u)->y, (u)->z);} while(0)
+
 void random650(vect650 *u);
 
 double norma650(vect650 *u);
