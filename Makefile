@@ -6,7 +6,7 @@ p644:
 
 
 all:
-	make -C f690
+#	make -C f690
 	make -C f650
 	mv f650/*.xo .
 #	make -C f643

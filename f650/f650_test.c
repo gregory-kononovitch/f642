@@ -850,8 +850,8 @@ int poly2() {
     //
     for(i = 0 ; i < sizeof(co1)/8 ; i++) {
         random650(&p);
-        co1[i] = sin650(p.x * M_PI);
-        co2[i] = cos650(p.y * M_PI);
+        co1[i] = sin650(p.x * 3.14159);
+        co2[i] = cos650(p.y * 3.14159);
     }
     co1[0] = +0.4;
     co2[0] = -0.4;
@@ -966,7 +966,7 @@ void gtk1() {
     bgra_origin650(&bgra, +width/2, +height/2);
     bgra_scale650(&bgra, 1, -1);
 
-    fb650 *fb = fb_open650();
+//    fb650 *fb = fb_open650();
     //
     bgra_fill650(&bgra, 0xff000000);
     long c;
@@ -974,9 +974,13 @@ void gtk1() {
     while(1) {
         bgra_fill650(&bgra, 0xff000000);
         for(i = 0 ; i < 1000 ; i++) {
-            random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
-            random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
-            //dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+//            random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
+//            random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
+            p1.x = 414549.710635175288;
+            p1.y = 240.071571635126;
+            p2.x = 814.599590942056;
+            p2.y = 36093.231835617305;
+            dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
             //printf("bgra random ok\n");
             c = 0L + RAND_MAX + 0L + rand();
             c = ((c << 32) | 0xff000000) >> 32;
@@ -989,8 +993,8 @@ void gtk1() {
         draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
         draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
         //
-        fb_draw650(fb, &bgra);
-        usleep(40000);
+//        fb_draw650(fb, &bgra);
+        //usleep(40000);
     }
 }
 
@@ -1016,7 +1020,30 @@ int main() {
 //    geo2();
 //    test3();
 
-    gtk1();
+//    gtk1();
+
+    //
+    int width = 1024, height = 600;
+    vect650 p1, p2;
+    bgra650 bgra;
+    //
+    bgra_alloc650(&bgra, width, height);
+    bgra_origin650(&bgra, +width/2, +height/2);
+    bgra_scale650(&bgra, 1, -1);
+    //
+    p1.x = 414549.710635175288;
+    p1.y = 240.071571635126;
+    p2.x = 814.599590942056;
+    p2.y = 36093.231835617305;
+    dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+    draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, 0xFFFF0FF0);
+
+    printf("x1 = %f\n", ((double*)bgra.data)[0]);
+    printf("y1 = %f\n", ((double*)bgra.data)[1]);
+    printf("x2 = %f\n", ((double*)bgra.data)[2]);
+    printf("y2 = %f\n", ((double*)bgra.data)[3]);
+    printf("a  = %f\n", ((double*)bgra.data)[4]);
+    printf("b  = %f\n", ((double*)bgra.data)[5]);
 
     return 0;
 }

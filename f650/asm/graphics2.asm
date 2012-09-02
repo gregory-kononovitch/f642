@@ -160,6 +160,9 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			ucomisd			xmm0, qword [ONE]
 			jae				.tw2				; x1 >= 1
 			movsd			xmm0, qword [HALF]	; x1 = 0.5
+			movsd			xmm1, xmm0			; 0.5
+			mulsd			xmm1, xmm8			; * a
+			addsd			xmm1, xmm9			; + b (y1 = a*0.5 + b)
 
 .tw2:		; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;} -> if (x2 >= w1) x2 = w - 0.5
 			movsd			xmm12, xmm10
@@ -169,6 +172,9 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			;
 			movsd			xmm2, xmm10			; x2 = width
 			subsd			xmm2, qword [HALF]	; -.5
+			movsd			xmm1, xmm0			; 0.5
+			mulsd			xmm1, xmm8			; * a
+			addsd			xmm1, xmm9			; + b (y1 = a*0.5 + b)
 
 .prepax:	;
 			mov				r10, rsi			; color
@@ -192,6 +198,10 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			cvtsi2ss		xmm13, edx			; dist
 			cvtsi2ss		xmm14, eax			; nb xi
 			divss			xmm13, xmm14		; PAS @@@
+
+						movsd			qword [rdi + 32], xmm8
+			movsd			qword [rdi + 40], xmm9
+
 			; 4 * xi
 			addss			xmm12, dword [HALFf]
 			movss			dword [rbp - 16], xmm12
@@ -232,6 +242,11 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movdqa			xmm10, oword [rbp - 16]
 
 			xor				rdx, rdx
+			movsd			qword [rdi], xmm0
+			movsd			qword [rdi + 8], xmm1
+			movsd			qword [rdi + 16], xmm2
+			movsd			qword [rdi + 24], xmm3
+			ret
 
 .loopx:		; loop xi, yi
 			movdqa			xmm14, xmm12		; xi
