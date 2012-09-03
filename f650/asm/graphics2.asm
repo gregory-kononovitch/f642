@@ -258,7 +258,6 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 
 
 .prepax:	;
-			mov				r10, rsi			; color
 			movzx			r11, word[rdi + 8]	; width = r11w
 			mov				rdi, [rdi]			;
 			;
@@ -281,7 +280,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			divss			xmm13, xmm14		; PAS @@@
 
 			; 4 * xi
-			addss			xmm12, dword [HALFf]
+;			addss			xmm12, dword [HALFf]	; @@@ not the moment to comment
 			movss			dword [rbp - 16], xmm12
 			addss			xmm12, xmm13
 			movss			dword [rbp - 12], xmm12
@@ -482,30 +481,29 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 
 
 .prepay:	;
-			mov				r10, rsi			; color
 			movzx			r11, word[rdi + 8]	; width = r11w
 			mov				rdi, [rdi]			;
 			;
-			cvttsd2si		edx, xmm0			; @@@ ready in ri
-			cvtsi2ss		xmm12, edx			; X0
-			cvttsd2si		eax, xmm2
+			cvttsd2si		edx, xmm1			; @@@ ready in ri
+			cvtsi2ss		xmm12, edx			; Y0
+			cvttsd2si		eax, xmm3
 			sub				eax, edx
 			mov				edx, eax			; dist @@@
-			add				eax, 1				; nb xi
+			add				eax, 1				; nb yi
 			cmp				eax, 4
 			ja				.i4
 			xor				eax, eax
 .i4			shr				eax, 2
 			add				eax, 1
 			mov				ecx, eax			; cpt loop
-			shl				eax, 2				; nb4 xi
+			shl				eax, 2				; nb4 yi
 			;
 			cvtsi2ss		xmm13, edx			; dist
 			cvtsi2ss		xmm14, eax			; nb xi
 			divss			xmm13, xmm14		; PAS @@@
 
-			; 4 * xi
-			addss			xmm12, dword [HALFf]
+			; 4 * yi
+;			addss			xmm12, dword [HALFf]    @@@
 			movss			dword [rbp - 16], xmm12
 			addss			xmm12, xmm13
 			movss			dword [rbp - 12], xmm12
@@ -550,11 +548,11 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			movsd			qword [rdi + 24], xmm3
 
 
-.loopx:		; loop xi, yi
-			movdqa			xmm14, xmm12		; xi
-			movdqa			xmm15, xmm12		; yi = xi
-			mulps			xmm15, xmm8			; a . xi
-			addps			xmm15, xmm9			; + b
+.loopy:		; loop xi, yi
+			movdqa			xmm15, xmm12		; yi
+			movdqa			xmm14, xmm12		; xi = yi
+			mulps			xmm14, xmm8			; a . yi
+			addps			xmm14, xmm9			; + b
 			; index
 			cvttps2dq		xmm14, xmm14		; xif -> xi
 			cvttps2dq		xmm15, xmm15		; yif -> yi
@@ -585,11 +583,11 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			mov				eax, dword [rbp - 4]
 			mov				dword [rdi + 4*rax], esi
 
-.coopx:		;
+.coopy:		;
 			addps			xmm12, xmm13
-			loop			.loopx
+			loop			.loopy
 
-.donex		;
+.doney		;
 			ret
 
 
