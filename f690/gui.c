@@ -77,6 +77,9 @@ static void maj() {
         printf("y2 = %f\n", ((double*)bgra.data)[3]);
         printf("a  = %f\n", ((double*)bgra.data)[4]);
         printf("b  = %f\n", ((double*)bgra.data)[5]);
+        printf("dist  = %f\n", ((float*)bgra.data)[12]);
+        printf("ni    = %f\n", ((float*)bgra.data)[13]);
+        printf("pas   = %f\n", ((float*)bgra.data)[14]);
     }
     printf("maj 150 ok\n");
     //abgr

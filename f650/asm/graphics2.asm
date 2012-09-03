@@ -8,15 +8,16 @@
 ; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ;
 
-%macro  prologue 1
+%macro  begin 1
 	push    ebp
 	mov     ebp, esp
 	sub     esp, %1
 %endmacro
 
-%macro  epilogue
+%macro  return 0
 	mov     esp, ebp
     pop     ebp
+    ret
 %endmacro
 
 
@@ -538,7 +539,16 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			;
 			cvtsi2ss		xmm13, edx			; dist
 			cvtsi2ss		xmm14, eax			; nb xi
+	; @@@ debug
+			movss			dword [rdi + 48], xmm13
+			movss			dword [rdi + 52], xmm14
+			;ret
+
 			divss			xmm13, xmm14		; PAS @@@
+
+	; @@@ debug
+			movss			dword [rdi + 56], xmm13
+			;ret
 
 			; 4 * yi
 ;			addss			xmm12, dword [HALFf]    @@@
@@ -580,7 +590,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			mov				dword [rbp - 8], dword r11d
 			movdqa			xmm10, oword [rbp - 16]
 
-			sub				rbp, 32
+			sub				rbp, byte 32
 
 .loopy:		; loop xi, yi
 			movdqa			xmm15, xmm12		; yi
