@@ -974,13 +974,9 @@ void gtk1() {
     while(1) {
         bgra_fill650(&bgra, 0xff000000);
         for(i = 0 ; i < 1000 ; i++) {
-//            random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
-//            random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
-            p1.x = 414549.710635175288;
-            p1.y = 240.071571635126;
-            p2.x = 814.599590942056;
-            p2.y = 36093.231835617305;
-            dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+            random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
+            random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
+//            dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
             //printf("bgra random ok\n");
             c = 0L + RAND_MAX + 0L + rand();
             c = ((c << 32) | 0xff000000) >> 32;
@@ -1020,7 +1016,7 @@ int main() {
 //    geo2();
 //    test3();
 
-//    gtk1();
+    gtk1();
 
     //
     int width = 1024, height = 600;
@@ -1032,6 +1028,21 @@ int main() {
     bgra_scale650(&bgra, 1, -1);
     //
     p1.x = -414549.710635175288;
+    p1.y = 240.071571635126;
+    p2.x = 814.599590942056;
+    p2.y = 36093.231835617305;
+    dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+    draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, 0xFFFF0FF0);
+
+    printf("x1 = %f\n", ((double*)bgra.data)[0]);
+    printf("y1 = %f\n", ((double*)bgra.data)[1]);
+    printf("x2 = %f\n", ((double*)bgra.data)[2]);
+    printf("y2 = %f\n", ((double*)bgra.data)[3]);
+    printf("a  = %f\n", ((double*)bgra.data)[4]);
+    printf("b  = %f\n", ((double*)bgra.data)[5]);
+
+    //
+    p1.x = +414549.710635175288;
     p1.y = 240.071571635126;
     p2.x = 814.599590942056;
     p2.y = 36093.231835617305;

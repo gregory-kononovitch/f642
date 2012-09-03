@@ -164,7 +164,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			subsd			xmm9, xmm5			; b = y1 - a * x1
 			; if (x1 < 0) { x1 = 0 ; y1 = b;} -> if (x1 < 0) x1 = 0
 			ucomisd			xmm0, qword [ZERO]
-			jae				.tw2				; x1 >= 0
+			jae				.twx2				; x1 >= 0
 			xorpd			xmm0, xmm0			; x1 = 0
 			movsd			xmm1, xmm9			; y1 = b
 
@@ -327,7 +327,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			qword [rdi + 8], xmm1
 			movsd			qword [rdi + 16], xmm2
 			movsd			qword [rdi + 24], xmm3
-	ret
+	;ret
 
 .loopx:		; loop xi, yi
 			movdqa			xmm14, xmm12		; xi
@@ -481,10 +481,9 @@ hline:
 			sub			rcx, r8
 			add			rcx, 1			; rcx
 			mov			rax, rcx		; return
-			mov			rdx, rsi		; color
 			;
 .loop
-			mov			dword [rdi], edx
+			mov			dword [rdi], esi
 			add			rdi, 4
 			loop		.loop
 
@@ -530,11 +529,10 @@ vline:
 			sub			rcx, r9
 			add			rcx, 1			; rcx
 			mov			rax, rcx		; return
-			mov			rdx, rsi		; color
 			shl			r12, 2			; linesize
 			;
 .loop
-			mov			dword [rdi], edx
+			mov			dword [rdi], esi
 			add			rdi, r12
 			loop		.loop
 
@@ -552,7 +550,7 @@ point:
 			mov			rdi, [rdi]
 			add			rdi, rax		; rdi = point 0
 			mov			rax, 1			; return
-			mov			dword [rdi], rsi
+			mov			dword [rdi], esi
 
 			ret
 
