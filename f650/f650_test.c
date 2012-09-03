@@ -1104,21 +1104,22 @@ int unit3() {
     p2.x = +300;
     p2.y = +50;
 
-    //
-    l1 = ReadTSC();
-    l = draw_line2a650(&bgra1, p1.x, p1.y, p2.x, p2.y, WHITE650);
-    l2 = ReadTSC();
-    printf("line2 : %ldµops = %ld\n", l2 - l1, l);
+    for(i = 0 ; i < 5 ; i++) {
+        //
+        l1 = ReadTSC();
+        l = draw_line2a650(&bgra1, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        l2 = ReadTSC();
+        printf("line2 : %ld µops = %ld\n", l2 - l1, l);
 
-    //
-    l1 = ReadTSC();
-    l = draw_line3a650(&bgra2, p1.x, p1.y, p2.x, p2.y, WHITE650);
-    l2 = ReadTSC();
-    printf("line3 : %ldµops = %ld\n", l2 - l1, l);
-
+        //
+        l1 = ReadTSC();
+        l = draw_line3a650(&bgra2, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        l2 = ReadTSC();
+        printf("line3 : %ld µops = %ld\n", l2 - l1, l);
+    }
     //
     for(i = 0 ; i < 10 ; i++) {
-        printf("%d : %d (%d, %d)\n", i, bgra2.data[i], bgra2.data[i] % 1024, bgra2.data[i] / 1024);
+        printf("%d : %d (%d, %d)\n", i, bgra2.data[i], bgra2.data[i] % 1024 - 512, bgra2.data[i] / 1024 - 300);
     }
 
     //

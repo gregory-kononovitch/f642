@@ -310,7 +310,10 @@ prepax:	; x1 < x2 ; y1 != y2
 			sub				r12d, r8d				; x2 - x1 = n
 			mov				r13d, r11d
 			sub				r13d, r9d				; y2 - y1 = nv
-			xor				r15, r15
+			jns				.dyp
+			mov				r13d, r9d
+			sub				r13d, r11d				; y1 - y2 = nv
+.dyp		xor				r15, r15
 			mov				r15w, word [rdi + 8]	; +w
 			jns				.nh
 			mov 			r13d, r9d
@@ -331,7 +334,7 @@ prepax:	; x1 < x2 ; y1 != y2
 			mov				dword [rdi + 4*rax], esi
 			mov				r11d, eax			; tmp
 
-			mov				dword [rdi], eax	; ###
+			mov				dword [rdi + 16], eax	; ###
 
 %define		n	r12d
 %define		nv	r13d
@@ -349,6 +352,11 @@ xhori:		;
 			add				eax, 1		; hi
 			mov				edx, r11d	; ind
 			mov				ecx, n		; cpt
+
+			mov				dword [rdi], n	; ###
+			mov				dword [rdi+4], nh	; ###
+			mov				dword [rdi+8], nv	; ###
+			mov				dword [rdi+12], eax	; ###
 			;
 .loop1		;
 			push			rcx
@@ -361,14 +369,17 @@ xhori:		;
 			add				edx, r15d
 			mov				dword [rdi + 4*rdx], esi
 			pop				rcx
+			sub				ecx, eax
+			sub				ecx, 1
 			;
-			loop			.loop1
+			cmp				ecx, 0
+			jg				.loop1
 			;
 			pop				r15
 			pop				r14
 			pop				r13
 			pop				r12
-			mov				rax, r9
+			mov				rax, rcx
 			return
 			;
 xvert:

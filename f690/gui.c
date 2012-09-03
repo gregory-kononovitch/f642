@@ -66,10 +66,16 @@ static void tst_bgra() {
     long c;
     if (debug) printf("bgra clear ok\n");
     for(i = 0 ; i < 1000 ; i++) {
-//        random650(&p1); p1.x = (1 + p1.x) * width/2. ; p1.y = (1 + p1.y) * height/2.;
+        random650(&p1); p1.x = (1 + p1.x) * width/2. ; p1.y = (1 + p1.y) * height/2.;
 //        random650(&p2); p2.x = (1 + p2.x) * width/2. ; p2.y = (1 + p2.y) * height/2.;
-        random650(&p1); p1.x = -width/2. + (1. + p1.x) * width ; p1.y = -height/2. + (1. + p1.y) * height;
-        random650(&p2); p2.x = -width/2. + (1. + p2.x) * width ; p2.y = -height/2. + (1. + p2.y) * height;
+//        random650(&p1); p1.x = -width/2. + (1. + p1.x) * width ; p1.y = -height/2. + (1. + p1.y) * height;
+//        random650(&p2); p2.x = -width/2. + (1. + p2.x) * width ; p2.y = -height/2. + (1. + p2.y) * height;
+//        p2.x = p1.x + 300 ; p2.y = p1.y + 50;
+        p1.x = 100;
+        p1.y = 150;
+        p2.x = 700;
+        p2.y = 350;
+
         //
         if (debug) printf("bgra random ok\n");
         c = rand();
@@ -78,7 +84,8 @@ static void tst_bgra() {
         if (debug) dump650(" ; p2 = ", &p2, "");
         if (debug) printf(" ; c = %ld\n", c);
         if (debug) printf("%ld", c);
-        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? MAGENTA650 : CYAN650);
+        c = draw_line3a650(&bgra, p1.x, p1.y + 50, p2.x, p2.y + 50, c % 2 == 0 ? ORANGE650 : YELLOW650);
 //        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
         if (debug) {
             printf("bgra draw line ok :\n");
