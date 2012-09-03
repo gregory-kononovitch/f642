@@ -15,6 +15,12 @@ HALF	dq				0.5
 HALFf	dd				0.5
 PAS		dq				0.65
 FOURf	dd				4.0
+; special case
+ZERO#	dq				0.001
+ONE#	dq				1.001
+HALF_	dq				0.499
+
+
 
 SECTION .text  align=16
 
@@ -168,15 +174,19 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			xmm12, xmm10
 			subsd			xmm12, qword [ONE]	; w1
 			ucomisd			xmm2, xmm12
-			jb				.prepax				; x2 < w1
+			jb				.twy1				; x2 < w1
 			;
 			movsd			xmm2, xmm10			; x2 = width - .5
 			subsd			xmm2, qword [HALF]	; -.5
 			movsd			xmm3, xmm2			; 0.5
 			mulsd			xmm3, xmm8			; * a
 			addsd			xmm3, xmm9			; + b (y1 = a*0.5 + b)
+
+.twy1		; test yi
+
+
 			; recalc xi
-			; a > 0
+			; a > 0 ?
 			ucomisd			xmm8, [ZERO]
 			jb				.twan
 			; a > 0
@@ -193,7 +203,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			xorpd			xmm1, xmm1			; y1 = 0
 			xorpd			xmm0, xmm0
 			subsd			xmm0, xmm9
-			divsd			xmm0, xmm8			; x1 = (y1 - b) / a
+			divsd			xmm0, xmm8			; x1 = -b / a
 
 .twapx2		; a > 0, (x1, y1) inside
 			; y2 < height ok
@@ -204,10 +214,17 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			xmm2, xmm3
 			subsd			xmm2, xmm9
 			divsd			xmm2, xmm8			; x2 = (h-b)/a
+			; falling below h
+			ucomisd			xmm5, [ONE_]
+			jb				.twap@@@
+			subsd			xmm2, [ZERO_]
+			movsd			xmm3, xmm2
+			mulsd			xmm3, xmm8
+			addsd			xmm3, xmm9
+			jmp				.prepax
 
-
-
-
+.twap@@@	; radical
+			jmp 			point
 
 
 .twan		; a < 0
@@ -286,7 +303,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			qword [rdi + 8], xmm1
 			movsd			qword [rdi + 16], xmm2
 			movsd			qword [rdi + 24], xmm3
-			ret
+	ret
 
 .loopx:		; loop xi, yi
 			movdqa			xmm14, xmm12		; xi
@@ -503,6 +520,15 @@ vline:
 
 ;;;;;;;;;;;
 point:
+			xor			rax, rax
+			mov			ax, word [rdi + 8]	; width
+			mul			r9				; * y1, x1 = x2 E [0, w[
+			add			rax, r8			; + x1
+			shl			rax, 2			; * 4
+			mov			rdi, [rdi]
+			add			rdi, rax		; rdi = point 0
+			mov			rax, 1			; return
+			mov			dword [rdi], rsi
 
 			ret
 
