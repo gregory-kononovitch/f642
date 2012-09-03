@@ -1043,51 +1043,63 @@ int main() {
 //    i = -250.5;
 //    printf("i = %f -> %d\n", i, (int)i);
 
-    geo2();
+//    geo2();
 //    test3();
 
 //    gtk1();
 
 
-    return 0;
+//    return 0;
     //
     int width = 1024, height = 600;
     vect650 p1, p2;
     bgra650 bgra;
-//     gtk1 config
-//    bgra_alloc650(&bgra, width, height);
-//    bgra_origin650(&bgra, +width/2, +height/2);
-//    bgra_scale650(&bgra, 1, -1);
+//    // Config poly2
+//    bgra_alloc650(&bgra, 1024, 600);
+//    bgra_origin650(&bgra, 0., 0.);
+//    bgra_scale650(&bgra, 1024. / 4., 600. / 4.);
+//
+//    //
+////    p0 : (1.500000, -106.566510)  p : (1.250000, 56.634899)
+//    p1.x = 1.5;
+//    p1.y = -106.566510;
+//    p2.x = 1.25;
+//    p2.y = 56.634899;
+//    dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+//    draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, 0xFFFF0FF0);
+//
+//    printf("x1 = %f\n", ((double*)bgra.data)[0]);
+//    printf("y1 = %f\n", ((double*)bgra.data)[1]);
+//    printf("x2 = %f\n", ((double*)bgra.data)[2]);
+//    printf("y2 = %f\n", ((double*)bgra.data)[3]);
+//    printf("a  = %f\n", ((double*)bgra.data)[4]);
+//    printf("b  = %f\n", ((double*)bgra.data)[5]);
 
-    // Config poly2
-    bgra_alloc650(&bgra, 1024, 600);
-    bgra_origin650(&bgra, 0., 0.);
-    bgra_scale650(&bgra, 1024. / 4., 600. / 4.);
+    // gtk
+    // gtk1 config
+    width = 800;
+    height = 448;
+    bgra_alloc650(&bgra, width, height);
+    bgra_origin650(&bgra, +width/2, +height/2);
+    bgra_scale650(&bgra, 1, -1);
 
-    //
-//    p0 : (1.500000, -106.566510)  p : (1.250000, 56.634899)
-    p1.x = 1.5;
-    p1.y = -106.566510;
-    p2.x = 1.25;
-    p2.y = 56.634899;
+
+    // p1 = (58.739364, 200.953567) ; p2 = (404.474496, 200.449352)
+    // p1 = (127.849826, 271.316449) ; p2 = (161.247973, 39.581984) ; c = -1427598263
+    long l = -1427598263;
+//    p1.y = +414549.710635175288;
+//    p1.x = 240.071571635126;
+//    p2.y = 814.599590942056;
+//    p2.x = 36093.231835617305;
+    p1.x = +127.849826;
+    p1.y = 271.316449;
+    p2.x = 161.247973;
+    p2.y = 39.581984;
+
     dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
-    draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, 0xFFFF0FF0);
+    l = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, l);
 
-    printf("x1 = %f\n", ((double*)bgra.data)[0]);
-    printf("y1 = %f\n", ((double*)bgra.data)[1]);
-    printf("x2 = %f\n", ((double*)bgra.data)[2]);
-    printf("y2 = %f\n", ((double*)bgra.data)[3]);
-    printf("a  = %f\n", ((double*)bgra.data)[4]);
-    printf("b  = %f\n", ((double*)bgra.data)[5]);
-
-    //
-    p1.y = +414549.710635175288;
-    p1.x = 240.071571635126;
-    p2.y = 814.599590942056;
-    p2.x = 36093.231835617305;
-    dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
-    draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, 0xFFFF0FF0);
-
+    printf("%ld pixels\n", l);
     printf("x1 = %f\n", ((double*)bgra.data)[0]);
     printf("y1 = %f\n", ((double*)bgra.data)[1]);
     printf("x2 = %f\n", ((double*)bgra.data)[2]);

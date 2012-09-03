@@ -16,6 +16,8 @@ _gtk = gui.o
 f690 = f690_gui.o
 
 gtk : $(f690)
+	yasm -f elf64 -a x86 -m amd64 -o ../f650/asm/graphics2.ao ../f650/asm/graphics2.asm
+	
 	gcc -o f690-gui.xo $(f690) $(BASE_LIBS) $(GTK_LIBS) \
 	../f650/f650_graphics.o ../f650/f650_geometry1.o \
 	../f650/asm/graphics.ao ../f650/asm/graphics2.ao ../f650/asm/std1.ao

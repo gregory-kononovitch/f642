@@ -51,33 +51,6 @@ static void destroy(GtkWidget *widget, gpointer data) {
  *
  */
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *event, gpointer data) {
-//    gint x = widget->allocation.x;
-//    gint y = widget->allocation.y;
-//    gint w = widget->allocation.width;
-//    gint h = widget->allocation.height;
-//
-//    cairo_t *g = gdk_cairo_create(widget->window);
-//    //
-////    gdk_cairo_set_source_pixbuf(g, img, 0, 0);
-////    printf("cairo_set_source\n");
-//    //
-//    cairo_select_font_face(g, "Purisa", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-//    cairo_set_font_size(g, 12);
-//    cairo_set_source_rgb(g, 0, 0, 0);
-//    //
-//    char s[16];
-//    snprintf(s, 15, "TEST (%d, %d)", x, y);
-//    cairo_move_to(g, 10, height - 1);
-//    cairo_show_text(g, s);
-//    //
-//    cairo_set_source_rgb(g, 1, 0, 1);
-//    cairo_set_line_width(g, 1);
-//    cairo_rectangle(g, 0, 0, width, height);
-//    printf("cairo drawn\n");
-//    //
-//    cairo_destroy(g);
-//    printf("cairo destroy\n");
-    //
     return FALSE;
 }
 
@@ -85,24 +58,36 @@ static void maj() {
     int i;
     vect650 p1, p2;
     //
-    //bgra_fill650(&bgra, 0xff000000);
+    bgra_fill650(&bgra, 0xff000000);
     long c;
     printf("bgra clear ok\n");
     for(i = 0 ; i < 150 ; i++) {
         random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
         random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
-        dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
-        //printf("bgra random ok\n");
+        printf("bgra random ok\n");
         c = 0L + RAND_MAX + 0L + rand();
         c = ((c << 32) | 0xff000000) >> 32;
+        dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "");
+        printf(" ; c = %ld\n", c);
         draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
-        //printf("bgra draw line ok\n");
+        printf("bgra draw line ok :\n");
+        printf("x1 = %f\n", ((double*)bgra.data)[0]);
+        printf("y1 = %f\n", ((double*)bgra.data)[1]);
+        printf("x2 = %f\n", ((double*)bgra.data)[2]);
+        printf("y2 = %f\n", ((double*)bgra.data)[3]);
+        printf("a  = %f\n", ((double*)bgra.data)[4]);
+        printf("b  = %f\n", ((double*)bgra.data)[5]);
     }
+    printf("maj 150 ok\n");
     //abgr
     draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
+    printf("maj 0 ok\n");
     draw_line650(&bgra, 0, height - 1, width, height - 1, 0xff0000ff);
+    printf("maj 1 ok\n");
     draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
+    printf("maj 2 ok\n");
     draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
+    printf("maj 3 ok\n");
 }
 
 static gboolean time_handler(GtkWidget *widget) {
@@ -185,7 +170,6 @@ int main(int argc, char *argv[]) {
     // GdkPixbufAnimation
     //gtk_image_set_from_pixbuf
     bgra_alloc650(&bgra, width, height);
-//    bgra.data = (uint32_t*)gdimg->mem;
     bgra_origin650(&bgra, +width/2, +height/2);
     bgra_scale650(&bgra, 1, -1);
     printf("bgra alloc ok ::\n");
