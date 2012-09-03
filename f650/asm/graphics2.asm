@@ -175,8 +175,8 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			xmm3, xmm2			; 0.5
 			mulsd			xmm3, xmm8			; * a
 			addsd			xmm3, xmm9			; + b (y1 = a*0.5 + b)
-
-.tw3		; a > 0
+			; recalc xi
+			; a > 0
 			ucomisd			xmm8, [ZERO]
 			jb				.twan
 			; a > 0
@@ -187,7 +187,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			ucomisd			xmm3, [ZERO]
 			jb				NOPIX
 			; pix
-			; y1 < 0
+			; y1 < 0, recalc x1
 			ucomisd			xmm1, [ZERO]
 			jae				.twapx2
 			xorpd			xmm1, xmm1			; y1 = 0
@@ -199,7 +199,16 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			; y2 < height ok
 			ucomisd			xmm3, xmm11
 			jb				.prepax
-			; y2 >= height
+			; y2 >= height, recalc x2
+			movsd			xmm3, xmm11			; y2 = h
+			movsd			xmm2, xmm3
+			subsd			xmm2, xmm9
+			divsd			xmm2, xmm8			; x2 = (h-b)/a
+
+
+
+
+
 
 .twan		; a < 0
 
