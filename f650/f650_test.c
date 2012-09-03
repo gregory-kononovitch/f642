@@ -432,16 +432,16 @@ int test3() {
         //
         for(i = 0 ; i < 50 ; i++) {  // 28kHz
             random650(&p1);
-//            p1.x *= 10;
-            p1.x += pos.x - 6;
+            p1.x *= 10;
+//            p1.x += pos.x - 6;
             p1.y *= 5;
             p1.z *= 2;
             compute_pix650(&cam, &p1, &q1);
             random650(&p2);
-//            p2.x *= 10;
-            p2.x += pos.x + 6;
-//            p2.y *= 5;
-            p2.y = -5 * p1.y;
+            p2.x *= 10;
+//            p2.x += pos.x + 6;
+            p2.y *= 5;
+//            p2.y = -5 * p1.y;
             p2.z *= 2;
             compute_pix650(&cam, &p2, &q2);
             draw_line650(&img, q1.x, q1.y, q2.x, q2.y, rand());
@@ -895,6 +895,7 @@ int poly2() {
 //            p0.x = p.x;
 //            p0.y = polya650(co2, sizeof(co2) / 8, p0.x);
 //            if ((p.y < -2 || p.y > 2) && (p0.y < -2 || p0.y > 2)) continue;
+            dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
             draw_line650(&img, p0.x, p0.y, p.x, p.y, GREEN650);
             p0.x = p.x;
             p0.y = p.y;
@@ -918,7 +919,7 @@ int geo2() {
     p1.x = +250.5;
     p1.y = +250.5;
     p2.x = -250.5;
-    p2.y = -245.5;
+    p2.y = -255.5;
 
     //
     bgra_alloc650(&img1, 1024, 600);
@@ -1006,31 +1007,40 @@ int main() {
 
 //    test_geo1();
 
-    poly2();
+//    poly2();
 
     double i = 250.5;
     printf("i = %f -> %d\n", i, (int)i);
     i = -250.5;
     printf("i = %f -> %d\n", i, (int)i);
 
-//    geo2();
+    geo2();
 //    test3();
 
 //    gtk1();
 
+
+    return 0;
     //
     int width = 1024, height = 600;
     vect650 p1, p2;
     bgra650 bgra;
+//     gtk1 config
+//    bgra_alloc650(&bgra, width, height);
+//    bgra_origin650(&bgra, +width/2, +height/2);
+//    bgra_scale650(&bgra, 1, -1);
+
+    // Config poly2
+    bgra_alloc650(&bgra, 1024, 600);
+    bgra_origin650(&bgra, 0., 0.);
+    bgra_scale650(&bgra, 1024. / 4., 600. / 4.);
+
     //
-    bgra_alloc650(&bgra, width, height);
-    bgra_origin650(&bgra, +width/2, +height/2);
-    bgra_scale650(&bgra, 1, -1);
-    //
-    p1.x = -414549.710635175288;
-    p1.y = 240.071571635126;
-    p2.x = 814.599590942056;
-    p2.y = 36093.231835617305;
+//    p0 : (1.500000, -106.566510)  p : (1.250000, 56.634899)
+    p1.x = 1.5;
+    p1.y = -106.566510;
+    p2.x = 1.25;
+    p2.y = 56.634899;
     dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
     draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, 0xFFFF0FF0);
 
@@ -1042,10 +1052,10 @@ int main() {
     printf("b  = %f\n", ((double*)bgra.data)[5]);
 
     //
-    p1.x = +414549.710635175288;
-    p1.y = 240.071571635126;
-    p2.x = 814.599590942056;
-    p2.y = 36093.231835617305;
+    p1.y = +414549.710635175288;
+    p1.x = 240.071571635126;
+    p2.y = 814.599590942056;
+    p2.x = 36093.231835617305;
     dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
     draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, 0xFFFF0FF0);
 

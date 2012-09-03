@@ -385,6 +385,19 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			mulsd			xmm7, xmm1			; a * y1
 			movsd			xmm9, xmm0			; x1
 			subsd			xmm9, xmm7			; b = x1 - a * y1
+
+			mov				rdx, [rdi]			;
+
+			; for tests
+			movsd			qword [rdx], xmm0
+			movsd			qword [rdx + 8], xmm1
+			movsd			qword [rdx + 16], xmm2
+			movsd			qword [rdx + 24], xmm3
+			movsd			qword [rdx + 32], xmm8
+			movsd			qword [rdx + 40], xmm9
+			ret
+
+
 			; if (y1 < 0) { y1 = 0 ; x1 = b;} -> if (y1 < 0) y1 = 0
 			ucomisd			xmm1, qword [ZERO]
 			jae				.twy2				; y1 >= 0
@@ -483,6 +496,16 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 .prepay:	;
 			movzx			r11, word[rdi + 8]	; width = r11w
 			mov				rdi, [rdi]			;
+
+			; for tests
+			movsd			qword [rdi], xmm0
+			movsd			qword [rdi + 8], xmm1
+			movsd			qword [rdi + 16], xmm2
+			movsd			qword [rdi + 24], xmm3
+			movsd			qword [rdi + 32], xmm8
+			movsd			qword [rdi + 40], xmm9
+			ret
+
 			;
 			cvttsd2si		edx, xmm1			; @@@ ready in ri
 			cvtsi2ss		xmm12, edx			; Y0
@@ -542,6 +565,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			movdqa			xmm10, oword [rbp - 16]
 
 			xor				rdx, rdx
+			; for tests
 			movsd			qword [rdi], xmm0
 			movsd			qword [rdi + 8], xmm1
 			movsd			qword [rdi + 16], xmm2
