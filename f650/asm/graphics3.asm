@@ -294,11 +294,11 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 .vline:
 			cmp				r8d, r10d
 			jz				point				;
-			cmp				r11, r9
+			cmp				r11d, r9d
 			jns				vline.vgo
-			mov				rdx, r11
-			mov				r11, r9
-			mov				r9, rdx
+			mov				edx, r11d
+			mov				r11d, r9d
+			mov				r9d, edx
 			jmp				vline.vgo
 
 .prepax:	; x1 < x2 ; y1 != y2
@@ -306,13 +306,74 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			push			r13
 			push			r14
 			push			r15
-			mov				r12, r10
-			sub				r12, r8		; x2 - x1
-			mov				r13, r11
-			sub				r13, r9		; y2 - y1
+			mov				r12d, r10d
+			sub				r12d, r8d				; x2 - x1 = n
+			mov				r13d, r11d
+			sub				r13d, r9d				; y2 - y1 = nv
+			xor				r15, r15
+			mov				r15w, word [rdi + 8]	; +w
+			jns				.nh
+			mov 			r13d, r9d
+			sub				r13d, r11d
+			mov				r14w, word [rdi + 8]
+			xor				r15, r15
+			sub				r15d, r14d				; -w
+
+.nh			mov				r14d, r12d
+			sub				r14d, r13d	; nh
 			;
-			mov				r14, r12
-			sub				r14, r13	; nbh
+			xor				rdx, rdx
+			xor				rax, rax
+			mov				ax, word [rdi + 8]
+			mul				r9d
+			add				eax, r8d			; i0
+			mov				rdi, [rdi]
+			mov				dword [rdi + 4*rax], esi
+			mov				ecx, eax			; temp
+%define		n	r12d
+%define		nv	r13d
+%define		nh	r14d
+			;
+			cmp				nh, nv
+			js				xvert
+			jz				xequa
+xhori		;
+			mov				eax, n
+			sub				eax, nv
+			mov				ecx, nv
+			add				ecx, 1
+			div				ecx
+			add				eax, 1		; hi
+			mov				edx, ecx	; ind
+			mov				ecx, n		; cpt
+			;
+.loop1		;
+			push			ecx
+			mov				ecx, eax
+.loop2
+			add				edx, 1
+			mov				dword [rdi + 4*edx], esi
+			loop			.loop2
+			;
+			add				edx, r15d
+			mov				dword [rdi + 4*edx], esi
+			pop				ecx
+			;
+			loop			.loop1
+
+			jmp				.endx
+xvert
+
+			jmp				.endx
+
+
+
+
+xequa
+
+
+
+
 
 
 
