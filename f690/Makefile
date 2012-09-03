@@ -16,17 +16,19 @@ _gtk = gui.o
 f690 = f690_gui.o
 
 gtk : $(f690)
-	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ../f650/asm/graphics2.ao ../f650/asm/graphics2.asm
-	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ../f650/asm/graphics3.ao ../f650/asm/graphics3.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./std1.ao ../f650/asm/std1.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./graphics.ao ../f650/asm/graphics.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./graphics2.ao ../f650/asm/graphics2.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./graphics3.ao ../f650/asm/graphics3.asm
 	
 	gcc -o f690-gui.xo $(f690) $(BASE_LIBS) $(GTK_LIBS) \
 	../f650/f650_graphics.o ../f650/f650_geometry1.o \
-	../f650/asm/graphics.ao ../f650/asm/graphics2.ao ../f650/asm/graphics3.ao ../f650/asm/std1.ao
+	./graphics.ao ./graphics2.ao ./graphics3.ao ./std1.ao
 #	
 	gcc -O3 -Wall -c gui.c -o gui.o $(BASE_INCLUDE) $(GTK_INCLUDE)
 	gcc -o gtk.xo $(_gtk) $(BASE_LIBS) $(GTK_LIBS) \
 	../f650/f650_graphics.o ../f650/f650_geometry1.o \
-	../f650/asm/graphics.ao ../f650/asm/graphics2.ao ../f650/asm/graphics3.ao ../f650/asm/std1.ao
+	./graphics.ao ./graphics2.ao ./graphics3.ao ./std1.ao
 	
 	
 gui.o : gui.c

@@ -295,19 +295,32 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			cmp				r8d, r10d
 			jz				point				;
 			cmp				r11, r9
-			jns				vline.go
+			jns				vline.vgo
 			mov				rdx, r11
 			mov				r11, r9
 			mov				r9, rdx
 			jmp				vline.vgo
 
 .prepax:	; x1 < x2 ; y1 != y2
-
-
+			push			r12
+			push			r13
+			push			r14
+			push			r15
+			mov				r12, r10
+			sub				r12, r8		; x2 - x1
+			mov				r13, r11
+			sub				r13, r9		; y2 - y1
+			;
+			mov				r14, r12
+			sub				r14, r13	; nbh
 
 
 
 .endx
+			pop				r15
+			pop				r14
+			pop				r13
+			pop				r12
 			mov				rax, r9
 			return
 

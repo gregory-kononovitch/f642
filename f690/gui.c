@@ -20,7 +20,7 @@ static int          height = 512;
 static bgra650      bgra;
 static GdkPixbuf    *img   = NULL;
 
-static void maj();
+static void tst_bgra();
 
 bgra650 *get_bgra() {
     return &bgra;   // before a straight struct
@@ -58,7 +58,7 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *event, gpoint
     return FALSE;
 }
 
-static void maj() {
+static void tst_bgra() {
     int i, debug = 0;
     vect650 p1, p2;
     //
@@ -66,15 +66,11 @@ static void maj() {
     long c;
     if (debug) printf("bgra clear ok\n");
     for(i = 0 ; i < 1000 ; i++) {
-        random650(&p1); p1.x = (1 + p1.x) * width/2. ; p1.y = (1 + p1.y) * height/2.;
-        random650(&p2); p2.x = (1 + p2.x) * width/2. ; p2.y = (1 + p2.y) * height/2.;
+//        random650(&p1); p1.x = (1 + p1.x) * width/2. ; p1.y = (1 + p1.y) * height/2.;
+//        random650(&p2); p2.x = (1 + p2.x) * width/2. ; p2.y = (1 + p2.y) * height/2.;
+        random650(&p1); p1.x = -width/2. + (1. + p1.x) * width ; p1.y = -height/2. + (1. + p1.y) * height;
+        random650(&p2); p2.x = -width/2. + (1. + p2.x) * width ; p2.y = -height/2. + (1. + p2.y) * height;
         //
-//        random650(&p1); p1.x = (1 + p1.x) * 100 * width ; p1.y = (1 + p1.y) * 100 * height;
-//        random650(&p1); p1.x = bgra.x0 ; p1.y = bgra.y0;
-//        random650(&p2); p2.x = p2.x * 100 * width ; p2.y = p2.y * 100 * height;
-//        random650(&p2); p2.x = p1.x + p2.x * 400 ; p2.y = p1.y + p2.y * 400;
-
-
         if (debug) printf("bgra random ok\n");
         c = rand();
         c = (c | 0xff000000) & 0xffffffff;
@@ -82,8 +78,8 @@ static void maj() {
         if (debug) dump650(" ; p2 = ", &p2, "");
         if (debug) printf(" ; c = %ld\n", c);
         if (debug) printf("%ld", c);
-//        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
-        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+//        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
         if (debug) {
             printf("bgra draw line ok :\n");
             printf("x1 = %f\n", ((double*)bgra.data)[0]);
@@ -99,16 +95,11 @@ static void maj() {
         }
     }
     if (debug) printf("maj 150 ok\n");
-    //abgr
-//    draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
-//    draw_line650(&bgra, 0, height - 1, width, height - 1, 0xff0000ff);
-//    draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
-//    draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
 }
 
 static gboolean time_handler(GtkWidget *widget) {
     //
-    maj();
+    tst_bgra();
     gtk_widget_queue_draw(widget);
     return TRUE;
 }
@@ -190,7 +181,7 @@ int main(int argc, char *argv[]) {
     bgra_origin650(&bgra, +width/2, +height/2);
     bgra_scale650(&bgra, 1, -1);
     printf("bgra alloc ok ::\n");
-    maj();
+    tst_bgra();
     printf("bgra maj ok\n");
 
     img = gdk_pixbuf_new_from_data(
