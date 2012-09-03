@@ -15,8 +15,8 @@
 
 
 //
-static int          width  = 800;
-static int          height = 448;
+static int          width  = 910;
+static int          height = 512;
 static bgra650      bgra;
 static GdkPixbuf    *img   = NULL;
 
@@ -61,9 +61,16 @@ static void maj() {
     bgra_fill650(&bgra, 0xff000000);
     long c;
     if (debug) printf("bgra clear ok\n");
-    for(i = 0 ; i < 150 ; i++) {
-        random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
-        random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
+    for(i = 0 ; i < 1000 ; i++) {
+        random650(&p1); p1.x = (1 + p1.x) * width/2. ; p1.y = (1 + p1.y) * height/2.;
+        random650(&p2); p2.x = (1 + p2.x) * width/2. ; p2.y = (1 + p2.y) * height/2.;
+        //
+//        random650(&p1); p1.x = (1 + p1.x) * 100 * width ; p1.y = (1 + p1.y) * 100 * height;
+//        random650(&p1); p1.x = bgra.x0 ; p1.y = bgra.y0;
+//        random650(&p2); p2.x = p2.x * 100 * width ; p2.y = p2.y * 100 * height;
+//        random650(&p2); p2.x = p1.x + p2.x * 400 ; p2.y = p1.y + p2.y * 400;
+
+
         if (debug) printf("bgra random ok\n");
         c = rand();
         c = (c | 0xff000000) & 0xffffffff;
@@ -71,7 +78,7 @@ static void maj() {
         if (debug) dump650(" ; p2 = ", &p2, "");
         if (debug) printf(" ; c = %ld\n", c);
         if (debug) printf("%ld", c);
-        //c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+//        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
         c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
         if (debug) {
             printf("bgra draw line ok :\n");
@@ -89,14 +96,10 @@ static void maj() {
     }
     if (debug) printf("maj 150 ok\n");
     //abgr
-    draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
-    if (debug) printf("maj 0 ok\n");
-    draw_line650(&bgra, 0, height - 1, width, height - 1, 0xff0000ff);
-    if (debug) printf("maj 1 ok\n");
-    draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
-    if (debug) printf("maj 2 ok\n");
-    draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
-    if (debug) printf("maj 3 ok\n");
+//    draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
+//    draw_line650(&bgra, 0, height - 1, width, height - 1, 0xff0000ff);
+//    draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
+//    draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
 }
 
 static gboolean time_handler(GtkWidget *widget) {
@@ -132,6 +135,7 @@ int main(int argc, char *argv[]) {
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_container_set_border_width(GTK_CONTAINER(window), 0);
     gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+    gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
     printf("window ok\n");
 
     // layout
