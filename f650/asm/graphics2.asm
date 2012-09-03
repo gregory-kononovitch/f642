@@ -16,9 +16,9 @@ HALFf	dd				0.5
 PAS		dq				0.65
 FOURf	dd				4.0
 ; special case
-ZERO#	dq				0.001
-ONE#	dq				1.001
-HALF_	dq				0.499
+ZERO#	dq				0.0001
+ONE#	dq				1.0001
+ONE_	dq				0.9999
 
 
 
@@ -168,17 +168,43 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			xorpd			xmm0, xmm0			; x1 = 0
 			movsd			xmm1, xmm9			; y1 = b
 
-.tw2:		; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;} -> if (x2 >= w1) x2 = w - 0.5
-			movsd			xmm12, xmm10
-			subsd			xmm12, qword [ONE]	; w1
-			ucomisd			xmm2, xmm12
+.twx2:		; if (x2 >= w) { x2 = w- ; y2 = a * x2 + b;}
+			ucomisd			xmm2, xmm10
 			jb				.twy1				; x2 < w1
-			;
-			movsd			xmm2, xmm10			; x2 = width - .5
-			subsd			xmm2, qword [HALF]	; -.5
-			movsd			xmm3, xmm2			; 0.5
+			; @@@ ~
+			movsd			xmm2, qword [ONE_]	;
+			mulsd			xmm2, xmm10			; x2 = width-
+			movsd			xmm12, [ZERO#]		;
+			mulsd			xmm12, xmm0			;
+			addsd			xmm2, xmm12			; x2-
+			movsd			xmm3, xmm2			; x2
 			mulsd			xmm3, xmm8			; * a
 			addsd			xmm3, xmm9			; + b (y1 = a*0.5 + b)
+
+.twy1		;
+			ucomisd			xmm1, [ZERO]
+			jb				.twy1n
+			ucomisd			xmm1, xmm11
+			jb				.twy2
+			; y1 >= h
+			ucomisd			xmm8, [ZERO]
+			ja				NOPIX
+			; a < 0
+			ucomisd			xmm1, xmm11
+			je				.twy1h
+			movsd			xmm1, xmm11
+			movsd			xmm0, xmm1
+			subsd			xmm0, xmm9
+			divsd			xmm0, xmm8
+
+.twy1h		; y1 = h, a < 0
+
+.twy1n		; y1 < 0
+
+
+
+.twy2		; (x1, y1) ok
+
 
 
 .prepax:	;
