@@ -143,7 +143,7 @@ draw_line2a650:
 
 .cmpdxdy:
 			ucomisd			xmm5, xmm7
-			jbe				yaxis
+			jbe				yaxis			; dy >= dx
 
 xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			ucomisd			xmm2, xmm0
@@ -162,13 +162,11 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			mulsd			xmm5, xmm0			; a * x1
 			movsd			xmm9, xmm1			; y1
 			subsd			xmm9, xmm5			; b = y1 - a * x1
-			; if (x1 < 0) { x1 = 0 ; y1 = b;} -> if (x1 < 1) x1 = 0.5
-			ucomisd			xmm0, qword [ONE]
-			jae				.tw2				; x1 >= 1
-			movsd			xmm0, qword [HALF]	; x1 = 0.5
-			movsd			xmm1, xmm0			; 0.5
-			mulsd			xmm1, xmm8			; * a
-			addsd			xmm1, xmm9			; + b (y1 = a*0.5 + b)
+			; if (x1 < 0) { x1 = 0 ; y1 = b;} -> if (x1 < 0) x1 = 0
+			ucomisd			xmm0, qword [ZERO]
+			jae				.tw2				; x1 >= 0
+			xorpd			xmm0, xmm0			; x1 = 0
+			movsd			xmm1, xmm9			; y1 = b
 
 .tw2:		; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;} -> if (x2 >= w1) x2 = w - 0.5
 			movsd			xmm12, xmm10
@@ -181,56 +179,6 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			xmm3, xmm2			; 0.5
 			mulsd			xmm3, xmm8			; * a
 			addsd			xmm3, xmm9			; + b (y1 = a*0.5 + b)
-
-.twy1		; test yi
-
-
-			; recalc xi
-			; a > 0 ?
-			ucomisd			xmm8, [ZERO]
-			jb				.twan
-			; a > 0
-			; y1 >= h nopix
-			ucomisd			xmm1, xmm11
-			jae				NOPIX
-			; y2 < 0 nopix
-			ucomisd			xmm3, [ZERO]
-			jb				NOPIX
-			; pix
-			; y1 < 0, recalc x1
-			ucomisd			xmm1, [ZERO]
-			jae				.twapx2
-			xorpd			xmm1, xmm1			; y1 = 0
-			xorpd			xmm0, xmm0
-			subsd			xmm0, xmm9
-			divsd			xmm0, xmm8			; x1 = -b / a
-
-.twapx2		; a > 0, (x1, y1) inside
-			; y2 < height ok
-			ucomisd			xmm3, xmm11
-			jb				.prepax
-			; y2 >= height, recalc x2
-			movsd			xmm3, xmm11			; y2 = h
-			movsd			xmm2, xmm3
-			subsd			xmm2, xmm9
-			divsd			xmm2, xmm8			; x2 = (h-b)/a
-			; falling below h
-			ucomisd			xmm5, [ONE_]
-			jb				.twap@@@
-			subsd			xmm2, [ZERO_]
-			movsd			xmm3, xmm2
-			mulsd			xmm3, xmm8
-			addsd			xmm3, xmm9
-			jmp				.prepax
-
-.twap@@@	; radical
-			jmp 			point
-
-
-.twan		; a < 0
-
-
-
 
 
 .prepax:	;
