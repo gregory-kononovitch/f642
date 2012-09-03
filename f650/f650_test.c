@@ -927,6 +927,19 @@ int geo2() {
     bgra_alloc650(&img2, 1024, 600);
     bgra_clear650(&img2);
 
+    a = 0.5;
+    for(i = 0 ; i < 360 ; i++) {
+        a = i * 3.14159 / 180.;
+        turn2d650(&p1, i * 3.14159 / 180.);
+        p1.x = 290. * cos(a);
+        p1.y = 290. * sin(a);
+        dump650("u", &p1, " : ");
+        l1 = ReadTSC();
+        l = draw_line2a650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
+        l2 = ReadTSC();
+        printf("draw2 : %ld for %d = %lu\n", l2 - l1, i, l);
+    }
+
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
@@ -957,7 +970,7 @@ int geo2() {
 //        turn2d650(&p1, rad);
         p1.x = 290. * cos(rad);
         p1.y = 290. * sin(rad);
-        //dump650("u", &p1, " : ");
+        dump650("u", &p1, " : ");
         l1 = ReadTSC();
         l = draw_line2a650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
         l2 = ReadTSC();
