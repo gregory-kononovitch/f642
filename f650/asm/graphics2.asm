@@ -644,6 +644,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 
 ;;;;;;;;;;;
 hline:
+			push		r12
 			xor			r12, r12
 			mov			r12w, word [rdi + 8]
 			;
@@ -686,10 +687,12 @@ hline:
 			loop		.loop
 
 			;
+			pop			r12
 			return
 
 ;;;;;;;;;;;
 vline:
+			push		r12
 			xor			r12, r12
 			mov			r12w, word [rdi + 10]	; height
 			;
@@ -735,6 +738,7 @@ vline:
 			loop		.loop
 
 			;
+			pop			r12
 			return
 
 

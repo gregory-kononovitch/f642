@@ -287,6 +287,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			jz				.vline
 			cmp				r9d, r11d
 			jnz				.prepax
+			push			r12
 			xor				r12, r12			; prep hline
 			mov				r12w, word [rdi + 8]
 			jmp				hline.hgo
@@ -294,6 +295,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 .vline:
 			cmp				r8d, r10d
 			jz				point
+			push 			r12
 			xor				r12, r12			; prep vline
 			mov				r12w, word [rdi + 10]
 			jmp				vline
@@ -551,6 +553,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 
 ;;;;;;;;;;;
 hline:
+			push 		r12			; TODO another reg
 			xor			r12, r12
 			mov			r12w, word [rdi + 8]
 			;
@@ -593,10 +596,12 @@ hline:
 			loop		.loop
 
 			;
+			pop			r12
 			return
 
 ;;;;;;;;;;;
 vline:
+			push 		r12			; TODO another reg
 			xor			r12, r12
 			mov			r12w, word [rdi + 10]	; height
 			;
@@ -642,6 +647,7 @@ vline:
 			loop		.loop
 
 			;
+			pop			r12
 			return
 
 
