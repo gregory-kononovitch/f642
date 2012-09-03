@@ -503,7 +503,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			movsd			qword [rdi + 24], xmm3
 			movsd			qword [rdi + 32], xmm8
 			movsd			qword [rdi + 40], xmm9
-
+			ret
 			;
 			cvttsd2si		edx, xmm1			; @@@ ready in ri
 			cvtsi2ss		xmm12, edx			; Y0

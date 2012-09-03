@@ -393,7 +393,7 @@ int test3() {
 
     int col = rand();
     l1 = ReadTSC();
-    i = draw_line650(&img, q1.x, q1.y, q2.x, q2.y, col);
+    draw_line650(&img, q1.x, q1.y, q2.x, q2.y, col);
     l2 = ReadTSC();
     printf("draw_line650 = %ld for %d\n", l2 - l1, i);
 
@@ -884,8 +884,10 @@ int poly2() {
         draw_line650(&img, -1.9, 0., +1.9, 0., MAGENTA650);
         draw_line650(&img, 0., -1.9, 0., +1.9, MAGENTA650);
         //
-        draw_line2a650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
-        draw_linea650(&img, p1.x, p1.y - .25, p2.x, p2.y - .25, RED650);
+        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
+        draw_line650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
+        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
+        draw_line650(&img, p1.x, p1.y - .25, p2.x, p2.y - .25, RED650);
 
         //
         p0.x = +2;
@@ -915,11 +917,6 @@ int geo2() {
     struct timeval tv1, tv2;
     vect650 p1, p2;
     bgra650 img1, img2;
-    //
-    p1.x = +250.5;
-    p1.y = +250.5;
-    p2.x = -250.5;
-    p2.y = -255.5;
 
     //
     bgra_alloc650(&img1, 1024, 600);
@@ -935,15 +932,22 @@ int geo2() {
         p1.y = 290. * sin(a);
         dump650("u", &p1, " : ");
         l1 = ReadTSC();
-        l = draw_line2a650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
+        draw_line650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
         l2 = ReadTSC();
         printf("draw2 : %ld for %d = %lu\n", l2 - l1, i, l);
     }
 
+    //
+    bgra_clear650(&img2);
+    p1.x = +250.5;
+    p1.y = +250.5;
+    p2.x = -250.5;
+    p2.y = -255.5;
+
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        draw_linea650(&img1, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        draw_line650(&img1, p1.x, p1.y, p2.x, p2.y, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -953,7 +957,7 @@ int geo2() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        l = draw_line2a650(&img2, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        draw_line650(&img2, p1.x, p1.y, p2.x, p2.y, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -972,7 +976,7 @@ int geo2() {
         p1.y = 290. * sin(rad);
         dump650("u", &p1, " : ");
         l1 = ReadTSC();
-        l = draw_line2a650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
+        draw_line650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
         l2 = ReadTSC();
         printf("draw2 : %ld for %f = %lu\n", l2 - l1, 180. * rad / 3.14159, l);
 //    }
@@ -1027,20 +1031,20 @@ int main() {
 
 //    test_geo1();
 
-//    poly2();
+    //poly2();
 
     double i = 250.5;
     printf("i = %f -> %d\n", i, (int)i);
     i = -250.5;
     printf("i = %f -> %d\n", i, (int)i);
 
-    geo2();
+//    geo2();
 //    test3();
 
 //    gtk1();
 
 
-    return 0;
+//    return 0;
     //
     int width = 1024, height = 600;
     vect650 p1, p2;
