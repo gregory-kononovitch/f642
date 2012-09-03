@@ -204,10 +204,19 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			xmm12, xmm2
 			mulsd			xmm12, [ZERO#]
 			addsd			xmm0, xmm12			; x1+
+			movsd			xmm1, xmm0
+			mulsd			xmm1, xmm8
+			addsd			xmm1, xmm9			; y1
 			jmp				.twy2
 
 .twy1n		; y1 < 0
-
+			ucomisd			xmm8, [ZERO]
+			jbe				NOPIX
+			; a > 0
+			xorpd			xmm1, xmm1
+			xorpd			xmm0, xmm0
+			subsd			xmm0, xmm9			; @@@neg
+			divsd			xmm0, xmm8
 
 
 .twy2		; (x1, y1) ok
