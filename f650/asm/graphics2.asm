@@ -196,8 +196,15 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			xmm0, xmm1
 			subsd			xmm0, xmm9
 			divsd			xmm0, xmm8
+			ucomisd			xmm0, xmm2
+			jae				NOPIX				; @@@ if e, perhaps one...
 
 .twy1h		; y1 = h, a < 0
+			mulsd			xmm0, [ONE_]
+			movsd			xmm12, xmm2
+			mulsd			xmm12, [ZERO#]
+			addsd			xmm0, xmm12			; x1+
+			jmp				.twy2
 
 .twy1n		; y1 < 0
 
