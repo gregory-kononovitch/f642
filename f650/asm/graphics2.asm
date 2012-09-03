@@ -1,12 +1,13 @@
-/*
- * file    : graphics2.asm
- * project : f640
- *
- * Created on: Aug 31, 2012 (fork of graphics.asm)
- * Author and copyright (C) 2012 : Gregory Kononovitch
- * License : GNU Library or "Lesser" General Public License version 3.0 (LGPLv3)
- * There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- */
+;
+; file    : graphics2.asm
+; project : f640
+;
+; Created on: Aug 31, 2012 (fork of graphics.asm)
+; Author and copyright (C) 2012 : Gregory Kononovitch
+; License : GNU Library or "Lesser" General Public License version 3.0 (LGPLv3)
+; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+;
+
 %macro  prologue 1
 	push    ebp
 	mov     ebp, esp
