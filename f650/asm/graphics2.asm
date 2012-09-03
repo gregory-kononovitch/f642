@@ -444,44 +444,44 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 
 
 .twx2		; (x1, y1) ok, y2 < h
-			ucomisd			xmm3, [ZERO]
-			jb				.twy2n
-			ucomisd			xmm3, xmm11
-			jb				.prepax				; !
-			; y2 >= h
+			ucomisd			xmm2, [ZERO]
+			jb				.twx2n
+			ucomisd			xmm2, xmm10
+			jb				.prepay				; !
+			; x2 >= w
 			ucomisd			xmm8, [ZERO]
 			jb				NOPIX
 			; a > 0
-			ucomisd			xmm3, xmm11
-			je				.twy2h
-			movsd			xmm3, xmm11
-			movsd			xmm2, xmm3
-			subsd			xmm2, xmm9			; @@@ neg
-			divsd			xmm2, xmm8
-			ucomisd			xmm2, xmm0
+			ucomisd			xmm2, xmm10
+			je				.twx2w
+			movsd			xmm2, xmm10
+			movsd			xmm3, xmm2
+			subsd			xmm3, xmm9			; @@@ neg
+			divsd			xmm3, xmm8
+			ucomisd			xmm3, xmm1
 			jbe				NOPIX				; @@@ if e, perhaps one...
 
-.twy2h		; y2 = h, a > 0
-			mulsd			xmm2, [ONE_]
-			movsd			xmm12, xmm0
+.twx2w		; x2 = w, a > 0
+			mulsd			xmm3, [ONE_]
+			movsd			xmm12, xmm1
 			mulsd			xmm12, [ZERO#]
-			addsd			xmm2, xmm12			; x1+
-			movsd			xmm3, xmm2
-			mulsd			xmm3, xmm8
-			addsd			xmm3, xmm9			; y1
-			jmp				.prepax
+			addsd			xmm3, xmm12			; y2-
+			movsd			xmm2, xmm3
+			mulsd			xmm2, xmm8
+			addsd			xmm2, xmm9			; x1
+			jmp				.prepay
 
-.twy2n		; y2 < 0
+.twx2n		; x2 < 0
 			ucomisd			xmm8, [ZERO]
 			jae				NOPIX
 			; a < 0
-			xorpd			xmm3, xmm3
 			xorpd			xmm2, xmm2
-			subsd			xmm2, xmm9			; @@@neg
-			divsd			xmm2, xmm8
+			xorpd			xmm3, xmm3
+			subsd			xmm3, xmm9			; @@@neg
+			divsd			xmm3, xmm8
 
 
-.prepax:	;
+.prepay:	;
 			mov				r10, rsi			; color
 			movzx			r11, word[rdi + 8]	; width = r11w
 			mov				rdi, [rdi]			;
