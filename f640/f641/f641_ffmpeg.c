@@ -1068,8 +1068,8 @@ static void* f641_init_recording(void *appli) {
     res->video_stream->codec->coded_height  = app->height;
     res->video_stream->codec->time_base.num = 1;
     res->video_stream->codec->time_base.den = app->recording_rate;
-    res->video_stream->codec->sample_fmt    = SAMPLE_FMT_S16;
-    res->video_stream->codec->sample_rate   = 44100;
+//    res->video_stream->codec->sample_fmt    = SAMPLE_FMT_S16;
+//    res->video_stream->codec->sample_rate   = 44100;
 
     // Codec / CodecCtxt
     res->encoder = avcodec_find_encoder(app->process->recording_codec);

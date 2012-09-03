@@ -1,3 +1,14 @@
+;
+; file    : geo1.asm
+; project : f640
+;
+; Created on: Aug 28, 2012
+; Author and copyright (C) 2012 : Gregory Kononovitch
+; License : GNU Library or "Lesser" General Public License version 3.0 (LGPLv3)
+; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+;
+
+
 default rel
 
 
@@ -6,6 +17,7 @@ default rel
 global norma650: function
 global unita650: function
 global scala650: function
+global scal2a650: function
 global vecta650: function
 global adda650: function
 global suba650: function
@@ -156,6 +168,19 @@ scala650:
 		movsd		xmm2, [rsi + 8]
 		mulsd		xmm1, xmm2
 		addsd		xmm0, xmm1
+		;
+		movsd		xmm1, [rdi + 16]
+		movsd		xmm2, [rsi + 16]
+		mulsd		xmm1, xmm2
+		addsd		xmm0, xmm1
+		ret
+
+; double scal2a650(vect650 *u, vect650 *v) @@@
+scal2a650:
+		movapd		xmm0, [rdi]
+		movapd		xmm1, [rsi]
+		dppd		xmm0, xmm1, 49		; 110001b
+
 		;
 		movsd		xmm1, [rdi + 16]
 		movsd		xmm2, [rsi + 16]

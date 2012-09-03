@@ -1,4 +1,12 @@
-
+;
+; file    : graphics.asm
+; project : f640
+;
+; Created on: Aug 27, 2012
+; Author and copyright (C) 2012 : Gregory Kononovitch
+; License : GNU Library or "Lesser" General Public License version 3.0 (LGPLv3)
+; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+;
 
 
 default rel
@@ -7,6 +15,7 @@ global draw_linea650: 	function
 global draw_zlinea650: 	function
 
 SECTION .data
+ZERO	dq				0.0
 HALF	dq				0.5
 PAS		dq				0.65
 
@@ -43,31 +52,19 @@ PX:		; prepar : x = sx * (x - x0) + width / 2
 
 		; tests x
 TX1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm0
-		seta			al
-		test			al, al
-		je				TX2					; xmm0 >= 0
+		ucomisd			xmm0, [ZERO]
+		jae				TX2					; xmm0 >= 0
 
-TX11:
-		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				TX2					; xmm2 >= 0
-		jmp				NOPIX				; xmm2 < 0
+TX11:	;
+		ucomisd			xmm2, [ZERO]
+		jb				NOPIX				; xmm2 < 0
 
 TX2:	; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
-		movsd			xmm4, xmm10			; width -> xmm4
-		ucomisd			xmm4, xmm0
-		seta			al
-		test			al, al
-		je				TX21				; xmm0 >= width
-		jmp				PY
+		ucomisd			xmm0, xmm10
+		jb				PY
 TX21:
-		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				NOPIX
+		ucomisd			xmm0, xmm10
+		jae				NOPIX
 
 PY:		; prepar : y = height / 2 - sy * (y - y0)
 		movsd			xmm4, [rdi + 24]	; y0 -> xmm4
@@ -90,40 +87,24 @@ PY:		; prepar : y = height / 2 - sy * (y - y0)
 
 		; tests x
 TY1:	; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm1
-		seta			al
-		test			al, al
-		je				TY2					; xmm1 >= 0
-
+		ucomisd			xmm1, [ZERO]
+		jae				TY2					; xmm1 >= 0
 TY11:
-		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				TY2					; xmm3 >= 0
-		jmp				NOPIX				; xmm3 < 0
+		ucomisd			xmm3, [ZERO]
+		jb				NOPIX				; xmm3 < 0
 
 TY2:	; if (x1 >= w && x2 >= w) return (opt : if (x1 < w || x2 < w) ok)
-		movsd			xmm4, xmm11			; height -> xmm4
-		ucomisd			xmm4, xmm1
-		seta			al
-		test			al, al
-		je				TY21				; xmm1 >= width
-		jmp				ABSX
+		ucomisd			xmm1, xmm11
+		jb				ABSX				; y1 < h
 TY21:
-		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				NOPIX
+		ucomisd			xmm3, xmm11
+		jae				NOPIX
 
 ABSX:	; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5
 		movsd			xmm4, xmm2
 		subsd			xmm4, xmm0	; xmm4 = x2 - x1
-		xorpd			xmm5, xmm5
-		ucomisd			xmm5, xmm4
-		seta			al
-		test			al, al
-		je				XPOS
+		ucomisd			xmm2, xmm0
+		jae				XPOS
 		xorpd			xmm5, xmm5
 		subsd			xmm5, xmm4
 		jmp				ABSY
@@ -134,11 +115,8 @@ XPOS:	; xmm4 = x2 - x1 = xmm5 > 0
 ABSY:	; y2 - y1 -> xmm6 / abs(y2 - y1) -> xmm7
 		movsd			xmm6, xmm3
 		subsd			xmm6, xmm1	; xmm4 = x2 - x1
-		xorpd			xmm7, xmm7
-		ucomisd			xmm7, xmm6
-		seta			al
-		test			al, al
-		je				YPOS
+		ucomisd			xmm3, xmm1
+		jae				YPOS
 		xorpd			xmm7, xmm7
 		subsd			xmm7, xmm6
 		jmp				CMPdXdY
@@ -148,16 +126,11 @@ YPOS:	; xmm6 = x2 - x1 > 0
 
 CMPdXdY:
 		ucomisd			xmm7, xmm5
-		seta			al
-		test			al, al
-		je				XAXIS
-		jmp				YAXIS
+		jae				YAXIS
 
 XAXIS:	; abs(x2 - x1) > abs(y2 - y1)
-		ucomisd			xmm0, xmm2
-		seta			al
-		test			al, al
-		je				XLINE				; xmm2 >= xmm0
+		ucomisd			xmm2, xmm0
+		jae				XLINE				; xmm2 >= xmm0
 SWPX:	; swap x1, x2 & y1, y2
 		movsd			xmm8, xmm0
 		movsd			xmm0, xmm2
@@ -173,21 +146,14 @@ XLINE:
 		movsd			xmm9, xmm1			; y1
 		subsd			xmm9, xmm5			; b = y1 - a * x1
 WX1:	; if (x1 < 0) { x1 = 0 ; y1 = b;}
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm0
-		seta			al
-		test			al, al
-		je				WX2					; x1 >= 0
-		movsd			xmm0, xmm4			; x1 = 0
+		ucomisd			xmm0, [ZERO]
+		jae				WX2					; x1 >= 0
+		xorpd			xmm0, xmm0			; x1 = 0
 		movsd			xmm1, xmm9			; y1 = b
 
 WX2:	; if (x2 >= w) { x2 = w ; y2 = a * x2 + b;}
-		movsd			xmm4, xmm10
-		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				WX22				; x2 >= width
-		jmp				TX
+		ucomisd			xmm2, xmm10
+		jb				TX					; x2 < width
 WX22:	movsd			xmm2, xmm10			; x2 = width
 		movsd			xmm3, xmm10			; y2 =
 		mulsd			xmm3, xmm8			; a * width
@@ -198,23 +164,19 @@ TX:		movsd			xmm4, xmm0			; xmm4 = x = x1
 		mov				r10, rsi			; color
 		xor				r11, r11
 		mov				r11w, [rdi + 8]		; width - r9w/d
-		xorpd			xmm12, xmm12		; xmm12 = 0
+		mov				rdi, [rdi]
+
 LOOPX:	; loop
 		; xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
 		mulsd			xmm5, xmm8			; y = a * x
 		addsd			xmm5, xmm9			; y = y + b
 TIX1:	; if (y < 0) continue;
-		ucomisd			xmm12, xmm5
-		seta			al
-		test			al, al
-		je				TIX2				; y >= 0
-		jmp				COOPX
+		ucomisd			xmm5, [ZERO]
+		jb				COOPX				; y < 0
 TIX2:	; if (y >= h) continue;
-		ucomisd			xmm11, xmm5
-		seta			al
-		test			al, al
-		je				COOPX				; y >= h
+		ucomisd			xmm5, xmm11
+		jae				COOPX				; y >= h
 		inc				rcx
 
 		; index
@@ -222,24 +184,17 @@ TIX2:	; if (y >= h) continue;
 		imul			r8d, r11d			; width * (int)y
 		cvttsd2si		r9d, xmm4			; (int)x -> r9d
 		add				r8d, r9d			; index
-		shl				r8, 2				; index << 2
-		mov				rax, qword [rdi]	;
-		add				rax, r8				;
-		mov				[rax], dword r10d	;
+		mov				[rdi + 4*r8], dword r10d	;
 
 COOPX:	;
 		addsd			xmm4, xmm6			; x += 0.65
 		ucomisd			xmm4, xmm2
-		seta			al
-		test			al, al
-		je				LOOPX				; xmm2 >= xmm4
+		jbe				LOOPX				; xmm2 >= xmm4
 		jmp				RETOK
 
 YAXIS:
-		ucomisd			xmm1, xmm3
-		seta			al
-		test			al, al
-		je				YLINE				; xmm3 >= xmm1
+		ucomisd			xmm3, xmm1
+		jae				YLINE				; xmm3 >= xmm1
 SWPY:	; swap x1, x2 & y1, y2
 		movsd			xmm8, xmm0
 		movsd			xmm0, xmm2
@@ -258,21 +213,14 @@ YLINE:
 		; @@@ case x1 ~= x2 / y1 ~= y2
 
 WY1:	; if (y1 < 0) { y1 = 0 ; x1 = b;}
-		xorpd			xmm4, xmm4
-		ucomisd			xmm4, xmm1
-		seta			al
-		test			al, al
-		je				WY2					; y1 >= 0
+		ucomisd			xmm1, [ZERO]
+		jae				WY2					; y1 >= 0
 		movsd			xmm1, xmm4			; y1 = 0
 		movsd			xmm0, xmm9			; x1 = b
 
 WY2:	; if (y2 >= img->height) { y2 = img->height ; x2 = a * y2 + b;}
-		movsd			xmm4, xmm11
-		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				WY22				; y2 >= height
-		jmp				TY
+		ucomisd			xmm3, xmm11
+		jb				TY					; y2 < height
 
 WY22:	movsd			xmm2, xmm10			; x2 = width
 		mulsd			xmm2, xmm8			; a * width
@@ -284,23 +232,18 @@ TY:		movsd			xmm4, xmm1			; xmm4 = x = x1
 		mov				r10, rsi			; color
 		xor				r11, r11
 		mov				r11w, [rdi + 8]		; width - r9w/d
-		xorpd			xmm12, xmm12		; xmm12 = 0
+		mov				rdi, [rdi]
 LOOPY:	; loop
 		; xi, yi
 		movsd			xmm5, xmm4			; xmm5 = y = x
 		mulsd			xmm5, xmm8			; x = a * y
 		addsd			xmm5, xmm9			; x = x + b
 TIY1:	; if (x < 0) continue;
-		ucomisd			xmm12, xmm5
-		seta			al
-		test			al, al
-		je				TIY2				; x >= 0
-		jmp				COOPY
+		ucomisd			xmm5, [ZERO]
+		jbe				COOPY				; x < 0
 TIY2:	; if (x >= w) continue;
-		ucomisd			xmm10, xmm5
-		seta			al
-		test			al, al
-		je				COOPY				; y >= w
+		ucomisd			xmm5, xmm10
+		jae				COOPY				; y >= w
 		inc				rcx
 
 		; index
@@ -308,17 +251,13 @@ TIY2:	; if (x >= w) continue;
 		imul			r8d, r11d			; width * (int)y
 		cvttsd2si		r9d, xmm5			; (int)x -> r9d
 		add				r8d, r9d			; index
-		shl				r8, 2				; index << 2
-		mov				rax, qword [rdi]	;
-		add				rax, r8				;
-		mov				[rax], dword r10d	;
+		mov				[rdi + 4*r8], dword r10d	;
+
 
 COOPY:	;
 		addsd			xmm4, xmm6			; y += 0.65
 		ucomisd			xmm4, xmm3
-		seta			al
-		test			al, al
-		je				LOOPY				; xmm3 >= xmm4
+		jbe				LOOPY				; xmm3 >= xmm4
 		jmp				RETOK
 
 

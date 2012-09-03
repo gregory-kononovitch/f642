@@ -22,6 +22,11 @@ void random650(vect650 *u) {
     u->z = 2. * ( 0.5 - 1. * rand() / RAND_MAX);
 }
 
+void turn2d650(vect650 *u, double rad) {
+    u->x = cos(rad);
+    u->y = sin(rad);
+}
+
 
 double normf650(vect650 *u) {
     return sqrt(u->x * u->x + u->y * u->y + u->z * u->z);
@@ -118,4 +123,40 @@ vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix) {
     pix->y = pixz * (cam->ecran.yAxis.x * pix->x + cam->ecran.yAxis.y * pix->y + cam->ecran.yAxis.z * pix->z);
     pix->x = pixz * pixx;
     pix->z = -pix->z;
+}
+
+
+/*
+ *  FB
+ */
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <linux/fb.h>
+fb650 *fb_open650() {
+    int fd = open("/dev/fb0", O_RDWR);
+    fb650 *fb = calloc(1, sizeof(fb650));
+    if (!fb) return NULL;
+    struct fb_fix_screeninfo fix;
+    memset(&fix, 0, sizeof(fix));
+    int i = ioctl(fd, FBIOGET_FSCREENINFO, &fix);
+    if (i < 0) return NULL;
+    fb->start = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (fb->start == MAP_FAILED) {
+     printf("MMAP failed, exiting\n");
+     return NULL;
+    }
+    fb->len = fix.smem_len;
+    return fb;
+}
+
+void fb_close650(fb650 **fb) {
+    munmap((*fb)->start, (*fb)->len);
+    free(*fb);
+    *fb = NULL;
+}
+
+int fb_draw650(fb650 *fb, bgra650 *img) {
+    memcpy(fb->start, img->data, img->size << 2);
+    return 0;
 }

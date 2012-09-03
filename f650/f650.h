@@ -66,11 +66,20 @@ void bgra_gray650(bgra650 *img, uint8_t gray);
 void bgra_fill650(bgra650 *img, uint32_t color);
 void bgraz_gray650(bgraz650 *img, uint8_t gray);
 
+//
+long asm_tst1650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+
 // Draw line
 int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+long draw_line2a650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+long draw_line3a650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 #ifdef ASM650
-#define draw_line650(img, x1, y1, x2, y2, c) draw_linea650(img, x1, y1, x2, y2, c)
+//#define draw_line650(img, x1, y1, x2, y2, c) do {                   \
+//    printf("Line (%.6f, %.6f)-(%.6f, %.6f)\n", x1, y1, x2, y2);     \
+//    draw_line2a650(img, x1, y1, x2, y2, c);                         \
+//    } while(0)
+#define draw_line650(img, x1, y1, x2, y2, c) draw_line2a650(img, x1, y1, x2, y2, c)
 #else
 #define draw_line650(img, x1, y1, x2, y2, c) draw_linef650(img, x1, y1, x2, y2, c)
 #endif
@@ -160,7 +169,11 @@ extern vect650 I650;
 extern vect650 J650;
 extern vect650 K650;
 
+#define set650(u, x, y, z) do{ (u)->x = x ; (u)->y = y ; (u)->z = z; } while(0)
+#define dump650(s1, u, s2) do {printf(s1 "(%.6f, %.6f)" s2, (u)->x, (u)->y);} while(0)
+
 void random650(vect650 *u);
+void turn2d650(vect650 *u, double rad);
 
 double norma650(vect650 *u);
 double normf650(vect650 *u);
@@ -211,6 +224,7 @@ void mul_and_subf650(vect650 *u, double a, vect650 *v);
 #endif
 
 double scala650(vect650 *u, vect650 *v);
+double scal2a650(vect650 *u, vect650 *v);
 double scalf650(vect650 *u, vect650 *v);
 #ifdef ASM650
 #define scal650(u, v) scala650(u, v)
@@ -279,8 +293,18 @@ vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
 #endif
 
 
+/*
+ *      fb0
+ */
+typedef struct {
+    void    *start;
+    int     fd;
+    int     len;
+} fb650;
 
-
+fb650   *fb_open650();
+void    fb_close650(fb650 **fb);
+int     fb_draw650(fb650 *fb, bgra650 *img);
 
 // asm
 int64_t ReadTSC();
@@ -289,12 +313,69 @@ int64_t ReadTSC();
 /*
  * asm tests
  */
+double fx(double x);
+
+// Sqrt !! longer
+double sqrta050(double val);
+#ifdef ASM650
+#define sqrt650(x) sqrt(x)
+#else
+#define sqrt650(x) sqrt(x)
+#endif
+
+double sqrta050f(double val, void *p);
+// Trig
+double cosa050(double rad);
+#ifdef ASM650
+#define cos650(x) cosa050(x)
+#else
+#define cos650(x) cos(x)
+#endif
+
+float cosa050f(float rad);
 //
-int adda050(uint16_t *number1, uint16_t *number2, int len);
-int mula050(uint8_t *number1, int len1, uint32_t fac);
-int diva050(uint8_t *number1, int len1, uint32_t div);
+double sina050(double rad);
+#ifdef ASM650
+#define sin650(x) sina050(x)
+#else
+#define sin650(x) sin(x)
+#endif
+
+float sina050f(float rad);
+// return sin
+double cossina050(double rad, double *res);
+#ifdef ASM650
+#define cossin650(x, res) cossina050(x, res)
+#else
+#define cossin650(x, res)  cossina050(x, res)
+#endif
+
+float cossina050f(float rad, float *res);
+
+// PI / digit
+void *adda050(char *number1, char *number2, int len);
+void *mula050(char *number1, int len1, uint32_t fac);
+void *diva050(char *number1, int len1, uint32_t div);
+// PI / ulong
+void *addla050(uint64_t *number1, char *uint64_t, int len);
+void *mulla050(uint64_t *number1, int len1, uint64_t fac);
+void *divla050(uint64_t *number1, int len1, uint64_t div);
+
+//
+int ax2bxca650(double a, double b, double c, double *res);
+int ax2bxca650f(float a, float b, float c, float *res);
+
+
 //
 double polya650(double *coe, int len, double x);
-int ax2bxca650(double a, double b, double c, double *res);
+double poly2a650(double *coe, int len2, double x);
+
+
+
+
+/*
+ *
+ */
+void *memseta650(void *align_x16, uint32_t col, size_t size);
 
 #endif /* F650_H_ */

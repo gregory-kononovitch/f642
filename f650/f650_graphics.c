@@ -64,8 +64,7 @@ void bgraz_gray650(bgraz650 *img, uint8_t gray) {
 }
 
 void bgra_fill650(bgra650 *img, uint32_t color) {
-    int i;
-    for(i = 0 ; i < img->size ; i++) img->data[i] = color;
+    memseta650(img->data, color, img->size << 4);
 }
 
 /*
@@ -80,8 +79,8 @@ int bgra_compare650(bgra650 *img1, bgra650 *img2) {
 
     for(i = 0 ; i < img1->size ; i++) {
         if (*p1 == *p2) {
-            //if (*p1 != 0) equ++;
-            equ++;
+            if (*p1 != 0) equ++;
+//            equ++;
         } else {
             dif++;
         }
