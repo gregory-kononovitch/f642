@@ -408,7 +408,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			jb				.twx1				; y2 < h
 			; @@@ ~
 			movsd			xmm3, qword [ONE_]	;
-			mulsd			xmm3, xmm10			; y2 = h-
+			mulsd			xmm3, xmm11			; y2 = h-
 			movsd			xmm12, [ZERO#]		;
 			mulsd			xmm12, xmm1			;
 			addsd			xmm3, xmm12			; y2-
