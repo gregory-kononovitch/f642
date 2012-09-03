@@ -244,7 +244,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			ucomisd			xmm3, [ZERO]
 			jb				.twy2n
 			ucomisd			xmm3, xmm11
-			jb				.prepax				; !
+			jb				.t2xy				; !
 			; y2 >= h
 			ucomisd			xmm8, [ZERO]
 			jb				NOPIX
@@ -266,7 +266,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			movsd			xmm3, xmm2
 			mulsd			xmm3, xmm8
 			addsd			xmm3, xmm9			; y1
-			jmp				.prepax
+			jmp				.t2xy
 
 .twy2n		; y2 < 0
 			ucomisd			xmm8, [ZERO]
@@ -277,127 +277,34 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			subsd			xmm2, xmm9			; TODO neg
 			divsd			xmm2, xmm8
 
-
-.prepax:	;
-			movzx			r11, word[rdi + 8]	; width = r11w
-			mov				rdi, [rdi]			;
-
-			; @@@ for tests
-			movsd			qword [rdi], xmm0
-			movsd			qword [rdi + 8], xmm1
-			movsd			qword [rdi + 16], xmm2
-			movsd			qword [rdi + 24], xmm3
-			movsd			qword [rdi + 32], xmm8
-			movsd			qword [rdi + 40], xmm9
-
+.t2xy:		;
+			cvttsd2si		r8d,  xmm0			;
+			cvttsd2si		r9d,  xmm1			;
+			cvttsd2si		r10d, xmm2			;
+			cvttsd2si		r11d, xmm3			;
 			;
-			cvttsd2si		edx, xmm0			; @@@ ready in ri
-			cvtsi2ss		xmm12, edx			; X0
-			cvttsd2si		eax, xmm2
-			sub				eax, edx
-			mov				edx, eax			; dist @@@
-			add				eax, 1				; nb xi
-			mov				r9, rax				; store for return
-			cmp				eax, 4
-			ja				.i4
-			xor				eax, eax
-.i4			shr				eax, 2
-			add				eax, 1
-			mov				ecx, eax			; cpt loop
-			shl				eax, 2				; nb4 xi
-			;
-			cvtsi2ss		xmm13, edx			; dist
-			cvtsi2ss		xmm14, eax			; nb xi
-	; @@@ debug
-			movss			dword [rdi + 48], xmm13
-			movss			dword [rdi + 52], xmm14
-			;return
+			cmp				r8d, r10d
+			jz				.vline
+			cmp				r9d, r11d
+			jnz				.prepax
+			xor				r12, r12			; prep hline
+			mov				r12w, word [rdi + 8]
+			jmp				hline.hgo
 
-			divss			xmm13, xmm14		; PAS @@@
+.vline:
+			cmp				r8d, r10d
+			jz				point
+			xor				r12, r12			; prep vline
+			mov				r12w, word [rdi + 10]
+			jmp				vline
 
-	; @@@ debug
-			movss			dword [rdi + 56], xmm13
-			;return
+.prepax:	; x1 < x2 ; y1 != y2
 
-			; 4 * xi
-;			addss			xmm12, dword [HALFf]	; @@@ not the moment to comment
-			movss			dword [rbp - 16], xmm12
-			addss			xmm12, xmm13
-			movss			dword [rbp - 12], xmm12
-			addss			xmm12, xmm13
-			movss			dword [rbp - 8], xmm12
-			addss			xmm12, xmm13
-			movss			dword [rbp - 4], xmm12
-			movdqa			xmm12, oword [rbp - 16]
-			; 4 * 4pas
-			mulss			xmm13, dword [FOURf]
-			movss			dword [rbp - 16], xmm13
-			movss			dword [rbp - 12], xmm13
-			movss			dword [rbp - 8], xmm13
-			movss			dword [rbp - 4], xmm13
-			movdqa			xmm13, oword [rbp - 16]
-			; 4 * a
-			cvtsd2ss		xmm8, xmm8
-			movss			dword [rbp - 16], xmm8
-			movss			dword [rbp - 12], xmm8
-			movss			dword [rbp - 8], xmm8
-			movss			dword [rbp - 4], xmm8
-			movdqa			xmm8, oword [rbp - 16]
-			; 4 * b
-			cvtsd2ss		xmm9, xmm9
-			movss			dword [rbp - 16], xmm9
-			movss			dword [rbp - 12], xmm9
-			movss			dword [rbp - 8], xmm9
-			movss			dword [rbp - 4], xmm9
-			movdqa			xmm9, oword [rbp - 16]
-			; 2 * w
-;			xor				r8, r8
-;			mov				dword [rbp - 12], dword r8d
-;			mov				dword [rbp - 4], dword r8d
-			mov				dword [rbp - 16], dword r11d
-			mov				dword [rbp - 8], dword r11d
-			movdqa			xmm10, oword [rbp - 16]
 
-.loopx:		; loop xi, yi
-			movdqa			xmm14, xmm12		; xi
-			movdqa			xmm15, xmm12		; yi = xi
-			mulps			xmm15, xmm8			; a . xi
-			addps			xmm15, xmm9			; + b
-			; index
-			cvttps2dq		xmm14, xmm14		; xif -> xi
-			cvttps2dq		xmm15, xmm15		; yif -> yi
-			; prep
-			movdqa			oword [rbp - 32], xmm15	; yi, temp
-			;
-			pmuludq			xmm15, xmm10
-			movdqa			oword [rbp - 16], xmm15	; w.yi
-			;
-			movdqu			xmm15, oword [rbp - 28] ; yi
-			pmuludq			xmm15, xmm10
-			movdqa			oword [rbp - 32], xmm15	; w.yi
-			;
-			mov				eax, dword [rbp - 32]
-			mov				dword [rbp - 12], eax
-			mov				eax, dword [rbp - 24]
-			mov				dword [rbp - 4], eax
-			;
-			paddd			xmm14, oword [rbp - 16]
-			movdqa			oword [rbp - 16], xmm14	; i
-			;
-			mov				eax, dword [rbp - 16]
-			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp - 12]
-			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp - 8]
-			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp - 4]
-			mov				dword [rdi + 4*rax], esi
 
-.coopx:		;
-			addps			xmm12, xmm13
-			loop			.loopx
 
-.donex		;
+
+.endx
 			mov				rax, r9
 			return
 

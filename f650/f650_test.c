@@ -849,13 +849,13 @@ int poly2() {
     }
     printf("img drawn\n");
     //
-    for(i = 0 ; i < sizeof(co1)/8 ; i++) {
-        random650(&p);
-        co1[i] = sin650(p.x * 3.14159);
-        co2[i] = cos650(p.y * 3.14159);
-    }
-    co1[0] = +0.4;
-    co2[0] = -0.4;
+//    for(i = 0 ; i < sizeof(co1)/8 ; i++) {
+//        random650(&p);
+//        co1[i] = sin650(p.x * 3.14159);
+//        co2[i] = cos650(p.y * 3.14159);
+//    }
+//    co1[0] = +0.4;
+//    co2[0] = -0.4;
     //
     p1.x = +461.01 / 256.;
     p1.y = +250.99 / 150.;
@@ -864,11 +864,14 @@ int poly2() {
     //
     fb650 *fb = fb_open650();
     double pas = 5e-3;
+    long c;
     while(1) {
         fb_draw650(fb, &img);
         //
-        usleep(50000);
-        continue;
+        usleep(40000);
+        c = rand();
+        c = (c | 0xff000000) & 0xffffffff;
+
         //
         for(i = 0 ; i < sizeof(co1)/8 ; i++) {
             random650(&p);
@@ -879,8 +882,8 @@ int poly2() {
             if (p.y < 0) co2[i] += pas;
             else co2[i] -= pas;
         }
-        co1[0] = +0.1;
-        co2[0] = -0.4;
+//        co1[0] = +0.1;
+//        co2[0] = -0.4;
         //
         bgra_clear650(&img);
         draw_line650(&img, -1.9, 0., +1.9, 0., MAGENTA650);
@@ -894,13 +897,12 @@ int poly2() {
         //
         p0.x = +2;
         p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
-        for(p.x = +2. ; p.x >= -2. ; p.x -= .25) {
+        for(p.x = +2. ; p.x >= -2. ; p.x -= .0005) {
             p.y = polya650(co1, sizeof(co1) / 8, p.x);
-//            p0.x = p.x;
-//            p0.y = polya650(co2, sizeof(co2) / 8, p0.x);
-//            if ((p.y < -2 || p.y > 2) && (p0.y < -2 || p0.y > 2)) continue;
-//            dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
-            draw_line650(&img, p0.x, p0.y, p.x, p.y, GREEN650);
+
+            draw_line650(&img, p0.x - 0.015625, p0.y, p.x - 0.015625, p.y, c);
+            draw_line650(&img, p0.x, p0.y, p.x, p.y, c);
+            draw_line650(&img, p0.x + 0.015625, p0.y, p.x + 0.015625, p.y, c);
             p0.x = p.x;
             p0.y = p.y;
         }
@@ -1036,7 +1038,7 @@ int main() {
 
 //    test_geo1();
 
-//    poly2();
+    poly2();
 
 //    double i = 250.5;
 //    printf("i = %f -> %d\n", i, (int)i);
@@ -1049,7 +1051,7 @@ int main() {
 //    gtk1();
 
 
-//    return 0;
+    return 0;
     //
     int width = 1024, height = 600;
     vect650 p1, p2;
