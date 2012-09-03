@@ -85,13 +85,13 @@ static void maj() {
     int i;
     vect650 p1, p2;
     //
-    bgra_fill650(&bgra, 0xff000000);
+    //bgra_fill650(&bgra, 0xff000000);
     long c;
-//    printf("bgra clear ok\n");
+    printf("bgra clear ok\n");
     for(i = 0 ; i < 150 ; i++) {
         random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
         random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
-        //dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
+        dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "\n");
         //printf("bgra random ok\n");
         c = 0L + RAND_MAX + 0L + rand();
         c = ((c << 32) | 0xff000000) >> 32;
@@ -177,8 +177,8 @@ int main(int argc, char *argv[]) {
             , gdimg->mem
     );
     //
-    GdkBitmap *mask = NULL;
-    GtkImage *gtimg = gtk_image_new_from_image(gdimg, mask);
+//    GdkBitmap *mask = NULL;
+//    GtkImage *gtimg = gtk_image_new_from_image(gdimg, mask);
 
 //    return 0;
 
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 //    bgra.data = (uint32_t*)gdimg->mem;
     bgra_origin650(&bgra, +width/2, +height/2);
     bgra_scale650(&bgra, 1, -1);
-    printf("bgra alloc ok\n");
+    printf("bgra alloc ok ::\n");
     maj();
     printf("bgra maj ok\n");
 
@@ -215,9 +215,9 @@ int main(int argc, char *argv[]) {
 
     // Events
 //    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
-    g_signal_connect(frame, "expose-event", G_CALLBACK (on_expose_event), NULL);
-    g_signal_connect(window, "delete-event", G_CALLBACK (delete_event), NULL);
-    g_signal_connect(window, "destroy", G_CALLBACK (destroy), NULL);
+    g_signal_connect(frame, "expose-event", G_CALLBACK(on_expose_event), NULL);
+    g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
+    g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
 
     // Show
