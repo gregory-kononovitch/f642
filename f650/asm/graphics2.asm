@@ -125,7 +125,7 @@ draw_line2a650:
 			jz				point
 			; ---------------------------
 .abs:		; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5 ; 6, 7 for y
-			movsd			xmm4, xmm2			;@@@ can be subpacked
+			movsd			xmm4, xmm2			; TODO can be subpacked
 			subsd			xmm4, xmm0	; xmm4 = x2 - x1
 			movsd			xmm6, xmm3
 			subsd			xmm6, xmm1	; xmm6 = y2 - y1
@@ -197,7 +197,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			subsd			xmm0, xmm9
 			divsd			xmm0, xmm8
 			ucomisd			xmm0, xmm2
-			jae				NOPIX				; @@@ if e, perhaps one...
+			jae				NOPIX				; TODO if e, perhaps one...
 
 .twy1h		; y1 = h, a < 0
 			mulsd			xmm0, [ONE_]
@@ -215,7 +215,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			; a > 0
 			xorpd			xmm1, xmm1
 			xorpd			xmm0, xmm0
-			subsd			xmm0, xmm9			; @@@neg
+			subsd			xmm0, xmm9			; TODO neg
 			divsd			xmm0, xmm8
 
 
@@ -232,10 +232,10 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			je				.twy2h
 			movsd			xmm3, xmm11
 			movsd			xmm2, xmm3
-			subsd			xmm2, xmm9			; @@@ neg
+			subsd			xmm2, xmm9			; TODO neg
 			divsd			xmm2, xmm8
 			ucomisd			xmm2, xmm0
-			jbe				NOPIX				; @@@ if e, perhaps one...
+			jbe				NOPIX				; TODO if e, perhaps one...
 
 .twy2h		; y2 = h, a > 0
 			mulsd			xmm2, [ONE_]
@@ -253,7 +253,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			; a < 0
 			xorpd			xmm3, xmm3
 			xorpd			xmm2, xmm2
-			subsd			xmm2, xmm9			; @@@neg
+			subsd			xmm2, xmm9			; TODO neg
 			divsd			xmm2, xmm8
 
 
@@ -267,6 +267,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			sub				eax, edx
 			mov				edx, eax			; dist @@@
 			add				eax, 1				; nb xi
+			mov				r9, rax				; store for return
 			cmp				eax, 4
 			ja				.i4
 			xor				eax, eax
@@ -318,12 +319,6 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			mov				dword [rbp - 8], dword r11d
 			movdqa			xmm10, oword [rbp - 16]
 
-			xor				rdx, rdx
-			movsd			qword [rdi], xmm0
-			movsd			qword [rdi + 8], xmm1
-			movsd			qword [rdi + 16], xmm2
-			movsd			qword [rdi + 24], xmm3
-
 
 .loopx:		; loop xi, yi
 			movdqa			xmm14, xmm12		; xi
@@ -365,6 +360,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			loop			.loopx
 
 .donex		;
+			mov				rax, r9
 			ret
 
 
@@ -385,17 +381,6 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			mulsd			xmm7, xmm1			; a * y1
 			movsd			xmm9, xmm0			; x1
 			subsd			xmm9, xmm7			; b = x1 - a * y1
-
-			mov				rdx, [rdi]			;
-
-			; for tests
-			movsd			qword [rdx], xmm0
-			movsd			qword [rdx + 8], xmm1
-			movsd			qword [rdx + 16], xmm2
-			movsd			qword [rdx + 24], xmm3
-			movsd			qword [rdx + 32], xmm8
-			movsd			qword [rdx + 40], xmm9
-
 
 			; if (y1 < 0) { y1 = 0 ; x1 = b;} -> if (y1 < 0) y1 = 0
 			ucomisd			xmm1, qword [ZERO]
@@ -432,7 +417,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			subsd			xmm1, xmm9
 			divsd			xmm1, xmm8
 			ucomisd			xmm1, xmm3
-			jae				NOPIX				; @@@ if e, perhaps one...
+			jae				NOPIX				; TODO if e, perhaps one...
 
 .twx1w		; x1 = w, a < 0
 			mulsd			xmm1, [ONE_]
@@ -450,7 +435,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			; a > 0
 			xorpd			xmm0, xmm0
 			xorpd			xmm1, xmm1
-			subsd			xmm1, xmm9			; @@@neg
+			subsd			xmm1, xmm9			; TODO neg
 			divsd			xmm1, xmm8
 
 
@@ -467,10 +452,10 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			je				.twx2w
 			movsd			xmm2, xmm10
 			movsd			xmm3, xmm2
-			subsd			xmm3, xmm9			; @@@ neg
+			subsd			xmm3, xmm9			; TODO neg
 			divsd			xmm3, xmm8
 			ucomisd			xmm3, xmm1
-			jbe				NOPIX				; @@@ if e, perhaps one...
+			jbe				NOPIX				; TODO if e, perhaps one...
 
 .twx2w		; x2 = w, a > 0
 			mulsd			xmm3, [ONE_]
@@ -488,7 +473,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			; a < 0
 			xorpd			xmm2, xmm2
 			xorpd			xmm3, xmm3
-			subsd			xmm3, xmm9			; @@@neg
+			subsd			xmm3, xmm9			; TODO neg
 			divsd			xmm3, xmm8
 
 
@@ -496,24 +481,25 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			movzx			r11, word[rdi + 8]	; width = r11w
 			mov				rdi, [rdi]			;
 
-			; for tests
+			; @@@ for tests
 			movsd			qword [rdi], xmm0
 			movsd			qword [rdi + 8], xmm1
 			movsd			qword [rdi + 16], xmm2
 			movsd			qword [rdi + 24], xmm3
 			movsd			qword [rdi + 32], xmm8
 			movsd			qword [rdi + 40], xmm9
-			ret
+
 			;
-			cvttsd2si		edx, xmm1			; @@@ ready in ri
+			cvttsd2si		edx, xmm1			; TODO ready in ri
 			cvtsi2ss		xmm12, edx			; Y0
 			cvttsd2si		eax, xmm3
 			sub				eax, edx
 			mov				edx, eax			; dist @@@
 			add				eax, 1				; nb yi
+			mov				r9, rax				; store for return
 			cmp				eax, 4
 			ja				.i4
-			xor				eax, eax
+			xor				eax, eax			;
 .i4			shr				eax, 2
 			add				eax, 1
 			mov				ecx, eax			; cpt loop
@@ -562,14 +548,6 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			mov				dword [rbp - 8], dword r11d
 			movdqa			xmm10, oword [rbp - 16]
 
-			xor				rdx, rdx
-			; for tests
-			movsd			qword [rdi], xmm0
-			movsd			qword [rdi + 8], xmm1
-			movsd			qword [rdi + 16], xmm2
-			movsd			qword [rdi + 24], xmm3
-
-
 .loopy:		; loop xi, yi
 			movdqa			xmm15, xmm12		; yi
 			movdqa			xmm14, xmm12		; xi = yi
@@ -610,6 +588,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			loop			.loopy
 
 .doney		;
+			mov				rax, r9
 			ret
 
 

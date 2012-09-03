@@ -430,18 +430,18 @@ int test3() {
         compute_pix650(&cam, &p2, &q2);
         draw_line650(&img, q1.x, q1.y, q2.x, q2.y, ORANGE650);
         //
-        for(i = 0 ; i < 50 ; i++) {  // 28kHz
+        for(i = 0 ; i < 500 ; i++) {  // 28kHz
             random650(&p1);
-            p1.x *= 10;
+            p1.x = pos.x + 10 * p1.x;
 //            p1.x += pos.x - 6;
-            p1.y *= 5;
+            p1.y *= 8;
             p1.z *= 2;
             compute_pix650(&cam, &p1, &q1);
             random650(&p2);
-            p2.x *= 10;
+            p2.x = pos.x + 10 * p2.x;
 //            p2.x += pos.x + 6;
-            p2.y *= 5;
-//            p2.y = -5 * p1.y;
+//            p2.y *= 8;
+            p2.y = -8 * p1.y;
             p2.z *= 2;
             compute_pix650(&cam, &p2, &q2);
             draw_line650(&img, q1.x, q1.y, q2.x, q2.y, rand());
@@ -840,8 +840,9 @@ int poly2() {
     //
     p0.x = -1;
     p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
-    for(p.x = -1. ; p.x <= 1. ; p.x += 2. / 2000.) {
+    for(p.x = -1. ; p.x <= 1. ; p.x += 0.1) {
         p.y = polya650(co1, sizeof(co1) / 8, p.x);
+//        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
         draw_line650(&img, p0.x, p0.y, p.x, p.y, GREEN650);
         p0.x = p.x;
         p0.y = p.y;
@@ -867,6 +868,7 @@ int poly2() {
         fb_draw650(fb, &img);
         //
         usleep(50000);
+        continue;
         //
         for(i = 0 ; i < sizeof(co1)/8 ; i++) {
             random650(&p);
@@ -884,9 +886,9 @@ int poly2() {
         draw_line650(&img, -1.9, 0., +1.9, 0., MAGENTA650);
         draw_line650(&img, 0., -1.9, 0., +1.9, MAGENTA650);
         //
-        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
+//        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
         draw_line650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
-        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
+//        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
         draw_line650(&img, p1.x, p1.y - .25, p2.x, p2.y - .25, RED650);
 
         //
@@ -897,7 +899,7 @@ int poly2() {
 //            p0.x = p.x;
 //            p0.y = polya650(co2, sizeof(co2) / 8, p0.x);
 //            if ((p.y < -2 || p.y > 2) && (p0.y < -2 || p0.y > 2)) continue;
-            dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
+//            dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
             draw_line650(&img, p0.x, p0.y, p.x, p.y, GREEN650);
             p0.x = p.x;
             p0.y = p.y;
@@ -1031,14 +1033,14 @@ int main() {
 
 //    test_geo1();
 
-    poly2();
+//    poly2();
 
     double i = 250.5;
     printf("i = %f -> %d\n", i, (int)i);
     i = -250.5;
     printf("i = %f -> %d\n", i, (int)i);
 
-//    geo2();
+    geo2();
 //    test3();
 
 //    gtk1();
