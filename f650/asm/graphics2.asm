@@ -9,14 +9,14 @@
 ;
 
 %macro  begin 1
-	push    ebp
-	mov     ebp, esp
-	sub     esp, %1
+	push    rbp
+	mov     rbp, rsp
+	sub     rsp, %1
 %endmacro
 
 %macro  return 0
-	mov     esp, ebp
-    pop     ebp
+	mov     rsp, rbp
+    pop     rbp
     ret
 %endmacro
 
@@ -57,6 +57,7 @@ SECTION .text  align=16
 ; h  -> xmm11
 ; x0 -
 draw_line2a650:
+			begin			32
 			xor				rcx, rcx
 .prepx:		; prepar : x = sx * (x - x0) + width / 2
 			movsd			xmm4, qword [rdi + 16]	; x0 -> xmm4
@@ -348,8 +349,6 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			mov				dword [rbp - 8], dword r11d
 			movdqa			xmm10, oword [rbp - 16]
 
-			sub				rbp, 32
-
 .loopx:		; loop xi, yi
 			movdqa			xmm14, xmm12		; xi
 			movdqa			xmm15, xmm12		; yi = xi
@@ -359,30 +358,30 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			cvttps2dq		xmm14, xmm14		; xif -> xi
 			cvttps2dq		xmm15, xmm15		; yif -> yi
 			; prep
-			movdqa			oword [rbp], xmm15	; yi, temp
+			movdqa			oword [rbp - 32], xmm15	; yi, temp
 			;
 			pmuludq			xmm15, xmm10
-			movdqa			oword [rbp + 16], xmm15	; w.yi
+			movdqa			oword [rbp - 16], xmm15	; w.yi
 			;
-			movdqu			xmm15, oword [rbp + 4] ; yi
+			movdqu			xmm15, oword [rbp - 28] ; yi
 			pmuludq			xmm15, xmm10
-			movdqa			oword [rbp], xmm15	; w.yi
+			movdqa			oword [rbp - 32], xmm15	; w.yi
 			;
-			mov				eax, dword [rbp]
-			mov				dword [rbp + 20], eax
+			mov				eax, dword [rbp - 32]
+			mov				dword [rbp - 12], eax
 			mov				eax, dword [rbp + 8]
-			mov				dword [rbp + 28], eax
+			mov				dword [rbp - 4], eax
 			;
-			paddd			xmm14, oword [rbp + 16]
-			movdqa			oword [rbp + 16], xmm14	; i
+			paddd			xmm14, oword [rbp - 16]
+			movdqa			oword [rbp - 16], xmm14	; i
 			;
-			mov				eax, dword [rbp + 16]
+			mov				eax, dword [rbp - 16]
 			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp + 20]
+			mov				eax, dword [rbp - 12]
 			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp + 24]
+			mov				eax, dword [rbp - 8]
 			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp + 28]
+			mov				eax, dword [rbp - 4]
 			mov				dword [rdi + 4*rax], esi
 
 .coopx:		;
@@ -390,9 +389,8 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			loop			.loopx
 
 .donex		;
-			add				rbp, 32
 			mov				rax, r9
-			ret
+			return
 
 
 yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
@@ -519,7 +517,7 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			movsd			qword [rdi + 24], xmm3
 			movsd			qword [rdi + 32], xmm8
 			movsd			qword [rdi + 40], xmm9
-			;ret
+			;return
 
 			;
 			cvttsd2si		edx, xmm1			; TODO ready in ri
@@ -542,13 +540,13 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 	; @@@ debug
 			movss			dword [rdi + 48], xmm13
 			movss			dword [rdi + 52], xmm14
-			;ret
+			;return
 
 			divss			xmm13, xmm14		; PAS @@@
 
 	; @@@ debug
 			movss			dword [rdi + 56], xmm13
-			;ret
+			;return
 
 			; 4 * yi
 ;			addss			xmm12, dword [HALFf]    @@@
@@ -590,8 +588,6 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			mov				dword [rbp - 8], dword r11d
 			movdqa			xmm10, oword [rbp - 16]
 
-			sub				rbp, byte 32
-
 .loopy:		; loop xi, yi
 			movdqa			xmm15, xmm12		; yi
 			movdqa			xmm14, xmm12		; xi = yi
@@ -601,31 +597,31 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			cvttps2dq		xmm14, xmm14		; xif -> xi
 			cvttps2dq		xmm15, xmm15		; yif -> yi
 			; prep
-			movdqa			oword [rbp], xmm15	; yi, temp
+			movdqa			oword [rbp - 32], xmm15	; yi, temp
 
 			;
 			pmuludq			xmm15, xmm10
-			movdqa			oword [rbp + 16], xmm15	; w.yi
+			movdqa			oword [rbp - 16], xmm15	; w.yi
 			;
-			movdqu			xmm15, oword [rbp + 4] ; yi
+			movdqu			xmm15, oword [rbp - 28] ; yi
 			pmuludq			xmm15, xmm10
-			movdqa			oword [rbp], xmm15	; w.yi
+			movdqa			oword [rbp - 32], xmm15	; w.yi
 			;
-			mov				eax, dword [rbp]
-			mov				dword [rbp + 20], eax
-			mov				eax, dword [rbp + 8]
-			mov				dword [rbp + 28], eax
+			mov				eax, dword [rbp - 32]
+			mov				dword [rbp - 12], eax
+			mov				eax, dword [rbp - 24]
+			mov				dword [rbp - 4], eax
 			;
-			paddd			xmm14, oword [rbp + 16]
-			movdqa			oword [rbp + 16], xmm14	; i
+			paddd			xmm14, oword [rbp - 16]
+			movdqa			oword [rbp - 16], xmm14	; i
 			;
-			mov				eax, dword [rbp + 16]
+			mov				eax, dword [rbp - 16]
 			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp + 20]
+			mov				eax, dword [rbp - 12]
 			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp + 24]
+			mov				eax, dword [rbp - 8]
 			mov				dword [rdi + 4*rax], esi
-			mov				eax, dword [rbp + 28]
+			mov				eax, dword [rbp - 4]
 			mov				dword [rdi + 4*rax], esi
 
 .coopy:		;
@@ -633,9 +629,8 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 			loop			.loopy
 
 .doney		;
-			add				rbp, 32
 			mov				rax, r9
-			ret
+			return
 
 
 ;;;;;;;;;;;
@@ -682,7 +677,7 @@ hline:
 			loop		.loop
 
 			;
-			ret
+			return
 
 ;;;;;;;;;;;
 vline:
@@ -731,7 +726,7 @@ vline:
 			loop		.loop
 
 			;
-			ret
+			return
 
 
 ;;;;;;;;;;;
@@ -746,13 +741,13 @@ point:
 			mov			rax, 1			; return
 			mov			dword [rdi], esi
 
-			ret
+			return
 
 
 ;;;;;;;;;;;
 NOPIX:	;
 		mov				rax, 0
-		ret
+		return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -775,4 +770,4 @@ asm_tst1650:
 			;
 			mov			dword [rdi + 4*rcx], r10d
 			loop		.loop
-			ret
+			return
