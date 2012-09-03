@@ -286,7 +286,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			cmp				r8d, r10d
 			jz				.vline
 			cmp				r9d, r11d
-			jnz				.prepax
+			jnz				prepax
 			xor				r11, r11			; prep hline
 			mov				r11w, word [rdi + 8]
 			jmp				hline.hgo
@@ -301,7 +301,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			mov				r9d, edx
 			jmp				vline.vgo
 
-.prepax:	; x1 < x2 ; y1 != y2
+prepax:	; x1 < x2 ; y1 != y2
 			push			r12
 			push			r13
 			push			r14
@@ -348,42 +348,43 @@ xhori		;
 			mov				ecx, n		; cpt
 			;
 .loop1		;
-			push			ecx
+			push			rcx
 			mov				ecx, eax
 .loop2
 			add				edx, 1
-			mov				dword [rdi + 4*edx], esi
+			mov				dword [rdi + 4*rdx], esi
 			loop			.loop2
 			;
 			add				edx, r15d
-			mov				dword [rdi + 4*edx], esi
-			pop				ecx
+			mov				dword [rdi + 4*rdx], esi
+			pop				rcx
 			;
 			loop			.loop1
-
-			jmp				.endx
-xvert
-
-			jmp				.endx
-
-
-
-
-xequa
-
-
-
-
-
-
-
-.endx
+			;
 			pop				r15
 			pop				r14
 			pop				r13
 			pop				r12
 			mov				rax, r9
 			return
+			;
+xvert:
+			pop				r15
+			pop				r14
+			pop				r13
+			pop				r12
+			mov				rax, r9
+			return
+
+xequa:
+			pop				r15
+			pop				r14
+			pop				r13
+			pop				r12
+			mov				rax, r9
+			return
+
+
 
 
 yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
