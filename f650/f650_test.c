@@ -927,16 +927,19 @@ int geo2() {
     bgra_clear650(&img2);
 
     a = 0.5;
-    for(i = 0 ; i < 360 ; i++) {
+    for(i = 0 ; i < 360 ; i += 10) {
         a = i * 3.14159 / 180.;
         turn2d650(&p1, i * 3.14159 / 180.);
-        p1.x = 290. * cos(a);
-        p1.y = 290. * sin(a);
-        dump650("u", &p1, " : ");
+        p1.x = 300. * cos(a);
+        p1.y = 300. * sin(a);
         l1 = ReadTSC();
-        draw_line650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
+        l = draw_line2a650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
         l2 = ReadTSC();
-        printf("draw2 : %ld for %d = %lu\n", l2 - l1, i, l);
+        printf("draw2 %3d° = %ld pixels  for   %ld µops ", i, l, l2 - l1);
+        l1 = ReadTSC();
+        draw_linea650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
+        l2 = ReadTSC();
+        printf(" / %ld µops\n", l2 - l1);
     }
 
     //
@@ -949,7 +952,7 @@ int geo2() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        draw_line650(&img1, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        draw_linea650(&img1, p1.x, p1.y, p2.x, p2.y, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -959,7 +962,7 @@ int geo2() {
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     for(i = 0 ; i < 30000 ; i++) {
-        draw_line650(&img2, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        draw_line2a650(&img2, p1.x, p1.y, p2.x, p2.y, WHITE650);
     }
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
@@ -1035,10 +1038,10 @@ int main() {
 
 //    poly2();
 
-    double i = 250.5;
-    printf("i = %f -> %d\n", i, (int)i);
-    i = -250.5;
-    printf("i = %f -> %d\n", i, (int)i);
+//    double i = 250.5;
+//    printf("i = %f -> %d\n", i, (int)i);
+//    i = -250.5;
+//    printf("i = %f -> %d\n", i, (int)i);
 
     geo2();
 //    test3();
@@ -1046,7 +1049,7 @@ int main() {
 //    gtk1();
 
 
-//    return 0;
+    return 0;
     //
     int width = 1024, height = 600;
     vect650 p1, p2;
