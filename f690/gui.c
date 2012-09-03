@@ -22,6 +22,10 @@ static GdkPixbuf    *img   = NULL;
 
 static void maj();
 
+bgra650 *get_bgra() {
+    return &bgra;   // before a straight struct
+}
+
 //
 static void hello(GtkWidget *widget, gpointer data) {
     g_print("Hello !\n");
