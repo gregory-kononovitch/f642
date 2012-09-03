@@ -329,7 +329,10 @@ prepax:	; x1 < x2 ; y1 != y2
 			add				eax, r8d			; i0
 			mov				rdi, [rdi]
 			mov				dword [rdi + 4*rax], esi
-			mov				ecx, eax			; temp
+			mov				r11d, eax			; tmp
+
+			mov				dword [rdi], eax	; ###
+
 %define		n	r12d
 %define		nv	r13d
 %define		nh	r14d
@@ -344,7 +347,7 @@ xhori:		;
 			add				ecx, 1
 			div				ecx
 			add				eax, 1		; hi
-			mov				edx, ecx	; ind
+			mov				edx, r11d	; ind
 			mov				ecx, n		; cpt
 			;
 .loop1		;

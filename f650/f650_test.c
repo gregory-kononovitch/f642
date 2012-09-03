@@ -1090,7 +1090,7 @@ int unit2() {
 
 
 int unit3() {
-    int width = 1024, height = 600;
+    int i, width = 1024, height = 600;
     long l1, l2, l;
     vect650 p1, p2;
     bgra650 bgra1, bgra2;
@@ -1115,6 +1115,11 @@ int unit3() {
     l = draw_line3a650(&bgra2, p1.x, p1.y, p2.x, p2.y, WHITE650);
     l2 = ReadTSC();
     printf("line3 : %ldµops = %ld\n", l2 - l1, l);
+
+    //
+    for(i = 0 ; i < 10 ; i++) {
+        printf("%d : %d (%d, %d)\n", i, bgra2.data[i], bgra2.data[i] % 1024, bgra2.data[i] / 1024);
+    }
 
     //
     bgra_compare650(&bgra1, &bgra2);
