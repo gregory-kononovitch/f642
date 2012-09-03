@@ -294,11 +294,13 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 
 .vline:
 			cmp				r8d, r10d
-			jz				point
-			push 			r12
-			xor				r12, r12			; prep vline
-			mov				r12w, word [rdi + 10]
-			jmp				vline
+			jz				point				;
+			cmp				r11, r9
+			jns				vline.go
+			mov				rdx, r11
+			mov				r11, r9
+			mov				r9, rdx
+			jmp				vline.vgo
 
 .prepax:	; x1 < x2 ; y1 != y2
 
@@ -601,9 +603,8 @@ hline:
 
 ;;;;;;;;;;;
 vline:
-			push 		r12			; TODO another reg
-			xor			r12, r12
-			mov			r12w, word [rdi + 10]	; height
+			xor			r10, r10
+			mov			r10w, word [rdi + 10]	; height
 			;
 			cmp			r11, r9
 			jns			.vpos
@@ -620,16 +621,16 @@ vline:
 .vpn		; y1 < 0
 			xor			r9, r9
 .vpo		;
-			cmp			r11, r12
+			cmp			r11, r10
 			js			.vgo
-			mov			r11, r12		; y2 >= h
+			mov			r11, r10		; y2 >= h
 			sub			r11, 1
 
-.vgo		; r9 = min >= 0 && r11 = max < h
+.vgo		; r9 = min >= 0 && r11 = max < h && r8 = x E
 			xor			rdx, rdx
-			xor			r12, r12
-			mov			r12w, word [rdi + 8]	; width
-			mov			rax, r12		; width
+			xor			r10, r10
+			mov			r10w, word [rdi + 8]	; width
+			mov			rax, r10		; width
 			mul			r9				; * x1 = x2 E [0, w[
 			add			rax, r8
 			shl			rax, 2			; * 4
@@ -639,15 +640,14 @@ vline:
 			sub			rcx, r9
 			add			rcx, 1			; rcx
 			mov			rax, rcx		; return
-			shl			r12, 2			; linesize
+			shl			r10, 2			; linesize
 			;
 .loop
 			mov			dword [rdi], esi
-			add			rdi, r12
+			add			rdi, r10
 			loop		.loop
 
 			;
-			pop			r12
 			return
 
 
