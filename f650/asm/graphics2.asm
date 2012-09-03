@@ -219,8 +219,42 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			divsd			xmm0, xmm8
 
 
-.twy2		; (x1, y1) ok
+.twy2		; (x1, y1) ok, x2 < w
+			ucomisd			xmm3, [ZERO]
+			jb				.twy2n
+			ucomisd			xmm3, xmm11
+			jb				.prepax				; !
+			; y2 >= h
+			ucomisd			xmm8, [ZERO]
+			jb				NOPIX
+			; a > 0
+			ucomisd			xmm3, xmm11
+			je				.twy2h
+			movsd			xmm3, xmm11
+			movsd			xmm2, xmm3
+			subsd			xmm2, xmm9			; @@@ neg
+			divsd			xmm2, xmm8
+			ucomisd			xmm2, xmm0
+			jbe				NOPIX				; @@@ if e, perhaps one...
 
+.twy2h		; y2 = h, a > 0
+			mulsd			xmm2, [ONE_]
+			movsd			xmm12, xmm0
+			mulsd			xmm12, [ZERO#]
+			addsd			xmm2, xmm12			; x1+
+			movsd			xmm3, xmm2
+			mulsd			xmm3, xmm8
+			addsd			xmm3, xmm9			; y1
+			jmp				.prepax
+
+.twy2n		; y2 < 0
+			ucomisd			xmm8, [ZERO]
+			jae				NOPIX
+			; a < 0
+			xorpd			xmm3, xmm3
+			xorpd			xmm2, xmm2
+			subsd			xmm2, xmm9			; @@@neg
+			divsd			xmm2, xmm8
 
 
 .prepax:	;
