@@ -644,9 +644,8 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 
 ;;;;;;;;;;;
 hline:
-			push		r12
-			xor			r12, r12
-			mov			r12w, word [rdi + 8]
+			xor			r11, r11
+			mov			r11w, word [rdi + 8]
 			;
 			cmp			r10, r8
 			jns			.hpos
@@ -663,15 +662,15 @@ hline:
 .hpn		; x1 < 0
 			xor			r8, r8
 .hpo		;
-			cmp			r10, r12
+			cmp			r10, r11
 			js			.hgo
-			mov			r10, r12		; x2 >= w
+			mov			r10, r11		; x2 >= w
 			sub			r10, 1
 
 .hgo		; r8 = min >= 0 && r10 = max < w
 			mov			rdi, [rdi]
 			xor			rdx, rdx
-			mov			rax, r12		; width
+			mov			rax, r11		; width
 			mul			r9				; * y1 = y2 E [0, h[
 			add			rax, r8			; + x1
 			shl			rax, 2			; * 4
@@ -687,7 +686,6 @@ hline:
 			loop		.loop
 
 			;
-			pop			r12
 			return
 
 ;;;;;;;;;;;
