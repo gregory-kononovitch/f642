@@ -911,7 +911,7 @@ int geo2() {
     int i;
     long l1, l2;
     uint64_t l;
-    double d;
+    double d, a;
     struct timeval tv1, tv2;
     vect650 p1, p2;
     bgra650 img1, img2;
@@ -950,12 +950,19 @@ int geo2() {
     //
     printf("compare : %d\n", bgra_compare650(&img1, &img2));
     //
-//    for(i = 0 ; i < 52 ; i++)
-//        printf("%d : %u = (%u, %u) - %.6f\n", i
-//                , img2.data[i]
-//                , (img2.data[i]) % 1024, (img2.data[i]) / 1024
-//                , ((float*)img2.data)[i]
-//        );
+    printf("Turn :\n");
+    a = 0.6;
+    double rad = 0.5;
+//    for(a = -3.14159 ; a < +3.14159 ; a += 1) {
+//        turn2d650(&p1, rad);
+        p1.x = 290. * cos(rad);
+        p1.y = 290. * sin(rad);
+        //dump650("u", &p1, " : ");
+        l1 = ReadTSC();
+        l = draw_line2a650(&img2, p1.x, p1.y, -p1.x, -p1.y, WHITE650);
+        l2 = ReadTSC();
+        printf("draw2 : %ld for %f = %lu\n", l2 - l1, 180. * rad / 3.14159, l);
+//    }
 }
 
 void gtk1() {

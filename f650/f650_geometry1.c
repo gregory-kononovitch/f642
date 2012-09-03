@@ -22,6 +22,11 @@ void random650(vect650 *u) {
     u->z = 2. * ( 0.5 - 1. * rand() / RAND_MAX);
 }
 
+void turn2d650(vect650 *u, double rad) {
+    u->x = cos(rad);
+    u->y = sin(rad);
+}
+
 
 double normf650(vect650 *u) {
     return sqrt(u->x * u->x + u->y * u->y + u->z * u->z);

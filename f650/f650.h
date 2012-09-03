@@ -168,6 +168,7 @@ extern vect650 K650;
 #define dump650(s1, u, s2) do {printf(s1 "(%.6f, %.6f)" s2, (u)->x, (u)->y);} while(0)
 
 void random650(vect650 *u);
+void turn2d650(vect650 *u, double rad);
 
 double norma650(vect650 *u);
 double normf650(vect650 *u);
