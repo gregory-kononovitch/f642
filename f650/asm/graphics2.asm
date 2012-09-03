@@ -125,7 +125,7 @@ draw_line2a650:
 			jz				point
 			; ---------------------------
 .abs:		; x2 - x1 -> xmm4 / abs(x2 - x1) -> xmm5 ; 6, 7 for y
-			movsd			xmm4, xmm2
+			movsd			xmm4, xmm2			;@@@ can be subpacked
 			subsd			xmm4, xmm0	; xmm4 = x2 - x1
 			movsd			xmm6, xmm3
 			subsd			xmm6, xmm1	; xmm6 = y2 - y1
@@ -145,7 +145,7 @@ draw_line2a650:
 			ucomisd			xmm5, xmm7
 			jbe				yaxis			; dy >= dx
 
-xaxis:		; abs(x2 - x1) > abs(y2 - y1)
+xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			ucomisd			xmm2, xmm0
 			ja				.xline				; xmm2 > xmm0
 .swapx:		; swap x1, x2 & y1, y2
@@ -369,76 +369,228 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			ret
 
 
-; -------------------------------------------------------------------
-yaxis:
-		ucomisd			xmm1, xmm3
-		jbe				YLINE				; xmm3 >= xmm1
-SWPY:	; swap x1, x2 & y1, y2
-		movsd			xmm8, xmm0
-		movsd			xmm0, xmm2
-		movsd			xmm2, xmm8
-		movsd			xmm8, xmm1
-		movsd			xmm1, xmm3
-		movsd			xmm3, xmm8
-YLINE:
-		movsd			xmm8, xmm4			; xmm8 = x2 - x1
-		divsd			xmm8, xmm6			; a = xmm8 = (x2 - x1) / (y2 - y1)
-		movsd			xmm5, xmm8			; a
-		mulsd			xmm5, xmm1			; a * y1
-		movsd			xmm9, xmm0			; x1
-		subsd			xmm9, xmm5			; b = x1 - a * y1
+yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
+			ucomisd			xmm3, xmm1
+			ja				.yline				; xmm3 > xmm1
+.swapy:		; swap x1, x2 & y1, y2
+			movsd			xmm8, xmm0
+			movsd			xmm0, xmm2
+			movsd			xmm2, xmm8
+			movsd			xmm8, xmm1
+			movsd			xmm1, xmm3
+			movsd			xmm3, xmm8
+.yline:		; x = a.y + b
+			movsd			xmm8, xmm4			; xmm8 = x2 - x1
+			divsd			xmm8, xmm6			; a = xmm8 = (x2 - x1) / (y2 - y1)
+			movsd			xmm7, xmm8			; a
+			mulsd			xmm7, xmm1			; a * y1
+			movsd			xmm9, xmm0			; x1
+			subsd			xmm9, xmm7			; b = x1 - a * y1
+			; if (y1 < 0) { y1 = 0 ; x1 = b;} -> if (y1 < 0) y1 = 0
+			ucomisd			xmm1, qword [ZERO]
+			jae				.twy2				; y1 >= 0
+			xorpd			xmm1, xmm1			; y1 = 0
+			movsd			xmm0, xmm9			; x1 = b
 
-		; @@@ case x1 ~= x2 / y1 ~= y2
+.twy2:		; if (y2 >= h) { y2 = h- ; x2 = a * y2 + b;}
+			ucomisd			xmm3, xmm11
+			jb				.twx1				; y2 < h
+			; @@@ ~
+			movsd			xmm3, qword [ONE_]	;
+			mulsd			xmm3, xmm10			; y2 = h-
+			movsd			xmm12, [ZERO#]		;
+			mulsd			xmm12, xmm1			;
+			addsd			xmm3, xmm12			; y2-
+			movsd			xmm2, xmm3			; x2
+			mulsd			xmm2, xmm8			; * a
+			addsd			xmm2, xmm9			; + b (x2 = a*y2 + b)
 
-WY1:	; if (y1 < 0) { y1 = 0 ; x1 = b;}
-		ucomisd			xmm1, [ZERO]
-		jae				WY2					; y1 >= 0
-		xorpd			xmm1, xmm1			; y1 = 0
-		movsd			xmm0, xmm9			; x1 = b
+.twx1		;
+			ucomisd			xmm0, [ZERO]
+			jb				.twx1n
+			ucomisd			xmm0, xmm10
+			jb				.twx2
+			; x1 >= w
+			ucomisd			xmm8, [ZERO]
+			ja				NOPIX
+			; a < 0
+			ucomisd			xmm0, xmm10
+			je				.twx1w
+			movsd			xmm0, xmm10
+			movsd			xmm1, xmm0
+			subsd			xmm1, xmm9
+			divsd			xmm1, xmm8
+			ucomisd			xmm1, xmm3
+			jae				NOPIX				; @@@ if e, perhaps one...
 
-WY2:	; if (y2 >= img->height) { y2 = img->height ; x2 = a * y2 + b;}
-		ucomisd			xmm3, xmm11
-		jb				TY					; y2 < height
+.twx1w		; x1 = w, a < 0
+			mulsd			xmm1, [ONE_]
+			movsd			xmm12, xmm3
+			mulsd			xmm12, [ZERO#]
+			addsd			xmm1, xmm12			; y1+
+			movsd			xmm0, xmm1
+			mulsd			xmm0, xmm8
+			addsd			xmm0, xmm9			; x1
+			jmp				.twx2
 
-WY22:	movsd			xmm2, xmm10			; x2 = width
-		mulsd			xmm2, xmm8			; a * width
-		addsd			xmm2, xmm9			; + b
-		movsd			xmm3, xmm11			; y2 =
+.twx1n		; x1 < 0
+			ucomisd			xmm8, [ZERO]
+			jbe				NOPIX
+			; a > 0
+			xorpd			xmm0, xmm0
+			xorpd			xmm1, xmm1
+			subsd			xmm1, xmm9			; @@@neg
+			divsd			xmm1, xmm8
 
-TY:		movsd			xmm4, xmm1			; xmm4 = x = x1
-		movsd			xmm6, qword [PAS]	; xmm6 = 0.65
-		mov				r10, rsi			; color
-		xor				r11, r11
-		mov				r11w, [rdi + 8]		; width - r9w/d
-		mov				rdi, [rdi]
-LOOPY:	; loop
-		; xi, yi
-		movsd			xmm5, xmm4			; xmm5 = y = x
-		mulsd			xmm5, xmm8			; x = a * y
-		addsd			xmm5, xmm9			; x = x + b
-TIY1:	; if (x < 0) continue;
-		ucomisd			xmm5, [ZERO]
-		jb				COOPY				; x < 0
-TIY2:	; if (x >= w) continue;
-		ucomisd			xmm5, xmm10
-		jae				COOPY				; y >= w
-		inc				rcx
 
-		; index
-		cvttsd2si		r8d, xmm4			; (int)y -> r8d
-		imul			r8d, r11d			; width * (int)y
-		cvttsd2si		r9d, xmm5			; (int)x -> r9d
-		add				r8d, r9d			; index
-		mov				[rdi + 4*r8], dword r10d	;
+.twx2		; (x1, y1) ok, y2 < h
+			ucomisd			xmm3, [ZERO]
+			jb				.twy2n
+			ucomisd			xmm3, xmm11
+			jb				.prepax				; !
+			; y2 >= h
+			ucomisd			xmm8, [ZERO]
+			jb				NOPIX
+			; a > 0
+			ucomisd			xmm3, xmm11
+			je				.twy2h
+			movsd			xmm3, xmm11
+			movsd			xmm2, xmm3
+			subsd			xmm2, xmm9			; @@@ neg
+			divsd			xmm2, xmm8
+			ucomisd			xmm2, xmm0
+			jbe				NOPIX				; @@@ if e, perhaps one...
 
-COOPY:	;
-		addsd			xmm4, xmm6			; y += 0.65
-		ucomisd			xmm4, xmm3
-		jbe				LOOPY				; xmm3 >= xmm4
+.twy2h		; y2 = h, a > 0
+			mulsd			xmm2, [ONE_]
+			movsd			xmm12, xmm0
+			mulsd			xmm12, [ZERO#]
+			addsd			xmm2, xmm12			; x1+
+			movsd			xmm3, xmm2
+			mulsd			xmm3, xmm8
+			addsd			xmm3, xmm9			; y1
+			jmp				.prepax
 
-		; exit
-		mov				rax, rcx
-		ret
+.twy2n		; y2 < 0
+			ucomisd			xmm8, [ZERO]
+			jae				NOPIX
+			; a < 0
+			xorpd			xmm3, xmm3
+			xorpd			xmm2, xmm2
+			subsd			xmm2, xmm9			; @@@neg
+			divsd			xmm2, xmm8
+
+
+.prepax:	;
+			mov				r10, rsi			; color
+			movzx			r11, word[rdi + 8]	; width = r11w
+			mov				rdi, [rdi]			;
+			;
+			cvttsd2si		edx, xmm0			; @@@ ready in ri
+			cvtsi2ss		xmm12, edx			; X0
+			cvttsd2si		eax, xmm2
+			sub				eax, edx
+			mov				edx, eax			; dist @@@
+			add				eax, 1				; nb xi
+			cmp				eax, 4
+			ja				.i4
+			xor				eax, eax
+.i4			shr				eax, 2
+			add				eax, 1
+			mov				ecx, eax			; cpt loop
+			shl				eax, 2				; nb4 xi
+			;
+			cvtsi2ss		xmm13, edx			; dist
+			cvtsi2ss		xmm14, eax			; nb xi
+			divss			xmm13, xmm14		; PAS @@@
+
+			; 4 * xi
+			addss			xmm12, dword [HALFf]
+			movss			dword [rbp - 16], xmm12
+			addss			xmm12, xmm13
+			movss			dword [rbp - 12], xmm12
+			addss			xmm12, xmm13
+			movss			dword [rbp - 8], xmm12
+			addss			xmm12, xmm13
+			movss			dword [rbp - 4], xmm12
+			movdqa			xmm12, oword [rbp - 16]
+			; 4 * 4pas
+			mulss			xmm13, dword [FOURf]
+			movss			dword [rbp - 16], xmm13
+			movss			dword [rbp - 12], xmm13
+			movss			dword [rbp - 8], xmm13
+			movss			dword [rbp - 4], xmm13
+			movdqa			xmm13, oword [rbp - 16]
+			; 4 * a
+			cvtsd2ss		xmm8, xmm8
+			movss			dword [rbp - 16], xmm8
+			movss			dword [rbp - 12], xmm8
+			movss			dword [rbp - 8], xmm8
+			movss			dword [rbp - 4], xmm8
+			movdqa			xmm8, oword [rbp - 16]
+			; 4 * b
+			cvtsd2ss		xmm9, xmm9
+			movss			dword [rbp - 16], xmm9
+			movss			dword [rbp - 12], xmm9
+			movss			dword [rbp - 8], xmm9
+			movss			dword [rbp - 4], xmm9
+			movdqa			xmm9, oword [rbp - 16]
+			; 2 * w
+;			xor				r8, r8
+;			mov				dword [rbp - 12], dword r8d
+;			mov				dword [rbp - 4], dword r8d
+			mov				dword [rbp - 16], dword r11d
+			mov				dword [rbp - 8], dword r11d
+			movdqa			xmm10, oword [rbp - 16]
+
+			xor				rdx, rdx
+			movsd			qword [rdi], xmm0
+			movsd			qword [rdi + 8], xmm1
+			movsd			qword [rdi + 16], xmm2
+			movsd			qword [rdi + 24], xmm3
+
+
+.loopx:		; loop xi, yi
+			movdqa			xmm14, xmm12		; xi
+			movdqa			xmm15, xmm12		; yi = xi
+			mulps			xmm15, xmm8			; a . xi
+			addps			xmm15, xmm9			; + b
+			; index
+			cvttps2dq		xmm14, xmm14		; xif -> xi
+			cvttps2dq		xmm15, xmm15		; yif -> yi
+			; prep
+			movdqa			oword [rbp - 32], xmm15	; yi, temp
+			;
+			pmuludq			xmm15, xmm10
+			movdqa			oword [rbp - 16], xmm15	; w.yi
+			;
+			movdqu			xmm15, oword [rbp - 28] ; yi
+			pmuludq			xmm15, xmm10
+			movdqa			oword [rbp - 32], xmm15	; w.yi
+			;
+			mov				eax, dword [rbp - 32]
+			mov				dword [rbp - 12], eax
+			mov				eax, dword [rbp - 24]
+			mov				dword [rbp - 4], eax
+			;
+			paddd			xmm14, oword [rbp - 16]
+			movdqa			oword [rbp - 16], xmm14	; i
+			;
+			mov				eax, dword [rbp - 16]
+			mov				dword [rdi + 4*rax], esi
+			mov				eax, dword [rbp - 12]
+			mov				dword [rdi + 4*rax], esi
+			mov				eax, dword [rbp - 8]
+			mov				dword [rdi + 4*rax], esi
+			mov				eax, dword [rbp - 4]
+			mov				dword [rdi + 4*rax], esi
+
+.coopx:		;
+			addps			xmm12, xmm13
+			loop			.loopx
+
+.donex		;
+			ret
 
 
 ;;;;;;;;;;;
