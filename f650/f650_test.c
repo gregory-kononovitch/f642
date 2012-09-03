@@ -1026,32 +1026,8 @@ void gtk1() {
     }
 }
 
-int main() {
-//    ax2();
-//    ax2f();
 
-//    trig();
-
-//    std1();
-
-//    pi2();
-
-//    test_geo1();
-
-    poly2();
-
-//    double i = 250.5;
-//    printf("i = %f -> %d\n", i, (int)i);
-//    i = -250.5;
-//    printf("i = %f -> %d\n", i, (int)i);
-
-//    geo2();
-//    test3();
-
-//    gtk1();
-
-
-    return 0;
+int unit2() {
     //
     int width = 1024, height = 600;
     vect650 p1, p2;
@@ -1108,6 +1084,65 @@ int main() {
     printf("y2 = %f\n", ((double*)bgra.data)[3]);
     printf("a  = %f\n", ((double*)bgra.data)[4]);
     printf("b  = %f\n", ((double*)bgra.data)[5]);
+
+    return 0;
+}
+
+
+int unit3() {
+    int width = 1024, height = 600;
+    long l1, l2, l;
+    vect650 p1, p2;
+    bgra650 bgra1, bgra2;
+
+    //
+    bgra_alloc650(&bgra1, 1024, 600);
+    bgra_alloc650(&bgra2, 1024, 600);
+    //
+    p1.x = -300;
+    p1.y = -50;
+    p2.x = +300;
+    p2.y = +50;
+
+    //
+    l1 = ReadTSC();
+    l = draw_line2a650(&bgra1, p1.x, p1.y, p2.x, p2.y, WHITE650);
+    l2 = ReadTSC();
+    printf("line2 : %ldµops = %ld\n", l2 - l1, l);
+
+    //
+    l1 = ReadTSC();
+    l = draw_line3a650(&bgra2, p1.x, p1.y, p2.x, p2.y, WHITE650);
+    l2 = ReadTSC();
+    printf("line3 : %ldµops = %ld\n", l2 - l1, l);
+
+    //
+    bgra_compare650(&bgra1, &bgra2);
+}
+
+int main() {
+//    ax2();
+//    ax2f();
+
+//    trig();
+
+//    std1();
+
+//    pi2();
+
+//    test_geo1();
+
+//    poly2();      // fb/poly/line
+
+//    geo2();       // ~unit/perf
+
+//    test3();      // fb/cam/line
+
+//    gtk1();       // viewer.maj()
+
+//    unit2();        // test unit line2
+
+    unit3();        // test unit line3
 
     return 0;
 }

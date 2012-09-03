@@ -56,7 +56,7 @@ SECTION .text  align=16
 ; w  -> xmm10
 ; h  -> xmm11
 ; x0 -
-draw_line2a650:
+draw_line3a650:
 			begin			32
 			xor				rcx, rcx
 .prepx:		; prepar : x = sx * (x - x0) + width / 2
@@ -337,7 +337,7 @@ prepax:	; x1 < x2 ; y1 != y2
 			cmp				nh, nv
 			js				xvert
 			jz				xequa
-xhori		;
+xhori:		;
 			mov				eax, n
 			sub				eax, nv
 			mov				ecx, nv
