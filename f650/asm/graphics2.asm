@@ -280,9 +280,6 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			cvtsi2ss		xmm14, eax			; nb xi
 			divss			xmm13, xmm14		; PAS @@@
 
-						movsd			qword [rdi + 32], xmm8
-			movsd			qword [rdi + 40], xmm9
-
 			; 4 * xi
 			addss			xmm12, dword [HALFf]
 			movss			dword [rbp - 16], xmm12
@@ -327,7 +324,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movsd			qword [rdi + 8], xmm1
 			movsd			qword [rdi + 16], xmm2
 			movsd			qword [rdi + 24], xmm3
-	;ret
+
 
 .loopx:		; loop xi, yi
 			movdqa			xmm14, xmm12		; xi
@@ -356,13 +353,13 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1)
 			movdqa			oword [rbp - 16], xmm14	; i
 			;
 			mov				eax, dword [rbp - 16]
-			mov				dword [rdi + 4*rax], r10d
+			mov				dword [rdi + 4*rax], esi
 			mov				eax, dword [rbp - 12]
-			mov				dword [rdi + 4*rax], r10d
+			mov				dword [rdi + 4*rax], esi
 			mov				eax, dword [rbp - 8]
-			mov				dword [rdi + 4*rax], r10d
+			mov				dword [rdi + 4*rax], esi
 			mov				eax, dword [rbp - 4]
-			mov				dword [rdi + 4*rax], r10d
+			mov				dword [rdi + 4*rax], esi
 
 .coopx:		;
 			addps			xmm12, xmm13

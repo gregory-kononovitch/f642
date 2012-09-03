@@ -1006,7 +1006,7 @@ int main() {
 
 //    test_geo1();
 
-//    poly2();
+    poly2();
 
     double i = 250.5;
     printf("i = %f -> %d\n", i, (int)i);
@@ -1016,7 +1016,7 @@ int main() {
 //    geo2();
 //    test3();
 
-    gtk1();
+//    gtk1();
 
     //
     int width = 1024, height = 600;
