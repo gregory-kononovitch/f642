@@ -308,7 +308,16 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			;
 			cvtsi2ss		xmm13, edx			; dist
 			cvtsi2ss		xmm14, eax			; nb xi
+	; @@@ debug
+			movss			dword [rdi + 48], xmm13
+			movss			dword [rdi + 52], xmm14
+			;return
+
 			divss			xmm13, xmm14		; PAS @@@
+
+	; @@@ debug
+			movss			dword [rdi + 56], xmm13
+			;return
 
 			; 4 * xi
 ;			addss			xmm12, dword [HALFf]	; @@@ not the moment to comment
@@ -369,7 +378,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			;
 			mov				eax, dword [rbp - 32]
 			mov				dword [rbp - 12], eax
-			mov				eax, dword [rbp + 8]
+			mov				eax, dword [rbp - 24]
 			mov				dword [rbp - 4], eax
 			;
 			paddd			xmm14, oword [rbp - 16]

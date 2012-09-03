@@ -55,42 +55,48 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *event, gpoint
 }
 
 static void maj() {
-    int i;
+    int i, debug = 0;
     vect650 p1, p2;
     //
     bgra_fill650(&bgra, 0xff000000);
     long c;
-    printf("bgra clear ok\n");
+    if (debug) printf("bgra clear ok\n");
     for(i = 0 ; i < 150 ; i++) {
         random650(&p1); p1.x = (1 + p1.x) * width/2 ; p1.y = (1 + p1.y) * height/2;
         random650(&p2); p2.x = (1 + p2.x) * width/2 ; p2.y = (1 + p2.y) * height/2;
-        printf("bgra random ok\n");
-        c = 0L + RAND_MAX + 0L + rand();
-        c = ((c << 32) | 0xff000000) >> 32;
-        dump650("p1 = ", &p1, ""); dump650(" ; p2 = ", &p2, "");
-        printf(" ; c = %ld\n", c);
-        draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
-        printf("bgra draw line ok :\n");
-        printf("x1 = %f\n", ((double*)bgra.data)[0]);
-        printf("y1 = %f\n", ((double*)bgra.data)[1]);
-        printf("x2 = %f\n", ((double*)bgra.data)[2]);
-        printf("y2 = %f\n", ((double*)bgra.data)[3]);
-        printf("a  = %f\n", ((double*)bgra.data)[4]);
-        printf("b  = %f\n", ((double*)bgra.data)[5]);
-        printf("dist  = %f\n", ((float*)bgra.data)[12]);
-        printf("ni    = %f\n", ((float*)bgra.data)[13]);
-        printf("pas   = %f\n", ((float*)bgra.data)[14]);
+        if (debug) printf("bgra random ok\n");
+        c = rand();
+        c = (c | 0xff000000) & 0xffffffff;
+        if (debug) dump650("p1 = ", &p1, "");
+        if (debug) dump650(" ; p2 = ", &p2, "");
+        if (debug) printf(" ; c = %ld\n", c);
+        if (debug) printf("%ld", c);
+        //c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+        if (debug) {
+            printf("bgra draw line ok :\n");
+            printf("x1 = %f\n", ((double*)bgra.data)[0]);
+            printf("y1 = %f\n", ((double*)bgra.data)[1]);
+            printf("x2 = %f\n", ((double*)bgra.data)[2]);
+            printf("y2 = %f\n", ((double*)bgra.data)[3]);
+            printf("a  = %f\n", ((double*)bgra.data)[4]);
+            printf("b  = %f\n", ((double*)bgra.data)[5]);
+            printf("dist  = %f\n", ((float*)bgra.data)[12]);
+            printf("ni    = %f\n", ((float*)bgra.data)[13]);
+            printf("pas   = %f\n", ((float*)bgra.data)[14]);
+            printf("return %ld\n", c);
+        }
     }
-    printf("maj 150 ok\n");
+    if (debug) printf("maj 150 ok\n");
     //abgr
     draw_line650(&bgra, 0, 0, width, 0, 0xffff00ff);
-    printf("maj 0 ok\n");
+    if (debug) printf("maj 0 ok\n");
     draw_line650(&bgra, 0, height - 1, width, height - 1, 0xff0000ff);
-    printf("maj 1 ok\n");
+    if (debug) printf("maj 1 ok\n");
     draw_line650(&bgra, 0, 0, 0, height, 0xffff00ff);
-    printf("maj 2 ok\n");
+    if (debug) printf("maj 2 ok\n");
     draw_line650(&bgra, width - 1, 0, width - 1, height, 0xff0000ff);
-    printf("maj 3 ok\n");
+    if (debug) printf("maj 3 ok\n");
 }
 
 static gboolean time_handler(GtkWidget *widget) {
