@@ -24,14 +24,15 @@ static GdkPixbuf    *img   = NULL;
 
 struct timing {
     long frame;
-    struct timeval tv_timer;
-    struct timeval tv_maj1;
-    struct timeval timing;
-    struct timeval tv_maj2;
-    struct timeval maj;
-    struct timeval tv_queued;
-    struct timeval tv_expose;
-    struct timeval delay;
+    struct timeval  tv_timer;
+    struct timeval  tv_maj1;
+    struct timeval  timing;
+    uint64_t        pixels;
+    struct timeval  tv_maj2;
+    struct timeval  maj;
+    struct timeval  tv_queued;
+    struct timeval  tv_expose;
+    struct timeval  delay;
 };
 static struct timing *timing = NULL;
 
@@ -46,13 +47,15 @@ static void tick_timer() {
             double t = timing->timing.tv_sec + 0.000001 * timing->timing.tv_usec;
             double m = timing->maj.tv_sec + 0.000001 * timing->maj.tv_usec;
             double d = timing->delay.tv_sec + 0.000001 * timing->delay.tv_usec;
-            printf("Frame %ld : Timer : %lds.%06lus, Timing : %.6fs, Maj : %.3fs, Expose : %.6fs\n"
+            printf("Frame %ld : Timer : %lds.%06lus, Timing : %.6fs, Maj : %.3fs, Expose : %.6fs (%lu)\n"
                     , timing->frame, tv.tv_sec, tv.tv_usec
                     , t / upd, m / upd, d / upd
+                    , timing->pixels / 1000
             );
             memset(&timing->timing, 0, sizeof(struct timeval));
             memset(&timing->maj, 0, sizeof(struct timeval));
             memset(&timing->delay, 0, sizeof(struct timeval));
+            timing->pixels = 0;
         }
 
         //
@@ -215,14 +218,14 @@ static void maj() {
     bgra_fill650(&bgra, 0xff000000);
     long c;
     for(i = 0 ; i < 1500 ; i++) {
-        random650(&p1); p1.x = p1.x * width/2. ; p1.y = p1.y * height/2.;
-        random650(&p2); p2.x = p2.x * width/2. ; p2.y = p2.y * height/2.;
+        random650(&p1); p1.x = p1.x * width ; p1.y = p1.y * height;
+        random650(&p2); p2.x = p2.x * width ; p2.y = p2.y * height;
 //        random650(&p1); p1.x = -width/2. + (1. + p1.x) * width ; p1.y = -height/2. + (1. + p1.y) * height;
 //        random650(&p2); p2.x = -width/2. + (1. + p2.x) * width ; p2.y = -height/2. + (1. + p2.y) * height;
 
         c = rand();
         c = (c | 0xff000000) & 0xffffffff;
-        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+        timing->pixels += draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
     }
     tick_maj2();
 }
