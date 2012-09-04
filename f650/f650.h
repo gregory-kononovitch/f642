@@ -36,6 +36,8 @@ typedef struct {
     double      y0;             // 24
     double      sx;             // 32
     double      sy;             // 40
+    // work
+    char        res1[16];       // 48
 } bgra650;
 
 typedef struct {
@@ -50,7 +52,7 @@ typedef struct {
     double      sy;             // 40
     //
     double      *zi;            // 48
-    void        *res;           // 64
+    void        *res;           // 56
 } bgraz650;
 
 // init
