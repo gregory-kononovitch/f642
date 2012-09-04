@@ -351,23 +351,15 @@ prepax:	; x1 < x2 ; y1 != y2
 			cmp				nh, nv
 			js				xvert
 			jz				xequa
-xhori:		;
+xhori:		; ni
 			xor				rdx, rdx
 			mov				eax, nh
-			sub				eax, 1
-			mov				ecx, nv
-			add				ecx, 2
-			div				ecx
-			cmp				edx, 0
-			jz				.ni0
-			add				eax, 1					; ni
-.ni0		;
+			div				nv
 			mov				r10d, eax				; ni
 			;
 			mov				edx, nv
 			imul			edx, r10d
 			mov				eax, nh
-			sub				eax, 1
 			sub				eax, edx
 			shr				eax, 1
 			jnc				.n1en2
@@ -382,7 +374,6 @@ xhori:		;
 
 			; start
 .xhst:
-			return
 			mov				rdi, [rdi]
 			; ###
 			mov				edx, dword [rbp - 28]	; n1
@@ -390,6 +381,7 @@ xhori:		;
 			mov				edx, dword [rbp - 24]	; n2
 			mov				dword [rdi + 24], edx
 			mov				dword [rdi + 28], r10d
+;			return
 			; ###
 			mov				eax, dword [rbp - 32]	; i0
 			mov				dword [rdi + 4*rax], esi

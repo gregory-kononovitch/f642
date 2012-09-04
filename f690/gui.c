@@ -101,21 +101,29 @@ static void tst_bgra() {
 //            printf("return %ld\n", c);
 //        }
 
-        double a = -25;
-        while(j < 20) {
+        double a = -14;
+        int k;
+        while(j < 14) {
             turn2d650(&p1, 3.14159 * a / 180.);
-            p2.x = -800. * p1.x;
-            p2.y = -256 - 800. * p1.y;
-            p1.x = +800. * p1.x;
-            p1.y = -256 + 800. * p1.y;
+            p2.x = -200. * p1.x;
+            p2.y = -200. * p1.y;
+            p1.x = +200. * p1.x;
+            p1.y = +200. * p1.y;
 //            dump650("p1 = ", &p1, "");
 //            dump650(" ; p2 = ", &p2, "\n");
             c = draw_line3a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
+            if (bgra.data[5] > bgra.data[7] || bgra.data[6] > bgra.data[7]){
+                dump650("p1 = ", &p1, "");
+                dump650(" ; p2 = ", &p2, "\n");
+                for(k = 0 ; k < 10 ; k++) {
+                    printf("%d : %d (%d, %d)\n", k, bgra.data[k], bgra.data[k] % 1024 - 512, bgra.data[k] / 1024 - 300);
+                }
+            }
 //            dump650("p1 = ", &p1, "");
 //            dump650(" ; p2 = ", &p2, "\n");
 //            printf("res = %ld\n", c);
             j = j + 1;
-            a += 2.5;
+            a += 2;
         }
     }
     if (debug) printf("maj 150 ok\n");
@@ -243,7 +251,7 @@ int main(int argc, char *argv[]) {
     gtk_widget_show_all(window);
 
     // Timer
-    g_timeout_add(40, (GSourceFunc)time_handler, (gpointer)frame);
+    g_timeout_add(200, (GSourceFunc)time_handler, (gpointer)frame);
 
     gtk_main();
 
