@@ -333,7 +333,7 @@ prepax:	; x1 < x2 ; y1 != y2
 .nh			mov				r8d, r10d
 			sub				r8d, r11d				; nh
 			;
-%define n 	r10d
+%define n 	r10d	; reused
 %define	nh 	r8d
 %define nv 	r11d
 %define dv 	r9d
@@ -354,8 +354,9 @@ prepax:	; x1 < x2 ; y1 != y2
 xhori:		;
 			xor				rdx, rdx
 			mov				eax, nh
-			mov				ecx, nv			; TODO? nv -> ecx
-			add				ecx, 1
+			sub				eax, 1
+			mov				ecx, nv
+			add				ecx, 2
 			div				ecx
 			cmp				edx, 0
 			jz				.ni0

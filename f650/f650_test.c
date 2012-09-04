@@ -1097,12 +1097,14 @@ int unit3() {
 
     //
     bgra_alloc650(&bgra1, 1024, 600);
+    bgra_clear650(&bgra1);
     bgra_alloc650(&bgra2, 1024, 600);
+    bgra_clear650(&bgra2);
     //
     p1.x = -300;
-    p1.y = -50;
+    p1.y = -150;
     p2.x = +300;
-    p2.y = +50;
+    p2.y = +149;
 
     for(i = 0 ; i < 5 ; i++) {
         //
