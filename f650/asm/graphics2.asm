@@ -869,7 +869,7 @@ draw_char2a650:
 			cvttsd2si		r8, xmm0
 			cvttsd2si		r9, xmm1
 			;
-			mov				dword [rbp - 32], ecx			; color
+			mov				eax, ecx						; color
 			mov				rcx, qword [rsi + 32]			; index ptr
 			shl				rdx, 2
 			add				rdx, rcx
@@ -879,33 +879,49 @@ draw_char2a650:
 			xor				rcx, rcx
 			mov				cl, byte [rdx + 1]				; size
 			add				rdx, 2							; glyphs start
-			xor				rax, rax
+			mov				rsi, rax						; color
 			mov				dword [rbp - 28], 0				; cpt
 ;			mov				rax, r9
 ;			mul				r10
 ;			add				rax, r8							; i0
+			mov				rdi, [rdi]
 			;
 .loop
+			xor				rax, rax
 			mov				al, byte [rdx]
 			mov				byte [rbp - 24], al
-			and				byte [rbp - 24], 0x0F			; xi
+			and				dword [rbp - 24], 0x0F			; xi
 			add				dword [rbp - 24], r8d			; + x0
+			; test x
+			cmp				dword [rbp - 24], 0
+			jl				.coot
+			cmp				dword [rbp - 24], r10d
+			jge				.coot
+			;
 			shr				ax, 4
+			add				eax, r9d						; + y0
+			; test y
+			cmp				eax, 0
+			jl				.coot
+			cmp				eax, r11d
+			jge				.coot
+			; index
 			imul			eax, r10d
-			add				eax, dword [rbp - 24]
-
-
-
-			add				dword [rbp - 28], dword 1
+			add				eax, dword [rbp - 24]			; i
+			;
+			mov				dword [rdi + 4*rax], esi		; pixel
+			add				dword [rbp - 28], dword 1		; cpt
 .coot		;
 			add				rdx, 1
 			loop			.loop
 			;
-			;mov				eax, dword [rbp - 28]
+			mov				eax, dword [rbp - 28]
+			pop				rbx
 			return
 
 .nopix		;
 			xor				rax, rax
+			pop				rbx
 			return
 
 

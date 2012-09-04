@@ -1189,7 +1189,7 @@ int font1() {
 
     //
     l1 = ReadTSC();
-    l = draw_char2a650(&img, 0, 0, &monospaced650, 80, WHITE650);
+    l = draw_char2a650(&img, 10, 10, &monospaced650, 80, WHITE650);
     l2 = ReadTSC();
     //
     printf("Read char %c wrotte %ld pixels for %ld µ\n", c, l, l2 - l1);
