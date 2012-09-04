@@ -900,9 +900,12 @@ int poly2() {
         for(p.x = +2. ; p.x >= -2. ; p.x -= .0005) {
             p.y = polya650(co1, sizeof(co1) / 8, p.x);
 
-            draw_line650(&img, p0.x - 0.015625, p0.y, p.x - 0.015625, p.y, c);
-            draw_line650(&img, p0.x, p0.y, p.x, p.y, c);
-            draw_line650(&img, p0.x + 0.015625, p0.y, p.x + 0.015625, p.y, c);
+//            draw_line650(&img, p0.x - 0.015625, p0.y, p.x - 0.015625, p.y, c);
+//            draw_line650(&img, p0.x, p0.y, p.x, p.y, c);
+//            draw_line650(&img, p0.x + 0.015625, p0.y, p.x + 0.015625, p.y, c);
+
+            draw_point2a650(&img, p.x, p.y, c);
+
             p0.x = p.x;
             p0.y = p.y;
         }
@@ -1141,6 +1144,35 @@ int unit3() {
     bgra_compare650(&bgra1, &bgra2);
 }
 
+
+int point1() {
+    int i;
+    long l1, l2;
+    uint64_t l, c;
+    struct timeval tv1, tv2;
+    vect650 p;
+    bgra650 img1;
+    //
+    bgra_alloc650(&img1, 1024, 600);
+    bgra_clear650(&img1);
+    //
+    l = 0;
+    int nb = 1000000;
+    l1 = ReadTSC();
+    for(i = 0 ; i < nb ; i++) {
+        random650(&p);
+        p.x *= 600.;
+        p.y *= 350.;
+        l += draw_point2a650(&img1, p.x, p.y, ORANGE650);
+    }
+    l2 = ReadTSC();
+    //
+    printf("%ld / %d pixels drawn in %ld µops / %ld µ/pix\n", l, nb, l2 - l1, (l2 - l1) / nb);
+
+    return 0;
+
+}
+
 int font1() {
     unsigned char c = 80;
     int i = monospaced650.index[c];
@@ -1171,7 +1203,9 @@ int main() {
 
 //    unit3();        // test unit line3
 
-    font1();
+    point1();
+
+//    font1();
 
     return 0;
 }

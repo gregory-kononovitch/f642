@@ -235,6 +235,9 @@ font650 monospaced650 = {
           .name     = "Monospaced 12"
         , .size     = 256
         , .first    = 0
+        , .baseline = 2
+        , .width    = 8     // 7 + 1
+        , .height   = 12    //
         , .index    = monospaced_index
         , .glyphs   = monospaced_glyphs
 };

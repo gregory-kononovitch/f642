@@ -71,6 +71,11 @@ void bgraz_gray650(bgraz650 *img, uint8_t gray);
 //
 long asm_tst1650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 
+// Draw point
+long draw_point2a650(bgra650 *img, double x1, double y1, uint32_t color);
+long draw_char2a650(bgra650 *img, double x1, double y1, font650 *font, int c, uint32_t color);
+
+
 // Draw line
 int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 long draw_line2a650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);

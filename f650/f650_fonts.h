@@ -13,11 +13,15 @@
 #define FONTS_H_
 
 typedef struct {
-    const char const            name[16];
-    const int                   size;
-    const int                   first;
-    const int const             *index;
-    const unsigned char const   *glyphs;
+    const char const            name[16];       // 0
+    const int                   size;           // 16
+    const int                   first;          // 20
+    const short                 baseline;       // 24
+    const short                 width;          // 26
+    const short                 height;         // 28
+    const short                 res;            // 30
+    const int const             *index;         // 32
+    const unsigned char const   *glyphs;        // 48
 } font650;
 
 

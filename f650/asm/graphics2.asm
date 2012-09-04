@@ -23,7 +23,14 @@
 
 default rel
 
+; Line
 global draw_line2a650: 	function
+; Point
+global draw_point2a650:	function
+; Char
+global draw_char2a650:	function
+
+; Test
 global asm_tst1650:		function
 
 
@@ -759,6 +766,135 @@ NOPIX:	;
 		return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;long draw_point2a650(bgra650 *img, double x1, double y1, uint32_t color);
+draw_point2a650:
+.prepx:		; prepar : x = sx * (x - x0) + width / 2
+			movsd			xmm4, qword [rdi + 16]	; x0 -> xmm4
+			subsd			xmm0, xmm4			; x1 = x1 - x0
+			movsd			xmm5, qword [rdi + 32]	; sx -> xmm5
+			mulsd			xmm0, xmm5			; x1 = sx * x1
+			xor				rax, rax
+			mov				ax, word [rdi + 8]	; ax = width
+			cvtsi2sd		xmm10, eax			; width -> xmm10
+			movsd			xmm4, xmm10			; width -> xmm4
+			mulsd			xmm4, qword [HALF]	; .5 -> xmm5
+			addsd			xmm0, xmm4			; x1 = x1 + w2
+
+			; tests x
+			; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
+			ucomisd			xmm0, [ZERO]
+			jb				.nopix				; xmm0 >= 0
+			;
+			ucomisd			xmm0, xmm10
+			jae				.nopix				; xmm0 < width
+
+.prepy:		; prepar : y = height / 2 - sy * (y - y0)
+			movsd			xmm4, [rdi + 24]	; y0 -> xmm4
+			subsd			xmm1, xmm4			; y1 = y1 - y0
+			movsd			xmm5, [rdi + 40]	; sy -> xmm5
+			mulsd			xmm1, xmm5			; y1 = sy * y1
+			xor				rdx, rdx
+			mov				dx, [rdi + 10]		; ax = height
+			cvtsi2sd		xmm11, edx			; height -> xmm11
+			movsd			xmm4, xmm11
+			mulsd			xmm4, qword [HALF]	; h2 -> xmm4
+			subsd			xmm4, xmm1			; xmm4 = h2 - y1
+			movsd			xmm1, xmm4			;
+
+			; tests y
+			; if (y1 < 0 && y2 < 0) return (opt : if (y1 >= 0 || y2 >= 0) ok)
+			ucomisd			xmm1, [ZERO]
+			jb				.nopix				; xmm1 >= 0
+			; y
+			ucomisd			xmm1, xmm11
+			jae				.nopix				; xmm3 < 0
+
+			;
+			xor				r8, r8
+			xor				r9, r9
+			cvttsd2si		r8, xmm0
+			cvttsd2si		r9, xmm1
+			imul			r9d, eax
+			add				r9d, r8d
+			mov				rdi, [rdi]
+			mov				dword [rdi + 4*r9], esi
+
+			mov				rax, 1
+			ret
+.nopix		;
+			xor				rax, rax
+			ret
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;long draw_char2a650(bgra650 *img, double x1, double y1, font650 *font, int char, uint32_t color);
+draw_char2a650:
+.prepx:		; prepar : x = sx * (x - x0) + width / 2
+			movsd			xmm4, qword [rdi + 16]	; x0 -> xmm4
+			subsd			xmm0, xmm4			; x1 = x1 - x0
+			movsd			xmm5, qword [rdi + 32]	; sx -> xmm5
+			mulsd			xmm0, xmm5			; x1 = sx * x1
+			xor				rax, rax
+			mov				ax, word [rdi + 8]	; ax = width
+			cvtsi2sd		xmm10, eax			; width -> xmm10
+			movsd			xmm4, xmm10			; width -> xmm4
+			mulsd			xmm4, qword [HALF]	; .5 -> xmm5
+			addsd			xmm0, xmm4			; x1 = x1 + w2
+
+			; tests x
+			; if (x1 < 0 && x2 < 0) return (opt : if (x1 >= 0 || x2 >= 0) ok)
+;			ucomisd			xmm0, [ZERO]
+;			jb				.nopix				; xmm0 >= 0
+			;
+;			ucomisd			xmm0, xmm10
+;			jae				.nopix				; xmm0 < width
+
+.prepy:		; prepar : y = height / 2 - sy * (y - y0)
+			movsd			xmm4, [rdi + 24]	; y0 -> xmm4
+			subsd			xmm1, xmm4			; y1 = y1 - y0
+			movsd			xmm5, [rdi + 40]	; sy -> xmm5
+			mulsd			xmm1, xmm5			; y1 = sy * y1
+			xor				rdx, rdx
+			mov				dx, [rdi + 10]		; ax = height
+			cvtsi2sd		xmm11, edx			; height -> xmm11
+			movsd			xmm4, xmm11
+			mulsd			xmm4, qword [HALF]	; h2 -> xmm4
+			subsd			xmm4, xmm1			; xmm4 = h2 - y1
+			movsd			xmm1, xmm4			;
+
+			; tests y
+			; if (y1 < 0 && y2 < 0) return (opt : if (y1 >= 0 || y2 >= 0) ok)
+;			ucomisd			xmm1, [ZERO]
+;			jb				.nopix				; xmm1 >= 0
+			; y
+;			ucomisd			xmm1, xmm11
+;			jae				.nopix				; xmm3 < 0
+
+			;
+			xor				r8, r8
+			xor				r9, r9
+			cvttsd2si		r8, xmm0
+			cvttsd2si		r9, xmm1
+			imul			r9d, eax
+			add				r9d, r8d
+			mov				rdi, [rdi]
+			mov				dword [rdi + 4*r9], esi
+
+			mov				rax, 1
+			ret
+.nopix		;
+			xor				rax, rax
+			ret
+
+
+
+
+			ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;long asm_tst1650
 asm_tst1650:
@@ -780,3 +916,5 @@ asm_tst1650:
 			mov			dword [rdi + 4*rcx], r10d
 			loop		.loop
 			return
+
+
