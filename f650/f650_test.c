@@ -1090,7 +1090,7 @@ int unit2() {
 
 
 int unit3() {
-    int i, width = 1024, height = 600;
+    int i, width = 910, height = 512;
     long l1, l2, l;
     vect650 p1, p2;
     bgra650 bgra1, bgra2;
@@ -1105,6 +1105,11 @@ int unit3() {
     p1.y = -150;
     p2.x = +300;
     p2.y = +149;
+
+    p1.x = -250;
+    p1.y = -30;
+    p2.x = +250;
+    p2.y = +70;
 
     for(i = 0 ; i < 5 ; i++) {
         //

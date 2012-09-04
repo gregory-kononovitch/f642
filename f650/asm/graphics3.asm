@@ -361,26 +361,28 @@ xhori:		;
 			cmp				edx, 0
 			jz				.ni0
 			add				eax, 1					; ni
+.ni0		;
 			mov				r10d, eax				; ni
-			sub				ecx, edx
-			shr				ecx, 1
+			;
+			mov				edx, nv
+			imul			edx, r10d
+			mov				eax, nh
+			sub				eax, 1
+			sub				eax, edx
+			shr				eax, 1
 			jnc				.n1en2
-			mov				dword [rbp - 24], ecx	; n2
-			add				ecx, 1
-			mov				dword [rbp - 28], ecx	; n1
-			jmp				.xhst
-
-.ni0:		; n1 = n2 = 0
-			mov				qword [rbp - 28], rdx	; n1, n2
-			mov				r10d, eax				; ni
+			mov				dword [rbp - 24], eax	; n2
+			add				eax, 1
+			mov				dword [rbp - 28], eax	; n1
 			jmp				.xhst
 
 .n1en2:		; n1 = n2
-			mov				dword [rbp - 28], ecx	; n1
-			mov				dword [rbp - 24], ecx	; n2
+			mov				dword [rbp - 28], eax	; n1
+			mov				dword [rbp - 24], eax	; n2
 
 			; start
 .xhst:
+			return
 			mov				rdi, [rdi]
 			; ###
 			mov				edx, dword [rbp - 28]	; n1

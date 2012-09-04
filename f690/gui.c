@@ -71,44 +71,49 @@ static void tst_bgra() {
 //        random650(&p1); p1.x = -width/2. + (1. + p1.x) * width ; p1.y = -height/2. + (1. + p1.y) * height;
 //        random650(&p2); p2.x = -width/2. + (1. + p2.x) * width ; p2.y = -height/2. + (1. + p2.y) * height;
 //        p2.x = p1.x + 300 ; p2.y = p1.y + 50;
-        p1.x = -250;
-        p1.y = -50;
-        p2.x = +250;
-        p2.y = +50;
+//        p1.x = -250;
+//        p1.y = -50;
+//        p2.x = +250;
+//        p2.y = +50;
+//
+//        //
+//        if (debug) printf("bgra random ok\n");
+//        c = rand();
+//        c = (c | 0xff000000) & 0xffffffff;
+//        if (debug) dump650("p1 = ", &p1, "");
+//        if (debug) dump650(" ; p2 = ", &p2, "");
+//        if (debug) printf(" ; c = %ld\n", c);
+//        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
+//        if (debug) printf("line2 ok\n", c);
+//        c = draw_line3a650(&bgra, p1.x, p1.y + 20, p2.x, p2.y + 20, ORANGE650);
+////        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+//        if (debug) {
+//            printf("bgra draw line ok :\n");
+//            printf("x1 = %f\n", ((double*)bgra.data)[0]);
+//            printf("y1 = %f\n", ((double*)bgra.data)[1]);
+//            printf("x2 = %f\n", ((double*)bgra.data)[2]);
+//            printf("y2 = %f\n", ((double*)bgra.data)[3]);
+//            printf("a  = %f\n", ((double*)bgra.data)[4]);
+//            printf("b  = %f\n", ((double*)bgra.data)[5]);
+//            printf("dist  = %f\n", ((float*)bgra.data)[12]);
+//            printf("ni    = %f\n", ((float*)bgra.data)[13]);
+//            printf("pas   = %f\n", ((float*)bgra.data)[14]);
+//            printf("return %ld\n", c);
+//        }
 
-        //
-        if (debug) printf("bgra random ok\n");
-        c = rand();
-        c = (c | 0xff000000) & 0xffffffff;
-        if (debug) dump650("p1 = ", &p1, "");
-        if (debug) dump650(" ; p2 = ", &p2, "");
-        if (debug) printf(" ; c = %ld\n", c);
-        if (debug) printf("%ld", c);
-        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
-        c = draw_line3a650(&bgra, p1.x, p1.y + 20, p2.x, p2.y + 20, ORANGE650);
-//        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
-        if (debug) {
-            printf("bgra draw line ok :\n");
-            printf("x1 = %f\n", ((double*)bgra.data)[0]);
-            printf("y1 = %f\n", ((double*)bgra.data)[1]);
-            printf("x2 = %f\n", ((double*)bgra.data)[2]);
-            printf("y2 = %f\n", ((double*)bgra.data)[3]);
-            printf("a  = %f\n", ((double*)bgra.data)[4]);
-            printf("b  = %f\n", ((double*)bgra.data)[5]);
-            printf("dist  = %f\n", ((float*)bgra.data)[12]);
-            printf("ni    = %f\n", ((float*)bgra.data)[13]);
-            printf("pas   = %f\n", ((float*)bgra.data)[14]);
-            printf("return %ld\n", c);
-        }
-
-        double a = -45;
-        while(j < 36) {
+        double a = -25;
+        while(j < 20) {
             turn2d650(&p1, 3.14159 * a / 180.);
             p2.x = -800. * p1.x;
             p2.y = -256 - 800. * p1.y;
             p1.x = +800. * p1.x;
             p1.y = -256 + 800. * p1.y;
+//            dump650("p1 = ", &p1, "");
+//            dump650(" ; p2 = ", &p2, "\n");
             c = draw_line3a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
+//            dump650("p1 = ", &p1, "");
+//            dump650(" ; p2 = ", &p2, "\n");
+//            printf("res = %ld\n", c);
             j = j + 1;
             a += 2.5;
         }
