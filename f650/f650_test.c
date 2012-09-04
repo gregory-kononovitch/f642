@@ -1176,7 +1176,23 @@ int point1() {
 int font1() {
     unsigned char c = 80;
     int i = monospaced650.index[c];
-    printf("%c : ascii code %d, %dpixels : %2x %2x %2x %2x\n", c, monospaced650.glyphs[i], monospaced650.glyphs[i+1], monospaced650.glyphs[i+2], monospaced650.glyphs[i+3], monospaced650.glyphs[i+3], monospaced650.glyphs[i+4]);
+    long l1, l2;
+    uint64_t l;
+    struct timeval tv1, tv2;
+    vect650 p;
+    bgra650 img;
+    //
+    bgra_alloc650(&img, 1024, 600);
+    bgra_clear650(&img);
+
+    printf("%c : ascii code %d, %d pixels : %2x %2x %2x %2x\n", c, monospaced650.glyphs[i], monospaced650.glyphs[i+1], monospaced650.glyphs[i+2], monospaced650.glyphs[i+3], monospaced650.glyphs[i+3], monospaced650.glyphs[i+4]);
+
+    //
+    l1 = ReadTSC();
+    l = draw_char2a650(&img, 0, 0, &monospaced650, 80, WHITE650);
+    l2 = ReadTSC();
+    //
+    printf("Read char %c wrotte %ld pixels for %ld µ\n", c, l, l2 - l1);
 }
 
 int main() {
@@ -1203,9 +1219,9 @@ int main() {
 
 //    unit3();        // test unit line3
 
-    point1();
+//    point1();
 
-//    font1();
+    font1();
 
     return 0;
 }

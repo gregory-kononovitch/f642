@@ -870,11 +870,16 @@ draw_char2a650:
 			cvttsd2si		r9, xmm1
 			;
 			mov				dword [rbp - 32], ecx			; color
-			add				rdx, qword [rsi + 32]			; char index
+			mov				rcx, qword [rsi + 32]			; char index
+			add				rdx, rcx
+			mov				ecx, dword [rdx]				; index
+			mov				rdx, [rsi + 40]
+			add				rdx, rcx						; start
 			xor				rcx, rcx
 			mov				cl, byte [rdx + 1]				; size
-			add				rdx, 2							; start
+			add				rdx, 2
 			xor				rax, rax
+			mov				dword [rbp - 28], ecx			; cpt
 ;			mov				rax, r9
 ;			mul				r10
 ;			add				rax, r8							; i0
@@ -882,11 +887,15 @@ draw_char2a650:
 .loop
 			mov				al, byte [rdx]
 
+
+;			add				dword [rbp - 28], dword 1
+			add				rax, 1
 .coot		;
 			add				rdx, 1
 			loop			.loop
 			;
-
+			;mov				eax, dword [rbp - 28]
+			return
 
 .nopix		;
 			xor				rax, rax
