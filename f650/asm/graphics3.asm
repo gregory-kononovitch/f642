@@ -309,28 +309,41 @@ prepax:	; x1 < x2 ; y1 != y2
 			mov				dx, word [rdi + 8]
 			imul			edx, r9d
 			add				edx, r8d				; i0
-			mov				dword [ebp - 32], edx
+			mov				dword [rbp - 32], edx
 			;
 			sub				r10d, r8d				; x2 - x1 = n
 			cmp				r11d,r9d
 			js				.dyn
 			sub				r11d, r9d				; y2 - y1 = nv
+			xor				r9, r9
 			mov				r9w, word [rdi + 8]		; + w
 			add				r9d, 1					; w + 1
 			jmp				.nh
 			;
 .dyn		sub				r9d, r11d
 			mov				r11d, r9d				; nv
-			mov				r9d, 1
-			sub				r9d, word [rdi + 8]		; -w + 1
+			xor				r8, r8
+			mov				r8w, word [rdi + 8]		; -w + 1
+			xor				r9, r9
+			sub				r9d, r8d
+			add				r9d, 1
+
 			; nh
 .nh			mov				r8d, r10d
 			sub				r8d, r11d				; nh
 			;
-%define n  	r10d
+%define n 	r10d
 %define	nh 	r8d
 %define nv 	r11d
 %define dv 	r9d
+
+			; ###
+			mov				rdx, [rdi]
+			mov				dword[rdx + 4], n
+			mov				dword[rdx + 8], nh
+			mov				dword[rdx + 12], nv
+			mov				dword[rdx + 16], dv
+
 			;
 			cmp				nh, nv
 			js				xvert
@@ -341,74 +354,80 @@ xhori:		;
 			mov				ecx, nv			; TODO? nv -> ecx
 			add				ecx, 1
 			div				ecx
-			test			edx
+			cmp				edx, 0
 			jz				.ni0
-			jpe				.n1en2
 			add				eax, 1					; ni
-			mov				word [rbp - 20], eax	; ni
-			shr				edx, 1
-			mov				word [rbp - 24], edx	; n2
-			add				edx, 1
-			mov				word [rbp - 28], edx	; n1
+			mov				r10d, eax				; ni
+			sub				ecx, edx
+			shr				ecx, 1
+			jnc				.n1en2
+			mov				dword [rbp - 24], ecx	; n2
+			add				ecx, 1
+			mov				dword [rbp - 28], ecx	; n1
 			jmp				.xhst
 
-.ni0		; n1 = n2 = 0
+.ni0:		; n1 = n2 = 0
 			mov				qword [rbp - 28], rdx	; n1, n2
-			mov				word [rbp - 20], eax	; ni
+			mov				r10d, eax				; ni
 			jmp				.xhst
 
-.n1en2		; n1 = n2
-			shr				edx, 1					; n1 = n2
-			add				eax, 1					; ni
-			mov				word [rbp - 20], eax	; n
-			shr				edx, 1
-			mov				word [rbp - 28], edx	; n1
-			mov				word [rbp - 24], edx	; n2
+.n1en2:		; n1 = n2
+			mov				dword [rbp - 28], ecx	; n1
+			mov				dword [rbp - 24], ecx	; n2
 
 			; start
-.xhst
+.xhst:
 			mov				rdi, [rdi]
+
+			mov				edx, dword [rbp - 28]	; n1
+			mov				dword [rdi + 20], edx
+			mov				edx, dword [rbp - 24]	; n2
+			mov				dword [rdi + 24], edx
+			mov				dword [rdi + 28], r10d
+			return
+
 			mov				eax, dword [ebp - 32]	; i0
-			mov				dword [rdi + 4*rax], rsi
+			mov				dword [rdi + 4*rax], esi
 			; n1
 			mov				ecx, dword [rbp - 28]
-			jzrcx			.v0
-.loopn1		;
+			jrcxz			.v0
+.loopn1:	;
 			add				eax, 1
-			mov				dword [rdi + 4*rax], rsi
+			mov				dword [rdi + 4*rax], esi
 			loop			.loopn1
-.v0			;
+.v0:		;
 			add				eax, dv
-			mov				dword [rdi + 4*rax], rsi
+			mov				dword [rdi + 4*rax], esi
 			;
 			mov				ecx, nv
 			sub				ecx, 1
-			jzrcx			.loopn2
-.loop		;
+			jrcxz			.loopn2
+.loop:		;
 			push			rcx
-			mov				ecx, ni
+			mov				ecx, r10d
 			;
-.loopni		add				eax, 1
-			mov				dword [rdi + 4*rax], rsi
+.loopni:	add				eax, 1
+			mov				dword [rdi + 4*rax], esi
 			loop			.loopni
 			;
 			add				eax, dv
-			mov				dword [rdi + 4*rax], rsi
+			mov				dword [rdi + 4*rax], esi
 			pop				rcx
 			loop			.loop
 			;
 			mov				ecx, dword [rbp - 24]
-			jzrcx			.hxend
-.loopn2		;
+			jrcxz			.hxend
+.loopn2:	;
 			add				eax, 1
-			mov				dword [rdi + 4*rax], rsi
+			mov				dword [rdi + 4*rax], esi
 			loop			.loopn2
 
-.hxend
+.hxend:
 			return
 			;
 xvert:
-			mov				rax, r9
+			mov				eax, n
+			add				eax, 1
 			return
 
 xequa:
