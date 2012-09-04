@@ -306,6 +306,7 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			jmp				vline.vgo
 
 prepax:	; x1 < x2 ; y1 != y2
+			xor				rdx,rdx
 			mov				dx, word [rdi + 8]
 			imul			edx, r9d
 			add				edx, r8d				; i0
@@ -339,6 +340,8 @@ prepax:	; x1 < x2 ; y1 != y2
 
 			; ###
 			mov				rdx, [rdi]
+			mov				eax, dword [rbp - 32]
+			mov				dword[rdx + 0], eax
 			mov				dword[rdx + 4], n
 			mov				dword[rdx + 8], nh
 			mov				dword[rdx + 12], nv
@@ -378,15 +381,14 @@ xhori:		;
 			; start
 .xhst:
 			mov				rdi, [rdi]
-
+			; ###
 			mov				edx, dword [rbp - 28]	; n1
 			mov				dword [rdi + 20], edx
 			mov				edx, dword [rbp - 24]	; n2
 			mov				dword [rdi + 24], edx
 			mov				dword [rdi + 28], r10d
-			return
-
-			mov				eax, dword [ebp - 32]	; i0
+			; ###
+			mov				eax, dword [rbp - 32]	; i0
 			mov				dword [rdi + 4*rax], esi
 			; n1
 			mov				ecx, dword [rbp - 28]
@@ -417,6 +419,7 @@ xhori:		;
 			;
 			mov				ecx, dword [rbp - 24]
 			jrcxz			.hxend
+			;
 .loopn2:	;
 			add				eax, 1
 			mov				dword [rdi + 4*rax], esi
