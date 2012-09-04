@@ -874,6 +874,8 @@ draw_char2a650:
 			shl				rdx, 2
 			add				rdx, rcx
 			mov				ecx, dword [rdx]				; index
+			cmp				ecx, 0
+			jl				.nopix
 			mov				rdx, [rsi + 40]					; glyphs
 			add				rdx, rcx						; char start
 			xor				rcx, rcx
@@ -899,7 +901,8 @@ draw_char2a650:
 			jge				.coot
 			;
 			shr				ax, 4
-			add				eax, r9d						; + y0
+			sub				eax, r9d						; + y0
+			neg				eax
 			; test y
 			cmp				eax, 0
 			jl				.coot
@@ -916,12 +919,10 @@ draw_char2a650:
 			loop			.loop
 			;
 			mov				eax, dword [rbp - 28]
-			pop				rbx
 			return
 
 .nopix		;
 			xor				rax, rax
-			pop				rbx
 			return
 
 

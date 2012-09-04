@@ -865,6 +865,8 @@ int poly2() {
     fb650 *fb = fb_open650();
     double pas = 5e-3;
     long c;
+    int ch = 0, row, col;
+    long t = 0;
     while(1) {
         fb_draw650(fb, &img);
         //
@@ -875,40 +877,48 @@ int poly2() {
         //
         for(i = 0 ; i < sizeof(co1)/8 ; i++) {
             random650(&p);
-            //
-            //co1[i] = sin650(p.x * M_PI);
             if (p.x < 0) co1[i] += pas;
             else co1[i] -= pas;
             if (p.y < 0) co2[i] += pas;
             else co2[i] -= pas;
         }
-//        co1[0] = +0.1;
-//        co2[0] = -0.4;
         //
         bgra_clear650(&img);
         draw_line650(&img, -1.9, 0., +1.9, 0., MAGENTA650);
         draw_line650(&img, 0., -1.9, 0., +1.9, MAGENTA650);
+
         //
-//        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
-        draw_line650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
-//        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
-        draw_line650(&img, p1.x, p1.y - .25, p2.x, p2.y - .25, RED650);
+        int nc = 1024 / (monospaced650.width  + 2);
+        int nr = 600 / (monospaced650.height + 2);
+        double x = 2;
+        double y = t;
+        ch = 0;
+        for(col = 0 ; col < nc ; col++) {
+            x = -512 + 2 + col * (monospaced650.width  + 2);
+            x *= 4. / 1024.;
+            for(row = 0 ; row < nr + 10; row++) {
+                y = 300 - ((2 + 3*t + row * (monospaced650.height + 2)) % 620);
+                y *= 4. / 600.;
+                draw_char2a650(&img, x, y, &monospaced650, 47 + (ch % 89), GREEN650);
+                ch++;
+            }
+        }
 
         //
         p0.x = +2;
         p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
-        for(p.x = +2. ; p.x >= -2. ; p.x -= .0005) {
+        ch = 0;
+        for(p.x = +2. ; p.x >= -2. ; p.x -= .05) {
             p.y = polya650(co1, sizeof(co1) / 8, p.x);
 
-//            draw_line650(&img, p0.x - 0.015625, p0.y, p.x - 0.015625, p.y, c);
-//            draw_line650(&img, p0.x, p0.y, p.x, p.y, c);
-//            draw_line650(&img, p0.x + 0.015625, p0.y, p.x + 0.015625, p.y, c);
-
             draw_point2a650(&img, p.x, p.y, c);
+            draw_line2a650(&img, p.x, p.y, p0.x, p0.y, c);
 
             p0.x = p.x;
             p0.y = p.y;
+            ch++;
         }
+        t++;
     }
     fb_close650(&fb);
 
@@ -1207,7 +1217,7 @@ int main() {
 
 //    test_geo1();
 
-//    poly2();      // fb/poly/line
+    poly2();      // fb/poly/line/char
 
 //    geo2();       // ~unit/perf
 
@@ -1221,7 +1231,7 @@ int main() {
 
 //    point1();
 
-    font1();
+    //font1();
 
     return 0;
 }
