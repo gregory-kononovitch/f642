@@ -344,43 +344,67 @@ xhori:		;
 			test			edx
 			jz				.ni0
 			jpe				.n1en2
-			add				eax, 1			; ni
-			mov				word [rbp - 20], eax	; n
+			add				eax, 1					; ni
+			mov				word [rbp - 20], eax	; ni
 			shr				edx, 1
-			mov				word [rbp - 28], edx	; n2
+			mov				word [rbp - 24], edx	; n2
 			add				edx, 1
-			mov				word [rbp - 24], edx	; n1
-			jmp
+			mov				word [rbp - 28], edx	; n1
+			jmp				.xhst
 
 .ni0		; n1 = n2 = 0
 			mov				qword [rbp - 28], rdx	; n1, n2
-			mov				word [rbp - 20], eax	; n
-			jmp
+			mov				word [rbp - 20], eax	; ni
+			jmp				.xhst
+
 .n1en2		; n1 = n2
-			shr				edx, 1			; n1 = n2
+			shr				edx, 1					; n1 = n2
+			add				eax, 1					; ni
+			mov				word [rbp - 20], eax	; n
+			shr				edx, 1
+			mov				word [rbp - 28], edx	; n1
+			mov				word [rbp - 24], edx	; n2
 
-
-
+			; start
+.xhst
+			mov				rdi, [rdi]
+			mov				eax, dword [ebp - 32]	; i0
+			mov				dword [rdi + 4*rax], rsi
+			; n1
+			mov				ecx, dword [rbp - 28]
+			jzrcx			.v0
+.loopn1		;
+			add				eax, 1
+			mov				dword [rdi + 4*rax], rsi
+			loop			.loopn1
+.v0			;
+			add				eax, dv
+			mov				dword [rdi + 4*rax], rsi
 			;
-.loop1		;
-			push			rcx
-			mov				ecx, eax
-.loop2
-			add				edx, 1
-			mov				dword [rdi + 4*rdx], esi
-			loop			.loop2
-			;
-			add				edx, r15d
-			add				edx, 1
-			mov				dword [rdi + 4*rdx], esi
-			pop				rcx
-			sub				ecx, eax
+			mov				ecx, nv
 			sub				ecx, 1
+			jzrcx			.loopn2
+.loop		;
+			push			rcx
+			mov				ecx, ni
 			;
-			cmp				ecx, 0
-			jg				.loop1
+.loopni		add				eax, 1
+			mov				dword [rdi + 4*rax], rsi
+			loop			.loopni
 			;
-			mov				rax, rcx
+			add				eax, dv
+			mov				dword [rdi + 4*rax], rsi
+			pop				rcx
+			loop			.loop
+			;
+			mov				ecx, dword [rbp - 24]
+			jzrcx			.hxend
+.loopn2		;
+			add				eax, 1
+			mov				dword [rdi + 4*rax], rsi
+			loop			.loopn2
+
+.hxend
 			return
 			;
 xvert:
