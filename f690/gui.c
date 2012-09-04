@@ -84,8 +84,8 @@ static void tst_bgra() {
         if (debug) dump650(" ; p2 = ", &p2, "");
         if (debug) printf(" ; c = %ld\n", c);
         if (debug) printf("%ld", c);
-        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, MAGENTA650);
-        c = draw_line3a650(&bgra, p1.x, p1.y - 10, p2.x, p2.y + 20, ORANGE650);
+        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        c = draw_line3a650(&bgra, p1.x, p1.y + 20, p2.x, p2.y + 20, ORANGE650);
 //        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
         if (debug) {
             printf("bgra draw line ok :\n");
@@ -101,17 +101,17 @@ static void tst_bgra() {
             printf("return %ld\n", c);
         }
 
-//        double a = 0;
-//        while(j < 360) {
-//            turn2d650(&p1, 3.14159 * a / 180.);
-//            p2.x = -800. * p1.x;
-//            p2.y = -256 - 800. * p1.y;
-//            p1.x = +800. * p1.x;
-//            p1.y = -256 + 800. * p1.y;
-//            c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
-//            j = j + 1;
-//            a += 0.5;
-//        }
+        double a = -45;
+        while(j < 36) {
+            turn2d650(&p1, 3.14159 * a / 180.);
+            p2.x = -800. * p1.x;
+            p2.y = -256 - 800. * p1.y;
+            p1.x = +800. * p1.x;
+            p1.y = -256 + 800. * p1.y;
+            c = draw_line3a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
+            j = j + 1;
+            a += 2.5;
+        }
     }
     if (debug) printf("maj 150 ok\n");
 }

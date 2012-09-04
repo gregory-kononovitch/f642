@@ -277,21 +277,25 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			subsd			xmm2, xmm9			; TODO neg
 			divsd			xmm2, xmm8
 
-.t2xy:		;
+; -------------------------------------------------------
+;		(x1, y1) & (x2, y2) inside & Dx > Dy            ;
+; -------------------------------------------------------
+.t2xy:		; prepare integers
 			cvttsd2si		r8d,  xmm0			;
 			cvttsd2si		r9d,  xmm1			;
 			cvttsd2si		r10d, xmm2			;
 			cvttsd2si		r11d, xmm3			;
-			;
+			; jump
 			cmp				r8d, r10d
 			jz				.vline
 			cmp				r9d, r11d
 			jnz				prepax
+			; hline
 			xor				r11, r11			; prep hline
 			mov				r11w, word [rdi + 8]
 			jmp				hline.hgo
 
-.vline:
+.vline:		; vline or point
 			cmp				r8d, r10d
 			jz				point				;
 			cmp				r11d, r9d
@@ -302,60 +306,61 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			jmp				vline.vgo
 
 prepax:	; x1 < x2 ; y1 != y2
-			push			r12
-			push			r13
-			push			r14
-			push			r15
-			mov				r12d, r10d
-			sub				r12d, r8d				; x2 - x1 = n
-			mov				r13d, r11d
-			sub				r13d, r9d				; y2 - y1 = nv
-			jns				.dyp
-			mov				r13d, r9d
-			sub				r13d, r11d				; y1 - y2 = nv
-.dyp		xor				r15, r15
-			mov				r15w, word [rdi + 8]	; +w
-			jns				.nh
-			mov 			r13d, r9d
-			sub				r13d, r11d
-			mov				r14w, word [rdi + 8]
-			xor				r15, r15
-			sub				r15d, r14d				; -w
-
-.nh			mov				r14d, r12d
-			sub				r14d, r13d	; nh
+			mov				dx, word [rdi + 8]
+			imul			edx, r9d
+			add				edx, r8d				; i0
+			mov				dword [ebp - 32], edx
 			;
-			xor				rdx, rdx
-			xor				rax, rax
-			mov				ax, word [rdi + 8]
-			mul				r9d
-			add				eax, r8d			; i0
-			mov				rdi, [rdi]
-			mov				dword [rdi + 4*rax], esi
-			mov				r11d, eax			; tmp
-
-			mov				dword [rdi + 16], eax	; ###
-
-%define		n	r12d
-%define		nv	r13d
-%define		nh	r14d
+			sub				r10d, r8d				; x2 - x1 = n
+			cmp				r11d,r9d
+			js				.dyn
+			sub				r11d, r9d				; y2 - y1 = nv
+			mov				r9w, word [rdi + 8]		; + w
+			add				r9d, 1					; w + 1
+			jmp				.nh
+			;
+.dyn		sub				r9d, r11d
+			mov				r11d, r9d				; nv
+			mov				r9d, 1
+			sub				r9d, word [rdi + 8]		; -w + 1
+			; nh
+.nh			mov				r8d, r10d
+			sub				r8d, r11d				; nh
+			;
+%define n  	r10d
+%define	nh 	r8d
+%define nv 	r11d
+%define dv 	r9d
 			;
 			cmp				nh, nv
+			js				xvert
 			jz				xequa
 xhori:		;
-			mov				eax, n
-			sub				eax, nv
-			mov				ecx, nv
+			xor				rdx, rdx
+			mov				eax, nh
+			mov				ecx, nv			; TODO? nv -> ecx
 			add				ecx, 1
 			div				ecx
-			add				eax, 1		; hi
-			mov				edx, r11d	; ind
-			mov				ecx, n		; cpt
+			test			edx
+			jz				.ni0
+			jpe				.n1en2
+			add				eax, 1			; ni
+			mov				word [rbp - 20], eax	; n
+			shr				edx, 1
+			mov				word [rbp - 28], edx	; n2
+			add				edx, 1
+			mov				word [rbp - 24], edx	; n1
+			jmp
 
-			mov				dword [rdi], n	; ###
-			mov				dword [rdi+4], nh	; ###
-			mov				dword [rdi+8], nv	; ###
-			mov				dword [rdi+12], eax	; ###
+.ni0		; n1 = n2 = 0
+			mov				qword [rbp - 28], rdx	; n1, n2
+			mov				word [rbp - 20], eax	; n
+			jmp
+.n1en2		; n1 = n2
+			shr				edx, 1			; n1 = n2
+
+
+
 			;
 .loop1		;
 			push			rcx
@@ -366,6 +371,7 @@ xhori:		;
 			loop			.loop2
 			;
 			add				edx, r15d
+			add				edx, 1
 			mov				dword [rdi + 4*rdx], esi
 			pop				rcx
 			sub				ecx, eax
@@ -374,13 +380,12 @@ xhori:		;
 			cmp				ecx, 0
 			jg				.loop1
 			;
-			pop				r15
-			pop				r14
-			pop				r13
-			pop				r12
 			mov				rax, rcx
 			return
 			;
+xvert:
+			mov				rax, r9
+			return
 
 xequa:
 			pop				r15
