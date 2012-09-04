@@ -341,7 +341,6 @@ prepax:	; x1 < x2 ; y1 != y2
 %define		nh	r14d
 			;
 			cmp				nh, nv
-			js				xvert
 			jz				xequa
 xhori:		;
 			mov				eax, n
@@ -382,13 +381,6 @@ xhori:		;
 			mov				rax, rcx
 			return
 			;
-xvert:
-			pop				r15
-			pop				r14
-			pop				r13
-			pop				r12
-			mov				rax, r9
-			return
 
 xequa:
 			pop				r15
