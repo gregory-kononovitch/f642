@@ -1141,6 +1141,12 @@ int unit3() {
     bgra_compare650(&bgra1, &bgra2);
 }
 
+int font1() {
+    unsigned char c = 80;
+    int i = monospaced650.index[c];
+    printf("%c : ascii code %d, %dpixels : %2x %2x %2x %2x\n", c, monospaced650.glyphs[i], monospaced650.glyphs[i+1], monospaced650.glyphs[i+2], monospaced650.glyphs[i+3], monospaced650.glyphs[i+3], monospaced650.glyphs[i+4]);
+}
+
 int main() {
 //    ax2();
 //    ax2f();
@@ -1163,7 +1169,9 @@ int main() {
 
 //    unit2();        // test unit line2
 
-    unit3();        // test unit line3
+//    unit3();        // test unit line3
+
+    font1();
 
     return 0;
 }

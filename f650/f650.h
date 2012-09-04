@@ -22,6 +22,8 @@
 
 #include <math.h>
 
+#include "f650_fonts.h"
+
 #define ASM650
 
 typedef struct {

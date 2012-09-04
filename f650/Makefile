@@ -12,10 +12,12 @@ all:
 	gcc -c f650_graphics.c
 	gcc -c f650_geometry1.c
 	gcc -c f650_test.c
-	gcc -o f650-test.xo f650_test.o f650_graphics.o f650_geometry1.o \
-	asm/math1.ao asm/trig1.ao asm/geo1.ao \
-	asm/graphics.ao asm/graphics2.ao asm/graphics3.ao \
-	asm/rdtsc64.ao \
-	asm/poly1.ao \
-	asm/math0.ao asm/std1.ao \
+	gcc -c f650_monospaced.c
+	gcc -o f650-test.xo f650_test.o f650_graphics.o f650_geometry1.o 	\
+	f650_monospaced.o													\
+	asm/math1.ao asm/trig1.ao asm/geo1.ao 								\
+	asm/graphics.ao asm/graphics2.ao asm/graphics3.ao 					\
+	asm/rdtsc64.ao 														\
+	asm/poly1.ao 														\
+	asm/math0.ao asm/std1.ao 											\
 	-lm
