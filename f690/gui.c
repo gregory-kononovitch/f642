@@ -33,6 +33,7 @@ struct timing {
     //
     int mousex;
     int mousey;
+    int refresh;
 };
 static struct timing *timing = NULL;
 
@@ -211,23 +212,44 @@ static void maj() {
     vect650 p1, p2;
     //
     tick_maj1();
-    //
-    bgra_fill650(&bgra, 0xff000000);
-    long c;
-    for (i = 0; i < 1500; i++) {
-        random650(&p1);
-        p1.x = p1.x * width * .5  + (timing->mousex - width / 2);
-        p1.y = p1.y * height * .5 + (height / 2. - timing->mousey);
-        random650(&p2);
-        p2.x = p2.x * width * .5  + (timing->mousex - width / 2);
-        p2.y = p2.y * height * .5 + (height / 2. - timing->mousey);;
-//        random650(&p1); p1.x = -width/2. + (1. + p1.x) * width ; p1.y = -height/2. + (1. + p1.y) * height;
-//        random650(&p2); p2.x = -width/2. + (1. + p2.x) * width ; p2.y = -height/2. + (1. + p2.y) * height;
+    if (timing->refresh) {
+        //
+        bgra_fill650(&bgra, 0xff000000);
+        long c;
+        for (i = 0; i < 1500; i++) {
+            random650(&p1);
+            p1.x = p1.x * width *  .4 + (timing->mousex - width / 2);
+            p1.y = p1.y * height * .4 + (height / 2. - timing->mousey);
+            random650(&p2);
+            p2.x = p2.x * width *  .4 + (timing->mousex - width / 2);
+            p2.y = p2.y * height * .4 + (height / 2. - timing->mousey);
+            ;
+    //        random650(&p1); p1.x = -width/2. + (1. + p1.x) * width ; p1.y = -height/2. + (1. + p1.y) * height;
+    //        random650(&p2); p2.x = -width/2. + (1. + p2.x) * width ; p2.y = -height/2. + (1. + p2.y) * height;
 
-        c = rand();
-        c = (c | 0xff000000) & 0xffffffff;
-        timing->pixels += draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
-        timing->pixels += draw_char2a650(&bgra, p1.x, p1.y, &monospaced650, 32 + (c % 90), WHITE650);
+            c = rand();
+            c = (c | 0xff000000) & 0xffffffff;
+    //        timing->pixels += draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+            timing->pixels += draw_char2a650(&bgra, p1.x, p1.y, &monospaced650, 32 + (c % 90), c);
+        }
+    }
+    //
+    unsigned char str[16];
+    snprintf(str, 16, "%d", timing->mousex);
+    i = 0;
+    int x = width/2 - 100;
+    while(str[i]) {
+        timing->pixels += draw_char2a650(&bgra, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
+        x += monospaced650.width;
+        i++;
+    }
+    snprintf(str, 16, "%d", timing->mousey);
+    i = 0;
+    x += monospaced650.width;
+    while(str[i]) {
+        timing->pixels += draw_char2a650(&bgra, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
+        x += monospaced650.width;
+        i++;
     }
     tick_maj2();
 }
@@ -259,9 +281,14 @@ static gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
         timing->mousey = event->y;
         state = event->state;
     }
-
 //    if (state & GDK_BUTTON1_MASK && pixmap != NULL) draw_brush(widget, x, y);
+    return TRUE;
+}
 
+static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event) {
+    if (event->button == 1) {
+        timing->refresh = !timing->refresh;
+    }
     return TRUE;
 }
 
@@ -272,6 +299,7 @@ int main(int argc, char *argv[]) {
 
     //
     timing = calloc(1, sizeof(struct timing));
+    timing->refresh = 1;
     //
     GtkWidget *window;
     GtkWidget *fixed;
@@ -320,7 +348,8 @@ int main(int argc, char *argv[]) {
     bgra_alloc650(&bgra, width, height);
     printf("bgra alloc ok ::\n");
 
-    img = gdk_pixbuf_new_from_data((guchar*) bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
+    img = gdk_pixbuf_new_from_data((guchar*) bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd,
+            NULL);
     printf("PixBuf new ok\n");
 
     // Image
@@ -332,13 +361,12 @@ int main(int argc, char *argv[]) {
 //    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
     g_signal_connect(frame, "expose-event", G_CALLBACK(on_expose_event), NULL);
     g_signal_connect(window, "motion_notify_event", G_CALLBACK (motion_notify_event), NULL);
-//    g_signal_connect(frame, "button_press_event", G_CALLBACK (button_press_event), NULL);
+    g_signal_connect(window, "button_press_event", G_CALLBACK (button_press_event), NULL);
 
-    gtk_widget_set_events(window, GDK_EXPOSURE_MASK
-                 | GDK_LEAVE_NOTIFY_MASK
-                 | GDK_BUTTON_PRESS_MASK
-                 | GDK_POINTER_MOTION_MASK
-                 | GDK_POINTER_MOTION_HINT_MASK);
+    gtk_widget_set_events(
+            window,
+            GDK_EXPOSURE_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK
+                    | GDK_POINTER_MOTION_HINT_MASK);
 
     g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);

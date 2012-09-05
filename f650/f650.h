@@ -70,6 +70,34 @@ void bgra_gray650(bgra650 *img, uint8_t gray);
 void bgra_fill650(bgra650 *img, uint32_t color);
 void bgraz_gray650(bgraz650 *img, uint8_t gray);
 
+
+/*
+ *  Geometry oriented
+ *  + double
+ */
+typedef struct {
+    double  x0;
+    double  y0;
+    double  sx;
+    double  sy;
+} tracer650;
+
+/*
+ *  Graphics oriented
+ *  + int
+ */
+typedef struct {
+    int         x;
+    int         y;
+    int         width;
+    int         height;
+} recti650;
+
+typedef struct {
+    recti650    clip_area;
+    int         depth;
+} painter650;
+
 //
 long asm_tst1650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 
