@@ -811,7 +811,9 @@ int poly2() {
     //
     FILE *filp = fopen("asm/graphics2.asm", "r");
     int si = fseek(filp, 0, SEEK_END);
-    fgetpos(filp, &si);
+    fpos_t pos;
+    fgetpos(filp, &pos);
+    si = (int)pos.__pos;
     printf("file opened, %d chars\n", si);
 
     fseek(filp, 0, SEEK_SET);

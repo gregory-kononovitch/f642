@@ -742,9 +742,9 @@ int f641_stream_on(struct f641_v4l2_parameters *prm) {
  */
 int f641_test_dq(struct f641_v4l2_parameters *prm, int nb) {
     int i;
-    clock_t times1, times2;
+//    clock_t times1, times2;
+//    times1 = clock();
 
-    times1 = clock();
     for(i = 0 ; i < 50 * nb ; i++) {
         // DeQueue
         struct v4l2_buffer frame;
@@ -775,9 +775,8 @@ int f641_test_dq(struct f641_v4l2_parameters *prm, int nb) {
             }
         }
     }
-    times2 = clock();
-
-    printf("DQ take %ld clock\n", times2 - times1);
+//    times2 = clock();
+//    printf("DQ take %ld clock\n", times2 - times1);
 
     return 0;
 }
