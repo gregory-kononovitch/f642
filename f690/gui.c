@@ -18,18 +18,25 @@ static int width = 960;
 static int height = 544;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
+static int timer_delay = 25;
+static long upd = 1000 / 25;
+
 
 struct timing {
     long frame;
-    struct timeval tv_timer;
-    struct timeval tv_maj1;
-    struct timeval timing;
-    uint64_t pixels;
-    struct timeval tv_maj2;
-    struct timeval maj;
-    struct timeval tv_queued;
-    struct timeval tv_expose;
-    struct timeval delay;
+    struct timeval  tv_timer;
+    struct timeval  tv_maj1;
+    struct timeval  timing;
+    long            nb_timed;
+    uint64_t        pixels;
+    struct timeval  tv_maj2;
+    struct timeval  maj;
+    long            nb_maj;
+    struct timeval  tv_queued;
+    long            nb_queued;
+    struct timeval  tv_exposed;
+    long            nb_exposed;
+    struct timeval  delay;
     //
     int mousex;
     int mousey;
@@ -37,23 +44,31 @@ struct timing {
 };
 static struct timing *timing = NULL;
 
-static long upd = 20;
 static void tick_timer() {
     if (timing) {
         struct timeval tv;
         gettimeofday(&tv, NULL);
         timersub(&tv, &timing->tv_timer, &tv);
+        timing->nb_timed++;
         // last frame
         if (timing->frame % upd == 0) {
             double t = timing->timing.tv_sec + 0.000001 * timing->timing.tv_usec;
             double m = timing->maj.tv_sec + 0.000001 * timing->maj.tv_usec;
             double d = timing->delay.tv_sec + 0.000001 * timing->delay.tv_usec;
-            printf("Frame %ld : Timer : %lds.%06lus, Timing : %.6fs, Maj : %.3fs, Expose : %.6fs (%lu)\n",
-                    timing->frame, tv.tv_sec, tv.tv_usec, t / upd, m / upd, d / upd, timing->pixels / 1000);
+            printf("Frame %ld : Timer : %ld, Maj %ld : %.0fms (%lu), Queue %ld, Expose %ld : %.2fms\n"
+                    , timing->frame
+                    , timing->nb_timed
+                    , timing->nb_maj, 1000. * m / upd, timing->pixels / 1000
+                    , timing->nb_queued
+                    , timing->nb_exposed, 1000. * d / upd);
             memset(&timing->timing, 0, sizeof(struct timeval));
             memset(&timing->maj, 0, sizeof(struct timeval));
             memset(&timing->delay, 0, sizeof(struct timeval));
             timing->pixels = 0;
+            timing->nb_timed = 0;
+            timing->nb_maj = 0;
+            timing->nb_queued = 0;
+            timing->nb_exposed = 0;
         }
 
         //
@@ -75,19 +90,22 @@ static void tick_maj2() {
         gettimeofday(&timing->tv_maj2, NULL);
         timersub(&timing->tv_maj2, &timing->tv_maj1, &tv);
         timeradd(&timing->maj, &tv, &timing->maj);
+        timing->nb_maj++;
     }
 }
 static void tick_queued() {
     if (timing) {
         gettimeofday(&timing->tv_queued, NULL);
+        timing->nb_queued++;
     }
 }
 static void tick_expose() {
     if (timing) {
         struct timeval tv;
-        gettimeofday(&timing->tv_expose, NULL);
-        timersub(&timing->tv_expose, &timing->tv_queued, &tv);
+        gettimeofday(&timing->tv_exposed, NULL);
+        timersub(&timing->tv_exposed, &timing->tv_queued, &tv);
         timeradd(&timing->delay, &tv, &timing->delay);
+        timing->nb_exposed++;
     }
 }
 
@@ -211,8 +229,8 @@ static void maj() {
     int i, j;
     vect650 p1, p2;
     //
-    tick_maj1();
-    if (timing->refresh) {
+    if (timing->frame % 2 == 0 && timing->refresh) {
+        tick_maj1();
         //
         bgra_fill650(&bgra, 0xff000000);
         long c;
@@ -229,9 +247,12 @@ static void maj() {
 
             c = rand();
             c = (c | 0xff000000) & 0xffffffff;
-    //        timing->pixels += draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+            if (i % 20 == 0) {
+                timing->pixels += draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+            }
             timing->pixels += draw_char2a650(&bgra, p1.x, p1.y, &monospaced650, 32 + (c % 90), c);
         }
+        tick_maj2();
     }
     //
     unsigned char str[16];
@@ -251,7 +272,6 @@ static void maj() {
         x += monospaced650.width;
         i++;
     }
-    tick_maj2();
 }
 
 static gboolean time_handler(GtkWidget *widget) {
@@ -376,7 +396,7 @@ int main(int argc, char *argv[]) {
     gtk_widget_show_all(window);
 
     // Timer
-    g_timeout_add(50, (GSourceFunc) time_handler, (gpointer) frame);
+    g_timeout_add(timer_delay, (GSourceFunc) time_handler, (gpointer) frame);
 
     gtk_main();
 

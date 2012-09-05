@@ -94,7 +94,7 @@ typedef struct {
 } recti650;
 
 typedef struct {
-    recti650    clip_area;
+    recti650    area;   //
     int         depth;
 } painter650;
 
