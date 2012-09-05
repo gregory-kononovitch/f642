@@ -22,6 +22,8 @@
 
 #include <math.h>
 
+#include "f650_fonts.h"
+
 #define ASM650
 
 typedef struct {
@@ -34,6 +36,8 @@ typedef struct {
     double      y0;             // 24
     double      sx;             // 32
     double      sy;             // 40
+    // work
+    char        res1[16];       // 48
 } bgra650;
 
 typedef struct {
@@ -48,7 +52,7 @@ typedef struct {
     double      sy;             // 40
     //
     double      *zi;            // 48
-    void        *res;           // 64
+    void        *res;           // 56
 } bgraz650;
 
 // init
@@ -66,8 +70,41 @@ void bgra_gray650(bgra650 *img, uint8_t gray);
 void bgra_fill650(bgra650 *img, uint32_t color);
 void bgraz_gray650(bgraz650 *img, uint8_t gray);
 
+
+/*
+ *  Geometry oriented
+ *  + double
+ */
+typedef struct {
+    double  x0;
+    double  y0;
+    double  sx;
+    double  sy;
+} tracer650;
+
+/*
+ *  Graphics oriented
+ *  + int
+ */
+typedef struct {
+    int         x;
+    int         y;
+    int         width;
+    int         height;
+} recti650;
+
+typedef struct {
+    recti650    area;   //
+    int         depth;
+} painter650;
+
 //
 long asm_tst1650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
+
+// Draw point
+long draw_point2a650(bgra650 *img, double x1, double y1, uint32_t color);
+long draw_char2a650(bgra650 *img, double x1, double y1, font650 *font, int c, uint32_t color);
+
 
 // Draw line
 int draw_linea650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);

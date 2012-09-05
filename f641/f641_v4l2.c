@@ -788,7 +788,7 @@
 ///*
 // *
 // */
-//int f641_free_mmap(struct f641_v4l2_parameters *prm)
+//int f641_stream_off(struct f641_v4l2_parameters *prm)
 //{
 //    int i;
 //    enum v4l2_buf_type type;
@@ -906,7 +906,7 @@ struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli, uint32_t p
 
 
 void f641_free_v4l2(struct f641_v4l2_parameters *prm) {
-    f641_free_mmap(prm);
+    f641_stream_off(prm);
 }
 
 /********************************

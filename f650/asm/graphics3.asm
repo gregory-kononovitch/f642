@@ -56,7 +56,7 @@ SECTION .text  align=16
 ; w  -> xmm10
 ; h  -> xmm11
 ; x0 -
-draw_line2a650:
+draw_line3a650:
 			begin			32
 			xor				rcx, rcx
 .prepx:		; prepar : x = sx * (x - x0) + width / 2
@@ -277,38 +277,166 @@ xaxis:		; abs(x2 - x1) > abs(y2 - y1) > 0
 			subsd			xmm2, xmm9			; TODO neg
 			divsd			xmm2, xmm8
 
-.t2xy:		;
+; -------------------------------------------------------
+;		(x1, y1) & (x2, y2) inside & Dx > Dy            ;
+; -------------------------------------------------------
+.t2xy:		; prepare integers
 			cvttsd2si		r8d,  xmm0			;
 			cvttsd2si		r9d,  xmm1			;
 			cvttsd2si		r10d, xmm2			;
 			cvttsd2si		r11d, xmm3			;
-			;
+			; jump
 			cmp				r8d, r10d
 			jz				.vline
 			cmp				r9d, r11d
-			jnz				.prepax
-			push			r12
-			xor				r12, r12			; prep hline
-			mov				r12w, word [rdi + 8]
+			jnz				prepax
+			; hline
+			xor				r11, r11			; prep hline
+			mov				r11w, word [rdi + 8]
 			jmp				hline.hgo
 
-.vline:
+.vline:		; vline or point
 			cmp				r8d, r10d
-			jz				point
-			push 			r12
-			xor				r12, r12			; prep vline
-			mov				r12w, word [rdi + 10]
-			jmp				vline
+			jz				point				;
+			cmp				r11d, r9d
+			jns				vline.vgo
+			mov				edx, r11d
+			mov				r11d, r9d
+			mov				r9d, edx
+			jmp				vline.vgo
 
-.prepax:	; x1 < x2 ; y1 != y2
+prepax:	; x1 < x2 ; y1 != y2
+			xor				rdx,rdx
+			mov				dx, word [rdi + 8]
+			imul			edx, r9d
+			add				edx, r8d				; i0
+			mov				dword [rbp - 32], edx
+			;
+			sub				r10d, r8d				; x2 - x1 = n
+			cmp				r11d,r9d
+			js				.dyn
+			sub				r11d, r9d				; y2 - y1 = nv
+			xor				r9, r9
+			mov				r9w, word [rdi + 8]		; + w
+			add				r9d, 1					; w + 1
+			jmp				.nh
+			;
+.dyn		sub				r9d, r11d
+			mov				r11d, r9d				; nv
+			xor				r8, r8
+			mov				r8w, word [rdi + 8]		; -w + 1
+			xor				r9, r9
+			sub				r9d, r8d
+			add				r9d, 1
 
+			; nh
+.nh			mov				r8d, r10d
+			sub				r8d, r11d				; nh
+			;
+%define n 	r10d	; reused
+%define	nh 	r8d
+%define nv 	r11d
+%define dv 	r9d
 
+			; ###
+			mov				rdx, [rdi]
+			mov				eax, dword [rbp - 32]
+			mov				dword[rdx + 0], eax
+			mov				dword[rdx + 4], n
+			mov				dword[rdx + 8], nh
+			mov				dword[rdx + 12], nv
+			mov				dword[rdx + 16], dv
 
+			;
+			cmp				nh, nv
+			js				xvert
+			jz				xequa
+xhori:		; ni
+			xor				rdx, rdx
+			mov				eax, nh
+			div				nv
+			mov				r10d, eax				; ni
+			;
+			mov				edx, nv
+			imul			edx, r10d
+			mov				eax, nh
+			sub				eax, edx
+			shr				eax, 1
+			jnc				.n1en2
+			mov				dword [rbp - 24], eax	; n2
+			add				eax, 1
+			mov				dword [rbp - 28], eax	; n1
+			jmp				.xhst
 
+.n1en2:		; n1 = n2
+			mov				dword [rbp - 28], eax	; n1
+			mov				dword [rbp - 24], eax	; n2
 
-.endx
+			; start
+.xhst:
+			mov				rdi, [rdi]
+			; ###
+			mov				edx, dword [rbp - 28]	; n1
+			mov				dword [rdi + 20], edx
+			mov				edx, dword [rbp - 24]	; n2
+			mov				dword [rdi + 24], edx
+			mov				dword [rdi + 28], r10d
+;			return
+			; ###
+			mov				eax, dword [rbp - 32]	; i0
+			mov				dword [rdi + 4*rax], esi
+			; n1
+			mov				ecx, dword [rbp - 28]
+			jrcxz			.v0
+.loopn1:	;
+			add				eax, 1
+			mov				dword [rdi + 4*rax], esi
+			loop			.loopn1
+.v0:		;
+			add				eax, dv
+			mov				dword [rdi + 4*rax], esi
+			;
+			mov				ecx, nv
+			sub				ecx, 1
+			jrcxz			.loopn2
+.loop:		;
+			push			rcx
+			mov				ecx, r10d
+			;
+.loopni:	add				eax, 1
+			mov				dword [rdi + 4*rax], esi
+			loop			.loopni
+			;
+			add				eax, dv
+			mov				dword [rdi + 4*rax], esi
+			pop				rcx
+			loop			.loop
+			;
+			mov				ecx, dword [rbp - 24]
+			jrcxz			.hxend
+			;
+.loopn2:	;
+			add				eax, 1
+			mov				dword [rdi + 4*rax], esi
+			loop			.loopn2
+
+.hxend:
+			return
+			;
+xvert:
+			mov				eax, n
+			add				eax, 1
+			return
+
+xequa:
+			pop				r15
+			pop				r14
+			pop				r13
+			pop				r12
 			mov				rax, r9
 			return
+
+
 
 
 yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
@@ -553,9 +681,8 @@ yaxis:		; abs(y2 - y1) >= abs(x2 - x1) > 0
 
 ;;;;;;;;;;;
 hline:
-			push 		r12			; TODO another reg
-			xor			r12, r12
-			mov			r12w, word [rdi + 8]
+			xor			r11, r11
+			mov			r11w, word [rdi + 8]
 			;
 			cmp			r10, r8
 			jns			.hpos
@@ -572,15 +699,15 @@ hline:
 .hpn		; x1 < 0
 			xor			r8, r8
 .hpo		;
-			cmp			r10, r12
+			cmp			r10, r11
 			js			.hgo
-			mov			r10, r12		; x2 >= w
+			mov			r10, r11		; x2 >= w
 			sub			r10, 1
 
 .hgo		; r8 = min >= 0 && r10 = max < w
 			mov			rdi, [rdi]
 			xor			rdx, rdx
-			mov			rax, r12		; width
+			mov			rax, r11		; width
 			mul			r9				; * y1 = y2 E [0, h[
 			add			rax, r8			; + x1
 			shl			rax, 2			; * 4
@@ -596,14 +723,12 @@ hline:
 			loop		.loop
 
 			;
-			pop			r12
 			return
 
 ;;;;;;;;;;;
 vline:
-			push 		r12			; TODO another reg
-			xor			r12, r12
-			mov			r12w, word [rdi + 10]	; height
+			xor			r10, r10
+			mov			r10w, word [rdi + 10]	; height
 			;
 			cmp			r11, r9
 			jns			.vpos
@@ -620,16 +745,16 @@ vline:
 .vpn		; y1 < 0
 			xor			r9, r9
 .vpo		;
-			cmp			r11, r12
+			cmp			r11, r10
 			js			.vgo
-			mov			r11, r12		; y2 >= h
+			mov			r11, r10		; y2 >= h
 			sub			r11, 1
 
-.vgo		; r9 = min >= 0 && r11 = max < h
+.vgo		; r9 = min >= 0 && r11 = max < h && r8 = x E
 			xor			rdx, rdx
-			xor			r12, r12
-			mov			r12w, word [rdi + 8]	; width
-			mov			rax, r12		; width
+			xor			r10, r10
+			mov			r10w, word [rdi + 8]	; width
+			mov			rax, r10		; width
 			mul			r9				; * x1 = x2 E [0, w[
 			add			rax, r8
 			shl			rax, 2			; * 4
@@ -639,15 +764,14 @@ vline:
 			sub			rcx, r9
 			add			rcx, 1			; rcx
 			mov			rax, rcx		; return
-			shl			r12, 2			; linesize
+			shl			r10, 2			; linesize
 			;
 .loop
 			mov			dword [rdi], esi
-			add			rdi, r12
+			add			rdi, r10
 			loop		.loop
 
 			;
-			pop			r12
 			return
 
 

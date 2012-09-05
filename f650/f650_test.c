@@ -808,7 +808,25 @@ int poly2() {
     double co1[22] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
     double co2[22] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
     double x, y;
+    //
+    FILE *filp = fopen("asm/graphics2.asm", "r");
+    int si = fseek(filp, 0, SEEK_END);
+    fpos_t pos;
+    fgetpos(filp, &pos);
+    si = (int)pos.__pos;
+    printf("file opened, %d chars\n", si);
 
+    fseek(filp, 0, SEEK_SET);
+    unsigned char *src = malloc(si);
+    fread(src, 1, si, filp);
+    fclose(filp);
+
+    //
+    for(i = 47 ; i < 127 ; i++) {
+        printf("Char '%c' = %d  |  %c\n", i, i, src[i]);
+    }
+
+    //
     x = 0.;
 
     for(i = 0 ; i < 1 ; i++) {
@@ -865,6 +883,8 @@ int poly2() {
     fb650 *fb = fb_open650();
     double pas = 5e-3;
     long c;
+    int ch = 0, row, col;
+    long t = 0;
     while(1) {
         fb_draw650(fb, &img);
         //
@@ -875,37 +895,49 @@ int poly2() {
         //
         for(i = 0 ; i < sizeof(co1)/8 ; i++) {
             random650(&p);
-            //
-            //co1[i] = sin650(p.x * M_PI);
             if (p.x < 0) co1[i] += pas;
             else co1[i] -= pas;
             if (p.y < 0) co2[i] += pas;
             else co2[i] -= pas;
         }
-//        co1[0] = +0.1;
-//        co2[0] = -0.4;
         //
         bgra_clear650(&img);
         draw_line650(&img, -1.9, 0., +1.9, 0., MAGENTA650);
         draw_line650(&img, 0., -1.9, 0., +1.9, MAGENTA650);
+
         //
-//        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
-        draw_line650(&img, p1.x, p1.y, p2.x, p2.y, GREEN650);
-//        dump650("p0 : ", &p0, " ") ; dump650(" p : ", &p, "\n");
-        draw_line650(&img, p1.x, p1.y - .25, p2.x, p2.y - .25, RED650);
+        int nc = 1024 / (monospaced650.width  + 2);
+        int nr = 600 / (monospaced650.height + 2);
+        double x = 2;
+        double y = t;
+        ch = 0;
+        for(col = 0 ; col < nc ; col++) {
+            x = -512 + 2 + col * (monospaced650.width  + 2);
+            x *= 4. / 1024.;
+            for(row = 0 ; row < nr + 2; row++) {
+                y = 300 - ((2 + 6*t + row * (monospaced650.height + 2)) % 620);
+                y *= 4. / 600.;
+                //draw_char2a650(&img, x, y, &monospaced650, src[ch % si], 0xff353535);
+                draw_char2a650(&img, x, y, &monospaced650, src[ch % si], GREEN650);
+                ch++;
+            }
+        }
 
         //
         p0.x = +2;
         p0.y = polya650(co1, sizeof(co1) / 8, p0.x);
-        for(p.x = +2. ; p.x >= -2. ; p.x -= .0005) {
+        ch = 0;
+        for(p.x = +2. ; p.x >= -2. ; p.x -= .05) {
             p.y = polya650(co1, sizeof(co1) / 8, p.x);
 
-            draw_line650(&img, p0.x - 0.015625, p0.y, p.x - 0.015625, p.y, c);
-            draw_line650(&img, p0.x, p0.y, p.x, p.y, c);
-            draw_line650(&img, p0.x + 0.015625, p0.y, p.x + 0.015625, p.y, c);
+            draw_point2a650(&img, p.x, p.y, c);
+            draw_line2a650(&img, p.x, p.y, p0.x, p0.y, c);
+
             p0.x = p.x;
             p0.y = p.y;
+            ch++;
         }
+        t++;
     }
     fb_close650(&fb);
 
@@ -1026,32 +1058,8 @@ void gtk1() {
     }
 }
 
-int main() {
-//    ax2();
-//    ax2f();
 
-//    trig();
-
-//    std1();
-
-//    pi2();
-
-//    test_geo1();
-
-    poly2();
-
-//    double i = 250.5;
-//    printf("i = %f -> %d\n", i, (int)i);
-//    i = -250.5;
-//    printf("i = %f -> %d\n", i, (int)i);
-
-//    geo2();
-//    test3();
-
-//    gtk1();
-
-
-    return 0;
+int unit2() {
     //
     int width = 1024, height = 600;
     vect650 p1, p2;
@@ -1108,6 +1116,143 @@ int main() {
     printf("y2 = %f\n", ((double*)bgra.data)[3]);
     printf("a  = %f\n", ((double*)bgra.data)[4]);
     printf("b  = %f\n", ((double*)bgra.data)[5]);
+
+    return 0;
+}
+
+
+int unit3() {
+    int i, width = 910, height = 512;
+    long l1, l2, l;
+    vect650 p1, p2;
+    bgra650 bgra1, bgra2;
+
+    //
+    bgra_alloc650(&bgra1, 1024, 600);
+    bgra_clear650(&bgra1);
+    bgra_alloc650(&bgra2, 1024, 600);
+    bgra_clear650(&bgra2);
+
+    // test 1
+    p1.x = -300;
+    p1.y = -50;
+    p2.x = +300;
+    p2.y = +50;
+
+//    // test 2
+//    p1.x = -300;
+//    p1.y = -150;
+//    p2.x = +300;
+//    p2.y = +149;
+
+//    // test 3
+//    p1.x = -250;
+//    p1.y = -30;
+//    p2.x = +250;
+//    p2.y = +70;
+
+    for(i = 0 ; i < 5 ; i++) {
+        //
+        l1 = ReadTSC();
+        l = draw_line2a650(&bgra1, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        l2 = ReadTSC();
+        printf("line2 : %ld µops = %ld\n", l2 - l1, l);
+
+        //
+        l1 = ReadTSC();
+        l = draw_line3a650(&bgra2, p1.x, p1.y, p2.x, p2.y, WHITE650);
+        l2 = ReadTSC();
+        printf("line3 : %ld µops = %ld\n", l2 - l1, l);
+    }
+    //
+    for(i = 0 ; i < 10 ; i++) {
+        printf("%d : %d (%d, %d)\n", i, bgra2.data[i], bgra2.data[i] % 1024 - 512, bgra2.data[i] / 1024 - 300);
+    }
+
+    //
+    bgra_compare650(&bgra1, &bgra2);
+}
+
+
+int point1() {
+    int i;
+    long l1, l2;
+    uint64_t l, c;
+    struct timeval tv1, tv2;
+    vect650 p;
+    bgra650 img1;
+    //
+    bgra_alloc650(&img1, 1024, 600);
+    bgra_clear650(&img1);
+    //
+    l = 0;
+    int nb = 1000000;
+    l1 = ReadTSC();
+    for(i = 0 ; i < nb ; i++) {
+        random650(&p);
+        p.x *= 600.;
+        p.y *= 350.;
+        l += draw_point2a650(&img1, p.x, p.y, ORANGE650);
+    }
+    l2 = ReadTSC();
+    //
+    printf("%ld / %d pixels drawn in %ld µops / %ld µ/pix\n", l, nb, l2 - l1, (l2 - l1) / nb);
+
+    return 0;
+
+}
+
+int font1() {
+    unsigned char c = 80;
+    int i = monospaced650.index[c];
+    long l1, l2;
+    uint64_t l;
+    struct timeval tv1, tv2;
+    vect650 p;
+    bgra650 img;
+    //
+    bgra_alloc650(&img, 1024, 600);
+    bgra_clear650(&img);
+
+    printf("%c : ascii code %d, %d pixels : %2x %2x %2x %2x\n", c, monospaced650.glyphs[i], monospaced650.glyphs[i+1], monospaced650.glyphs[i+2], monospaced650.glyphs[i+3], monospaced650.glyphs[i+3], monospaced650.glyphs[i+4]);
+
+    //
+    l1 = ReadTSC();
+    for(i = 0 ; i < 100000 ; i++) {
+        l += draw_char2a650(&img, 10, 10, &monospaced650, 32 + (i % 90), WHITE650);
+    }
+    l2 = ReadTSC();
+    //
+    printf("Read char %c wrotte %ld pixels for %ld µ, %.3fs\n", c, l, l2 - l1, (l2 - l1) / 1.5e9);
+}
+
+int main() {
+//    ax2();
+//    ax2f();
+
+//    trig();
+
+//    std1();
+
+//    pi2();
+
+//    test_geo1();
+
+//    poly2();      // fb/poly/line/char
+
+//    geo2();       // ~unit/perf
+
+//    test3();      // fb/cam/line
+
+//    gtk1();       // viewer.maj()
+
+//    unit2();        // test unit line2
+
+//    unit3();        // test unit line3
+
+//    point1();
+
+    font1();
 
     return 0;
 }
