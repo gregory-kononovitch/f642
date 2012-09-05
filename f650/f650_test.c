@@ -808,7 +808,23 @@ int poly2() {
     double co1[22] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
     double co2[22] = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
     double x, y;
+    //
+    FILE *filp = fopen("asm/graphics2.asm", "r");
+    int si = fseek(filp, 0, SEEK_END);
+    fgetpos(filp, &si);
+    printf("file opened, %d chars\n", si);
 
+    fseek(filp, 0, SEEK_SET);
+    unsigned char *src = malloc(si);
+    fread(src, 1, si, filp);
+    fclose(filp);
+
+    //
+    for(i = 47 ; i < 127 ; i++) {
+        printf("Char '%c' = %d  |  %c\n", i, i, src[i]);
+    }
+
+    //
     x = 0.;
 
     for(i = 0 ; i < 1 ; i++) {
@@ -897,9 +913,9 @@ int poly2() {
             x = -512 + 2 + col * (monospaced650.width  + 2);
             x *= 4. / 1024.;
             for(row = 0 ; row < nr + 10; row++) {
-                y = 300 - ((2 + 3*t + row * (monospaced650.height + 2)) % 620);
+                y = 300 - ((2 + 6*t + row * (monospaced650.height + 2)) % 620);
                 y *= 4. / 600.;
-                draw_char2a650(&img, x, y, &monospaced650, 47 + (ch % 89), GREEN650);
+                draw_char2a650(&img, x, y, &monospaced650, src[ch % si], GREEN650);
                 ch++;
             }
         }

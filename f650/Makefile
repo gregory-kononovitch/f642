@@ -1,7 +1,7 @@
 all:
 	rm -rf f650-test.xo f650_test.o f650_graphics.o asm/graphics.ao
 	yasm -f elf64 -a x86 -m amd64 -o asm/graphics.ao asm/graphics.asm
-	yasm -f elf64 -a x86 -m amd64 -o asm/graphics2.ao asm/graphics2.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o asm/graphics2.ao asm/graphics2.asm
 	yasm -f elf64 -a x86 -m amd64 -o asm/graphics3.ao asm/graphics3.asm
 	yasm -f elf64 -a x86 -m amd64 -o asm/geo1.ao asm/geo1.asm
 	yasm -f elf64 -a x86 -m amd64 -o asm/math1.ao asm/math1.asm

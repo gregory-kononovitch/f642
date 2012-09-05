@@ -880,6 +880,8 @@ draw_char2a650:
 			add				rdx, rcx						; char start
 			xor				rcx, rcx
 			mov				cl, byte [rdx + 1]				; size
+			cmp				ecx, 0
+			jz				.nopix
 			add				rdx, 2							; glyphs start
 			mov				rsi, rax						; color
 			mov				dword [rbp - 28], 0				; cpt
