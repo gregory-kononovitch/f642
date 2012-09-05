@@ -404,7 +404,7 @@ extern int f641_set_mmap(struct f641_v4l2_parameters *prm, int nb_buffers);
 extern int f641_set_uptr(struct f641_v4l2_parameters *prm, int nb_buffers);
 extern int f641_stream_on(struct f641_v4l2_parameters *prm);
 extern int f641_test_dq(struct f641_v4l2_parameters *prm, int nb);
-extern int f641_free_mmap(struct f641_v4l2_parameters *prm);
+extern int f641_stream_off(struct f641_v4l2_parameters *prm);
 extern int f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int white, int expo);
 
 extern struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli, uint32_t palette);

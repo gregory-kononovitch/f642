@@ -786,7 +786,7 @@ int f641_test_dq(struct f641_v4l2_parameters *prm, int nb) {
 /*
  *
  */
-int f641_free_mmap(struct f641_v4l2_parameters *prm)
+int f641_stream_off(struct f641_v4l2_parameters *prm)
 {
     int i;
     enum v4l2_buf_type type;
@@ -796,7 +796,7 @@ int f641_free_mmap(struct f641_v4l2_parameters *prm)
         printf("Error stoping stream.\n");
         printf("VIDIOC_STREAMOFF: %s\n", strerror(errno));
     } else {
-        if ( prm->verbose ) printf("STREAMOFF succed.\n");
+        if (prm->verbose) printf("STREAMOFF succed.\n");
     }
 
     for(i = 0; i < prm->req.count; i++)
@@ -837,7 +837,7 @@ int f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int
     return 0;
 }
 
-void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *device, int width, int height, int palette, int rate, int buffers) {
+void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *dev, int width, int height, int palette, int rate, int buffers) {
     int r;
 
     if (!prm) {
@@ -845,9 +845,9 @@ void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *device, int width, 
         return;
     }
     prm->DEBUG = 0;
-    snprintf(prm->dev, sizeof(prm->dev), device);
+    snprintf(prm->dev, sizeof(prm->dev), dev);
     prm->fd  = open(prm->dev, O_RDWR);
-    snprintf(prm->source, sizeof(prm->source), device);
+    snprintf(prm->source, sizeof(prm->source), dev);
     prm->width       = width;
     prm->height      = height;
     prm->frames_pers = rate;

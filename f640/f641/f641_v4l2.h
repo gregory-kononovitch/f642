@@ -42,25 +42,28 @@ typedef struct {
 struct f641_v4l2_parameters {
     int DEBUG;
 
-    char device[32];
-    char dev[32];
+    // Parameters (in)
+    char dev[32];               // in
+    int width;                  // in
+    int height;                 // in
+    int frames_pers;            // in
+    uint32_t palette;           // in        // = 0x47504A4D;   // 0x56595559
+
+    // Properties (out)
     int fd;
-    struct v4l2_capability cap;
     char source[32];
     char input[32];
-    int width;
-    int height;
-    int frames_pers;
-    uint32_t palette;// = 0x47504A4D;   // 0x56595559
+    struct v4l2_capability cap;
     struct v4l2_format format;
     struct v4l2_fmtdesc format_desc;
 
+    // work
     enum v4l2_memory memory;
     struct v4l2_requestbuffers req;
     struct v4l2_buffer buf;
-
     v4l2_buffer_t *buffers;
 
+    //  Logging
     int capture;
     int verbose;
     int quiet;
@@ -74,6 +77,7 @@ struct f641_v4l2_parameters {
     int show_framints;
     int show_vidstds;
 
+    // Controls
     int nb_controls;
     struct v4l2_queryctrl controls[128];
     int32_t controls_value[128];
