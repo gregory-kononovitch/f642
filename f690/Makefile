@@ -22,12 +22,12 @@ gtk : $(f690)
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./graphics3.ao ../f650/asm/graphics3.asm
 	
 	gcc -o f690-gui.xo $(f690) $(BASE_LIBS) $(GTK_LIBS) \
-	../f650/f650_graphics.o ../f650/f650_geometry1.o \
+	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o \
 	./graphics.ao ./graphics2.ao ./graphics3.ao ./std1.ao
 #	
 	gcc -O3 -Wall -c gui.c -o gui.o $(BASE_INCLUDE) $(GTK_INCLUDE)
 	gcc -o gtk.xo $(_gtk) $(BASE_LIBS) $(GTK_LIBS) \
-	../f650/f650_graphics.o ../f650/f650_geometry1.o \
+	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o \
 	./graphics.ao ./graphics2.ao ./graphics3.ao ./std1.ao
 	
 	

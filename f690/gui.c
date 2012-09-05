@@ -227,6 +227,7 @@ static void maj() {
         c = rand();
         c = (c | 0xff000000) & 0xffffffff;
         timing->pixels += draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+        timing->pixels += draw_char2a650(&bgra, p1.x, p1.y, &monospaced650, 32 + (c % 90), WHITE650);
     }
     tick_maj2();
 }

@@ -912,9 +912,10 @@ int poly2() {
         for(col = 0 ; col < nc ; col++) {
             x = -512 + 2 + col * (monospaced650.width  + 2);
             x *= 4. / 1024.;
-            for(row = 0 ; row < nr + 10; row++) {
+            for(row = 0 ; row < nr + 2; row++) {
                 y = 300 - ((2 + 6*t + row * (monospaced650.height + 2)) % 620);
                 y *= 4. / 600.;
+                //draw_char2a650(&img, x, y, &monospaced650, src[ch % si], 0xff353535);
                 draw_char2a650(&img, x, y, &monospaced650, src[ch % si], GREEN650);
                 ch++;
             }
@@ -1215,10 +1216,12 @@ int font1() {
 
     //
     l1 = ReadTSC();
-    l = draw_char2a650(&img, 10, 10, &monospaced650, 80, WHITE650);
+    for(i = 0 ; i < 100000 ; i++) {
+        l += draw_char2a650(&img, 10, 10, &monospaced650, 32 + (i % 90), WHITE650);
+    }
     l2 = ReadTSC();
     //
-    printf("Read char %c wrotte %ld pixels for %ld µ\n", c, l, l2 - l1);
+    printf("Read char %c wrotte %ld pixels for %ld µ, %.3fs\n", c, l, l2 - l1, (l2 - l1) / 1.5e9);
 }
 
 int main() {
@@ -1233,7 +1236,7 @@ int main() {
 
 //    test_geo1();
 
-    poly2();      // fb/poly/line/char
+//    poly2();      // fb/poly/line/char
 
 //    geo2();       // ~unit/perf
 
@@ -1247,7 +1250,7 @@ int main() {
 
 //    point1();
 
-    //font1();
+    font1();
 
     return 0;
 }
