@@ -13,13 +13,14 @@
 
 #include "f690.h"
 
+#include "../f650/exc/f650_brodge.c"
 //
-static int width = 960;
-static int height = 544;
+static int width = 800;
+static int height = 448;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 25;
-static long upd = 1000 / 25;
+static int timer_delay = 999;
+static long upd = 1000 / 999;
 
 
 struct timing {
@@ -115,27 +116,13 @@ bgra650 *get_bgra() {
     return &bgra; // before a straight struct
 }
 
-//
-static void hello(GtkWidget *widget, gpointer data) {
-    g_print("Hello !\n");
-}
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    /* If you return FALSE in the "delete-event" signal handler,
-     * GTK will emit the "destroy" signal. Returning TRUE means
-     * you don't want the window to be destroyed.
-     * This is useful for popping up 'are you sure you want to quit?'
-     * type dialogs. */
-
-    g_print("delete event occurred\n");
-
-    /* Change TRUE to FALSE and the main window will be destroyed with
-     * a "delete-event". */
-
+    // Change TRUE to FALSE and the main window will be destroyed with
     return FALSE;
 }
 
-/* Another callback */
+
 static void destroy(GtkWidget *widget, gpointer data) {
     gtk_main_quit();
 }
@@ -274,11 +261,21 @@ static void maj() {
     }
 }
 
+
+static void maj_brodge() {
+    if (timing->refresh) {
+        tick_maj1();
+        bgra_clear650(&bgra);
+        brodge_exec(&bgra);
+        tick_maj2();
+    }
+}
+
 static gboolean time_handler(GtkWidget *widget) {
     tick_timer();
     //
     //tst_bgra();
-    maj();
+    maj_brodge();
     //
     tick_queued();
     gtk_widget_queue_draw(widget);
@@ -357,19 +354,15 @@ int main(int argc, char *argv[]) {
     GdkImage *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
     printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n", gdimg->bpp, gdimg->bpl,
             gdimg->bits_per_pixel, gdimg->mem);
+
     //
-//    GdkBitmap *mask = NULL;
-//    GtkImage *gtimg = gtk_image_new_from_image(gdimg, mask);
+    brodge_init(width, height);
 
-//    return 0;
-
-    // GdkPixbufAnimation
-    //gtk_image_set_from_pixbuf
+    //
     bgra_alloc650(&bgra, width, height);
     printf("bgra alloc ok ::\n");
 
-    img = gdk_pixbuf_new_from_data((guchar*) bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd,
-            NULL);
+    img = gdk_pixbuf_new_from_data((guchar*) bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
     printf("PixBuf new ok\n");
 
     // Image

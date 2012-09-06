@@ -36,6 +36,7 @@ FLUSH		dd		0.0, 1.0, 2.0, 3.0
 %define		o_var	0xA0; fix + 64
 %define		o_dist	0xA0
 %define		o_fx	0xB0
+%define		o_mi	0xC0
 ;
 %define		stack_size	0xB0
 
@@ -61,6 +62,11 @@ brodga650:
 			imul			eax, r11d					; size
 			shl				eax, 2						; s4
 			mov				dword [rbp - res + 8], eax	;
+			;
+			xor				rax, rax
+			mov				qword [rbp - res + 12], rax	; sum mi
+			;
+			mov				qword [rbp - 16], rsi		; save image
 			;
 			mov				rsi, [rdi + 16]				; osc
 			mov				ecx, dword [rdi + 24]		; nb
@@ -114,6 +120,9 @@ brodga650:
 			mov				dword [rbp - o_m + 8], eax
 			mov				dword [rbp - o_m + 12], eax
 			movaps			xmm4, oword [rbp - o_m]
+			movss			xmm5, dword [rbp - o_m]
+			addss			xmm5, dword [rbp - res + 12]
+			movss			dword [rbp - res + 12], xmm5	; sum mi
 			; red
 			mov				eax, dword [rdi + 20]		; r
 			mov				dword [rbp - o_r], eax
@@ -149,6 +158,28 @@ brodga650:
 			sub				ecx, 1
 			cmp				ecx, 0
 			jge				.loop
+
+			; make rgb
+			mov				rsi, qword [rbp - 16]		; rest image
+			; images
+			mov				rdx, qword [rbp - 8]		; imr
+			mov				r14, rdx					; img
+			add				r14, qword[rbp - res + 8]	; + s4
+			mov				r15, r14					; imb
+			add				r15, qword[rbp - res + 8]	; + s4
+			;
+			mov				ecx, [rbp - res + 8]		; s4
+			; sum mi
+			mov				eax, dword [rbp - res + 12]	; sum mi
+			mov				dword [rbp - o_mi], eax
+			mov				dword [rbp - o_mi + 4], eax
+			mov				dword [rbp - o_mi + 8], eax
+			mov				dword [rbp - o_mi + 12], eax
+			movaps			xmm5, oword [rbp - o_mi]
+			movaps			xmm4, [ONEp]
+			divps			xmm4, xmm5
+			movaps			oword [rbp - o_mi], xmm4	; p 1/smi
+			;
 
 			;
 			return

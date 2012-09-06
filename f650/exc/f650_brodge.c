@@ -43,7 +43,6 @@ typedef struct {
 
 static bsource650   src[3];
 static brodge650    brodge1;
-static bgra650      bgra;
 
 
 long brodga650(brodge650 *brodge, bgra650 *img);
@@ -101,9 +100,10 @@ int brodge_exec(bgra650 *img) {
     int i, c;
     long l1, l2, l;
     struct timeval tv1, tv2;
+    bgra650 bgra;
 
     l1 = ReadTSC();
-    l  = brodga650(&brodge1, &img);
+    l  = brodga650(&brodge1, img);
     l2 = ReadTSC();
 
     printf("Brodge return %ld for %ld µops [ %ld ; %ld ; %ld ] : %.3f ms\n", l, (l2 - l1)
@@ -113,6 +113,20 @@ int brodge_exec(bgra650 *img) {
             , 1000 * 1.5e-9 * (l2 - l1)
     );
     //
+    return 0;
+}
+
+
+int main() {
+    bgra650 bgra;
+    //
+    brodge_init(800, 448);
+    // Image
+    bgra_alloc650(&bgra, brodge1.width, brodge1.height);
+    //
+    brodge_exec(&bgra);
+    //
+    int i, c;
     for(c = 0 ; c < 3 ; c++) {
         int off = c * brodge1.width * brodge1.height;
         for(i = 0 ; i < 8 ; i++) {
@@ -125,18 +139,6 @@ int brodge_exec(bgra650 *img) {
         }
         printf("\n");
     }
-    //
-    return 0;
-}
-
-
-int main() {
-    //
-    brodge_init(512, 288);
-    // Image
-    bgra_alloc650(&bgra, brodge1.width, brodge1.height);
-    //
-    brodge_exec(&bgra);
 
 
     return 0;
