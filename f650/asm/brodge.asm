@@ -17,6 +17,8 @@ ZEROp		dd		0.0, 0.0, 0.0, 0.0
 ONEp		dd		1.0, 1.0, 1.0, 1.0
 FOURp		dd		4.0, 4.0, 4.0, 4.0
 FLUSH		dd		0.0, 1.0, 2.0, 3.0
+ALPHAp		dd		0xff000000, 0xff000000, 0xff000000, 0xff000000
+WHITEp		dd		255.9, 255.9, 255.9, 255.9
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,6 +54,10 @@ FLUSH		dd		0.0, 1.0, 2.0, 3.0
 
 brodga650:
 			begin stack_size
+			push			r12
+			push			r13
+			push			r14
+			push			r15
 			;
 			mov				r10d, dword [rdi + 8]		; w
 			mov				eax, r10d
@@ -176,12 +182,54 @@ brodga650:
 			mov				dword [rbp - o_mi + 8], eax
 			mov				dword [rbp - o_mi + 12], eax
 			movaps			xmm5, oword [rbp - o_mi]
-			movaps			xmm4, [ONEp]
+			movaps			xmm4, [WHITEp]
 			divps			xmm4, xmm5
-			movaps			oword [rbp - o_mi], xmm4	; p 1/smi
+			movaps			oword [rbp - o_mi], xmm4	; p 256- / smi
 			;
+			;
+			mov				r9d, dword [rbp - res + 4]	; h
+.loopy		;
+			;
+			mov				r8d, dword [rbp - res]		; w4
+.loopx		;
+			movaps			xmm0, oword [rdx]			; red
+			mulps			xmm0, xmm4					; 255 / smi
+			cvttps2dq		xmm0, xmm0
+			pslld			xmm0, 16
+			por				xmm0, [ALPHAp]
+			;
+			movaps			xmm1, oword [r14]			; green
+			mulps			xmm1, xmm4					; 255 / smi
+			cvttps2dq		xmm1, xmm1
+			pslld			xmm0, 8
+			por				xmm0, xmm1
+			;
+			movaps			xmm1, oword [r15]			; red
+			mulps			xmm1, xmm4					; 255 / smi
+			cvttps2dq		xmm1, xmm1
+			por				xmm0, xmm1
+			;
+			;
+			movdqa			oword [rsi], xmm0
+			;
+.cootx
+			add				rsi, 16						; bgra
+			add				rdx, 16						; imr
+			add				r14, 16						; img
+			add				r15, 16						; imb
+			sub				r8d, 1						; xi
+			jnz				.loopx
 
-			;
+
+.cooty		;
+			sub				r9d, 1
+			jnz				.loopy
+
+			; exit
+			pop				r15
+			pop				r14
+			pop				r13
+			pop				r12
 			return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
