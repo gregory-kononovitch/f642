@@ -52,7 +52,7 @@ exec: $(objects) $(objects_ao) $(objects_e)
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o $@ $<
 
 clean:
-	rm -f *.o exc/*.o asm/*.ao exc/*.xo
+	rm -f *.o exc/*.o asm/*.ao *.xo exc/*.xo
 
 
 tmp:

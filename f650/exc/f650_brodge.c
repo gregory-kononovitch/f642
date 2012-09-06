@@ -38,26 +38,28 @@ typedef struct {
     bsource650  *sources;   // 16
     int         nb_src;     // 24
     //
-    int         res;        // 28
+    int         size;        // 28
 } brodge650;
 
 
-long brodga650(brodge650 *brodge);
+long brodga650(brodge650 *brodge, bgra650 *img);
 
 int main() {
+    int i;
     int width  = 512;
     int height = 288;
     //
     bsource650 src1;
     brodge650  brodge1;
+    bgra650 img;
 
     // Source 1
     float cosi(float d, float p) {
         p = (float)cos(p * d);
         return p > 0 ? p : -p;
     }
-    src1.x = .5f * width;
-    src1.y = .5f * height;
+    src1.x = 3;//.5f * width;
+    src1.y = 3;//.5f * height;
     src1.i = &cosi;
     src1.p = 2. * 3.14159 / 150.f;
     src1.m = 1.f;
@@ -71,13 +73,17 @@ int main() {
     brodge1.height = height;
     brodge1.sources = &src1;
     brodge1.nb_src = 1;
+    brodge1.size = width * height;
+
+    // Image
+    bgra_alloc650(&img, width, height);
 
     //
     long l1, l2, l;
     struct timeval tv1, tv2;
 
     l1 = ReadTSC();
-    l  = brodga650(&brodge1);
+    l  = brodga650(&brodge1, &img);
     l2 = ReadTSC();
 
     printf("Brodge return %ld for %ld µops [ %ld ; %ld ; %ld ] : %fs\n", l, (l2 - l1)
@@ -86,6 +92,15 @@ int main() {
             , (l2 - l1) / brodge1.nb_src / brodge1.width / brodge1.height
             , 1.5e-9 * (l2 - l1)
     );
+    //
+    for(i = 0 ; i < 8 ; i++) {
+        printf("%d : %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n", i
+                , brodge1.img[width * i + 0], brodge1.img[width * i + 1]
+                , brodge1.img[width * i + 2], brodge1.img[width * i + 3]
+                , brodge1.img[width * i + 4], brodge1.img[width * i + 5]
+                , brodge1.img[width * i + 6], brodge1.img[width * i + 7]
+        );
+    }
     //
     return 0;
 }
