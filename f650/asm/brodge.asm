@@ -93,7 +93,8 @@ brodga650:
 			xor				rax, rax
 			mov				dword [rbp - res + 12], eax	; sum mi
 			;
-			mov				qword [rbp - 16], rsi		; save bgra
+			mov				rax, [rsi]
+			mov				qword [rbp - 16], rax		; save bgra
 			;
 			mov				rsi, [rdi + 16]				; osc
 			mov				ecx, dword [rdi + 24]		; nb
@@ -239,7 +240,7 @@ rgb:		; make rgb
 			pslld			xmm1, 8
 			por				xmm0, xmm1
 			;
-			movaps			xmm1, oword [r15]			; blue
+			movaps			xmm1, oword [imb]			; blue
 			mulps			xmm1, xmm4					; 255 / smi
 			cvttps2dq		xmm1, xmm1
 			por				xmm0, xmm1
@@ -247,18 +248,18 @@ rgb:		; make rgb
 			;
 			movdqa			oword [rsi], xmm0
 			;
+
 .cootx:
 			add				rsi, 16						; bgra
 			add				imr, 16						; imr
 			add				img, 16						; img
 			add				imb, 16						; imb
 			sub				w4, 1						; xi
-			jnz				.loopx
-
+			jnz				rgb.loopx
 
 .cooty:		;
 			sub				h1, 1
-			jnz				.loopy
+			jnz				rgb.loopy
 
 			; exit
 			return

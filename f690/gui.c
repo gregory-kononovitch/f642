@@ -19,8 +19,8 @@ static int width = 800;
 static int height = 448;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 999;
-static long upd = 1000 / 999;
+static int timer_delay = 50;
+static long upd = 1000 / 50;
 
 
 struct timing {

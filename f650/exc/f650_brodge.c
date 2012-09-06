@@ -54,28 +54,28 @@ int brodge_init(int width, int height) {
         p = (float)cos(p * d);
         return p > 0 ? p : -p;
     }
-    src[0].x = 3;//.5f * width;
-    src[0].y = 3;//.5f * height;
+    src[0].x = 200.;//.5f * width;
+    src[0].y = 200.;//.5f * height;
     src[0].i = &cosi;
-    src[0].p = 2. * 3.14159 / 50.f;
+    src[0].p = 1. / 1000.f;
     src[0].m = 1.f;
     src[0].r = 0.25f;
     src[0].g = 1.f;
     src[0].b = 0.f;
     //
-    src[1].x = 3;//.5f * width;
-    src[1].y = 0;//.5f * height;
+    src[1].x = 500.;//.5f * width;
+    src[1].y = 300.;//.5f * height;
     src[1].i = &cosi;
-    src[1].p = 2. * 3.14159 / 150.f;
+    src[1].p = 1. / 150.f;
     src[1].m = 1.f;
     src[1].r = 1.0f;
     src[1].g = 0.35f;
     src[1].b = 0.f;
     //
-    src[2].x = 0;//.5f * width;
-    src[2].y = 3;//.5f * height;
+    src[2].x = 400.;//.5f * width;
+    src[2].y = 100.;//.5f * height;
     src[2].i = &cosi;
-    src[2].p = 2. * 3.14159 / 250.f;
+    src[2].p = 1. / 250.f;
     src[2].m = .5f;
     src[2].r = 0.5f;
     src[2].g = 0.f;
@@ -100,24 +100,30 @@ int brodge_exec(bgra650 *img) {
     int i, c;
     long l1, l2, l;
     struct timeval tv1, tv2;
-    bgra650 bgra;
 
+    brodge1.sources[0]->r = 1. / 100.;
+
+    gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
     l  = brodga650(&brodge1, img);
     l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
 
-    printf("Brodge return %ld for %ld µops [ %ld ; %ld ; %ld ] : %.3f ms\n", l, (l2 - l1)
+    printf("Brodge return %ld for %ld µops [ %ld ; %ld ; %ld ] : %.3f ms : %ld.%06lu s = %.0f ms\n", l, (l2 - l1)
             , (l2 - l1) / brodge1.nb_src
             , (l2 - l1) / brodge1.nb_src / brodge1.height
             , (l2 - l1) / brodge1.nb_src / brodge1.width / brodge1.height
             , 1000 * 1.5e-9 * (l2 - l1)
+            , tv2.tv_sec, tv2.tv_usec
+            , 1000. * tv2.tv_usec
     );
     //
     return 0;
 }
 
 
-int main() {
+int main0() {
     bgra650 bgra;
     //
     brodge_init(800, 448);
@@ -140,6 +146,15 @@ int main() {
         printf("\n");
     }
 
+    printf("\n");
+    for(i = 0 ; i < 8 ; i++) {
+        printf("%d : %8X %8X %8X %8X %8X %8X %8X %8X\n", i
+                , bgra.data[brodge1.width * i + 0], bgra.data[brodge1.width * i + 1]
+                , bgra.data[brodge1.width * i + 2], bgra.data[brodge1.width * i + 3]
+                , bgra.data[brodge1.width * i + 4], bgra.data[brodge1.width * i + 5]
+                , bgra.data[brodge1.width * i + 6], bgra.data[brodge1.width * i + 7]
+        );
+    }
 
     return 0;
 }
