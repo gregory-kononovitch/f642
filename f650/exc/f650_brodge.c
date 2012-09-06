@@ -63,8 +63,6 @@ int main() {
 
     // Brodge
     brodge1.img = calloc(sizeof(float), 3 * width * height);
-//    brodge1.img[1] = brodge1.img[0] + width * height * sizeof(float);
-//    brodge1.img[2] = brodge1.img[1] + width * height * sizeof(float);
     brodge1.width  = width;
     brodge1.height = height;
     brodge1.sources = &src1;
@@ -78,7 +76,12 @@ int main() {
     l  = brodga650(&brodge1);
     l2 = ReadTSC();
 
-    printf("Brodge return %ld for %ld µops\n", l, (l2 - l1));
+    printf("Brodge return %ld for %ld µops [ %ld ; %ld ; %ld ] : %fs\n", l, (l2 - l1)
+            , (l2 - l1) / brodge1.nb_src
+            , (l2 - l1) / brodge1.nb_src / brodge1.height
+            , (l2 - l1) / brodge1.nb_src / brodge1.width / brodge1.height
+            , 1.5e-9 * (l2 - l1)
+    );
     //
     return 0;
 }
