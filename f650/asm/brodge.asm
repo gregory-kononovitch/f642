@@ -165,7 +165,8 @@ brodga650:
 			cmp				ecx, 0
 			jge				.loop
 
-			; make rgb
+;----------
+.rgb		; make rgb
 			mov				rsi, qword [rbp - 16]		; rest image
 			; images
 			mov				rdx, qword [rbp - 8]		; imr
@@ -174,7 +175,6 @@ brodga650:
 			mov				r15, r14					; imb
 			add				r15, qword[rbp - res + 8]	; + s4
 			;
-			mov				ecx, [rbp - res + 8]		; s4
 			; sum mi
 			mov				eax, dword [rbp - res + 12]	; sum mi
 			mov				dword [rbp - o_mi], eax
@@ -204,7 +204,7 @@ brodga650:
 			pslld			xmm0, 8
 			por				xmm0, xmm1
 			;
-			movaps			xmm1, oword [r15]			; red
+			movaps			xmm1, oword [r15]			; blue
 			mulps			xmm1, xmm4					; 255 / smi
 			cvttps2dq		xmm1, xmm1
 			por				xmm0, xmm1
@@ -289,8 +289,7 @@ osc1:
 			addps			px, [FOURp]
 			sub				w4, 1
 			jnz				.loopx
-
-
+;------
 .cooty		;
 			addps			py, [ONEp]
 			sub				h1, 1
