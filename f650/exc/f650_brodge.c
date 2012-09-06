@@ -89,7 +89,7 @@ int brodge_init(int width, int height) {
     brodge1.sources[0] = &src[0];
     brodge1.sources[1] = &src[1];
     brodge1.sources[2] = &src[2];
-    brodge1.nb_src = 3;
+    brodge1.nb_src = 1;
     brodge1.size = width * height;
 
     //

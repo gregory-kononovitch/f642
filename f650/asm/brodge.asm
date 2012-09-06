@@ -8,9 +8,29 @@
 ; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ;
 
-%include "include1.txt"
-
 default rel
+
+;%include "include1.txt"
+
+%macro  begin 1
+	push    rbp
+	mov     rbp, rsp
+	sub     rsp, %1
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+%endmacro
+
+%macro  return 0
+	pop		r15
+	pop		r14
+	pop		r13
+	pop		r12
+	mov     rsp, rbp
+    pop     rbp
+    ret
+%endmacro
 
 
 global 	brodga650:			function
@@ -27,9 +47,8 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; long brodga650(brodge650 *brodge, bgra650 *img)
 ;
-%define		res		0x20
+%define		res		0x30
 ;
-%define		fix		0x20; res + 0x70
 %define		o_x0	0x30; fix - 0
 %define		o_y0	0x40; fix - 16
 %define		o_p		0x50; fix - 32
@@ -38,12 +57,11 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 %define		o_g		0x80; 64
 %define		o_b		0x90; fix - 96
 ;
-%define		o_var	0xA0; fix + 64
 %define		o_dist	0xA0
 %define		o_fx	0xB0
 %define		o_mi	0xC0
 ;
-%define		stack_size	0xB0
+%define		stack_size	0xC0
 
 ;
 %define		px		xmm8
@@ -57,10 +75,6 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 
 brodga650:
 			begin stack_size
-			push			r12
-			push			r13
-			push			r14
-			push			r15
 			;
 			mov				r10d, dword [rdi + 8]		; w
 			mov				eax, r10d
@@ -70,12 +84,12 @@ brodga650:
 			mov				dword [rbp - res + 4], r11d	;
 			imul			eax, r11d					; size
 			shl				eax, 2						; s4
-			mov				dword [rbp - res + 8], eax	;
+			mov				dword [rbp - res + 8], eax	; s4
 			;
 			xor				rax, rax
 			mov				dword [rbp - res + 12], eax	; sum mi
 			;
-			mov				qword [rbp - 16], rsi		; save image
+			mov				qword [rbp - 16], rsi		; save bgra
 			;
 			mov				rsi, [rdi + 16]				; osc
 			mov				ecx, dword [rdi + 24]		; nb
@@ -84,22 +98,28 @@ brodga650:
 			; loop
 			sub				ecx, 1
 			xor				rax, rax
-.loop
+;
+%define		imr		rdx
+%define		img		r14
+%define		imb		r15
+%define		osc		rdi
+%define		w4		r12d
+%define		h1 		r13d
+;
+.loop:
 			; images
-			mov				rdx, qword [rbp - 8]		; imr
-			mov				r14, rdx					; img
-			add				r14, qword[rbp - res + 8]	; + s4
-			mov				r15, r14					; imb
-			add				r15, qword[rbp - res + 8]	; + s4
+			mov				imr, qword [rbp - 8]		; imr
+			mov				img, imr					; img
+			add				r14d, dword[rbp - res + 8]	; + s4
+			mov				imb, img					; imb
+			add				r15d, dword[rbp - res + 8]	; + s4
 
 			; Osci
-			mov				rdi, rcx					; osci
-			shl				rdi, 3						; *8
-			add				rdi, rsi					; +osc
-			mov				rdi, [rdi]
+			mov				osc, rcx					; osci
+			shl				osc, 3						; *8
+			add				osc, rsi					; +osc
+			mov				osc, [osc]
 
-			;
-			push			rcx
 			; x0
 			mov				eax, dword [rdi]			; x0
 			mov				dword [rbp - o_x0], eax
@@ -131,7 +151,7 @@ brodga650:
 			mov				dword [rbp - o_m + 8], eax
 			mov				dword [rbp - o_m + 12], eax
 			movaps			xmm4, oword [rbp - o_m]
-			movss			xmm5, dword [rbp - o_m]
+			movss			xmm5, xmm4
 			addss			xmm5, dword [rbp - res + 12]
 			;movss			dword [rbp - res + 12], xmm5	; sum mi
 
@@ -166,22 +186,23 @@ brodga650:
 			movaps			oword [rbp - o_b], pbl
 
 			jmp				osc1						; process
-.ret		; osc return
+.ret:		; osc return
 
-			pop				rcx
 			sub				ecx, 1
 			cmp				ecx, 0
 			jge				.loop
+
+
 return
-;----------
-.rgb		; make rgb
+;------------------------------------------------------------------------
+rgb:		; make rgb
 			mov				rsi, qword [rbp - 16]		; rest image
 			; images
 			mov				rdx, qword [rbp - 8]		; imr
 			mov				r14, rdx					; img
-			add				r14, qword[rbp - res + 8]	; + s4
+			add				r14d, dword[rbp - res + 8]	; + s4
 			mov				r15, r14					; imb
-			add				r15, qword[rbp - res + 8]	; + s4
+			add				r15d, dword[rbp - res + 8]	; + s4
 			;
 			; sum mi
 			mov				eax, dword [rbp - res + 12]	; sum mi
@@ -196,10 +217,10 @@ return
 			;
 			;
 			mov				r9d, dword [rbp - res + 4]	; h
-.loopy		;
+.loopy:		;
 			;
 			mov				r8d, dword [rbp - res]		; w4
-.loopx		;
+.loopx:		;
 			movaps			xmm0, oword [rdx]			; red
 			mulps			xmm0, xmm4					; 255 / smi
 			cvttps2dq		xmm0, xmm0
@@ -220,44 +241,34 @@ return
 			;
 			movdqa			oword [rsi], xmm0
 			;
-.cootx
+.cootx:
 			add				rsi, 16						; bgra
-			add				rdx, 16						; imr
-			add				r14, 16						; img
-			add				r15, 16						; imb
+			add				imr, 16						; imr
+			add				img, 16						; img
+			add				imb, 16						; imb
 			sub				r8d, 1						; xi
 			jnz				.loopx
 
 
-.cooty		;
+.cooty:		;
 			sub				r9d, 1
 			jnz				.loopy
 
 			; exit
-			pop				r15
-			pop				r14
-			pop				r13
-			pop				r12
 			return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-%define		imr		rdx
-%define		img		r14
-%define		imb		r15
-%define		osc		rdi
-%define		w4		r12d
-%define		h1 		r13d
 ;
 osc1:
 			;
 			;
 			movdqa			py, [ZEROp]
 			mov				h1, dword [rbp - res + 4]	; h
-.loopy
+.loopy:
 			movdqa			px, [FLUSH]
 			mov				w4, dword [rbp - res]		; w4
 			;
-.loopx
+.loopx:
 			; dist
 			movaps			xmm4, px					; xi
 			subps			xmm4, px0					; xi - x0
@@ -277,20 +288,20 @@ osc1:
 			; red
 			mulps			xmm4, oword [rbp - o_r]
 			addps			xmm4, oword [imr]
-			movdqa			oword [imr], xmm4
+;			movdqa			oword [imr], xmm4
 			; green
 			movdqa			xmm4, oword [rbp - o_fx]
 			mulps			xmm4, oword [rbp - o_g]
-			addps			xmm4, oword [img]
-			movdqa			oword [img], xmm4
-			; blue
+;			addps			xmm4, oword [img]
+;			movdqa			oword [img], xmm4
+;			; blue
 			movdqa			xmm4, oword [rbp - o_fx]
 			mulps			xmm4, oword [rbp - o_b]
-			addps			xmm4, oword [imb]
-			movdqa			oword [imb], xmm4
+;			addps			xmm4, oword [imb]
+;			movdqa			oword [imb], xmm4
 
 			;
-.cootx		;
+.cootx:		;
 			add				imr, 16
 			add				img, 16
 			add				imb, 16
@@ -298,7 +309,7 @@ osc1:
 			sub				w4, 1
 			jnz				.loopx
 ;------
-.cooty		;
+.cooty:		;
 			addps			py, [ONEp]
 			sub				h1, 1
 			jnz				.loopy
