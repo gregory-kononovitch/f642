@@ -1,3 +1,43 @@
+# Options
+EXTENSION_C=.c
+EXTENSION_A=.asm
+
+ifeq (yes,$(DEBUG))
+DEBUGFLAGS=-g -DDEBUG
+endif
+
+# Path
+SRC_DIR=.
+ASM_DIR=asm
+
+# Librarires
+INCLUDE=
+LIBS=-lm
+
+#
+# source-files
+sources_c:=$(wildcard ${SRC_DIR}*$(EXTENSION_C))
+
+# asm files
+sources_a:=$(wildcard ${ASM_DIR}*$(EXTENSION_A))
+
+# object files; replace .c extension with .o
+objects:=$(patsubst %$(EXTENSION_C),%.o,$(sources_c))
+
+# object files; replace .asm extension with .ao
+objects_ao:=$(patsubst %$(EXTENSION_A),%.ao,$(sources_a))
+
+
+all:
+
+
+# Build rules
+%.o: %$(EXTENSION_C)
+	gcc -c $(COMPILEFLAGS) $(INCLUDE) -o $@ $<
+
+%.ao: %$(EXTENSION_A)
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o $@ $<
+
 all:
 	rm -rf f650-test.xo f650_test.o f650_graphics.o asm/graphics.ao
 	yasm -f elf64 -a x86 -m amd64 -o asm/graphics.ao asm/graphics.asm
