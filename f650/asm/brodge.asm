@@ -157,7 +157,7 @@ brodga650:
 			movaps			xmm4, oword [rbp - o_m]
 			movss			xmm5, xmm4
 			addss			xmm5, dword [rbp - res + 12]
-			;movss			dword [rbp - res + 12], xmm5	; sum mi
+			movss			dword [rbp - res + 12], xmm5	; sum mi
 
 			; red
 			mov				eax, dword [osc + 20]		; r
@@ -199,16 +199,16 @@ brodga650:
 			jge				.loopo
 
 
-return
 ;------------------------------------------------------------------------
 rgb:		; make rgb
 			mov				rsi, qword [rbp - 16]		; rest image
 			; images
-			mov				rdx, qword [rbp - 8]		; imr
-			mov				r14, rdx					; img
-			add				r14d, dword[rbp - res + 8]	; + s4
-			mov				r15, r14					; imb
-			add				r15d, dword[rbp - res + 8]	; + s4
+			mov				eax, dword[rbp - res + 8]	; + s4
+			mov				imr, qword [rbp - 8]		; imr
+			mov				img, imr					; img
+			add				img, rax					; + s4
+			mov				imb, img					; imb
+			add				imb, rax					; + s4
 			;
 			; sum mi
 			mov				eax, dword [rbp - res + 12]	; sum mi
@@ -222,21 +222,21 @@ rgb:		; make rgb
 			movaps			oword [rbp - o_mi], xmm4	; p 256- / smi
 			;
 			;
-			mov				r9d, dword [rbp - res + 4]	; h
+			mov				h1, dword [rbp - res + 4]	; h
 .loopy:		;
 			;
-			mov				r8d, dword [rbp - res]		; w4
+			mov				w4, dword [rbp - res]		; w4
 .loopx:		;
-			movaps			xmm0, oword [rdx]			; red
+			movaps			xmm0, oword [imr]			; red
 			mulps			xmm0, xmm4					; 255 / smi
 			cvttps2dq		xmm0, xmm0
 			pslld			xmm0, 16
 			por				xmm0, [ALPHAp]
 			;
-			movaps			xmm1, oword [r14]			; green
+			movaps			xmm1, oword [img]			; green
 			mulps			xmm1, xmm4					; 255 / smi
 			cvttps2dq		xmm1, xmm1
-			pslld			xmm0, 8
+			pslld			xmm1, 8
 			por				xmm0, xmm1
 			;
 			movaps			xmm1, oword [r15]			; blue
@@ -252,12 +252,12 @@ rgb:		; make rgb
 			add				imr, 16						; imr
 			add				img, 16						; img
 			add				imb, 16						; imb
-			sub				r8d, 1						; xi
+			sub				w4, 1						; xi
 			jnz				.loopx
 
 
 .cooty:		;
-			sub				r9d, 1
+			sub				h1, 1
 			jnz				.loopy
 
 			; exit
