@@ -182,12 +182,6 @@ union _vect650_ {
         vect650 *next;
     } nist;
     struct {
-        double x1;
-        double y1;
-        double x2;
-        double y2;
-    } seg2d;
-    struct {
         double x;
         double y;
         double z;
@@ -199,6 +193,18 @@ union _vect650_ {
         double z;
         vect650 *n;
     } plan;
+    struct {
+        double x1;
+        double y1;
+        double x2;
+        double y2;
+    } seg2d;
+    struct {
+        double x0;
+        double y0;
+        double w;
+        double h;
+    } rect;
 };
 
 extern vect650 O650;
