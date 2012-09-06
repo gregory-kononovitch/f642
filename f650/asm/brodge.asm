@@ -70,13 +70,19 @@ brodga650:
 			sub				ecx, 1
 			xor				rax, rax
 .loop
+			; images
 			mov				rdx, qword [rbp - 8]		; imr
 			mov				r14, rdx					; img
-			add				r14, qword[rbp -res - 12]	; + s4
+			add				r14, qword[rbp - res + 8]	; + s4
 			mov				r15, r14					; imb
-			add				r15, qword[rbp -res - 12]	; + s4
+			add				r15, qword[rbp - res + 8]	; + s4
+			; Osci
+			mov				rdi, rcx					; osci
+			shl				rdi, 3						; *8
+			add				rdi, rsi					; +osc
+			mov				rdi, [rdi]
+
 			;
-			lea				rdi, [rsi + 8*rcx]			; osc
 			push			rcx
 			; x0
 			mov				eax, dword [rdi]			; x0
@@ -85,6 +91,7 @@ brodga650:
 			mov				dword [rbp - o_x0 + 8], eax
 			mov				dword [rbp - o_x0 + 12], eax
 			movaps			px0, oword [rbp - o_x0]
+
 			; y0
 			mov				eax, dword [rdi + 4]		; y0
 			mov				dword [rbp - o_y0], eax
@@ -92,6 +99,7 @@ brodga650:
 			mov				dword [rbp - o_y0 + 8], eax
 			mov				dword [rbp - o_y0 + 12], eax
 			movaps			py0, oword [rbp - o_y0]
+
 			; p
 			mov				eax, dword [rdi + 32]		; p
 			mov				dword [rbp - o_p], eax
@@ -194,7 +202,7 @@ osc1:
 			addps			xmm4, oword [imb]
 			movdqa			oword [imb], xmm4
 
-
+			;
 .cootx		;
 			add				imr, 16
 			add				img, 16
