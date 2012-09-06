@@ -25,6 +25,9 @@ typedef struct {
     float       r;          // 20
     float       g;          // 24
     float       b;          // 28
+    //
+    float       p;          // 32
+    char        res[12];    // 36
 } bsource650;
 
 typedef struct {
@@ -56,6 +59,7 @@ int main() {
     src1.x = .5f * width;
     src1.y = .5f * height;
     src1.i = &cosi;
+    src1.p = 2. * 3.14159 / 150.f;
     src1.m = 1.f;
     src1.r = 0.25f;
     src1.g = 1.f;
