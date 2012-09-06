@@ -8,7 +8,7 @@
 ; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ;
 
-%include "include1.asm"
+%include "include1.txt"
 
 global 	brodga650:			function
 
