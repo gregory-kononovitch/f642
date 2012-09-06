@@ -47,7 +47,7 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; long brodga650(brodge650 *brodge, bgra650 *img)
 ;
-%define		res		0x30
+%define		res		0x20
 ;
 %define		o_x0	0x30; fix - 0
 %define		o_y0	0x40; fix - 16
@@ -76,15 +76,19 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 brodga650:
 			begin stack_size
 			;
-			mov				r10d, dword [rdi + 8]		; w
-			mov				eax, r10d
-			shr				r10, 2						; w4
-			mov				dword [rbp - res], r10d		; w4
-			mov				r11d, dword [rdi + 12]		; h
-			mov				dword [rbp - res + 4], r11d	;
-			imul			eax, r11d					; size
+%define		w4		r12d
+%define		h1 		r13d
+			;
+			mov				w4, dword [rdi + 8]			; w
+			mov				eax, w4
+			shr				w4, 2						; w4
+			mov				dword [rbp - res], w4		; w4
+			mov				h1, dword [rdi + 12]		; h
+			mov				dword [rbp - res + 4], h1	;
+			imul			eax, h1						; size
 			shl				eax, 2						; s4
 			mov				dword [rbp - res + 8], eax	; s4
+
 			;
 			xor				rax, rax
 			mov				dword [rbp - res + 12], eax	; sum mi
@@ -98,15 +102,14 @@ brodga650:
 			; loop
 			sub				ecx, 1
 			xor				rax, rax
+
 ;
 %define		imr		rdx
 %define		img		r14
 %define		imb		r15
 %define		osc		rdi
-%define		w4		r12d
-%define		h1 		r13d
 ;
-.loop:
+.loopo:
 			; images
 			mov				imr, qword [rbp - 8]		; imr
 			mov				img, imr					; img
@@ -121,7 +124,7 @@ brodga650:
 			mov				osc, [osc]
 
 			; x0
-			mov				eax, dword [rdi]			; x0
+			mov				eax, dword [osc]			; x0
 			mov				dword [rbp - o_x0], eax
 			mov				dword [rbp - o_x0 + 4], eax
 			mov				dword [rbp - o_x0 + 8], eax
@@ -129,7 +132,7 @@ brodga650:
 			movaps			px0, oword [rbp - o_x0]
 
 			; y0
-			mov				eax, dword [rdi + 4]		; y0
+			mov				eax, dword [osc + 4]		; y0
 			mov				dword [rbp - o_y0], eax
 			mov				dword [rbp - o_y0 + 4], eax
 			mov				dword [rbp - o_y0 + 8], eax
@@ -137,7 +140,7 @@ brodga650:
 			movaps			py0, oword [rbp - o_y0]
 
 			; p
-			mov				eax, dword [rdi + 32]		; p
+			mov				eax, dword [osc + 32]		; p
 			mov				dword [rbp - o_p], eax
 			mov				dword [rbp - o_p + 4], eax
 			mov				dword [rbp - o_p + 8], eax
@@ -145,7 +148,7 @@ brodga650:
 			movaps			pp, oword [rbp - o_p]
 
 			; m
-			mov				eax, dword [rdi + 16]		; m
+			mov				eax, dword [osc + 16]		; m
 			mov				dword [rbp - o_m], eax
 			mov				dword [rbp - o_m + 4], eax
 			mov				dword [rbp - o_m + 8], eax
@@ -156,7 +159,7 @@ brodga650:
 			;movss			dword [rbp - res + 12], xmm5	; sum mi
 
 			; red
-			mov				eax, dword [rdi + 20]		; r
+			mov				eax, dword [osc + 20]		; r
 			mov				dword [rbp - o_r], eax
 			mov				dword [rbp - o_r + 4], eax
 			mov				dword [rbp - o_r + 8], eax
@@ -166,7 +169,7 @@ brodga650:
 			movaps			oword [rbp - o_r], pre
 
 			; green
-			mov				eax, dword [rdi + 24]		; g
+			mov				eax, dword [osc + 24]		; g
 			mov				dword [rbp - o_g], eax
 			mov				dword [rbp - o_g + 4], eax
 			mov				dword [rbp - o_g + 8], eax
@@ -176,7 +179,7 @@ brodga650:
 			movaps			oword [rbp - o_g], pgr
 
 			; blue
-			mov				eax, dword [rdi + 28]		; b
+			mov				eax, dword [osc + 28]		; b
 			mov				dword [rbp - o_b], eax
 			mov				dword [rbp - o_b + 4], eax
 			mov				dword [rbp - o_b + 8], eax
@@ -190,7 +193,7 @@ brodga650:
 
 			sub				ecx, 1
 			cmp				ecx, 0
-			jge				.loop
+			jge				.loopo
 
 
 return
@@ -261,9 +264,9 @@ rgb:		; make rgb
 ;
 osc1:
 			;
-			;
 			movdqa			py, [ZEROp]
 			mov				h1, dword [rbp - res + 4]	; h
+
 .loopy:
 			movdqa			px, [FLUSH]
 			mov				w4, dword [rbp - res]		; w4
@@ -280,15 +283,17 @@ osc1:
 			sqrtps			xmm4, xmm4					; sqrt
 			mulps			xmm4, pp
 			movaps			oword [rbp - o_dist], xmm4	; dist
+
 			; fx
 			cvttps2dq		xmm5, xmm4
 			cvtdq2ps		xmm5, xmm5
 			subps			xmm4, xmm5					;
 			movaps			oword [rbp - o_fx], xmm4	; frac()
+
 			; red
 			mulps			xmm4, oword [rbp - o_r]
 			addps			xmm4, oword [imr]
-;			movdqa			oword [imr], xmm4
+			movdqa			oword [imr], xmm4
 			; green
 			movdqa			xmm4, oword [rbp - o_fx]
 			mulps			xmm4, oword [rbp - o_g]
@@ -302,15 +307,16 @@ osc1:
 
 			;
 .cootx:		;
-			add				imr, 16
-			add				img, 16
-			add				imb, 16
+			add				imr, 0x10
+			add				img, 0x10
+			add				imb, 0x10
 			addps			px, [FOURp]
 			sub				w4, 1
-			jnz				.loopx
-;------
+			jnz				osc1.loopx
+
+;-------------------
 .cooty:		;
 			addps			py, [ONEp]
 			sub				h1, 1
-			jnz				.loopy
+			jnz				osc1.loopy
 			jz				brodga650.ret
