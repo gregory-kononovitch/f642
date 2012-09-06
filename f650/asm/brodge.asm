@@ -10,6 +10,9 @@
 
 %include "include1.txt"
 
+default rel
+
+
 global 	brodga650:			function
 
 SECTION .data
@@ -70,7 +73,7 @@ brodga650:
 			mov				dword [rbp - res + 8], eax	;
 			;
 			xor				rax, rax
-			mov				qword [rbp - res + 12], rax	; sum mi
+			mov				dword [rbp - res + 12], eax	; sum mi
 			;
 			mov				qword [rbp - 16], rsi		; save image
 			;
@@ -88,6 +91,7 @@ brodga650:
 			add				r14, qword[rbp - res + 8]	; + s4
 			mov				r15, r14					; imb
 			add				r15, qword[rbp - res + 8]	; + s4
+
 			; Osci
 			mov				rdi, rcx					; osci
 			shl				rdi, 3						; *8
@@ -119,6 +123,7 @@ brodga650:
 			mov				dword [rbp - o_p + 8], eax
 			mov				dword [rbp - o_p + 12], eax
 			movaps			pp, oword [rbp - o_p]
+
 			; m
 			mov				eax, dword [rdi + 16]		; m
 			mov				dword [rbp - o_m], eax
@@ -128,7 +133,8 @@ brodga650:
 			movaps			xmm4, oword [rbp - o_m]
 			movss			xmm5, dword [rbp - o_m]
 			addss			xmm5, dword [rbp - res + 12]
-			movss			dword [rbp - res + 12], xmm5	; sum mi
+			;movss			dword [rbp - res + 12], xmm5	; sum mi
+
 			; red
 			mov				eax, dword [rdi + 20]		; r
 			mov				dword [rbp - o_r], eax
@@ -138,6 +144,7 @@ brodga650:
 			movaps			pre, oword [rbp - o_r]
 			mulps			pre, xmm4
 			movaps			oword [rbp - o_r], pre
+
 			; green
 			mov				eax, dword [rdi + 24]		; g
 			mov				dword [rbp - o_g], eax
@@ -147,6 +154,7 @@ brodga650:
 			movaps			pgr, oword [rbp - o_g]
 			mulps			pgr, xmm4
 			movaps			oword [rbp - o_g], pgr
+
 			; blue
 			mov				eax, dword [rdi + 28]		; b
 			mov				dword [rbp - o_b], eax
@@ -164,7 +172,7 @@ brodga650:
 			sub				ecx, 1
 			cmp				ecx, 0
 			jge				.loop
-
+return
 ;----------
 .rgb		; make rgb
 			mov				rsi, qword [rbp - 16]		; rest image
