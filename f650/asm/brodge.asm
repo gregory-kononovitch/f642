@@ -111,11 +111,12 @@ brodga650:
 ;
 .loopo:
 			; images
+			mov				eax, dword[rbp - res + 8]
 			mov				imr, qword [rbp - 8]		; imr
 			mov				img, imr					; img
-			add				r14d, dword[rbp - res + 8]	; + s4
+			add				img, rax					; + s4
 			mov				imb, img					; imb
-			add				r15d, dword[rbp - res + 8]	; + s4
+			add				imb, rax					; + s4
 
 			; Osci
 			mov				osc, rcx					; osci
@@ -188,8 +189,10 @@ brodga650:
 			mulps			pbl, xmm4
 			movaps			oword [rbp - o_b], pbl
 
+			;
 			jmp				osc1						; process
 .ret:		; osc return
+
 
 			sub				ecx, 1
 			cmp				ecx, 0
@@ -297,13 +300,13 @@ osc1:
 			; green
 			movdqa			xmm4, oword [rbp - o_fx]
 			mulps			xmm4, oword [rbp - o_g]
-;			addps			xmm4, oword [img]
-;			movdqa			oword [img], xmm4
-;			; blue
+			addps			xmm4, oword [img]
+			movdqa			oword [img], xmm4
+			; blue
 			movdqa			xmm4, oword [rbp - o_fx]
 			mulps			xmm4, oword [rbp - o_b]
-;			addps			xmm4, oword [imb]
-;			movdqa			oword [imb], xmm4
+			addps			xmm4, oword [imb]
+			movdqa			oword [imb], xmm4
 
 			;
 .cootx:		;
