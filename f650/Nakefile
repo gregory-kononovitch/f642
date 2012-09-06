@@ -47,7 +47,7 @@ headers:=$(patsubst %$(EXTENSION),%.h,$(sources))
 
 # object files; replace .c extension with .o
 objects:=$(patsubst %$(EXTENSION),%.o,$(sources))
-objects_ao:=$(patsubst %.asm,%.ao,$(sources_asm))
+objects_ao:=$(patsubst %(ASM_EXTENSION),%.ao,$(sources_asm))
 objects_so:=$(patsubst %$(EXTENSION),%.lo,$(sources))
 
 WARNINGFLAGS=-Wall
@@ -76,9 +76,7 @@ lib:
 %.lo: %$(EXTENSION)
 	gcc -c $(COMPILEFLAGS) $(INCLUDE) -fPIC -o $@ $<
 
-$(EXEC): $(objects) asm/graphics.asm
-#	@echo "ASM ${ASM_DIR} : $(objects_ao)"
-	yasm -f elf64 -a x86 -m amd64 -o asm/graphics.ao asm/graphics.asm
+$(EXEC): $(objects) $(objects_ao)
 	gcc -o $(EXEC) $(objects) $(objects_ao) $(LIBS)
 	
 $(LIBRARY): $(objects)

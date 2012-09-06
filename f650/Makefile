@@ -10,6 +10,7 @@ endif
 # Path
 SRC_DIR=./
 ASM_DIR=asm/
+EXC_DIR=exc/
 
 # Librarires
 INCLUDE=
@@ -22,21 +23,26 @@ sources_c:=$(wildcard ${SRC_DIR}*$(EXTENSION_C))
 # asm files
 sources_a:=$(wildcard ${ASM_DIR}*$(EXTENSION_A))
 
+# main.o files
+sources_e:=$(wildcard ${EXC_DIR}*$(EXTENSION_C))
+
+
 # object files; replace .c extension with .o
 objects:=$(patsubst %$(EXTENSION_C),%.o,$(sources_c))
 
 # object files; replace .asm extension with .ao
 objects_ao:=$(patsubst %$(EXTENSION_A),%.ao,$(sources_a))
 
+# object files; replace .c extension with .o
+objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
+
 
 all: exec
 
-exec: $(objects) $(objects_ao) asm/graphics.ao
-	@echo "C $(sources_c)"
-	@echo "A $(sources_a)"
-	@echo "A $(objects_ao)"
-#	gcc -o f650-brodge.xo f650_brodge.mo $(objects) $(objects_ao) $(LIBS)
-#	gcc -o f650-test.xo f650_test.mo $(objects) $(objects_ao) $(LIBS)
+exec: $(objects) $(objects_ao) $(objects_e)
+	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
+
 
 # Build rules
 %.o: %$(EXTENSION_C)
@@ -46,7 +52,7 @@ exec: $(objects) $(objects_ao) asm/graphics.ao
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o $@ $<
 
 clean:
-	rm -f *.o *.mo *.xo asm/*.ao
+	rm -f *.o exc/*.o asm/*.ao exc/*.xo
 
 
 tmp:
