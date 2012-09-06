@@ -15,12 +15,12 @@
 /**
  * Simple struct for simple brodges
  */
-float (*ffx11)(float d, float p);
+typedef float (*ffx11)(float d, float p);
 
 typedef struct {
     float       x;
     float       y;          // 4
-    ffx11       *intens;    // 8
+    float (*i)(float d, float p);  // 8
     float       m;          // 16
     float       r;          // 20
     float       g;          // 24
@@ -55,11 +55,11 @@ int main() {
     }
     src1.x = .5f * width;
     src1.y = .5f * height;
-    src1.intens = &cosi;
+    src1.i = &cosi;
     src1.m = 1.f;
-    src1.r = 1.f;
+    src1.r = 0.25f;
     src1.g = 1.f;
-    src1.b = 1.f;
+    src1.b = 0.f;
 
     // Brodge
     brodge1.img = calloc(sizeof(float), 3 * width * height);
