@@ -231,7 +231,7 @@ rgb:		; make rgb
 			movaps			xmm0, oword [imr]			; red
 			mulps			xmm0, xmm4					; 255 / smi
 			cvttps2dq		xmm0, xmm0
-			pslld			xmm0, 16
+;			pslld			xmm0, 16
 			por				xmm0, [ALPHAp]
 			;
 			movaps			xmm1, oword [img]			; green
@@ -243,6 +243,7 @@ rgb:		; make rgb
 			movaps			xmm1, oword [imb]			; blue
 			mulps			xmm1, xmm4					; 255 / smi
 			cvttps2dq		xmm1, xmm1
+			pslld			xmm1, 16
 			por				xmm0, xmm1
 			;
 			;

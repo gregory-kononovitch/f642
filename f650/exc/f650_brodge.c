@@ -101,7 +101,32 @@ int brodge_exec(bgra650 *img) {
     long l1, l2, l;
     struct timeval tv1, tv2;
 
-    brodge1.sources[0]->r = 1. / 100.;
+    memset(brodge1.img, 0, 3 * brodge1.width * brodge1.height * sizeof(float));
+
+    src[0].x = 100.;
+    src[0].y = 100.;
+    src[0].p = 1. / 100.f;
+    src[0].m = 1.f;
+    src[0].r = .25f;
+    src[0].g = 1.f;
+    src[0].b = 0.f;
+    //
+    src[1].x = 500.;//.5f * width;
+    src[1].y = 300.;//.5f * height;
+    src[1].p = 1. / 150.f;
+    src[1].m = 1.f;
+    src[1].r = 1.0f;
+    src[1].g = 0.65f;
+    src[1].b = 0.f;
+    //
+    src[2].x = 100.;//.5f * width;
+    src[2].y = 400.;//.5f * height;
+    src[2].p = 1. / 250.f;
+    src[2].m = .5f;
+    src[2].r = 0.5f;
+    src[2].g = 0.f;
+    src[2].b = 1.f;
+
 
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
@@ -116,7 +141,7 @@ int brodge_exec(bgra650 *img) {
             , (l2 - l1) / brodge1.nb_src / brodge1.width / brodge1.height
             , 1000 * 1.5e-9 * (l2 - l1)
             , tv2.tv_sec, tv2.tv_usec
-            , 1000. * tv2.tv_usec
+            , .001 * tv2.tv_usec
     );
     //
     return 0;
