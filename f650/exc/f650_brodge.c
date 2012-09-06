@@ -63,6 +63,8 @@ int main() {
 
     // Brodge
     brodge1.img = calloc(sizeof(float), 3 * width * height);
+//    brodge1.img[1] = brodge1.img[0] + width * height * sizeof(float);
+//    brodge1.img[2] = brodge1.img[1] + width * height * sizeof(float);
     brodge1.width  = width;
     brodge1.height = height;
     brodge1.sources = &src1;
