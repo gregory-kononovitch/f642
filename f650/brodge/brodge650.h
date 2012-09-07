@@ -42,7 +42,8 @@ typedef struct {
 
 long brodga650(brodge650 *brodge, bgra650 *img);
 
-int brodge_init(brodge650 *brodge, int width, int height, int nb_src);
+brodge650 *brodge_init(int width, int height, int nb_src);
+void brodge_free(brodge650 *brodge);
 int brodge_exec(brodge650 *brodge, bgra650 *img);
 
 #endif /* BRODGE650_H_ */

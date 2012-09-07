@@ -11,48 +11,55 @@
 #include "brodge650.h"
 #include "../f650.h"
 
-int brodge_init(brodge650 *brodge, int width, int height, int nb_src) {
+static float lini(float d, float p) {
+    if (p != 0) d /= p;
+    else d = 0;
+    return d > 0 ? d : -d;
+}
+
+brodge650 *brodge_init(int width, int height, int nb_src) {
     int i;
-    bsource650 *src;
+    brodge650 *brodge = calloc(1, sizeof(brodge650));
+    bsource650 **src;
     if (!brodge) return - 1;
     //
-    float cosi(float d, float p) {
-        if (p != 0) d /= p;
-        else d = 0;
-        return d > 0 ? d : -d;
-    }
-    //
-    src = calloc(nb_src, sizeof(bsource650));
+    // Brodge
+    brodge.img = calloc(sizeof(float), 3 * width * height);
+    brodge.width  = width;
+    brodge.height = height;
+    brodge.nb_src = nb_src;
+    brodge.size = width * height;
 
+    //
+    src = calloc(nb_src, sizeof(void*));
+    brodge.sources = src;
     for(i = 0 ; i < nb_src ; i++) {
         vect650 v;
+        src[i] = calloc(nb_src, sizeof(bsource650));
         random650(&v);
         src[i].x = (.5 + v.x) * width;
         src[i].y = (.5 + v.y) * height;
-        src[i].i = &cosi;
+        src[i].i = &lini;
         src[i].p = 1. / (0.25 * v.z * width);
         src[i].m = 1.f;
         src[i].r = .5 * (1. + v.x);
         src[i].g = .5 * (1. + v.y);
         src[i].b = .5 * (1. + v.z);
     }
-
-    // Brodge
-    brodge.img = calloc(sizeof(float), 3 * width * height);
-    brodge.width  = width;
-    brodge.height = height;
-    brodge.sources = malloc(3 * sizeof(void*));
-    brodge.sources[0] = &src[0];
-    brodge.sources[1] = &src[1];
-    brodge.sources[2] = &src[2];
-    brodge.nb_src = 2;
-    brodge.size = width * height;
-
     //
-    return 0;
+    return brodge;
 }
 
-
+void brodge_free(brodge650 **brodge) {
+    int i;
+    for(i = 0 ; i < (*brodge)->nb_src ; i++) {
+        free((*brodge)->sources[i]);
+    }
+    free((*brodge)->sources);
+    free((*brodge)->img);
+    free(*brodge);
+    *brodge = NULL;
+}
 
 int brodge_exec(brodge650 *brodge, bgra650 *img) {
     int i;
