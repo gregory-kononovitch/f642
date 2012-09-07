@@ -29,6 +29,9 @@ typedef struct {
     float       h;          // 36
     float       e;          // 40
     int         w;          // 44
+    //
+    void        *func;
+    void        *parm;
 } bsource650;
 
 typedef struct {
@@ -39,7 +42,7 @@ typedef struct {
     bsource650  **sources;  // 16
     int         nb_src;     // 24
     //
-    int         size;        // 28
+    int         flags;      // 28
 } brodge650;
 
 
@@ -48,6 +51,7 @@ extern long brodga650(brodge650 *brodge, bgra650 *img);
 brodge650 *brodge_init(int width, int height, int nb_src);
 void brodge_free(brodge650 **brodge);
 int brodge_anim(brodge650 *brodge);
+void brodge_rebase(brodge650 *brodge);
 int brodge_exec(brodge650 *brodge, bgra650 *img);
 
 #endif /* BRODGE650_H_ */

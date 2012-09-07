@@ -37,7 +37,8 @@ typedef struct {
     double      sx;             // 32
     double      sy;             // 40
     // work
-    char        res1[16];       // 48
+    void        *res1;          // 48
+    void        *res2;          // 56
 } bgra650;
 
 typedef struct {
@@ -223,6 +224,7 @@ extern vect650 K650;
 #define dump650(s1, u, s2) do {printf(s1 "(%.6f, %.6f)" s2, (u)->x, (u)->y);} while(0)
 
 void random650(vect650 *u);
+void ranbom650(vect650 *u, double min, double max);
 void turn2d650(vect650 *u, double rad);
 
 double norma650(vect650 *u);

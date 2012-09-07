@@ -41,7 +41,7 @@ objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
 all: exec
 
 exec: $(objects) $(objects_ao) $(objects_e)
-#	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
 	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
 
 
@@ -53,7 +53,7 @@ exec: $(objects) $(objects_ao) $(objects_e)
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o $@ $<
 
 clean:
-	rm -f *.o exc/*.o asm/*.ao *.xo exc/*.xo
+	rm -f *.o exc/*.o brodge/*.o asm/*.ao *.xo exc/*.xo
 
 
 tmp:

@@ -42,6 +42,7 @@ struct timing {
     int mousex;
     int mousey;
     int refresh;
+    int selection;
 };
 static struct timing *timing = NULL;
 
@@ -267,6 +268,10 @@ static void maj_brodge() {
         tick_maj1();
         bgra_clear650(&bgra);
         brodge_anim(brodge);
+        if (timing->selection > -1) {
+            brodge->sources[0]->x = timing->mousex;
+            brodge->sources[0]->y = timing->mousey;
+        }
         brodge_exec(brodge, &bgra);
         tick_maj2();
         soon = 0;
@@ -304,9 +309,25 @@ static gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
     return TRUE;
 }
 
+static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event) {
+    printf("Keyval = %d\n", event->keyval);
+    if (event->keyval == 32) {
+        brodge_rebase(brodge);
+    }
+    return TRUE;
+}
+
 static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event) {
     if (event->button == 1) {
+        timing->selection = - timing->selection;
+    } else if (event->button == 3) {
         timing->refresh = !timing->refresh;
+    }
+    return TRUE;
+}
+
+static gboolean button_release_event(GtkWidget *widget, GdkEventButton *event) {
+    if (event->button == 1) {
     }
     return TRUE;
 }
@@ -319,6 +340,7 @@ int main(int argc, char *argv[]) {
     //
     timing = calloc(1, sizeof(struct timing));
     timing->refresh = 1;
+    timing->selection = -1;
     //
     GtkWidget *window;
     GtkWidget *fixed;
@@ -374,13 +396,19 @@ int main(int argc, char *argv[]) {
     // Events
 //    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
     g_signal_connect(frame, "expose-event", G_CALLBACK(on_expose_event), NULL);
+
+    g_signal_connect(window, "key_press_event", G_CALLBACK (key_press_event), NULL);
     g_signal_connect(window, "motion_notify_event", G_CALLBACK (motion_notify_event), NULL);
     g_signal_connect(window, "button_press_event", G_CALLBACK (button_press_event), NULL);
+    g_signal_connect(window, "button_release_event", G_CALLBACK (button_release_event), NULL);
 
     gtk_widget_set_events(
             window,
-            GDK_EXPOSURE_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK
-                    | GDK_POINTER_MOTION_HINT_MASK);
+            GDK_EXPOSURE_MASK | GDK_LEAVE_NOTIFY_MASK
+            | GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK
+            | GDK_BUTTON_RELEASE_MASK
+            | GDK_KEY_PRESS_MASK
+            | GDK_POINTER_MOTION_HINT_MASK);
 
     g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);

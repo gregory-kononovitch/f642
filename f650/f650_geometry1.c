@@ -16,10 +16,14 @@ vect650 I650 = {1.0, 0.0, 0.0, 0.0};
 vect650 J650 = {0.0, 1.0, 0.0, 0.0};
 vect650 K650 = {0.0, 0.0, 1.0, 0.0};
 
+void ranbom650(vect650 *u, double min, double max) {
+    u->x = min + (max - min) * (1. * rand() / RAND_MAX);
+    u->y = min + (max - min) * (1. * rand() / RAND_MAX);
+    u->z = min + (max - min) * (1. * rand() / RAND_MAX);
+}
+
 void random650(vect650 *u) {
-    u->x = 2. * ( 0.5 - 1. * rand() / RAND_MAX);
-    u->y = 2. * ( 0.5 - 1. * rand() / RAND_MAX);
-    u->z = 2. * ( 0.5 - 1. * rand() / RAND_MAX);
+    ranbom650(u, -1, 1);
 }
 
 void turn2d650(vect650 *u, double rad) {
