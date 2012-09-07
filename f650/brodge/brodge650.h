@@ -23,28 +23,39 @@ typedef struct {
     float       m;          // 16
     float       r;          // 20
     float       g;          // 24
-    float       b;          // 28
+    float       blue;       // 28
     //
     float       p;          // 32   wavelen
     float       h;          // 36   height
     float       e;          // 40   atenuation
-    // types
-
-#define BRDG_AXIS        1 << 0
-#define BRDG_SCALE       1 << 1
-#define BRDG_LINE        1 << 2
-#define BRDG_SQUARE      1 << 3
-#define BRDG_ELLIPSE     1 << 4
-#define BRDG_PARABOLE    1 << 5
-#define BRDG_HYPERBOLE   1 << 6
+    // types / transformations
+#define BRDG_AXIS           1 << 0
+#define BRDG_SCALE          1 << 1
+//
+#define BRDG_XLINE          1 << 8
+#define BRDG_YLINE          2 << 8
+#define BRDG_PSQUARE        3 << 8
+#define BRDG_MSQUARE        4 << 8
+#define BRDG_ELLIPSE        5 << 8
+#define BRDG_PARABOLE       6 << 8
+#define BRDG_HYPERBOLE      7 << 8
+//
+#define BRDG_XYPOLYNOME     8 << 8
+//
+#define BRDG_SIMPLE         BRDG_HYPERBOLE
 
     int         flags;      // 44
     // axis
     float       cos;        // 48
     float       sin;        // 52
-    // conic
+    // conic / scaling
     float       a;          // 56
     float       b;          // 60
+    // higher
+    float       *axibyi;    // polynome coeff x, y
+    int         plen;
+    // trigo
+    char        res[4];     //
     //
     void        *func;
     void        *parm;
@@ -61,11 +72,17 @@ typedef struct {
     int         flags;      // 28
 } brodge650;
 
-
+//
 extern long brodga650(brodge650 *brodge, bgra650 *img);
-
+//
 brodge650 *brodge_init(int width, int height, int nb_src);
 void brodge_free(brodge650 **brodge);
+//
+void brodge_init_src(brodge650 *brodge, bsource650 *src);
+void brodge_turn_src(brodge650 *brodge, bsource650 *src, float cos, float sin);
+void brodge_scale_src(brodge650 *brodge, bsource650 *src, float a, float b);
+
+//
 int brodge_anim(brodge650 *brodge);
 void brodge_rebase(brodge650 *brodge);
 int brodge_exec(brodge650 *brodge, bgra650 *img);

@@ -16,6 +16,40 @@ static float lini(float d, float p) {
     return d > 0 ? d : -d;
 }
 
+void brodge_init_src(brodge650 *brodge, bsource650 *src) {
+    src->x = .5 * brodge->width;
+    src->y = .5 * brodge->height;
+    src->i = &lini;
+    src->m = 1.f;
+    src->r = .75f;
+    src->g = 1.f;
+    src->b = .25f;
+    //
+    src->p = 1. / 150;
+    src->h = 0.f;
+    src->e = 1.;
+    // axis
+    src->cos = 1.;
+    src->sin = 0.;
+    //
+    src->a = 1.;
+    src->b = 1.;
+    //
+    src->flags = BRDG_SIMPLE;
+}
+
+void brodge_turn_src(brodge650 *brodge, bsource650 *src, float cos, float sin) {
+    src->cos = 1.;
+    src->sin = 0.;
+    src->flags |= BRDG_AXIS;
+}
+
+void brodge_scale_src(brodge650 *brodge, bsource650 *src, float a, float b) {
+    src->a = a;
+    src->b = b;
+    src->flags |= BRDG_SCALE;
+}
+
 brodge650 *brodge_init(int width, int height, int nb_src) {
     int i;
     brodge650 *brodge = calloc(1, sizeof(brodge650));
@@ -37,6 +71,7 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     for(i = 0 ; i < nb_src ; i++) {
         vect650 v;
         src[i] = calloc(nb_src, sizeof(bsource650));
+        brodge_init_src(brodge, src[i]);
         random650(&v);
         src[i]->x = (.5 + v.x) * width;
         src[i]->y = (.5 + v.y) * height;

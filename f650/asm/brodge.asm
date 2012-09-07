@@ -312,10 +312,16 @@ osc1:
 			; mul & sum : ax + b lines
 
 
-			; abs : square
+			; abs+ : square
 ;			andps			xmm4, xmm7					; abs(xi - x0)
 ;			andps			xmm5, xmm7					; abs(yi - y0)
 ;			addps			xmm4, xmm5
+
+			; abs- : square
+			andps			xmm4, xmm7					; abs(xi - x0)
+			andps			xmm5, xmm7					; abs(yi - y0)
+			subps			xmm4, xmm5
+;			andps			xmm4, xmm7					;
 
 			; ^2 : parabole
 ;			mulps			xmm4, xmm4					; ^2
@@ -331,11 +337,11 @@ osc1:
 ;			sqrtps			xmm4, xmm4					; sqrt dist
 
 			; tsid : hyperbole
-			mulps			xmm4, xmm4					; ^2
-			mulps			xmm5, xmm5					; ^2
-			subps			xmm4, xmm5					; -
-			andps			xmm4, xmm7					; abs
-			sqrtps			xmm4, xmm4					; sqrt dist
+;			mulps			xmm4, xmm4					; ^2
+;			mulps			xmm5, xmm5					; ^2
+;			subps			xmm4, xmm5					; -
+;			andps			xmm4, xmm7					; abs
+;			sqrtps			xmm4, xmm4					; sqrt dist
 
 ; ----------
 
