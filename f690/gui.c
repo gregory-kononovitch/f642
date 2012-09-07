@@ -18,8 +18,8 @@ static int width = 960;
 static int height = 540;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 63;
-static long upd = 1000 / 63;
+static int timer_delay = 125;
+static long upd = 1000 / 125;
 //
 static brodge650 *brodge;
 

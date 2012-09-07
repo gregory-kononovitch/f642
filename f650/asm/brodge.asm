@@ -388,9 +388,9 @@ osc1:
 			movaps			xmm6, xmm4					; x
 			movaps			xmm4, xmm7					; x done
 			movaps			xmm7, xmm5					; y
-			mulps			xmm6, xmm1					; x sin
-			mulps			xmm7, xmm0					; y cos
-			subps			xmm7, xmm6					; -
+			mulps			xmm6, xmm2					; x sin
+			mulps			xmm7, xmm3					; y cos
+			addps			xmm7, xmm6					; -
 			movaps			xmm5, xmm7					; y done
 
 
