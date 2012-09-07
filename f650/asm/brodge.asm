@@ -43,6 +43,8 @@ FOURp		dd		4.0, 4.0, 4.0, 4.0
 FLUSH		dd		0.0, 1.0, 2.0, 3.0
 ALPHAp		dd		0xff000000, 0xff000000, 0xff000000, 0xff000000
 WHITEp		dd		255.9, 255.9, 255.9, 255.9
+ABSp		dd		0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F
+NEGp		dd		0x80808080, 0x80808080, 0x80808080, 0x80808080
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,10 +68,12 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 %define		o_sin	0xF0
 %define		o_sx	0x100
 %define		o_sy	0x110
-%define		o_ref1	0x120
-%define		o_ref2	0x130
+%define		o_ref11	0x120
+%define		o_ref12	0x130
+%define		o_ref21	0x140
+%define		o_ref22	0x150
 ;
-%define		stack_size	0x130
+%define		stack_size	0x150
 
 ;
 %define		px		xmm8
@@ -295,6 +299,8 @@ osc1:
 			; type / flags
 			movaps			xmm0, oword [ONEp]
 			movaps			xmm1, oword [ZEROp]
+			movaps			xmm2, oword [ZEROp]
+			movaps			xmm3, oword [ONEp]
 			;
 			mov				eax, dword [osc + 44]
 			and				eax, 0x01
@@ -315,8 +321,13 @@ osc1:
 			mov				dword [rbp - o_sin + 8], eax
 			mov				dword [rbp - o_sin + 12], eax
 			movaps			xmm1, oword [rbp - o_sin]
+			;
+			movaps			xmm2, xmm1
+			andps			xmm2, oword [NEGp]
+			movaps			xmm3, xmm0
 
 .setscale:
+			;
 			mov				eax, dword [osc + 44]
 			and				eax, 0x02
 			cmp				eax, 0
@@ -329,6 +340,7 @@ osc1:
 			mov				dword [rbp - o_sx + 8], eax
 			mov				dword [rbp - o_sx + 12], eax
 			mulps			xmm0, oword [rbp - o_sx]
+			mulps			xmm2, oword [rbp - o_sx]
 			; b
 			mov				eax, dword [osc + 60]		; b
 			mov				dword [rbp - o_sy], eax
@@ -336,16 +348,14 @@ osc1:
 			mov				dword [rbp - o_sy + 8], eax
 			mov				dword [rbp - o_sy + 12], eax
 			mulps			xmm1, oword [rbp - o_sy]
+			mulps			xmm3, oword [rbp - o_sy]
 
 
 .refdone:
-			movaps			oword [rbp - o_ref1], xmm0
-			movaps			oword [rbp - o_ref2], xmm1
-
-			; prepar for abs
-			xorpd			xmm7, xmm7
-			cmppd			xmm7, xmm7, 0	; 1 in all
-			psrld			xmm7, 1
+			movaps			oword [rbp - o_ref11], xmm0
+			movaps			oword [rbp - o_ref12], xmm1
+			movaps			oword [rbp - o_ref21], xmm2
+			movaps			oword [rbp - o_ref22], xmm3
 
 			;
 			movdqa			py, [ZEROp]
@@ -370,18 +380,18 @@ osc1:
 			jz				.axisok
 
 			; axis
-			movaps			xmm2, xmm4					; x
-			movaps			xmm3, xmm5					; y
-			mulps			xmm2, xmm0					; x cos
-			mulps			xmm3, xmm1					; y sin
-			addps			xmm3, xmm2					; +
-			movaps			xmm2, xmm4					; x
-			movaps			xmm4, xmm3					; x done
-			movaps			xmm3, xmm5					; y
-			mulps			xmm2, xmm1					; x sin
-			mulps			xmm3, xmm0					; y cos
-			subps			xmm3, xmm2					; -
-			movaps			xmm5, xmm3					; y done
+			movaps			xmm6, xmm4					; x
+			movaps			xmm7, xmm5					; y
+			mulps			xmm6, xmm0					; x cos
+			mulps			xmm7, xmm1					; y sin
+			addps			xmm7, xmm6					; +
+			movaps			xmm6, xmm4					; x
+			movaps			xmm4, xmm7					; x done
+			movaps			xmm7, xmm5					; y
+			mulps			xmm6, xmm1					; x sin
+			mulps			xmm7, xmm0					; y cos
+			subps			xmm7, xmm6					; -
+			movaps			xmm5, xmm7					; y done
 
 
 .axisok:
@@ -414,23 +424,23 @@ osc1:
 
 
 .psquare	; abs+ : square
-			andps			xmm4, xmm7					; abs(xi - x0)
-			andps			xmm5, xmm7					; abs(yi - y0)
+			andps			xmm4, oword [ABSp]					; abs(xi - x0)
+			andps			xmm5, oword [ABSp]					; abs(yi - y0)
 			addps			xmm4, xmm5
 			jmp				.draw
 
 
 .hsquare	; abs- : square
-			andps			xmm4, xmm7					; abs(xi - x0)
-			andps			xmm5, xmm7					; abs(yi - y0)
+			andps			xmm4, oword [ABSp]					; abs(xi - x0)
+			andps			xmm5, oword [ABSp]					; abs(yi - y0)
 			subps			xmm4, xmm5
-			andps			xmm4, xmm7					;
+			andps			xmm4, oword [ABSp]					;
 			jmp				.draw
 
 .parabole	; ^2 : parabole
 			mulps			xmm4, xmm4					; ^2
 			subps			xmm4, xmm5					; -
-			andps			xmm4, xmm7					; abs
+			andps			xmm4, oword [ABSp]					; abs
 			sqrtps			xmm4, xmm4					; sqrt dist
 			jmp				.draw
 
@@ -447,7 +457,7 @@ osc1:
 			mulps			xmm4, xmm4					; ^2
 			mulps			xmm5, xmm5					; ^2
 			subps			xmm4, xmm5					; -
-			andps			xmm4, xmm7					; abs
+			andps			xmm4, oword [ABSp]					; abs
 			sqrtps			xmm4, xmm4					; sqrt dist
 
 ; ----------
