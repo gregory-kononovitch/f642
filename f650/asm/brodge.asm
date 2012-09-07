@@ -318,10 +318,10 @@ osc1:
 ;			addps			xmm4, xmm5
 
 			; ^2 : parabole
-			mulps			xmm4, xmm4					; ^2
-			addps			xmm4, xmm5					; -
-			andps			xmm4, xmm7					; abs
-			sqrtps			xmm4, xmm4					; sqrt dist
+;			mulps			xmm4, xmm4					; ^2
+;			subps			xmm4, xmm5					; -
+;			andps			xmm4, xmm7					; abs
+;			sqrtps			xmm4, xmm4					; sqrt dist
 
 
 			; dist : circle / ellipse
@@ -331,11 +331,11 @@ osc1:
 ;			sqrtps			xmm4, xmm4					; sqrt dist
 
 			; tsid : hyperbole
-;			mulps			xmm4, xmm4					; ^2
-;			mulps			xmm5, xmm5					; ^2
-;			subps			xmm4, xmm5					; -
-;			andps			xmm4, xmm7					; abs
-;			sqrtps			xmm4, xmm4					; sqrt dist
+			mulps			xmm4, xmm4					; ^2
+			mulps			xmm5, xmm5					; ^2
+			subps			xmm4, xmm5					; -
+			andps			xmm4, xmm7					; abs
+			sqrtps			xmm4, xmm4					; sqrt dist
 
 ; ----------
 
