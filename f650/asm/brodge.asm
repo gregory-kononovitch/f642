@@ -37,6 +37,7 @@ global 	brodga650:			function
 
 SECTION .data
 ZEROp		dd		0.0, 0.0, 0.0, 0.0
+ONEpi		dd		1, 1, 1, 1
 ONEp		dd		1.0, 1.0, 1.0, 1.0
 FOURp		dd		4.0, 4.0, 4.0, 4.0
 FLUSH		dd		0.0, 1.0, 2.0, 3.0
@@ -56,12 +57,12 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 %define		o_r		0x70; fix - 64
 %define		o_g		0x80; 64
 %define		o_b		0x90; fix - 96
-;
 %define		o_dist	0xA0
 %define		o_fx	0xB0
 %define		o_mi	0xC0
+%define		o_h		0xD0
 ;
-%define		stack_size	0xC0
+%define		stack_size	0xD0
 
 ;
 %define		px		xmm8
@@ -148,6 +149,13 @@ brodga650:
 			mov				dword [rbp - o_p + 8], eax
 			mov				dword [rbp - o_p + 12], eax
 			movaps			pp, oword [rbp - o_p]
+
+			; h
+			mov				eax, dword [osc + 36]		; h
+			mov				dword [rbp - o_h], eax
+			mov				dword [rbp - o_h + 4], eax
+			mov				dword [rbp - o_h + 8], eax
+			mov				dword [rbp - o_h + 12], eax
 
 			; m
 			mov				eax, dword [osc + 16]		; m
@@ -294,14 +302,17 @@ osc1:
 			subps			xmm5, py0					; yi - y0
 			mulps			xmm5, xmm5					; ^2
 			addps			xmm4, xmm5					; +
-			sqrtps			xmm4, xmm4					; sqrt
+			sqrtps			xmm4, xmm4					; sqrt dist
+			addps			xmm4, oword [rbp - o_h]		; + h
 			mulps			xmm4, pp
 			movaps			oword [rbp - o_dist], xmm4	; dist
 
 			; fx
 			cvttps2dq		xmm5, xmm4
+;			paddd			xmm5, [ONEpi]
 			cvtdq2ps		xmm5, xmm5
 			subps			xmm4, xmm5					;
+;			movaps			xmm4, xmm5
 			movaps			oword [rbp - o_fx], xmm4	; frac()
 
 			; red

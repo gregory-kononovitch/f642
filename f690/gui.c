@@ -15,12 +15,12 @@
 
 #include "../f650/exc/f650_brodge.c"
 //
-static int width = 1024;
-static int height = 576;
+static int width = 960;
+static int height = 540;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 83;
-static long upd = 1000 / 83;
+static int timer_delay = 63;
+static long upd = 1000 / 63;
 
 
 struct timing {

@@ -20,14 +20,16 @@ typedef float (*ffx11)(float d, float p);
 typedef struct {
     float       x;
     float       y;          // 4
-    float (*i)(float d, float p);  // 8
+    float       (*i)(float d, float p);  // 8
     float       m;          // 16
     float       r;          // 20
     float       g;          // 24
     float       b;          // 28
     //
     float       p;          // 32
-    char        res[12];    // 36
+    float       h;          // 36
+    float       e;          // 40
+    int         w;          // 44
 } bsource650;
 
 typedef struct {
@@ -54,18 +56,18 @@ int brodge_init(int width, int height) {
         return p > 0 ? p : -p;
     }
     src[0].x = 200.;//.5f * width;
-    src[0].y = 200.;//.5f * height;
+    src[0].y = 100.;//.5f * height;
     src[0].i = &cosi;
-    src[0].p = 1. / 1000.f;
+    src[0].p = 1. / 100.f;
     src[0].m = 1.f;
     src[0].r = 0.25f;
     src[0].g = 1.f;
     src[0].b = 0.1f;
     //
-    src[1].x = 500.;//.5f * width;
-    src[1].y = 300.;//.5f * height;
+    src[1].x = 800.;//.5f * width;
+    src[1].y = 500.;//.5f * height;
     src[1].i = &cosi;
-    src[1].p = 1. / 150.f;
+    src[1].p = 1. / 200.f;
     src[1].m = 1.f;
     src[1].r = 1.0f;
     src[1].g = 0.35f;
@@ -88,7 +90,7 @@ int brodge_init(int width, int height) {
     brodge1.sources[0] = &src[0];
     brodge1.sources[1] = &src[1];
     brodge1.sources[2] = &src[2];
-    brodge1.nb_src = 3;
+    brodge1.nb_src = 2;
     brodge1.size = width * height;
 
     //
@@ -114,6 +116,8 @@ int brodge_exec(bgra650 *img) {
 //        if (src[i].p > .1) {
 //            src[i].p = 1. / (3. + 1. / src[i].p);
 //        }
+        src[i].h  = 5. * src[i].e;
+        src[i].e += 1;
         //
         random650(&alea);
 //        src[i].m = 1.f;
