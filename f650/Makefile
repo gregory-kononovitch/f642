@@ -18,7 +18,8 @@ LIBS=-lm
 
 #
 # source-files
-sources_c:=$(wildcard ${SRC_DIR}*$(EXTENSION_C))
+sources_c:= $(wildcard ${SRC_DIR}*$(EXTENSION_C))
+sources_c+= $(wildcard ${SRC_DIR}/brodge/*$(EXTENSION_C))
 
 # asm files
 sources_a:=$(wildcard ${ASM_DIR}*$(EXTENSION_A))
@@ -40,8 +41,8 @@ objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
 all: exec
 
 exec: $(objects) $(objects_ao) $(objects_e)
-	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
-#	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
+#	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
 
 
 # Build rules

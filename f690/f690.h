@@ -16,6 +16,6 @@
 #include <cairo.h>
 
 #include "../f650/f650.h"
-
+#include "../f650/brodge/brodge650.h"
 
 #endif /* F690_H_ */

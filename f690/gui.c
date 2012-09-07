@@ -13,7 +13,6 @@
 
 #include "f690.h"
 
-#include "../f650/exc/f650_brodge.c"
 //
 static int width = 960;
 static int height = 540;
@@ -21,7 +20,8 @@ static bgra650 bgra;
 static GdkPixbuf *img = NULL;
 static int timer_delay = 63;
 static long upd = 1000 / 63;
-
+//
+static brodge650 *brodge;
 
 struct timing {
     long frame;
@@ -266,7 +266,8 @@ static void maj_brodge() {
         soon = 1;
         tick_maj1();
         bgra_clear650(&bgra);
-        brodge_exec(&bgra);
+        brodge_anim(brodge);
+        brodge_exec(brodge, &bgra);
         tick_maj2();
         soon = 0;
     }
@@ -356,7 +357,7 @@ int main(int argc, char *argv[]) {
 //            gdimg->bits_per_pixel, gdimg->mem);
 
     //
-    brodge_init(width, height);
+    brodge = brodge_init(width, height, 2);
 
     //
     bgra_alloc650(&bgra, width, height);

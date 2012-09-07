@@ -29,7 +29,7 @@ gtk : $(f690)
 #	
 	gcc -O3 -Wall -c gui.c -o gui.o $(BASE_INCLUDE) $(GTK_INCLUDE)
 	gcc -o gtk.xo $(_gtk) $(BASE_LIBS) $(GTK_LIBS) \
-	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o \
+	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o ../f650/brodge/brodge650.o \
 	./graphics.ao ./graphics2.ao ./graphics3.ao ./std1.ao ./rdtsc64.ao ./brodge.ao
 	
 	

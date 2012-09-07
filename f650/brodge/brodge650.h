@@ -13,6 +13,9 @@
 #define BRODGE650_H_
 
 
+#include "../f650.h"
+
+
 typedef struct {
     float       x;
     float       y;          // 4
@@ -40,10 +43,11 @@ typedef struct {
 } brodge650;
 
 
-long brodga650(brodge650 *brodge, bgra650 *img);
+extern long brodga650(brodge650 *brodge, bgra650 *img);
 
 brodge650 *brodge_init(int width, int height, int nb_src);
-void brodge_free(brodge650 *brodge);
+void brodge_free(brodge650 **brodge);
+int brodge_anim(brodge650 *brodge);
 int brodge_exec(brodge650 *brodge, bgra650 *img);
 
 #endif /* BRODGE650_H_ */

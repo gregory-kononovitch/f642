@@ -9,7 +9,6 @@
  */
 
 #include "brodge650.h"
-#include "../f650.h"
 
 static float lini(float d, float p) {
     if (p != 0) d /= p;
@@ -21,30 +20,30 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     int i;
     brodge650 *brodge = calloc(1, sizeof(brodge650));
     bsource650 **src;
-    if (!brodge) return - 1;
+    if (!brodge) return NULL;
     //
     // Brodge
-    brodge.img = calloc(sizeof(float), 3 * width * height);
-    brodge.width  = width;
-    brodge.height = height;
-    brodge.nb_src = nb_src;
-    brodge.size = width * height;
+    brodge->img = calloc(sizeof(float), 3 * width * height);
+    brodge->width  = width;
+    brodge->height = height;
+    brodge->nb_src = nb_src;
+    brodge->size = width * height;
 
     //
     src = calloc(nb_src, sizeof(void*));
-    brodge.sources = src;
+    brodge->sources = src;
     for(i = 0 ; i < nb_src ; i++) {
         vect650 v;
         src[i] = calloc(nb_src, sizeof(bsource650));
         random650(&v);
-        src[i].x = (.5 + v.x) * width;
-        src[i].y = (.5 + v.y) * height;
-        src[i].i = &lini;
-        src[i].p = 1. / (0.25 * v.z * width);
-        src[i].m = 1.f;
-        src[i].r = .5 * (1. + v.x);
-        src[i].g = .5 * (1. + v.y);
-        src[i].b = .5 * (1. + v.z);
+        src[i]->x = (.5 + v.x) * width;
+        src[i]->y = (.5 + v.y) * height;
+        src[i]->i = &lini;
+        src[i]->p = 1. / (0.25 * v.z * width);
+        src[i]->m = 1.f;
+        src[i]->r = .5 * (1. + v.x);
+        src[i]->g = .5 * (1. + v.y);
+        src[i]->b = .5 * (1. + v.z);
     }
     //
     return brodge;
@@ -61,13 +60,9 @@ void brodge_free(brodge650 **brodge) {
     *brodge = NULL;
 }
 
-int brodge_exec(brodge650 *brodge, bgra650 *img) {
+int brodge_anim(brodge650 *brodge) {
     int i;
-    long l1, l2, l;
     vect650 alea;
-    struct timeval tv1, tv2;
-
-    memset(brodge->img, 0, 3 * brodge->width * brodge->height * sizeof(float));
 
     for(i = 0 ; i < brodge->nb_src ; i++) {
         random650(&alea);
@@ -101,9 +96,20 @@ int brodge_exec(brodge650 *brodge, bgra650 *img) {
         brodge->sources[i]->b /= max;
     }
 
+    return 0;
+}
+
+int brodge_exec(brodge650 *brodge, bgra650 *img) {
+    long l1, l2, l;
+    struct timeval tv1, tv2;
+
+    //
+    memset(brodge->img, 0, 3 * brodge->width * brodge->height * sizeof(float));
+
+    //
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
-    l  = brodga650(&brodge, img);
+    l  = brodga650(brodge, img);
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
     timersub(&tv2, &tv1, &tv2);
@@ -113,8 +119,8 @@ int brodge_exec(brodge650 *brodge, bgra650 *img) {
             , (l2 - l1) / brodge->nb_src / brodge->height
             , (l2 - l1) / brodge->nb_src / brodge->width / brodge->height
             , 1000 * 1.5e-9 * (l2 - l1)
-            , tv2->tv_sec, tv2->tv_usec
-            , .001 * tv2->tv_usec
+            , tv2.tv_sec, tv2.tv_usec
+            , .001 * tv2.tv_usec
     );
     //
     return 0;
