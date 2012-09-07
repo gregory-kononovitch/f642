@@ -56,7 +56,7 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     bsource650 **src;
     if (!brodge) return NULL;
     //
-    nb_src = 1;
+    //nb_src = 1;
     // Brodge
     brodge->img = calloc(sizeof(float), 3 * width * height);
     brodge->width  = width;
@@ -89,8 +89,10 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
         ((vect650*)src[i]->parm)->z = v.z / 100.;
         ((vect650*)src[i]->parm)->t = 0;
     }
-//    src[0]->flags = BRDG_PSQUARE;
-//    brodge_scale_src(brodge, src[0], 0.02, 0.01);
+    src[0]->flags = BRDG_ELLIPSE;
+    src[1]->flags = BRDG_ELLIPSE;
+    brodge_scale_src(brodge, src[0], 0.2, 0.1);
+    brodge_scale_src(brodge, src[1], 0.7, 0.5);
 //    src[1]->flags = BRDG_PSQUARE;
     //
     return brodge;
