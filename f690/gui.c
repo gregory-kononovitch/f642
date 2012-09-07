@@ -15,12 +15,13 @@
 
 //
 static int width = 960;
-static int height = 544;
+static int height = 540;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 25;
-static long upd = 1000 / 25;
-
+static int timer_delay = 125;
+static long upd = 1000 / 125;
+//
+static brodge650 *brodge;
 
 struct timing {
     long frame;
@@ -41,6 +42,7 @@ struct timing {
     int mousex;
     int mousey;
     int refresh;
+    int selection;
 };
 static struct timing *timing = NULL;
 
@@ -52,7 +54,6 @@ static void tick_timer() {
         timing->nb_timed++;
         // last frame
         if (timing->frame % upd == 0) {
-            double t = timing->timing.tv_sec + 0.000001 * timing->timing.tv_usec;
             double m = timing->maj.tv_sec + 0.000001 * timing->maj.tv_usec;
             double d = timing->delay.tv_sec + 0.000001 * timing->delay.tv_usec;
             printf("Frame %ld : Timer : %ld, Maj %ld : %.0fms (%lu), Queue %ld, Expose %ld : %.2fms\n"
@@ -115,27 +116,13 @@ bgra650 *get_bgra() {
     return &bgra; // before a straight struct
 }
 
-//
-static void hello(GtkWidget *widget, gpointer data) {
-    g_print("Hello !\n");
-}
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    /* If you return FALSE in the "delete-event" signal handler,
-     * GTK will emit the "destroy" signal. Returning TRUE means
-     * you don't want the window to be destroyed.
-     * This is useful for popping up 'are you sure you want to quit?'
-     * type dialogs. */
-
-    g_print("delete event occurred\n");
-
-    /* Change TRUE to FALSE and the main window will be destroyed with
-     * a "delete-event". */
-
+    // Change TRUE to FALSE and the main window will be destroyed with
     return FALSE;
 }
 
-/* Another callback */
+
 static void destroy(GtkWidget *widget, gpointer data) {
     gtk_main_quit();
 }
@@ -226,7 +213,7 @@ static void tst_bgra() {
 }
 
 static void maj() {
-    int i, j;
+    int i;
     vect650 p1, p2;
     //
     if (timing->frame % 2 == 0 && timing->refresh) {
@@ -256,7 +243,7 @@ static void maj() {
     }
     //
     unsigned char str[16];
-    snprintf(str, 16, "%d", timing->mousex);
+    snprintf((char*)str, 16, "%d", timing->mousex);
     i = 0;
     int x = width/2 - 100;
     while(str[i]) {
@@ -264,7 +251,7 @@ static void maj() {
         x += monospaced650.width;
         i++;
     }
-    snprintf(str, 16, "%d", timing->mousey);
+    snprintf((char*)str, 16, "%d", timing->mousey);
     i = 0;
     x += monospaced650.width;
     while(str[i]) {
@@ -274,11 +261,28 @@ static void maj() {
     }
 }
 
+static int soon = 0;
+static void maj_brodge() {
+    if (timing->refresh && !soon) {
+        soon = 1;
+        tick_maj1();
+        bgra_clear650(&bgra);
+        brodge_anim(brodge);
+        if (timing->selection > -1) {
+            brodge->sources[0]->x = timing->mousex;
+            brodge->sources[0]->y = timing->mousey;
+        }
+        brodge_exec(brodge, &bgra);
+        tick_maj2();
+        soon = 0;
+    }
+}
+
 static gboolean time_handler(GtkWidget *widget) {
     tick_timer();
     //
     //tst_bgra();
-    maj();
+    maj_brodge();
     //
     tick_queued();
     gtk_widget_queue_draw(widget);
@@ -305,9 +309,25 @@ static gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
     return TRUE;
 }
 
+static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event) {
+    printf("Keyval = %d\n", event->keyval);
+    if (event->keyval == 32) {
+        brodge_rebase(brodge);
+    }
+    return TRUE;
+}
+
 static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event) {
     if (event->button == 1) {
+        timing->selection = - timing->selection;
+    } else if (event->button == 3) {
         timing->refresh = !timing->refresh;
+    }
+    return TRUE;
+}
+
+static gboolean button_release_event(GtkWidget *widget, GdkEventButton *event) {
+    if (event->button == 1) {
     }
     return TRUE;
 }
@@ -320,10 +340,10 @@ int main(int argc, char *argv[]) {
     //
     timing = calloc(1, sizeof(struct timing));
     timing->refresh = 1;
+    timing->selection = -1;
     //
     GtkWidget *window;
     GtkWidget *fixed;
-    GtkWidget *darea;
     GtkWidget *frame;
 
     //
@@ -344,32 +364,28 @@ int main(int argc, char *argv[]) {
     printf("fixed ok\n");
 
     // Image
-    GList *visuals = gdk_list_visuals();
-    void tst(gpointer data, gpointer udata) {
-        if (((GdkVisual*) data)->depth == 32) printf(
-                "visual :\n\ttype = %d\n\ttype = %d\n\tdepth = %d\n\tbits/rgb = %d\n\torder = %d\n\tred = %08X\n\tgreen = %08X\n\tblue = %08X\n",
-                ((GdkVisual*) data)->type, ((GdkVisual*) data)->colormap_size, ((GdkVisual*) data)->depth,
-                ((GdkVisual*) data)->bits_per_rgb, ((GdkVisual*) data)->byte_order, ((GdkVisual*) data)->red_mask,
-                ((GdkVisual*) data)->green_mask, ((GdkVisual*) data)->blue_mask);
-    }
-    g_list_foreach(visuals, &tst, NULL);
-    GdkVisual *visu = gdk_visual_get_best_with_depth(32);
-    GdkImage *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
-    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n", gdimg->bpp, gdimg->bpl,
-            gdimg->bits_per_pixel, gdimg->mem);
+//    GList *visuals = gdk_list_visuals();
+//    void tst(gpointer data, gpointer udata) {
+//        if (((GdkVisual*) data)->depth == 32) printf(
+//                "visual :\n\ttype = %d\n\ttype = %d\n\tdepth = %d\n\tbits/rgb = %d\n\torder = %d\n\tred = %08X\n\tgreen = %08X\n\tblue = %08X\n",
+//                ((GdkVisual*) data)->type, ((GdkVisual*) data)->colormap_size, ((GdkVisual*) data)->depth,
+//                ((GdkVisual*) data)->bits_per_rgb, ((GdkVisual*) data)->byte_order, ((GdkVisual*) data)->red_mask,
+//                ((GdkVisual*) data)->green_mask, ((GdkVisual*) data)->blue_mask);
+//    }
+//    g_list_foreach(visuals, &tst, NULL);
+//    GdkVisual *visu = gdk_visual_get_best_with_depth(32);
+//    GdkImage *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
+//    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n", gdimg->bpp, gdimg->bpl,
+//            gdimg->bits_per_pixel, gdimg->mem);
+
     //
-//    GdkBitmap *mask = NULL;
-//    GtkImage *gtimg = gtk_image_new_from_image(gdimg, mask);
+    brodge = brodge_init(width, height, 2);
 
-//    return 0;
-
-    // GdkPixbufAnimation
-    //gtk_image_set_from_pixbuf
+    //
     bgra_alloc650(&bgra, width, height);
     printf("bgra alloc ok ::\n");
 
-    img = gdk_pixbuf_new_from_data((guchar*) bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd,
-            NULL);
+    img = gdk_pixbuf_new_from_data((guchar*) bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
     printf("PixBuf new ok\n");
 
     // Image
@@ -380,13 +396,19 @@ int main(int argc, char *argv[]) {
     // Events
 //    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
     g_signal_connect(frame, "expose-event", G_CALLBACK(on_expose_event), NULL);
+
+    g_signal_connect(window, "key_press_event", G_CALLBACK (key_press_event), NULL);
     g_signal_connect(window, "motion_notify_event", G_CALLBACK (motion_notify_event), NULL);
     g_signal_connect(window, "button_press_event", G_CALLBACK (button_press_event), NULL);
+    g_signal_connect(window, "button_release_event", G_CALLBACK (button_release_event), NULL);
 
     gtk_widget_set_events(
             window,
-            GDK_EXPOSURE_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK
-                    | GDK_POINTER_MOTION_HINT_MASK);
+            GDK_EXPOSURE_MASK | GDK_LEAVE_NOTIFY_MASK
+            | GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK
+            | GDK_BUTTON_RELEASE_MASK
+            | GDK_KEY_PRESS_MASK
+            | GDK_POINTER_MOTION_HINT_MASK);
 
     g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
@@ -396,7 +418,7 @@ int main(int argc, char *argv[]) {
     gtk_widget_show_all(window);
 
     // Timer
-    g_timeout_add(timer_delay, (GSourceFunc) time_handler, (gpointer) frame);
+    g_timeout_add(timer_delay, (GSourceFunc)time_handler, (gpointer)frame);
 
     gtk_main();
 

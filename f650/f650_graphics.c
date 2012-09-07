@@ -54,6 +54,11 @@ void bgra_clear650(bgra650 *img) {
     memset(img->data, 0, img->size << 2);
 }
 
+void memset2a650(void *align_x16, uint32_t fill, uint64_t size);
+void bgra_clear2650(bgra650 *img) {
+    memset2a650(img->data, 0, img->size >> 1);
+}
+
 void bgra_gray650(bgra650 *img, uint8_t gray) {
     memset(img->data, gray, img->size << 2);
 }
@@ -65,6 +70,9 @@ void bgraz_gray650(bgraz650 *img, uint8_t gray) {
 
 void bgra_fill650(bgra650 *img, uint32_t color) {
     memseta650(img->data, color, img->size << 4);
+}
+void bgra_fill2650(bgra650 *img, uint32_t color) {
+    memset2a650(img->data, color, img->size >> 1);
 }
 
 /*

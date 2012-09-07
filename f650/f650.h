@@ -37,7 +37,8 @@ typedef struct {
     double      sx;             // 32
     double      sy;             // 40
     // work
-    char        res1[16];       // 48
+    void        *res1;          // 48
+    void        *res2;          // 56
 } bgra650;
 
 typedef struct {
@@ -66,8 +67,13 @@ int bgra_compare650(bgra650 *img1, bgra650 *img2);
 
 //
 void bgra_clear650(bgra650 *img);
+void bgra_clear2650(bgra650 *img);
+//
 void bgra_gray650(bgra650 *img, uint8_t gray);
+//
 void bgra_fill650(bgra650 *img, uint32_t color);
+void bgra_fill2650(bgra650 *img, uint32_t color);
+//
 void bgraz_gray650(bgraz650 *img, uint8_t gray);
 
 
@@ -84,17 +90,17 @@ typedef struct {
 
 /*
  *  Graphics oriented
- *  + int
+ *  + int (float)
  */
 typedef struct {
     int         x;
     int         y;
     int         width;
     int         height;
-} recti650;
+} rect650i;
 
 typedef struct {
-    recti650    area;   //
+    rect650i    area;   //
     int         depth;
 } painter650;
 
@@ -112,10 +118,12 @@ long draw_line2a650(bgra650 *img, double x1, double y1, double x2, double y2, ui
 long draw_line3a650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 #ifdef ASM650
-//#define draw_line650(img, x1, y1, x2, y2, c) do {                   \
-//    printf("Line (%.6f, %.6f)-(%.6f, %.6f)\n", x1, y1, x2, y2);     \
-//    draw_line2a650(img, x1, y1, x2, y2, c);                         \
-//    } while(0)
+/*
+#define draw_line650(img, x1, y1, x2, y2, c) do {                   \
+    printf("Line (%.6f, %.6f)-(%.6f, %.6f)\n", x1, y1, x2, y2);     \
+    draw_line2a650(img, x1, y1, x2, y2, c);                         \
+    } while(0)
+*/
 #define draw_line650(img, x1, y1, x2, y2, c) draw_line2a650(img, x1, y1, x2, y2, c)
 #else
 #define draw_line650(img, x1, y1, x2, y2, c) draw_linef650(img, x1, y1, x2, y2, c)
@@ -182,12 +190,6 @@ union _vect650_ {
         vect650 *next;
     } nist;
     struct {
-        double x1;
-        double y1;
-        double x2;
-        double y2;
-    } seg2d;
-    struct {
         double x;
         double y;
         double z;
@@ -199,6 +201,18 @@ union _vect650_ {
         double z;
         vect650 *n;
     } plan;
+    struct {
+        double x1;
+        double y1;
+        double x2;
+        double y2;
+    } seg2d;
+    struct {
+        double x0;
+        double y0;
+        double w;
+        double h;
+    } rect;
 };
 
 extern vect650 O650;
@@ -210,6 +224,7 @@ extern vect650 K650;
 #define dump650(s1, u, s2) do {printf(s1 "(%.6f, %.6f)" s2, (u)->x, (u)->y);} while(0)
 
 void random650(vect650 *u);
+void ranbom650(vect650 *u, double min, double max);
 void turn2d650(vect650 *u, double rad);
 
 double norma650(vect650 *u);
@@ -242,6 +257,14 @@ void subf650(vect650 *u, vect650 *v);
 #define sub650(u) suba650(u)
 #else
 #define sub650(u) subf650(u)
+#endif
+
+void mula650(vect650 *u, double a);
+void mulf650(vect650 *u, double a);
+#ifdef ASM650
+#define mul650(u, a) mula650(u, a)
+#else
+#define mul650(u, a) mulf650(u, a)
 #endif
 
 void mul_and_adda650(vect650 *u, double a, vect650 *v);
@@ -329,6 +352,59 @@ vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
 #define compute_pix650(cam, r, p) compute_pixf650(cam, r, p)
 #endif
 
+
+/*
+ * -----------------------------------------------------------------
+ */
+typedef union _vect650f_ vect650f;
+
+union _vect650f_ {
+    struct {
+        float x;
+        float y;
+        float z;
+        float t;
+    };
+    struct {
+        float array[4];
+    };
+    struct {
+        float r;
+        float a;
+        float z;
+        float t;
+    } cyl;
+    struct {
+        float x;
+        float y;
+        float z;
+        vect650 *next;
+    } nist;
+    struct {
+        float x;
+        float y;
+        float z;
+        vect650 *u;
+    } line;
+    struct {
+        float x;
+        float y;
+        float z;
+        vect650 *n;
+    } plan;
+    struct {
+        float x1;
+        float y1;
+        float x2;
+        float y2;
+    } seg2d;
+    struct {
+        float x0;
+        float y0;
+        float w;
+        float h;
+    } rect;
+};
 
 /*
  *      fb0

@@ -21,6 +21,8 @@ static bgra650      bgra;
 static GdkImage     *ximg;
 static GdkPixbuf    *img   = NULL;
 static GdkPixmap    *pixmap= NULL;
+//
+
 
 static void maj();
 
