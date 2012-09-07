@@ -54,6 +54,13 @@ void subf650(vect650 *u, vect650 *v) {
     u->z -= v->z;
 }
 
+void mulf650(vect650 *u, double a) {
+    u->x *= a;
+    u->y *= a;
+    u->z *= a;
+}
+
+
 void mul_and_addf650(vect650 *u, double a, vect650 *v) {
     u->x += a * v->x;
     u->y += a * v->y;

@@ -89,17 +89,17 @@ typedef struct {
 
 /*
  *  Graphics oriented
- *  + int
+ *  + int (float)
  */
 typedef struct {
     int         x;
     int         y;
     int         width;
     int         height;
-} recti650;
+} rect650i;
 
 typedef struct {
-    recti650    area;   //
+    rect650i    area;   //
     int         depth;
 } painter650;
 
@@ -257,6 +257,14 @@ void subf650(vect650 *u, vect650 *v);
 #define sub650(u) subf650(u)
 #endif
 
+void mula650(vect650 *u, double a);
+void mulf650(vect650 *u, double a);
+#ifdef ASM650
+#define mul650(u, a) mula650(u, a)
+#else
+#define mul650(u, a) mulf650(u, a)
+#endif
+
 void mul_and_adda650(vect650 *u, double a, vect650 *v);
 void mul_and_addf650(vect650 *u, double a, vect650 *v);
 #ifdef ASM650
@@ -342,6 +350,59 @@ vect650 *compute_pixf650(persp650 *cam, vect650 *rea, vect650 *pix);
 #define compute_pix650(cam, r, p) compute_pixf650(cam, r, p)
 #endif
 
+
+/*
+ * -----------------------------------------------------------------
+ */
+typedef union _vect650f_ vect650f;
+
+union _vect650f_ {
+    struct {
+        float x;
+        float y;
+        float z;
+        float t;
+    };
+    struct {
+        float array[4];
+    };
+    struct {
+        float r;
+        float a;
+        float z;
+        float t;
+    } cyl;
+    struct {
+        float x;
+        float y;
+        float z;
+        vect650 *next;
+    } nist;
+    struct {
+        float x;
+        float y;
+        float z;
+        vect650 *u;
+    } line;
+    struct {
+        float x;
+        float y;
+        float z;
+        vect650 *n;
+    } plan;
+    struct {
+        float x1;
+        float y1;
+        float x2;
+        float y2;
+    } seg2d;
+    struct {
+        float x0;
+        float y0;
+        float w;
+        float h;
+    } rect;
+};
 
 /*
  *      fb0

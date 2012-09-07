@@ -49,7 +49,7 @@ static brodge650    brodge1;
 
 long brodga650(brodge650 *brodge, bgra650 *img);
 
-int brodge_init(int width, int height) {
+int _brodge_init(int width, int height) {
     // Source 1
     float cosi(float d, float p) {
         p = (float)cos(p * d);
@@ -97,7 +97,7 @@ int brodge_init(int width, int height) {
     return 0;
 }
 
-int brodge_exec(bgra650 *img) {
+int _brodge_exec(bgra650 *img) {
     int i;
     long l1, l2, l;
     vect650 alea;
@@ -161,11 +161,11 @@ int main0() {
     long l1, l2;
     bgra650 bgra;
     //
-    brodge_init(800, 448);
+    _brodge_init(800, 448);
     // Image
     bgra_alloc650(&bgra, brodge1.width, brodge1.height);
     //
-    brodge_exec(&bgra);
+    _brodge_exec(&bgra);
     //
     int i, c;
     for(c = 0 ; c < 3 ; c++) {

@@ -115,6 +115,21 @@ suba650:
 		movsd		[rdi + 16], xmm0
 		ret
 
+; void mul_a650(vect650 *u, double a)
+mul_a650:
+		movsd		xmm1, [rdi]
+		mulsd		xmm1, xmm0
+		movsd		[rdi + 0], xmm1
+		;
+		movsd		xmm1, [rdi + 8]
+		mulsd		xmm1, xmm0
+		movsd		[rdi + 8], xmm1
+		;
+		movsd		xmm1, [rdi + 16]
+		mulsd		xmm1, xmm0
+		movsd		[rdi + 16], xmm1
+		ret
+
 ; void add_mula650(vect650 *u, double a, vect650 *v)
 mul_and_adda650:
 		movsd		xmm1, [rdi + 0]

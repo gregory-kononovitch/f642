@@ -341,19 +341,19 @@ int main(int argc, char *argv[]) {
     printf("fixed ok\n");
 
     // Image
-    GList *visuals = gdk_list_visuals();
-    void tst(gpointer data, gpointer udata) {
-        if (((GdkVisual*) data)->depth == 32) printf(
-                "visual :\n\ttype = %d\n\ttype = %d\n\tdepth = %d\n\tbits/rgb = %d\n\torder = %d\n\tred = %08X\n\tgreen = %08X\n\tblue = %08X\n",
-                ((GdkVisual*) data)->type, ((GdkVisual*) data)->colormap_size, ((GdkVisual*) data)->depth,
-                ((GdkVisual*) data)->bits_per_rgb, ((GdkVisual*) data)->byte_order, ((GdkVisual*) data)->red_mask,
-                ((GdkVisual*) data)->green_mask, ((GdkVisual*) data)->blue_mask);
-    }
-    g_list_foreach(visuals, &tst, NULL);
-    GdkVisual *visu = gdk_visual_get_best_with_depth(32);
-    GdkImage *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
-    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n", gdimg->bpp, gdimg->bpl,
-            gdimg->bits_per_pixel, gdimg->mem);
+//    GList *visuals = gdk_list_visuals();
+//    void tst(gpointer data, gpointer udata) {
+//        if (((GdkVisual*) data)->depth == 32) printf(
+//                "visual :\n\ttype = %d\n\ttype = %d\n\tdepth = %d\n\tbits/rgb = %d\n\torder = %d\n\tred = %08X\n\tgreen = %08X\n\tblue = %08X\n",
+//                ((GdkVisual*) data)->type, ((GdkVisual*) data)->colormap_size, ((GdkVisual*) data)->depth,
+//                ((GdkVisual*) data)->bits_per_rgb, ((GdkVisual*) data)->byte_order, ((GdkVisual*) data)->red_mask,
+//                ((GdkVisual*) data)->green_mask, ((GdkVisual*) data)->blue_mask);
+//    }
+//    g_list_foreach(visuals, &tst, NULL);
+//    GdkVisual *visu = gdk_visual_get_best_with_depth(32);
+//    GdkImage *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
+//    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n", gdimg->bpp, gdimg->bpl,
+//            gdimg->bits_per_pixel, gdimg->mem);
 
     //
     brodge_init(width, height);
