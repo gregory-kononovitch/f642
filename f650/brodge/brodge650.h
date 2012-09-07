@@ -28,7 +28,14 @@ typedef struct {
     float       p;          // 32
     float       h;          // 36
     float       e;          // 40
-    int         w;          // 44
+    // types
+    int         flags;      // 44
+    // axis
+    float       a;          // 48
+    float       b;          // 52
+    // conic
+    float       sx;         // 56
+    float       sy;         // 60
     //
     void        *func;
     void        *parm;

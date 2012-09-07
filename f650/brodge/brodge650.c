@@ -27,7 +27,6 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     brodge->width  = width;
     brodge->height = height;
     brodge->nb_src = nb_src;
-    brodge->size = width * height;
     //
     struct timeval tv;
     gettimeofday(&tv, NULL);
