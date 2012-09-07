@@ -66,8 +66,13 @@ int bgra_compare650(bgra650 *img1, bgra650 *img2);
 
 //
 void bgra_clear650(bgra650 *img);
+void bgra_clear2650(bgra650 *img);
+//
 void bgra_gray650(bgra650 *img, uint8_t gray);
+//
 void bgra_fill650(bgra650 *img, uint32_t color);
+void bgra_fill2650(bgra650 *img, uint32_t color);
+//
 void bgraz_gray650(bgraz650 *img, uint8_t gray);
 
 
@@ -112,10 +117,12 @@ long draw_line2a650(bgra650 *img, double x1, double y1, double x2, double y2, ui
 long draw_line3a650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 int draw_linef650(bgra650 *img, double x1, double y1, double x2, double y2, uint32_t color);
 #ifdef ASM650
-//#define draw_line650(img, x1, y1, x2, y2, c) do {                   \
-//    printf("Line (%.6f, %.6f)-(%.6f, %.6f)\n", x1, y1, x2, y2);     \
-//    draw_line2a650(img, x1, y1, x2, y2, c);                         \
-//    } while(0)
+/*
+#define draw_line650(img, x1, y1, x2, y2, c) do {                   \
+    printf("Line (%.6f, %.6f)-(%.6f, %.6f)\n", x1, y1, x2, y2);     \
+    draw_line2a650(img, x1, y1, x2, y2, c);                         \
+    } while(0)
+*/
 #define draw_line650(img, x1, y1, x2, y2, c) draw_line2a650(img, x1, y1, x2, y2, c)
 #else
 #define draw_line650(img, x1, y1, x2, y2, c) draw_linef650(img, x1, y1, x2, y2, c)

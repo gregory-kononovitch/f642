@@ -48,7 +48,6 @@ static brodge650    brodge1;
 long brodga650(brodge650 *brodge, bgra650 *img);
 
 int brodge_init(int width, int height) {
-    int i;
     // Source 1
     float cosi(float d, float p) {
         p = (float)cos(p * d);
@@ -61,7 +60,7 @@ int brodge_init(int width, int height) {
     src[0].m = 1.f;
     src[0].r = 0.25f;
     src[0].g = 1.f;
-    src[0].b = 0.f;
+    src[0].b = 0.1f;
     //
     src[1].x = 500.;//.5f * width;
     src[1].y = 300.;//.5f * height;
@@ -70,7 +69,7 @@ int brodge_init(int width, int height) {
     src[1].m = 1.f;
     src[1].r = 1.0f;
     src[1].g = 0.35f;
-    src[1].b = 0.f;
+    src[1].b = 0.1f;
     //
     src[2].x = 400.;//.5f * width;
     src[2].y = 100.;//.5f * height;
@@ -78,7 +77,7 @@ int brodge_init(int width, int height) {
     src[2].p = 1. / 250.f;
     src[2].m = .5f;
     src[2].r = 0.5f;
-    src[2].g = 0.f;
+    src[2].g = 0.2f;
     src[2].b = 1.f;
 
     // Brodge
@@ -97,36 +96,42 @@ int brodge_init(int width, int height) {
 }
 
 int brodge_exec(bgra650 *img) {
-    int i, c;
+    int i;
     long l1, l2, l;
+    vect650 alea;
     struct timeval tv1, tv2;
 
     memset(brodge1.img, 0, 3 * brodge1.width * brodge1.height * sizeof(float));
 
-    src[0].x = 100.;
-    src[0].y = 100.;
-    src[0].p = 1. / 100.f;
-    src[0].m = 1.f;
-    src[0].r = .25f;
-    src[0].g = 1.f;
-    src[0].b = 0.f;
-    //
-    src[1].x = 500.;//.5f * width;
-    src[1].y = 300.;//.5f * height;
-    src[1].p = 1. / 150.f;
-    src[1].m = 1.f;
-    src[1].r = 1.0f;
-    src[1].g = 0.65f;
-    src[1].b = 0.f;
-    //
-    src[2].x = 100.;//.5f * width;
-    src[2].y = 400.;//.5f * height;
-    src[2].p = 1. / 250.f;
-    src[2].m = .5f;
-    src[2].r = 0.5f;
-    src[2].g = 0.f;
-    src[2].b = 1.f;
-
+    for(i = 0 ; i < brodge1.nb_src ; i++) {
+        random650(&alea);
+//        alea.x *= 3;
+//        alea.y *= 3;
+//        alea.z *= 3;
+//        src[i].x += alea.x;
+//        src[i].y += alea.y;
+//        src[i].p = 1. / (alea.z + 1. / src[i].p);
+//        if (src[i].p > .1) {
+//            src[i].p = 1. / (3. + 1. / src[i].p);
+//        }
+        //
+        random650(&alea);
+//        src[i].m = 1.f;
+        src[i].r *= (1 + 0.05 * alea.x);
+        src[i].g *= (1 + 0.05 * alea.y);
+        src[i].b *= (1 + 0.05 * alea.z);
+        float max;
+        if (src[i].r > src[i].g) {
+            if (src[i].r > src[i].b) max = src[i].r;
+            else max = src[i].b;
+        } else {
+            if (src[i].g > src[i].b) max = src[i].g;
+            else max = src[i].b;
+        }
+        src[i].r /= max;
+        src[i].g /= max;
+        src[i].b /= max;
+    }
 
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
@@ -149,6 +154,7 @@ int brodge_exec(bgra650 *img) {
 
 
 int main0() {
+    long l1, l2;
     bgra650 bgra;
     //
     brodge_init(800, 448);
@@ -180,6 +186,30 @@ int main0() {
                 , bgra.data[brodge1.width * i + 6], bgra.data[brodge1.width * i + 7]
         );
     }
+
+    //
+    l1 = ReadTSC();
+    bgra_clear2650(&bgra);
+    l2 = ReadTSC();
+    printf("Clear 2 : %ld\n", (l2 - l1));
+
+    //
+    l1 = ReadTSC();
+    bgra_clear650(&bgra);
+    l2 = ReadTSC();
+    printf("Clear 1 : %ld\n", (l2 - l1));
+
+    //
+    l1 = ReadTSC();
+    bgra_fill650(&bgra, 0xff000000);
+    l2 = ReadTSC();
+    printf("Fill 1 : %ld\n", (l2 - l1));
+
+    //
+    l1 = ReadTSC();
+    bgra_fill2650(&bgra, 0xff000000);
+    l2 = ReadTSC();
+    printf("Fill 2 : %ld\n", (l2 - l1));
 
     return 0;
 }

@@ -12,6 +12,7 @@ default rel
 
 ;
 global memseta650:		function
+global memset2a650:		function
 
 
 SECTION .data
@@ -37,4 +38,12 @@ memseta650:
 		add			rax, 16
 		loop		.loop
 .end:
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; memseta650(void *align_x16, uint32_t fill, uin64_t size)
+memset2a650:
+		mov			eax, esi
+		mov			rcx, rdx
+		rep stosq
 		ret

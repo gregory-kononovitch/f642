@@ -15,12 +15,12 @@
 
 #include "../f650/exc/f650_brodge.c"
 //
-static int width = 800;
-static int height = 448;
+static int width = 1024;
+static int height = 576;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 50;
-static long upd = 1000 / 50;
+static int timer_delay = 71;
+static long upd = 1000 / 71;
 
 
 struct timing {
@@ -53,7 +53,6 @@ static void tick_timer() {
         timing->nb_timed++;
         // last frame
         if (timing->frame % upd == 0) {
-            double t = timing->timing.tv_sec + 0.000001 * timing->timing.tv_usec;
             double m = timing->maj.tv_sec + 0.000001 * timing->maj.tv_usec;
             double d = timing->delay.tv_sec + 0.000001 * timing->delay.tv_usec;
             printf("Frame %ld : Timer : %ld, Maj %ld : %.0fms (%lu), Queue %ld, Expose %ld : %.2fms\n"
@@ -213,7 +212,7 @@ static void tst_bgra() {
 }
 
 static void maj() {
-    int i, j;
+    int i;
     vect650 p1, p2;
     //
     if (timing->frame % 2 == 0 && timing->refresh) {
@@ -243,7 +242,7 @@ static void maj() {
     }
     //
     unsigned char str[16];
-    snprintf(str, 16, "%d", timing->mousex);
+    snprintf((char*)str, 16, "%d", timing->mousex);
     i = 0;
     int x = width/2 - 100;
     while(str[i]) {
@@ -251,7 +250,7 @@ static void maj() {
         x += monospaced650.width;
         i++;
     }
-    snprintf(str, 16, "%d", timing->mousey);
+    snprintf((char*)str, 16, "%d", timing->mousey);
     i = 0;
     x += monospaced650.width;
     while(str[i]) {
@@ -320,7 +319,6 @@ int main(int argc, char *argv[]) {
     //
     GtkWidget *window;
     GtkWidget *fixed;
-    GtkWidget *darea;
     GtkWidget *frame;
 
     //
