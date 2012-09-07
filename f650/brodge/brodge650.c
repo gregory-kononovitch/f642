@@ -91,8 +91,9 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     }
     src[0]->flags = BRDG_ELLIPSE;
 //    src[1]->flags = BRDG_ELLIPSE;
-//    brodge_scale_src(brodge, src[0], 3, 1);
-//    brodge_scale_src(brodge, src[1], 1, 3);
+    brodge_scale_src(brodge, src[0], 3, 1);
+//    brodge_turn_src(brodge, src[0], .7071, .7071);
+//    brodge_scale_src(brodge, src[1], 1, 1);
     //
     return brodge;
 }
@@ -142,10 +143,10 @@ int brodge_anim(brodge650 *brodge) {
         brodge->sources[i]->y = ((vect650*)brodge->sources[i]->parm)->y * sin(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z);
         //
         brodge->sources[i]->h  = 5. * brodge->sources[i]->e;
-        brodge_turn_src(brodge, brodge->sources[i]
-                  , cos(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z)
-                  , sin(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z)
-        );
+//        brodge_turn_src(brodge, brodge->sources[i]
+//                  , cos(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z)
+//                  , sin(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z)
+//        );
         brodge->sources[i]->e += 1;
         //
         random650(&alea);
