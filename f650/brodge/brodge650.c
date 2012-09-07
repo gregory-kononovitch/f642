@@ -39,8 +39,8 @@ void brodge_init_src(brodge650 *brodge, bsource650 *src) {
 }
 
 void brodge_turn_src(brodge650 *brodge, bsource650 *src, float cos, float sin) {
-    src->cos = 1.;
-    src->sin = 0.;
+    src->cos = cos;
+    src->sin = sin;
     src->flags |= BRDG_AXIS;
 }
 
@@ -56,6 +56,7 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     bsource650 **src;
     if (!brodge) return NULL;
     //
+    nb_src = 1;
     // Brodge
     brodge->img = calloc(sizeof(float), 3 * width * height);
     brodge->width  = width;
@@ -88,6 +89,9 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
         ((vect650*)src[i]->parm)->z = v.z / 100.;
         ((vect650*)src[i]->parm)->t = 0;
     }
+//    src[0]->flags = BRDG_PSQUARE;
+//    brodge_scale_src(brodge, src[0], 0.02, 0.01);
+//    src[1]->flags = BRDG_PSQUARE;
     //
     return brodge;
 }
@@ -135,11 +139,12 @@ int brodge_anim(brodge650 *brodge) {
         ((vect650*)brodge->sources[i]->parm)->t++;
         brodge->sources[i]->x = ((vect650*)brodge->sources[i]->parm)->x * cos(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z);
         brodge->sources[i]->y = ((vect650*)brodge->sources[i]->parm)->y * sin(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z);
-//        brodge->sources[i].p = 1. / (alea.z + 1. / brodge->sources[i].p);
-//        if (brodge->sources[i].p > .1) {
-//            brodge->sources[i].p = 1. / (3. + 1. / brodge->sources[i].p);
-//        }
+        //
         brodge->sources[i]->h  = 5. * brodge->sources[i]->e;
+        brodge_turn_src(brodge, brodge->sources[i]
+                  , cos(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z)
+                  , sin(6.3 * ((vect650*)brodge->sources[i]->parm)->t * ((vect650*)brodge->sources[i]->parm)->z)
+        );
         brodge->sources[i]->e += 1;
         //
         random650(&alea);
@@ -182,7 +187,7 @@ int brodge_exec(brodge650 *brodge, bgra650 *img) {
             , 0.000001 * (l2 - l1) / brodge->nb_src
             , (l2 - l1) / brodge->nb_src / brodge->height
             , (l2 - l1) / brodge->nb_src / brodge->width / brodge->height
-            , 1000 * 1.5e-9 * (l2 - l1)
+            , 1000 * 1.5e-9 / (l2 - l1)
             , .001 * tv2.tv_usec
     );
     //

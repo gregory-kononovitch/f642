@@ -26,6 +26,7 @@ int main() {
     // Image
     bgra_alloc650(&bgra, brodge->width, brodge->height);
     //
+    brodge_anim(brodge);
     brodge_exec(brodge, &bgra);
     //
     int i, c;

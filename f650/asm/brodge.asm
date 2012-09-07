@@ -62,7 +62,14 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 %define		o_mi	0xC0
 %define		o_h		0xD0
 ;
-%define		stack_size	0xD0
+%define		o_cos	0xE0
+%define		o_sin	0xF0
+%define		o_sx	0x100
+%define		o_sy	0x110
+%define		o_ref1	0x120
+%define		o_ref2	0x130
+;
+%define		stack_size	0x130
 
 ;
 %define		px		xmm8
@@ -285,6 +292,56 @@ rgb:		; make rgb
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 osc1:
+			; type / flags
+			movaps			xmm0, oword [ONEp]
+			movaps			xmm1, oword [ZEROp]
+			;
+			mov				eax, dword [osc + 44]
+			and				eax, 0x01
+			cmp				eax, 0
+			jz				.setscale
+			;
+			; cos
+			mov				eax, dword [osc + 48]		; cos
+			mov				dword [rbp - o_cos], eax
+			mov				dword [rbp - o_cos + 4], eax
+			mov				dword [rbp - o_cos + 8], eax
+			mov				dword [rbp - o_cos + 12], eax
+			mulps			xmm0, oword [rbp - o_cos]
+			; sin
+			mov				eax, dword [osc + 52]		; sin
+			mov				dword [rbp - o_sin], eax
+			mov				dword [rbp - o_sin + 4], eax
+			mov				dword [rbp - o_sin + 8], eax
+			mov				dword [rbp - o_sin + 12], eax
+			movaps			xmm1, oword [rbp - o_sin]
+
+.setscale:
+			mov				eax, dword [osc + 44]
+			and				eax, 0x02
+			cmp				eax, 0
+			jz				.refdone
+			;
+			; a
+			mov				eax, dword [osc + 56]		; a
+			mov				dword [rbp - o_sx], eax
+			mov				dword [rbp - o_sx + 4], eax
+			mov				dword [rbp - o_sx + 8], eax
+			mov				dword [rbp - o_sx + 12], eax
+			mulps			xmm0, oword [rbp - o_sx]
+			; b
+			mov				eax, dword [osc + 60]		; b
+			mov				dword [rbp - o_sy], eax
+			mov				dword [rbp - o_sy + 4], eax
+			mov				dword [rbp - o_sy + 8], eax
+			mov				dword [rbp - o_sy + 12], eax
+			mulps			xmm1, oword [rbp - o_sy]
+
+
+.refdone:
+			movaps			oword [rbp - o_ref1], xmm0
+			movaps			oword [rbp - o_ref2], xmm1
+
 			; prepar for abs
 			xorpd			xmm7, xmm7
 			cmppd			xmm7, xmm7, 0	; 1 in all
@@ -306,45 +363,95 @@ osc1:
 			movaps			xmm5, py					; yi
 			subps			xmm5, py0					; yi - y0
 
-			; sum : (1,1) line
-;			addps			xmm4, xmm5
+			; Axis
+			mov				eax, dword [osc + 44]
+			and				eax, 0x03
+			cmp				eax, 0
+			jz				.axisok
+
+			; axis
+			movaps			xmm2, xmm4					; x
+			movaps			xmm3, xmm5					; y
+			mulps			xmm2, xmm0					; x cos
+			mulps			xmm3, xmm1					; y sin
+			addps			xmm3, xmm2					; +
+			movaps			xmm2, xmm4					; x
+			movaps			xmm4, xmm3					; x done
+			movaps			xmm3, xmm5					; y
+			mulps			xmm2, xmm1					; x sin
+			mulps			xmm3, xmm0					; y cos
+			subps			xmm3, xmm2					; -
+			movaps			xmm5, xmm3					; y done
+
+
+.axisok:
+			;
+			mov				eax, dword [osc + 44]
+			test			eax, 0x100
+			jnz				.line
+			test			eax, 0x200
+			jnz				.line
+			test			eax, 0x400
+			jnz				.psquare
+			test			eax, 0x800
+			jnz				.hsquare
+			test			eax, 0x1000
+			jnz				.round
+			test			eax, 0x2000
+			jnz				.parabole
+			test			eax, 0x4000
+			jnz				.hyperbole
+
+
+
+
+			;
+.line		; sum : (1,1) line
+			addps			xmm4, xmm5
+			jmp				.draw
 
 			; mul & sum : ax + b lines
 
 
-			; abs+ : square
-;			andps			xmm4, xmm7					; abs(xi - x0)
-;			andps			xmm5, xmm7					; abs(yi - y0)
-;			addps			xmm4, xmm5
+.psquare	; abs+ : square
+			andps			xmm4, xmm7					; abs(xi - x0)
+			andps			xmm5, xmm7					; abs(yi - y0)
+			addps			xmm4, xmm5
+			jmp				.draw
 
-			; abs- : square
+
+.hsquare	; abs- : square
 			andps			xmm4, xmm7					; abs(xi - x0)
 			andps			xmm5, xmm7					; abs(yi - y0)
 			subps			xmm4, xmm5
-;			andps			xmm4, xmm7					;
+			andps			xmm4, xmm7					;
+			jmp				.draw
 
-			; ^2 : parabole
-;			mulps			xmm4, xmm4					; ^2
-;			subps			xmm4, xmm5					; -
-;			andps			xmm4, xmm7					; abs
-;			sqrtps			xmm4, xmm4					; sqrt dist
+.parabole	; ^2 : parabole
+			mulps			xmm4, xmm4					; ^2
+			subps			xmm4, xmm5					; -
+			andps			xmm4, xmm7					; abs
+			sqrtps			xmm4, xmm4					; sqrt dist
+			jmp				.draw
 
 
-			; dist : circle / ellipse
-;			mulps			xmm4, xmm4					; ^2
-;			mulps			xmm5, xmm5					; ^2
-;			addps			xmm4, xmm5					; +
-;			sqrtps			xmm4, xmm4					; sqrt dist
+.round		; dist : circle / ellipse
+			mulps			xmm4, xmm4					; ^2
+			mulps			xmm5, xmm5					; ^2
+			addps			xmm4, xmm5					; +
+			sqrtps			xmm4, xmm4					; sqrt dist
+			jmp				.draw
 
-			; tsid : hyperbole
-;			mulps			xmm4, xmm4					; ^2
-;			mulps			xmm5, xmm5					; ^2
-;			subps			xmm4, xmm5					; -
-;			andps			xmm4, xmm7					; abs
-;			sqrtps			xmm4, xmm4					; sqrt dist
+
+.hyperbole	; tsid : hyperbole
+			mulps			xmm4, xmm4					; ^2
+			mulps			xmm5, xmm5					; ^2
+			subps			xmm4, xmm5					; -
+			andps			xmm4, xmm7					; abs
+			sqrtps			xmm4, xmm4					; sqrt dist
 
 ; ----------
-
+.draw
 			; h
 			addps			xmm4, oword [rbp - o_h]		; + h
 			mulps			xmm4, pp
