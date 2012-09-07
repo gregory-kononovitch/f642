@@ -285,6 +285,11 @@ rgb:		; make rgb
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 osc1:
+			; prepar for abs
+			xorpd			xmm7, xmm7
+			cmppd			xmm7, xmm7, 0	; 1 in all
+			psrld			xmm7, 1
+
 			;
 			movdqa			py, [ZEROp]
 			mov				h1, dword [rbp - res + 4]	; h
@@ -294,18 +299,28 @@ osc1:
 			mov				w4, dword [rbp - res]		; w4
 			;
 .loopx:
-			; dist
+			; x - x0
 			movaps			xmm4, px					; xi
 			subps			xmm4, px0					; xi - x0
-			mulps			xmm4, xmm4					; ^2
+			; y - y0
 			movaps			xmm5, py					; yi
 			subps			xmm5, py0					; yi - y0
-			mulps			xmm5, xmm5					; ^2
-			addps			xmm4, xmm5					; +
-			sqrtps			xmm4, xmm4					; sqrt dist
+
+			; abs
+			andps			xmm4, xmm7					; abs(xi - x0)
+			andps			xmm5, xmm7					; abs(yi - y0)
+			addps			xmm4, xmm5
+
+			; dist
+;			mulps			xmm4, xmm4					; ^2
+;			mulps			xmm5, xmm5					; ^2
+;			addps			xmm4, xmm5					; +
+;			sqrtps			xmm4, xmm4					; sqrt dist
+
+			; h
 			addps			xmm4, oword [rbp - o_h]		; + h
 			mulps			xmm4, pp
-			movaps			oword [rbp - o_dist], xmm4	; dist
+;			movaps			oword [rbp - o_dist], xmm4	; dist
 
 			; fx
 			cvttps2dq		xmm5, xmm4
