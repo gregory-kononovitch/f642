@@ -25,17 +25,26 @@ typedef struct {
     float       g;          // 24
     float       b;          // 28
     //
-    float       p;          // 32
-    float       h;          // 36
-    float       e;          // 40
+    float       p;          // 32   wavelen
+    float       h;          // 36   height
+    float       e;          // 40   atenuation
     // types
+
+#define BRDG_AXIS        1 << 0
+#define BRDG_SCALE       1 << 1
+#define BRDG_LINE        1 << 2
+#define BRDG_SQUARE      1 << 3
+#define BRDG_ELLIPSE     1 << 4
+#define BRDG_PARABOLE    1 << 5
+#define BRDG_HYPERBOLE   1 << 6
+
     int         flags;      // 44
     // axis
-    float       a;          // 48
-    float       b;          // 52
+    float       cos;        // 48
+    float       sin;        // 52
     // conic
-    float       sx;         // 56
-    float       sy;         // 60
+    float       a;          // 56
+    float       b;          // 60
     //
     void        *func;
     void        *parm;
