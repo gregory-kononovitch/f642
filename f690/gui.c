@@ -19,8 +19,8 @@ static int width = 1024;
 static int height = 576;
 static bgra650 bgra;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 71;
-static long upd = 1000 / 71;
+static int timer_delay = 83;
+static long upd = 1000 / 83;
 
 
 struct timing {
@@ -260,13 +260,15 @@ static void maj() {
     }
 }
 
-
+static int soon = 0;
 static void maj_brodge() {
-    if (timing->refresh) {
+    if (timing->refresh && !soon) {
+        soon = 1;
         tick_maj1();
         bgra_clear650(&bgra);
         brodge_exec(&bgra);
         tick_maj2();
+        soon = 0;
     }
 }
 
@@ -387,7 +389,7 @@ int main(int argc, char *argv[]) {
     gtk_widget_show_all(window);
 
     // Timer
-    g_timeout_add(timer_delay, (GSourceFunc) time_handler, (gpointer) frame);
+    g_timeout_add(timer_delay, (GSourceFunc)time_handler, (gpointer)frame);
 
     gtk_main();
 

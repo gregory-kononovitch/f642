@@ -230,22 +230,31 @@ rgb:		; make rgb
 .loopx:		;
 			movaps			xmm0, oword [imr]			; red
 			mulps			xmm0, xmm4					; 255 / smi
-			cvttps2dq		xmm0, xmm0
-;			pslld			xmm0, 16
-			por				xmm0, [ALPHAp]
+			movaps			xmm3, xmm0
 			;
 			movaps			xmm1, oword [img]			; green
 			mulps			xmm1, xmm4					; 255 / smi
+			maxps			xmm3, xmm1
+			;
+			movaps			xmm2, oword [imb]			; blue
+			mulps			xmm2, xmm4					; 255 / smi
+			maxps			xmm3, xmm2
+			;
+			movaps			xmm5, oword [WHITEp]
+			divps			xmm5, xmm3
+			mulps			xmm0, xmm5
+			mulps			xmm1, xmm5
+			mulps			xmm2, xmm5
+			;
+			cvttps2dq		xmm0, xmm0
+;			pslld			xmm0, 16
+			por				xmm0, [ALPHAp]
 			cvttps2dq		xmm1, xmm1
 			pslld			xmm1, 8
 			por				xmm0, xmm1
-			;
-			movaps			xmm1, oword [imb]			; blue
-			mulps			xmm1, xmm4					; 255 / smi
-			cvttps2dq		xmm1, xmm1
-			pslld			xmm1, 16
-			por				xmm0, xmm1
-			;
+			cvttps2dq		xmm2, xmm2
+			pslld			xmm2, 16
+			por				xmm0, xmm2
 			;
 			movdqa			oword [rsi], xmm0
 			;
