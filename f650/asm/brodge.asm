@@ -299,23 +299,45 @@ osc1:
 			mov				w4, dword [rbp - res]		; w4
 			;
 .loopx:
-			; x - x0
+			; x - x0 : vline
 			movaps			xmm4, px					; xi
 			subps			xmm4, px0					; xi - x0
-			; y - y0
+			; y - y0 : hline
 			movaps			xmm5, py					; yi
 			subps			xmm5, py0					; yi - y0
 
-			; abs
-			andps			xmm4, xmm7					; abs(xi - x0)
-			andps			xmm5, xmm7					; abs(yi - y0)
-			addps			xmm4, xmm5
+			; sum : (1,1) line
+;			addps			xmm4, xmm5
 
-			; dist
+			; mul & sum : ax + b lines
+
+
+			; abs : square
+;			andps			xmm4, xmm7					; abs(xi - x0)
+;			andps			xmm5, xmm7					; abs(yi - y0)
+;			addps			xmm4, xmm5
+
+			; ^2 : parabole
+			mulps			xmm4, xmm4					; ^2
+			addps			xmm4, xmm5					; -
+			andps			xmm4, xmm7					; abs
+			sqrtps			xmm4, xmm4					; sqrt dist
+
+
+			; dist : circle / ellipse
 ;			mulps			xmm4, xmm4					; ^2
 ;			mulps			xmm5, xmm5					; ^2
 ;			addps			xmm4, xmm5					; +
 ;			sqrtps			xmm4, xmm4					; sqrt dist
+
+			; tsid : hyperbole
+;			mulps			xmm4, xmm4					; ^2
+;			mulps			xmm5, xmm5					; ^2
+;			subps			xmm4, xmm5					; -
+;			andps			xmm4, xmm7					; abs
+;			sqrtps			xmm4, xmm4					; sqrt dist
+
+; ----------
 
 			; h
 			addps			xmm4, oword [rbp - o_h]		; + h
