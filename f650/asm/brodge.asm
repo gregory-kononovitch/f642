@@ -356,6 +356,7 @@ osc1:
 			movaps			oword [rbp - o_ref12], xmm1
 			movaps			oword [rbp - o_ref21], xmm2
 			movaps			oword [rbp - o_ref22], xmm3
+			movaps			xmm7, oword [ABSp]
 
 			;
 			movdqa			py, [ZEROp]
@@ -424,23 +425,23 @@ osc1:
 
 
 .psquare	; abs+ : square
-			andps			xmm4, oword [ABSp]					; abs(xi - x0)
-			andps			xmm5, oword [ABSp]					; abs(yi - y0)
+			andps			xmm4, oword xmm7					; abs(xi - x0)
+			andps			xmm5, oword xmm7					; abs(yi - y0)
 			addps			xmm4, xmm5
 			jmp				.draw
 
 
 .hsquare	; abs- : square
-			andps			xmm4, oword [ABSp]					; abs(xi - x0)
-			andps			xmm5, oword [ABSp]					; abs(yi - y0)
+			andps			xmm4, oword xmm7					; abs(xi - x0)
+			andps			xmm5, oword xmm7					; abs(yi - y0)
 			subps			xmm4, xmm5
-			andps			xmm4, oword [ABSp]					;
+;			andps			xmm4, oword xmm7					;
 			jmp				.draw
 
 .parabole	; ^2 : parabole
 			mulps			xmm4, xmm4					; ^2
 			subps			xmm4, xmm5					; -
-			andps			xmm4, oword [ABSp]					; abs
+			andps			xmm4, oword xmm7					; abs
 			sqrtps			xmm4, xmm4					; sqrt dist
 			jmp				.draw
 
@@ -457,7 +458,7 @@ osc1:
 			mulps			xmm4, xmm4					; ^2
 			mulps			xmm5, xmm5					; ^2
 			subps			xmm4, xmm5					; -
-			andps			xmm4, oword [ABSp]					; abs
+			andps			xmm4, oword xmm7					; abs
 			sqrtps			xmm4, xmm4					; sqrt dist
 
 ; ----------

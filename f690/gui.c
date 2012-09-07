@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
 //            gdimg->bits_per_pixel, gdimg->mem);
 
     //
-    brodge = brodge_init(width, height, 2);
+    brodge = brodge_init(width, height, 1);
 
     //
     bgra_alloc650(&bgra, width, height);

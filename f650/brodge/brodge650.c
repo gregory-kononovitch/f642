@@ -90,9 +90,9 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
         ((vect650*)src[i]->parm)->t = 0;
     }
     src[0]->flags = BRDG_ELLIPSE;
-    src[1]->flags = BRDG_ELLIPSE;
-    brodge_scale_src(brodge, src[0], 3, 1);
-    brodge_scale_src(brodge, src[1], 1, 3);
+//    src[1]->flags = BRDG_ELLIPSE;
+//    brodge_scale_src(brodge, src[0], 3, 1);
+//    brodge_scale_src(brodge, src[1], 1, 3);
     //
     return brodge;
 }
