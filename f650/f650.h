@@ -23,7 +23,6 @@
 #include <math.h>
 
 #include "f650_fonts.h"
-#include "layout/f650_layout.h"
 
 #define ASM650
 
@@ -100,10 +99,12 @@ typedef struct {
  *  Graphics oriented
  *  + int (float)
  */
-typedef struct {
+typedef struct _pos650i_ pos650i_;
+
+struct _pos650i_ {
     int         x;
     int         y;
-} pos650i_;
+};
 
 typedef struct {
     int         width;
@@ -508,11 +509,13 @@ double polya650(double *coe, int len, double x);
 double poly2a650(double *coe, int len2, double x);
 
 
-
-
 /*
  *
  */
 void *memseta650(void *align_x16, uint32_t col, size_t size);
+
+
+#include "layout/f650_layout.h"
+
 
 #endif /* F650_H_ */

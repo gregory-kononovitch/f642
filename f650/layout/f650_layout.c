@@ -95,18 +95,23 @@ void desk_free654(desk654 **desk) {
  */
 static void zone_compute_heap64(desk654 *desk, zone654 *zone) {
     // _obytes0;       // offset
-    zone->_obytes0 = desk->col_bepth * (zone->_posa.x + zone->_posa.y * desk->width);
+    zone->_obytes0 = (zone->_posa.x + zone->_posa.y * desk->width) * desk->col_bepth;
     // _udword1;
-    if (zone->_posa.x & 0x03) {
-        zone->_udword1 = ((zone->_posa.x & 0x03) + 0x04) - zone->_posa.x;
-    } else {
-        zone->_udword1 = 0;
-    }
+    zone->_udword1 = 4 - (zone->_posa.x & 0x03);
+    zone->_udword1 &= 0x03;
     // _udword3;
     zone->_udword3 = (zone->_posa.x + zone->dim.width) & 0x03;
-    // _abytes2;       // 112
-    // _obytes4;       // next line
-
+    // _aoword2;
+    zone->_aoword2 = zone->dim.width - zone->_udword1 - zone->_udword3;
+    if (zone->_aoword2 < 40) {
+        zone->_udword1 = zone->dim.width;
+        zone->_udword3 = 0;
+        zone->_aoword2 = 0;
+    } else {
+        zone->_aoword2 >>= 2;
+    }
+    // _obytes4;
+    zone->_obytes4  = (desk->width - zone->dim.width) * desk->col_bepth;
 }
 
 /*

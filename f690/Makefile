@@ -15,7 +15,7 @@ _gtk = gui.o
 
 f690 = f690_gui.o
 
-gtk : $(f690)
+gtk : $(_gtk)
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./std1.ao ../f650/asm/std1.asm
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./graphics.ao ../f650/asm/graphics.asm
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./graphics2.ao ../f650/asm/graphics2.asm
@@ -45,4 +45,4 @@ all : gtk
 
 .PHONY : clean
 clean :
-	rm -f $(_gtk) gtk.xo
+	rm -f *.o *.ao *.xo

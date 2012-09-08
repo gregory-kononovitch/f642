@@ -14,7 +14,8 @@ default rel
 global memseta650:		function
 global memset2a650:		function
 global inserta650:		function
-
+;
+global imgfill1a650:	function
 
 SECTION .data
 
@@ -106,3 +107,33 @@ inserta650:
 			jnz				.loopy
 			;
 			ret
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; long imgfill1a650(bgra *dest, uint32_t color, void *pties)
+imgfill1a650:
+			;
+			mov				rdi, [rdi]
+			mov				eax, dword [rdx]		; offset0
+			add				rdi, rax				; + offset0
+			mov				r8d, dword [rdx + 16]	; offset4
+			;
+			mov				r10d, dword [rdx + 4]	; dword1
+			mov				r9d, dword [rdx + 20]	; hsrc
+			;
+.loopy
+			mov				ecx, r10d				; dword1
+.loopx
+			mov				dword [rdi], esi
+			;
+			add				rdi, 4
+			loop			.loopx
+			;
+			add				rdi, r8
+			sub				r9d, 1					; h
+			jnz				.loopy
+			;
+			ret
+
+

@@ -75,7 +75,7 @@ struct _zone654_ {
     int                 _aoword2;       // 112
     int                 _udword3;
     int                 _obytes4;       // next line
-    int                 _res1;
+    int                 _height;
                                         // 128
 };
 
