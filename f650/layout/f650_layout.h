@@ -54,7 +54,7 @@ struct _zone654_ {
 
     // zones
     int                 num;            // 16
-    int                 pixed;          //
+    int                 flags;          // (pixed, opaque,...)
     zone654             *zones;
     zone654             *head;          // 32
     zone654             *items;
@@ -70,11 +70,11 @@ struct _zone654_ {
     pos650i_            _posa;
     int                 _visible;       // 96
     int                 _pad1;
-    int                 _obytes0;       // offset
+    int                 _obytes0;       // offset nw
     int                 _udword1;
     int                 _aoword2;       // 112
     int                 _udword3;
-    int                 _obytes4;       // next line
+    int                 _obytes4;       // next seg
     int                 _height;
                                         // 128
 };
@@ -115,8 +115,8 @@ struct _desk654_ {
 desk654 *desk_create654(int width, int height);
 void desk_free654(desk654 **desk);
 //
-void desk_compute(desk654 *desk);
-void desk_compute_zone(desk654 *desk, zone654 *zone);
+void desk_layout(desk654 *desk);
+void desk_layout_zone(desk654 *desk, zone654 *zone);
 
 // Zone
 zone654 *zone_add_item(desk654 *desk, zone654 *head, int level);

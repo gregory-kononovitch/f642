@@ -56,7 +56,7 @@ desk654 *desk_create654(int width, int height) {
     desk->root->dim.width  = width;
     desk->root->dim.height = height;
     desk->root->num = 0;
-    desk->root->pixed = 1;
+    desk->root->flags = 1;
     desk->root->zones = desk->zones;
     desk->root->head  = NULL;
     desk->root->items = NULL;
@@ -76,7 +76,7 @@ desk654 *desk_create654(int width, int height) {
     bgra_fill650(&desk->bgra, BLACK650);
     desk->col_bepth = 4;
     desk->background.value = BLACK650;
-    desk->foreground.value = 0xff00ff80;
+    desk->foreground.value = 0xff606060;
     //
     return desk;
 }
@@ -111,20 +111,22 @@ static void zone_compute_heap64(desk654 *desk, zone654 *zone) {
         zone->_aoword2 >>= 2;
     }
     // _obytes4;
-    zone->_obytes4  = (desk->width - zone->dim.width) * desk->col_bepth;
+    zone->_obytes4 = (desk->width - zone->dim.width) * desk->col_bepth;
+    // _height
+    zone->_height = zone->dim.height;
 }
 
 /*
  * Assuming zone is updated
  */
-static void desk_compute_iter(desk654 *desk, zone654 *zone) {
+static void desk_layout_iter(desk654 *desk, zone654 *zone) {
     zone = zone->items;
     while(zone) {
         zone->_posa.x = zone->posr.x + zone->head->_posa.x;
         zone->_posa.y = zone->posr.y + zone->head->_posa.y;
         zone_compute_heap64(desk, zone);
         //
-        desk_compute_iter(desk, zone);
+        desk_layout_iter(desk, zone);
         //
         zone = zone->next;
     }
@@ -133,7 +135,7 @@ static void desk_compute_iter(desk654 *desk, zone654 *zone) {
 /*
  * Assuming no other zone above has been changed
  */
-void desk_compute_zone(desk654 *desk, zone654 *zone) {
+void desk_layout_zone(desk654 *desk, zone654 *zone) {
     zone->_posa.x = zone->posr.x;
     zone->_posa.y = zone->posr.y;
     if (zone->head) {
@@ -142,14 +144,14 @@ void desk_compute_zone(desk654 *desk, zone654 *zone) {
         zone_compute_heap64(desk, zone);
     }
     //
-    desk_compute_iter(desk, zone);
+    desk_layout_iter(desk, zone);
 }
 
 /*
  *
  */
-void desk_compute(desk654 *desk) {
-    desk_compute_zone(desk, desk->root);
+void desk_layout(desk654 *desk) {
+    desk_layout_zone(desk, desk->root);
 }
 
 /*
@@ -164,7 +166,7 @@ zone654 *zone_add_item(desk654 *desk, zone654 *head, int level) {
     zone654 *zone = &desk->zones[desk->nb_zones];     // @@@
     //
     zone->num = desk->nb_zones;
-    zone->pixed = 0;
+    zone->flags = 0;
     zone->zones = desk->zones;
     //
     zone->posr.x = 0;
@@ -191,7 +193,7 @@ zone654 *zone_add_item(desk654 *desk, zone654 *head, int level) {
 }
 
 /*
- * Without recomputing
+ * Without laying out
  */
 void zone_set_location(zone654 *zone, int x, int y) {
     zone->posr.x = x;
@@ -199,7 +201,7 @@ void zone_set_location(zone654 *zone, int x, int y) {
 }
 
 /*
- * Without recomputing
+ * Without laying out
  */
 void zone_set_dimension(zone654 *zone, int w, int h) {
     zone->dim.width  = w;

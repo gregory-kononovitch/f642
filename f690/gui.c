@@ -370,9 +370,9 @@ int main(int argc, char *argv[]) {
     printf("window ok\n");
 
     // layout
-    fixed = gtk_fixed_new();
-    gtk_container_add(GTK_CONTAINER(window), fixed);
-    printf("fixed ok\n");
+//    fixed = gtk_fixed_new();
+//    gtk_container_add(GTK_CONTAINER(window), fixed);
+//    printf("fixed ok\n");
 
     // Image
 //    GList *visuals = gdk_list_visuals();
@@ -398,13 +398,13 @@ int main(int argc, char *argv[]) {
     bgra_fill650(&bgra0, 0xff000000);
     printf("bgra alloc ok ::\n");
 
+    // Image
     img = gdk_pixbuf_new_from_data((guchar*) bgra0.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
     printf("PixBuf new ok\n");
-
-    // Image
     frame = gtk_image_new_from_pixbuf(img);
-    gtk_fixed_put(GTK_FIXED(fixed), frame, 0, 0);
-    printf("fixed ok\n");
+//    gtk_fixed_put(GTK_FIXED(fixed), frame, 0, 0);
+    gtk_container_add(GTK_CONTAINER(window), frame);
+    printf("image ok\n");
 
     // Events
 //    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
@@ -416,18 +416,19 @@ int main(int argc, char *argv[]) {
     g_signal_connect(window, "button_release_event", G_CALLBACK (button_release_event), NULL);
 
     gtk_widget_set_events(
-            window,
-            GDK_EXPOSURE_MASK | GDK_LEAVE_NOTIFY_MASK
-            | GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK
-            | GDK_BUTTON_RELEASE_MASK
+            window
+            , GDK_EXPOSURE_MASK
+            | GDK_LEAVE_NOTIFY_MASK
             | GDK_KEY_PRESS_MASK
-            | GDK_POINTER_MOTION_HINT_MASK);
+            | GDK_BUTTON_PRESS_MASK   | GDK_BUTTON_RELEASE_MASK
+            | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
+    );
 
     g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
     // Show
-    gtk_widget_show(fixed);
+//    gtk_widget_show(fixed);
     gtk_widget_show_all(window);
 
     // Timer
