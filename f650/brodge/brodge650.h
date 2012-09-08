@@ -35,7 +35,7 @@ typedef struct {
 #define BRDG_XLINE          1 << 8
 #define BRDG_YLINE          1 << 9
 #define BRDG_PSQUARE        1 << 10
-#define BRDG_MSQUARE        1 << 11
+#define BRDG_HSQUARE        1 << 11
 #define BRDG_ELLIPSE        1 << 12
 #define BRDG_PARABOLE       1 << 13
 #define BRDG_HYPERBOLE      1 << 14

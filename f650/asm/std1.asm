@@ -68,22 +68,22 @@ inserta650:
 			sub				eax, r10d				; dif
 			shl				eax, 2					; int
 			;
-			mov				edx, r9d
-			sub				edx, r11d
-			imul			edx, r8d
-			shl				edx, 1					; dh2
+			sub				r9d, r11d
+			imul			r9d, r8d
+			shl				r9d, 1					; dh2
 			mov				ecx, r8d
 			sub				ecx, r10d
 			shl				ecx, 1					; dw2
 			;
 			mov				rsi, [rsi]
-			add				rsi, rdx				; + dh2
+			add				rsi, r9					; + dh2
 			sub				rsi, rcx				; - dw2
 			shl				ecx, 1					; dw
 			mov				r8d, ecx				; dw
 			;
 			mov				rdi, [rdi]
 			shr				r10d, 2					; wsrc * 4 / 16
+			shr				r10d, 1
 			;
 			mov				eax, r11d
 .loopy:
@@ -91,12 +91,14 @@ inserta650:
 			mov				ecx, r10d
 			;
 .loopx:		;
+			movdqa			xmm1, oword [rdi + 16]
+			movdqa			oword [rsi + 16], xmm1
 			movdqa			xmm0, oword [rdi]
 			movdqa			oword [rsi], xmm0
 			;
 .cootx:
-			add				rdi, 16
-			add				rsi, 16
+			add				rdi, 32
+			add				rsi, 32
 			loop			.loopx
 			;
 .cooty:		;

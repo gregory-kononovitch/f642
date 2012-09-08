@@ -424,13 +424,14 @@ osc1:
 			; mul & sum : ax + b lines
 
 
-.psquare	; abs+ : square
+.psquare	; abs+ : psquare
 			andps			xmm4, xmm7					; abs(xi - x0)
+			andps			xmm5, xmm7					; abs(yi - y0)
 			addps			xmm4, xmm5
 			jmp				.draw
 
 
-.hsquare	; abs- : square
+.hsquare	; abs- : hsquare
 			andps			xmm4, xmm7					; abs(xi - x0)
 			andps			xmm5, xmm7					; abs(yi - y0)
 			subps			xmm4, xmm5

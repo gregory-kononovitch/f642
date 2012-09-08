@@ -58,7 +58,7 @@ static void tick_timer() {
         if (timing->frame % upd == 0) {
             double m = timing->maj.tv_sec + 0.000001 * timing->maj.tv_usec;
             double d = timing->delay.tv_sec + 0.000001 * timing->delay.tv_usec;
-            printf("Frame %ld : Timer : %ld, Maj %ld : %.0fms (%lu), Queue %ld, Expose %ld : %.2fms\n"
+            printf("Frame %ld : Timer : %ld, Maj %ld : %.1fms (%lu), Queue %ld, Expose %ld : %.2fms\n"
                     , timing->frame
                     , timing->nb_timed
                     , timing->nb_maj, 1000. * m / upd, timing->pixels / 1000
@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
 //            gdimg->bits_per_pixel, gdimg->mem);
 
     //
-    brodge = brodge_init(928, 522, 3);
+    brodge = brodge_init(928, 522, 2);
     bgra_alloc650(&bgra1, brodge->width, brodge->height);
 
     //
