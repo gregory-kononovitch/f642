@@ -102,7 +102,19 @@ struct _desk654_ {
 
 
 
+/*
+ *
+ */
+// Desk
+desk654 *desk_create654(int width, int height);
+void desk_free654(desk654 **desk);
+//
+void desk_compute(desk654 *desk);
+void desk_compute_zone(desk654 *desk, zone654 *zone);
 
-
+// Zone
+zone654 *zone_add_item(desk654 *desk, zone654 *head, int level);
+void zone_set_location(zone654 * zone, int x, int y);
+void zone_set_dimension(zone654 * zone, int w, int h);
 
 #endif /* F650_LAYOUT_H_ */

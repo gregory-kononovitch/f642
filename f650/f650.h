@@ -27,6 +27,13 @@
 
 #define ASM650
 
+
+#define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
+
+
+/*
+ *
+ */
 typedef struct {
     uint32_t    *data;          // 0
     int16_t     width;          // 8
