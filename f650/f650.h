@@ -111,8 +111,8 @@ typedef union {
         int         height;
     };
     struct {
-        pos650i     pos;
-        dim650i     dim;
+        pos650i_    pos;
+        dim650i_    dim;
     };
 } rect650i;
 

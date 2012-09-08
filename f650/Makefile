@@ -8,9 +8,9 @@ DEBUGFLAGS=-g -DDEBUG
 endif
 
 # Path
-SRC_DIR=./
-ASM_DIR=asm/
-EXC_DIR=exc/
+SRC_DIR=.
+ASM_DIR=asm
+EXC_DIR=exc
 
 # Librarires
 INCLUDE=
@@ -18,14 +18,15 @@ LIBS=-lm
 
 #
 # source-files
-sources_c:= $(wildcard ${SRC_DIR}*$(EXTENSION_C))
+sources_c:= $(wildcard ${SRC_DIR}/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/brodge/*$(EXTENSION_C))
+sources_c+= $(wildcard ${SRC_DIR}/layout/*$(EXTENSION_C))
 
 # asm files
-sources_a:=$(wildcard ${ASM_DIR}*$(EXTENSION_A))
+sources_a:=$(wildcard ${ASM_DIR}/*$(EXTENSION_A))
 
 # main.o files
-sources_e:=$(wildcard ${EXC_DIR}*$(EXTENSION_C))
+sources_e:=$(wildcard ${EXC_DIR}/*$(EXTENSION_C))
 
 
 # object files; replace .c extension with .o
