@@ -85,6 +85,7 @@ inserta650:
 			mov				rdi, [rdi]
 			shr				r10d, 2					; wsrc * 4 / 16
 			;
+			mov				eax, r11d
 .loopy:
 			add				rsi, r8
 			mov				ecx, r10d

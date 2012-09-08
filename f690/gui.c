@@ -271,8 +271,8 @@ static void maj_brodge() {
         //bgra_clear650(&bgra0);
         brodge_anim(brodge);
         if (timing->selection > -1) {
-            brodge->sources[0]->x = timing->mousex;
-            brodge->sources[0]->y = timing->mousey;
+            brodge->sources[timing->selection]->x = timing->mousex;
+            brodge->sources[timing->selection]->y = timing->mousey;
         }
         brodge_exec(brodge, &bgra1);
         inserta650(&bgra1, &bgra0);
@@ -314,8 +314,13 @@ static gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
 
 static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event) {
     printf("Keyval = %d\n", event->keyval);
-    if (event->keyval == 32) {
-        brodge_rebase(brodge);
+    switch(event->keyval) {
+        case 32:
+            brodge_rebase(brodge);
+            break;
+        case 65307:
+            gtk_main_quit();
+            break;
     }
     return TRUE;
 }
@@ -385,7 +390,7 @@ int main(int argc, char *argv[]) {
 //            gdimg->bits_per_pixel, gdimg->mem);
 
     //
-    brodge = brodge_init(960, 540, 2);
+    brodge = brodge_init(928, 522, 3);
     bgra_alloc650(&bgra1, brodge->width, brodge->height);
 
     //
