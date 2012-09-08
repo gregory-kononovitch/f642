@@ -56,7 +56,7 @@ desk654 *desk_create654(int width, int height) {
     desk->root->dim.width  = width;
     desk->root->dim.height = height;
     desk->root->num = 0;
-    desk->root->any = 1;
+    desk->root->pixed = 1;
     desk->root->zones = desk->zones;
     desk->root->head  = NULL;
     desk->root->items = NULL;
@@ -70,6 +70,14 @@ desk654 *desk_create654(int width, int height) {
     desk->level0->last  = desk->root;
 
     //
+    desk->width  = width;
+    desk->height = height;
+    bgra_alloc650(&desk->bgra, width, height);
+    bgra_fill650(&desk->bgra, BLACK650);
+    desk->col_bepth = 4;
+    desk->background.value = BLACK650;
+    desk->foreground.value = 0xff00ff80;
+    //
     return desk;
 }
 
@@ -82,6 +90,26 @@ void desk_free654(desk654 **desk) {
 
 
 /*
+ * Assuming zone position+dimension / root is set
+ * + @@@ everything is >= 0, no pb hors champ
+ */
+static void zone_compute_heap64(desk654 *desk, zone654 *zone) {
+    // _obytes0;       // offset
+    zone->_obytes0 = desk->col_bepth * (zone->_posa.x + zone->_posa.y * desk->width);
+    // _udword1;
+    if (zone->_posa.x & 0x03) {
+        zone->_udword1 = ((zone->_posa.x & 0x03) + 0x04) - zone->_posa.x;
+    } else {
+        zone->_udword1 = 0;
+    }
+    // _udword3;
+    zone->_udword3 = (zone->_posa.x + zone->dim.width) & 0x03;
+    // _abytes2;       // 112
+    // _obytes4;       // next line
+
+}
+
+/*
  * Assuming zone is updated
  */
 static void desk_compute_iter(desk654 *desk, zone654 *zone) {
@@ -89,6 +117,7 @@ static void desk_compute_iter(desk654 *desk, zone654 *zone) {
     while(zone) {
         zone->_posa.x = zone->posr.x + zone->head->_posa.x;
         zone->_posa.y = zone->posr.y + zone->head->_posa.y;
+        zone_compute_heap64(desk, zone);
         //
         desk_compute_iter(desk, zone);
         //
@@ -105,6 +134,7 @@ void desk_compute_zone(desk654 *desk, zone654 *zone) {
     if (zone->head) {
         zone->_posa.x += zone->head->_posa.x;
         zone->_posa.y += zone->head->_posa.y;
+        zone_compute_heap64(desk, zone);
     }
     //
     desk_compute_iter(desk, zone);
@@ -129,7 +159,7 @@ zone654 *zone_add_item(desk654 *desk, zone654 *head, int level) {
     zone654 *zone = &desk->zones[desk->nb_zones];     // @@@
     //
     zone->num = desk->nb_zones;
-    zone->any = 0;
+    zone->pixed = 0;
     zone->zones = desk->zones;
     //
     zone->posr.x = 0;

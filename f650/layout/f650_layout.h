@@ -38,8 +38,8 @@ struct _level654_ {
     // zones
     zone654             *first;             // 32
     zone654             *last;
-    //
 
+    //
     void                *pad1;               // 48
     void                *pad2;
 };
@@ -54,7 +54,7 @@ struct _zone654_ {
 
     // zones
     int                 num;            // 16
-    int                 any;            // (nb_zones for root)
+    int                 pixed;          //
     zone654             *zones;
     zone654             *head;          // 32
     zone654             *items;
@@ -71,9 +71,9 @@ struct _zone654_ {
     int                 _visible;       // 96
     int                 _pad1;
     int                 _obytes0;       // offset
-    int                 _ubytes1;
-    int                 _abytes2;       // 112
-    int                 _ubytes3;
+    int                 _udword1;
+    int                 _aoword2;       // 112
+    int                 _udword3;
     int                 _obytes4;       // next line
     int                 _res1;
                                         // 128
@@ -96,7 +96,13 @@ struct _desk654_ {
     int                 nb_max_zones;       // (tab of zones?)
 
     //
-
+    int                 width;
+    int                 height;
+    bgra650             bgra;
+    int                 col_bepth;          // temp
+    color650            background;
+    color650            foreground;
+    int                 pad1;
 };
 
 
