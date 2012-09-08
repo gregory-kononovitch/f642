@@ -15,71 +15,92 @@
 
 #include "../f650.h"
 
-//
-typedef struct _litem654_       litem654;
-typedef struct _znode654_       znode654;
+
 //
 typedef struct _level654_       level654;
 typedef struct _zone654_        zone654;
+typedef struct _desk654_        desk654;
 
-/*
- *
- */
-struct _litem654_ {
-    level654            *up;
-    level654            *down;
-};
-
-struct _znode654_ {
-    zone654             *prev;
-    zone654             *next;
-    zone654             *head;
-    zone654             *items;
-};
 
 /*
  *
  */
 struct _level654_ {
-
+    //
 
     // levels
     int                 num;
     int                 any;
     level654            *levels;
-    level654            *down;
+    level654            *down;              // 16
     level654            *up;
 
     // zones
-    zone654             *first;
+    zone654             *first;             // 32
     zone654             *last;
+    //
+
+    void                *pad1;               // 48
+    void                *pad2;
 };
 
-
+/*
+ *
+ */
 struct _zone654_ {
     // rect650i
     pos650i_            posr;
     dim650i_            dim;
 
     // zones
-    int                 num;
-    int                 any;
+    int                 num;            // 16
+    int                 any;            // (nb_zones for root)
     zone654             *zones;
-    zone654             *head;
+    zone654             *head;          // 32
     zone654             *items;
-    zone654             *prev;
+    zone654             *prev;          // 48
     zone654             *next;
 
     // level
-    level654            *level;
+    level654            *level;         // 64
     zone654             *down;
-    zone654             *up;
-    void                *res1;
+    zone654             *up;            // 80
 
     // work
-    pos650i_             _posa;
+    pos650i_            _posa;
+    int                 _visible;       // 96
+    int                 _pad1;
+    int                 _obytes0;       // offset
+    int                 _ubytes1;
+    int                 _abytes2;       // 112
+    int                 _ubytes3;
+    int                 _obytes4;       // next line
+    int                 _res1;
+                                        // 128
+};
+
+/*
+ *
+ */
+struct _desk654_ {
+    //
+    level654            *level0;
+    zone654             *root;
+    //
+    level654            *levels;            // 16
+    int                 nb_levels;
+    int                 nb_max_level;       // (tab of levels?)
+    //
+    zone654             *zones;             // 32
+    int                 nb_zones;
+    int                 nb_max_zones;       // (tab of zones?)
+
+    //
 
 };
+
+
+
 
 
 
