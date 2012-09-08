@@ -13,6 +13,7 @@ default rel
 ;
 global memseta650:		function
 global memset2a650:		function
+global inserta650:		function
 
 
 SECTION .data
@@ -47,3 +48,58 @@ memset2a650:
 		mov			rcx, rdx
 		rep stosq
 		ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; img (960x540)  -> (1024, 600)
+; inserta650(bgra650 *img, bgra650 *into)
+inserta650:
+			;
+			xor				r8, r8
+			xor				r9, r9
+			xor				r10, r10
+			xor				r11, r11
+			mov				r8w,  [rsi + 8]			; wdest
+			mov				r9w,  [rsi + 10]		; hdest
+			mov				r10w, [rdi + 8]			; wsrc
+			mov				r11w, [rdi + 10]		; hsrc
+			;
+			mov				eax, r8d
+			sub				eax, r10d				; dif
+			shl				eax, 2					; int
+			;
+			mov				edx, r9d
+			sub				edx, r11d
+			imul			edx, r8d
+			shl				edx, 1					; dh2
+			mov				ecx, r8d
+			sub				ecx, r10d
+			shl				ecx, 1					; dw2
+			;
+			mov				rsi, [rsi]
+			add				rsi, rdx				; + dh2
+			sub				rsi, rcx				; - dw2
+			shl				ecx, 1					; dw
+			mov				r8d, ecx				; dw
+			;
+			mov				rdi, [rdi]
+			shr				r10d, 2					; wsrc * 4 / 16
+			;
+.loopy:
+			add				rsi, r8
+			mov				ecx, r10d
+			;
+.loopx:		;
+			movdqa			xmm0, oword [rdi]
+			movdqa			oword [rsi], xmm0
+			;
+.cootx:
+			add				rdi, 16
+			add				rsi, 16
+			loop			.loopx
+			;
+.cooty:		;
+			sub				eax, 1
+			jnz				.loopy
+			;
+			ret

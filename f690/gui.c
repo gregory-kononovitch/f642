@@ -14,14 +14,16 @@
 #include "f690.h"
 
 //
-static int width = 960;
-static int height = 540;
-static bgra650 bgra;
+static int width = 1024;    // 960;
+static int height = 600;    // 540;
+static bgra650 bgra0;
+static bgra650 bgra1;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 125;
-static long upd = 1000 / 125;
+static int timer_delay = 65;
+static long upd = 1000 / 65;
 //
 static brodge650 *brodge;
+extern void inserta650(bgra650 *img, bgra650 *into);
 
 struct timing {
     long frame;
@@ -113,7 +115,7 @@ static void tick_expose() {
 static void tst_bgra();
 
 bgra650 *get_bgra() {
-    return &bgra; // before a straight struct
+    return &bgra0; // before a straight struct
 }
 
 
@@ -141,7 +143,7 @@ static void tst_bgra() {
     //
     tick_maj1();
     //
-    bgra_fill650(&bgra, 0xff000000);
+    bgra_fill650(&bgra0, 0xff000000);
     long c;
     if (debug) printf("bgra clear ok\n");
     for (i = 0; i < 1; i++) {
@@ -158,27 +160,27 @@ static void tst_bgra() {
 //        p2.y = +50;
 //
 //        //
-//        if (debug) printf("bgra random ok\n");
+//        if (debug) printf("bgra0 random ok\n");
 //        c = rand();
 //        c = (c | 0xff000000) & 0xffffffff;
 //        if (debug) dump650("p1 = ", &p1, "");
 //        if (debug) dump650(" ; p2 = ", &p2, "");
 //        if (debug) printf(" ; c = %ld\n", c);
-//        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
+//        c = draw_line2a650(&bgra0, p1.x, p1.y, p2.x, p2.y, WHITE650);
 //        if (debug) printf("line2 ok\n", c);
-//        c = draw_line3a650(&bgra, p1.x, p1.y + 20, p2.x, p2.y + 20, ORANGE650);
-////        c = draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c);
+//        c = draw_line3a650(&bgra0, p1.x, p1.y + 20, p2.x, p2.y + 20, ORANGE650);
+////        c = draw_line2a650(&bgra0, p1.x, p1.y, p2.x, p2.y, c);
 //        if (debug) {
-//            printf("bgra draw line ok :\n");
-//            printf("x1 = %f\n", ((double*)bgra.data)[0]);
-//            printf("y1 = %f\n", ((double*)bgra.data)[1]);
-//            printf("x2 = %f\n", ((double*)bgra.data)[2]);
-//            printf("y2 = %f\n", ((double*)bgra.data)[3]);
-//            printf("a  = %f\n", ((double*)bgra.data)[4]);
-//            printf("b  = %f\n", ((double*)bgra.data)[5]);
-//            printf("dist  = %f\n", ((float*)bgra.data)[12]);
-//            printf("ni    = %f\n", ((float*)bgra.data)[13]);
-//            printf("pas   = %f\n", ((float*)bgra.data)[14]);
+//            printf("bgra0 draw line ok :\n");
+//            printf("x1 = %f\n", ((double*)bgra0.data)[0]);
+//            printf("y1 = %f\n", ((double*)bgra0.data)[1]);
+//            printf("x2 = %f\n", ((double*)bgra0.data)[2]);
+//            printf("y2 = %f\n", ((double*)bgra0.data)[3]);
+//            printf("a  = %f\n", ((double*)bgra0.data)[4]);
+//            printf("b  = %f\n", ((double*)bgra0.data)[5]);
+//            printf("dist  = %f\n", ((float*)bgra0.data)[12]);
+//            printf("ni    = %f\n", ((float*)bgra0.data)[13]);
+//            printf("pas   = %f\n", ((float*)bgra0.data)[14]);
 //            printf("return %ld\n", c);
 //        }
 
@@ -192,12 +194,12 @@ static void tst_bgra() {
             p1.y = +200. * p1.y;
 //            dump650("p1 = ", &p1, "");
 //            dump650(" ; p2 = ", &p2, "\n");
-            c = draw_line3a650(&bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
-            if (bgra.data[5] > bgra.data[7] || bgra.data[6] > bgra.data[7]) {
+            c = draw_line3a650(&bgra0, p1.x, p1.y, p2.x, p2.y, WHITE650);
+            if (bgra0.data[5] > bgra0.data[7] || bgra0.data[6] > bgra0.data[7]) {
                 dump650("p1 = ", &p1, "");
                 dump650(" ; p2 = ", &p2, "\n");
                 for (k = 0; k < 10; k++) {
-                    printf("%d : %d (%d, %d)\n", k, bgra.data[k], bgra.data[k] % 1024 - 512, bgra.data[k] / 1024 - 300);
+                    printf("%d : %d (%d, %d)\n", k, bgra0.data[k], bgra0.data[k] % 1024 - 512, bgra0.data[k] / 1024 - 300);
                 }
             }
 //            dump650("p1 = ", &p1, "");
@@ -219,7 +221,7 @@ static void maj() {
     if (timing->frame % 2 == 0 && timing->refresh) {
         tick_maj1();
         //
-        bgra_fill650(&bgra, 0xff000000);
+        bgra_fill650(&bgra0, 0xff000000);
         long c;
         for (i = 0; i < 1500; i++) {
             random650(&p1);
@@ -235,9 +237,9 @@ static void maj() {
             c = rand();
             c = (c | 0xff000000) & 0xffffffff;
             if (i % 20 == 0) {
-                timing->pixels += draw_line2a650(&bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+                timing->pixels += draw_line2a650(&bgra0, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
             }
-            timing->pixels += draw_char2a650(&bgra, p1.x, p1.y, &monospaced650, 32 + (c % 90), c);
+            timing->pixels += draw_char2a650(&bgra0, p1.x, p1.y, &monospaced650, 32 + (c % 90), c);
         }
         tick_maj2();
     }
@@ -247,7 +249,7 @@ static void maj() {
     i = 0;
     int x = width/2 - 100;
     while(str[i]) {
-        timing->pixels += draw_char2a650(&bgra, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
+        timing->pixels += draw_char2a650(&bgra0, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
         x += monospaced650.width;
         i++;
     }
@@ -255,7 +257,7 @@ static void maj() {
     i = 0;
     x += monospaced650.width;
     while(str[i]) {
-        timing->pixels += draw_char2a650(&bgra, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
+        timing->pixels += draw_char2a650(&bgra0, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
         x += monospaced650.width;
         i++;
     }
@@ -266,13 +268,14 @@ static void maj_brodge() {
     if (timing->refresh && !soon) {
         soon = 1;
         tick_maj1();
-        bgra_clear650(&bgra);
+        //bgra_clear650(&bgra0);
         brodge_anim(brodge);
         if (timing->selection > -1) {
             brodge->sources[0]->x = timing->mousex;
             brodge->sources[0]->y = timing->mousey;
         }
-        brodge_exec(brodge, &bgra);
+        brodge_exec(brodge, &bgra1);
+        inserta650(&bgra1, &bgra0);
         tick_maj2();
         soon = 0;
     }
@@ -319,7 +322,10 @@ static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event) {
 
 static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event) {
     if (event->button == 1) {
-        timing->selection = - timing->selection;
+        timing->selection++;
+        if (timing->selection == brodge->nb_src) {
+            timing->selection = -1;
+        }
     } else if (event->button == 3) {
         timing->refresh = !timing->refresh;
     }
@@ -379,13 +385,15 @@ int main(int argc, char *argv[]) {
 //            gdimg->bits_per_pixel, gdimg->mem);
 
     //
-    brodge = brodge_init(width, height, 2);
+    brodge = brodge_init(960, 540, 2);
+    bgra_alloc650(&bgra1, brodge->width, brodge->height);
 
     //
-    bgra_alloc650(&bgra, width, height);
+    bgra_alloc650(&bgra0, width, height);
+    bgra_fill650(&bgra0, 0xff000000);
     printf("bgra alloc ok ::\n");
 
-    img = gdk_pixbuf_new_from_data((guchar*) bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
+    img = gdk_pixbuf_new_from_data((guchar*) bgra0.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
     printf("PixBuf new ok\n");
 
     // Image
