@@ -23,6 +23,7 @@
 #include <math.h>
 
 #include "f650_fonts.h"
+#include "layout/f650_layout.h"
 
 #define ASM650
 
@@ -95,8 +96,24 @@ typedef struct {
 typedef struct {
     int         x;
     int         y;
+} pos650i_;
+
+typedef struct {
     int         width;
     int         height;
+} dim650i_;
+
+typedef union {
+    struct {
+        int         x;
+        int         y;
+        int         width;
+        int         height;
+    };
+    struct {
+        pos650i     pos;
+        dim650i     dim;
+    };
 } rect650i;
 
 typedef struct {
