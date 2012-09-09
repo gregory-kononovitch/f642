@@ -44,6 +44,7 @@ struct timing {
     struct timeval  tv_layout2;
     struct timeval  layout;
     long            nb_layout;
+    long            ops_layout;
     // Queue
     struct timeval  tv_queued;
     long            nb_queued;
@@ -70,11 +71,11 @@ static void tick_timer() {
             double m = timing->maj.tv_sec + 0.000001 * timing->maj.tv_usec;
             double l = timing->layout.tv_sec + 0.000001 * timing->layout.tv_usec;
             double d = timing->delay.tv_sec + 0.000001 * timing->delay.tv_usec;
-            printf("Frame %ld : Timer : %ld | Maj %ld, %.1fms (%lu) | Layout %ld, %.3fms | Queue %ld | Expose %ld : %.2fms\n"
+            printf("Frame %ld : Timer : %ld | %ld Maj %.1fms (%lu) | %ld Layout %.3fms (%ld) | Queue %ld | Expose %ld : %.2fms\n"
                     , timing->frame
                     , timing->nb_timed
                     , timing->nb_maj, 1000. * m / upd, timing->pixels / 1000
-                    , timing->nb_layout, 1000. * l / upd
+                    , timing->nb_layout, 1000. * l / upd, timing->ops_layout / upd
                     , timing->nb_queued
                     , timing->nb_exposed, 1000. * d / upd);
             memset(&timing->timing, 0, sizeof(struct timeval));
@@ -85,6 +86,7 @@ static void tick_timer() {
             timing->nb_timed = 0;
             timing->nb_maj = 0;
             timing->nb_layout = 0;
+            timing->ops_layout = 0;
             timing->nb_queued = 0;
             timing->nb_exposed = 0;
         }
@@ -119,13 +121,14 @@ static void tick_layout1() {
         timeradd(&timing->timing, &tv, &timing->timing);
     }
 }
-static void tick_layout2() {
+static void tick_layout2(long ops) {
     if (timing) {
         struct timeval tv;
         gettimeofday(&timing->tv_layout2, NULL);
         timersub(&timing->tv_layout2, &timing->tv_layout1, &tv);
         timeradd(&timing->layout, &tv, &timing->layout);
         timing->nb_layout++;
+        timing->ops_layout += ops;
     }
 }
 static void tick_queued() {
@@ -309,15 +312,20 @@ static void maj_brodge() {
 }
 
 static void maj_layout() {
+    long l1, l2;
     tick_layout1();
     //
     int color = rand();
     color |= 0xff000000;
-    //imgfill1a650(&desk->bgra, color, (void*)zsta + 88);
+    l1 = ReadTSC();
+    imgfill1a650(&desk->bgra, color, ((void*)zsta) + 104);
+    l2 = ReadTSC();
     //
+    l1 = ReadTSC();
     inserta650(&bgra1, &desk->bgra);
+    l2 = ReadTSC();
     //
-    tick_layout2();
+    tick_layout2(l2 - l1);
 }
 
 static gboolean time_handler(GtkWidget *widget) {
@@ -419,11 +427,17 @@ int main(int argc, char *argv[]) {
     zone_set_location(zimg, (width - brodge->width) / 2, (height - brodge->height) / 2);
     zone_set_dimension(zimg, brodge->width, brodge->height);
     zsta = zone_add_item(desk, desk->root, 1);
-    zone_set_location(zsta, width - 201, height - 20);
+    zone_set_location(zsta, width - 201, 5);
     zone_set_dimension(zsta, 40, 20);
     desk_layout(desk);
     printf("desk layout ok :\n");
     desk_dump(desk);
+
+    // ### Test
+    long l1 = ReadTSC();
+    memcpy(desk->bgra.data, bgra1.data, bgra1.size << 2);
+    long l2 = ReadTSC();
+    printf("Memcopy : %ld\n", l2 - l1);
 
     // Image
     img = gdk_pixbuf_new_from_data((guchar*) desk->bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);

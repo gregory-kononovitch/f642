@@ -84,7 +84,7 @@ inserta650:
 			;
 			mov				rdi, [rdi]
 			shr				r10d, 2					; wsrc * 4 / 16
-			shr				r10d, 1
+;			shr				r10d, 1
 			;
 			mov				eax, r11d
 .loopy:
@@ -92,14 +92,14 @@ inserta650:
 			mov				ecx, r10d
 			;
 .loopx:		;
-			movdqa			xmm1, oword [rdi + 16]
-			movdqa			oword [rsi + 16], xmm1
+;			movdqa			xmm1, oword [rdi + 16]
+;			movdqa			oword [rsi + 16], xmm1
 			movdqa			xmm0, oword [rdi]
 			movdqa			oword [rsi], xmm0
 			;
 .cootx:
-			add				rdi, 32
-			add				rsi, 32
+			add				rdi, 16
+			add				rsi, 16
 			loop			.loopx
 			;
 .cooty:		;

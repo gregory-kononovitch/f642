@@ -186,13 +186,13 @@ int brodge_exec(brodge650 *brodge, bgra650 *img) {
     gettimeofday(&tv2, NULL);
     timersub(&tv2, &tv1, &tv2);
 
-    printf("Brodge return %ld for %ld µops [ %.3fM ; %ld ; %ld ] : %.1f Hz := %.0f ms\n", l, (l2 - l1)
-            , 0.000001 * (l2 - l1) / brodge->nb_src
-            , (l2 - l1) / brodge->nb_src / brodge->height
-            , (l2 - l1) / brodge->nb_src / brodge->width / brodge->height
-            , 1.5e9 / (l2 - l1)
-            , .001 * tv2.tv_usec
-    );
+//    printf("Brodge return %ld for %ld µops [ %.3fM ; %ld ; %ld ] : %.1f Hz := %.0f ms\n", l, (l2 - l1)
+//            , 0.000001 * (l2 - l1) / brodge->nb_src
+//            , (l2 - l1) / brodge->nb_src / brodge->height
+//            , (l2 - l1) / brodge->nb_src / brodge->width / brodge->height
+//            , 1.5e9 / (l2 - l1)
+//            , .001 * tv2.tv_usec
+//    );
     //
     return 0;
 }
