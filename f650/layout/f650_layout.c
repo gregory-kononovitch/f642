@@ -207,3 +207,30 @@ void zone_set_dimension(zone654 *zone, int w, int h) {
     zone->dim.width  = w;
     zone->dim.height = h;
 }
+
+static void zone_dump_iter(zone654 *zone, char *tab) {
+    char tabi[33];
+    zone = zone->items;
+    snprintf(tabi, 33, "\t%s", tab);
+    while(zone) {
+        LOG("%sZone %d : %dx%d at (%d, %d)", tab, zone->num, zone->dim.width, zone->dim.height, zone->_posa.x, zone->_posa.y);
+        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d", tab, zone->_obytes0, zone->_udword1, zone->_aoword2, zone->_udword3, zone->_height);
+        //
+        zone_dump_iter(zone, tabi);
+        //
+        zone = zone->next;
+    }
+}
+
+void zone_dump(zone654 *zone, int tree) {
+    //static char *tab = "\t";
+    LOG("Zone %d : %dx%d at (%d, %d)", zone->num, zone->dim.width, zone->dim.height, zone->_posa.x, zone->_posa.y);
+    LOG(" - ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d", zone->_obytes0, zone->_udword1, zone->_aoword2, zone->_udword3, zone->_height);
+    if (tree) zone_dump_iter(zone, "\t");
+}
+
+void desk_dump(desk654 *desk) {
+    int i;
+    LOG("Desk :");
+    zone_dump(desk->root, 1);
+}

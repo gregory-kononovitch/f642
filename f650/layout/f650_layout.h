@@ -124,4 +124,15 @@ zone654 *zone_add_item(desk654 *desk, zone654 *head, int level);
 void zone_set_location(zone654 * zone, int x, int y);
 void zone_set_dimension(zone654 * zone, int w, int h);
 
+// Utils
+void zone_dump(zone654 *zone, int tree);
+void desk_dump(desk654 *desk);
+
+
+// ASM
+long imgfill1a650(bgra650 *dest, uint32_t color, void *pties);
+
+
+
+
 #endif /* F650_LAYOUT_H_ */

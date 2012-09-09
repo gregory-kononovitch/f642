@@ -17,6 +17,9 @@
 static int width = 1024;    // 960;
 static int height = 600;    // 540;
 static desk654 *desk;
+static zone654 *zimg;
+static zone654 *zsta;
+//
 static bgra650 bgra1;
 static GdkPixbuf *img = NULL;
 static int timer_delay = 65;
@@ -28,15 +31,23 @@ extern void inserta650(bgra650 *img, bgra650 *into);
 struct timing {
     long frame;
     struct timeval  tv_timer;
-    struct timeval  tv_maj1;
     struct timeval  timing;
     long            nb_timed;
+    // brodge
+    struct timeval  tv_maj1;
     uint64_t        pixels;
     struct timeval  tv_maj2;
     struct timeval  maj;
     long            nb_maj;
+    // layout
+    struct timeval  tv_layout1;
+    struct timeval  tv_layout2;
+    struct timeval  layout;
+    long            nb_layout;
+    // Queue
     struct timeval  tv_queued;
     long            nb_queued;
+    // Expose
     struct timeval  tv_exposed;
     long            nb_exposed;
     struct timeval  delay;
@@ -57,19 +68,23 @@ static void tick_timer() {
         // last frame
         if (timing->frame % upd == 0) {
             double m = timing->maj.tv_sec + 0.000001 * timing->maj.tv_usec;
+            double l = timing->layout.tv_sec + 0.000001 * timing->layout.tv_usec;
             double d = timing->delay.tv_sec + 0.000001 * timing->delay.tv_usec;
-            printf("Frame %ld : Timer : %ld, Maj %ld : %.1fms (%lu), Queue %ld, Expose %ld : %.2fms\n"
+            printf("Frame %ld : Timer : %ld | Maj %ld, %.1fms (%lu) | Layout %ld, %.3fms | Queue %ld | Expose %ld : %.2fms\n"
                     , timing->frame
                     , timing->nb_timed
                     , timing->nb_maj, 1000. * m / upd, timing->pixels / 1000
+                    , timing->nb_layout, 1000. * l / upd
                     , timing->nb_queued
                     , timing->nb_exposed, 1000. * d / upd);
             memset(&timing->timing, 0, sizeof(struct timeval));
             memset(&timing->maj, 0, sizeof(struct timeval));
+            memset(&timing->layout, 0, sizeof(struct timeval));
             memset(&timing->delay, 0, sizeof(struct timeval));
             timing->pixels = 0;
             timing->nb_timed = 0;
             timing->nb_maj = 0;
+            timing->nb_layout = 0;
             timing->nb_queued = 0;
             timing->nb_exposed = 0;
         }
@@ -94,6 +109,23 @@ static void tick_maj2() {
         timersub(&timing->tv_maj2, &timing->tv_maj1, &tv);
         timeradd(&timing->maj, &tv, &timing->maj);
         timing->nb_maj++;
+    }
+}
+static void tick_layout1() {
+    if (timing) {
+        struct timeval tv;
+        gettimeofday(&timing->tv_layout1, NULL);
+        timersub(&timing->tv_layout1, &timing->tv_maj2, &tv);
+        timeradd(&timing->timing, &tv, &timing->timing);
+    }
+}
+static void tick_layout2() {
+    if (timing) {
+        struct timeval tv;
+        gettimeofday(&timing->tv_layout2, NULL);
+        timersub(&timing->tv_layout2, &timing->tv_layout1, &tv);
+        timeradd(&timing->layout, &tv, &timing->layout);
+        timing->nb_layout++;
     }
 }
 static void tick_queued() {
@@ -271,10 +303,21 @@ static void maj_brodge() {
             brodge->sources[timing->selection]->y = timing->mousey;
         }
         brodge_exec(brodge, &bgra1);
-        inserta650(&bgra1, &desk->bgra);
         tick_maj2();
         soon = 0;
     }
+}
+
+static void maj_layout() {
+    tick_layout1();
+    //
+    int color = rand();
+    color |= 0xff000000;
+    //imgfill1a650(&desk->bgra, color, (void*)zsta + 88);
+    //
+    inserta650(&bgra1, &desk->bgra);
+    //
+    tick_layout2();
 }
 
 static gboolean time_handler(GtkWidget *widget) {
@@ -282,6 +325,8 @@ static gboolean time_handler(GtkWidget *widget) {
     //
     //tst_bgra();
     maj_brodge();
+    //
+    maj_layout();
     //
     tick_queued();
     gtk_widget_queue_draw(widget);
@@ -369,7 +414,16 @@ int main(int argc, char *argv[]) {
 
     // Desk
     desk = desk_create654(width, height);
-    printf("desk create ok ::\n");
+    printf("desk create ok :\n");
+    zimg = zone_add_item(desk, desk->root, 2);
+    zone_set_location(zimg, (width - brodge->width) / 2, (height - brodge->height) / 2);
+    zone_set_dimension(zimg, brodge->width, brodge->height);
+    zsta = zone_add_item(desk, desk->root, 1);
+    zone_set_location(zsta, width - 201, height - 20);
+    zone_set_dimension(zsta, 40, 20);
+    desk_layout(desk);
+    printf("desk layout ok :\n");
+    desk_dump(desk);
 
     // Image
     img = gdk_pixbuf_new_from_data((guchar*) desk->bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
