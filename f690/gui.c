@@ -16,7 +16,7 @@
 //
 static int width = 1024;    // 960;
 static int height = 600;    // 540;
-static bgra650 bgra0;
+static desk654 *desk;
 static bgra650 bgra1;
 static GdkPixbuf *img = NULL;
 static int timer_delay = 65;
@@ -114,13 +114,9 @@ static void tick_expose() {
 
 static void tst_bgra();
 
-bgra650 *get_bgra() {
-    return &bgra0; // before a straight struct
-}
-
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
-    // Change TRUE to FALSE and the main window will be destroyed with
+    // false to destroy
     return FALSE;
 }
 
@@ -143,7 +139,7 @@ static void tst_bgra() {
     //
     tick_maj1();
     //
-    bgra_fill650(&bgra0, 0xff000000);
+    bgra_fill650(&desk->bgra, 0xff000000);
     long c;
     if (debug) printf("bgra clear ok\n");
     for (i = 0; i < 1; i++) {
@@ -194,12 +190,12 @@ static void tst_bgra() {
             p1.y = +200. * p1.y;
 //            dump650("p1 = ", &p1, "");
 //            dump650(" ; p2 = ", &p2, "\n");
-            c = draw_line3a650(&bgra0, p1.x, p1.y, p2.x, p2.y, WHITE650);
-            if (bgra0.data[5] > bgra0.data[7] || bgra0.data[6] > bgra0.data[7]) {
+            c = draw_line3a650(&desk->bgra, p1.x, p1.y, p2.x, p2.y, WHITE650);
+            if (desk->bgra.data[5] > desk->bgra.data[7] || desk->bgra.data[6] > desk->bgra.data[7]) {
                 dump650("p1 = ", &p1, "");
                 dump650(" ; p2 = ", &p2, "\n");
                 for (k = 0; k < 10; k++) {
-                    printf("%d : %d (%d, %d)\n", k, bgra0.data[k], bgra0.data[k] % 1024 - 512, bgra0.data[k] / 1024 - 300);
+                    printf("%d : %d (%d, %d)\n", k, desk->bgra.data[k], desk->bgra.data[k] % 1024 - 512, desk->bgra.data[k] / 1024 - 300);
                 }
             }
 //            dump650("p1 = ", &p1, "");
@@ -221,7 +217,7 @@ static void maj() {
     if (timing->frame % 2 == 0 && timing->refresh) {
         tick_maj1();
         //
-        bgra_fill650(&bgra0, 0xff000000);
+        bgra_fill650(&desk->bgra, 0xff000000);
         long c;
         for (i = 0; i < 1500; i++) {
             random650(&p1);
@@ -237,9 +233,9 @@ static void maj() {
             c = rand();
             c = (c | 0xff000000) & 0xffffffff;
             if (i % 20 == 0) {
-                timing->pixels += draw_line2a650(&bgra0, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
+                timing->pixels += draw_line2a650(&desk->bgra, p1.x, p1.y, p2.x, p2.y, c % 2 == 0 ? ORANGE650 : YELLOW650);
             }
-            timing->pixels += draw_char2a650(&bgra0, p1.x, p1.y, &monospaced650, 32 + (c % 90), c);
+            timing->pixels += draw_char2a650(&desk->bgra, p1.x, p1.y, &monospaced650, 32 + (c % 90), c);
         }
         tick_maj2();
     }
@@ -249,7 +245,7 @@ static void maj() {
     i = 0;
     int x = width/2 - 100;
     while(str[i]) {
-        timing->pixels += draw_char2a650(&bgra0, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
+        timing->pixels += draw_char2a650(&desk->bgra, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
         x += monospaced650.width;
         i++;
     }
@@ -257,7 +253,7 @@ static void maj() {
     i = 0;
     x += monospaced650.width;
     while(str[i]) {
-        timing->pixels += draw_char2a650(&bgra0, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
+        timing->pixels += draw_char2a650(&desk->bgra, x, -height/2 + 5, &monospaced650, str[i], BLUE650);
         x += monospaced650.width;
         i++;
     }
@@ -275,7 +271,7 @@ static void maj_brodge() {
             brodge->sources[timing->selection]->y = timing->mousey;
         }
         brodge_exec(brodge, &bgra1);
-        inserta650(&bgra1, &bgra0);
+        inserta650(&bgra1, &desk->bgra);
         tick_maj2();
         soon = 0;
     }
@@ -315,10 +311,10 @@ static gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
 static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event) {
     printf("Keyval = %d\n", event->keyval);
     switch(event->keyval) {
-        case 32:
+        case 32:                // space
             brodge_rebase(brodge);
             break;
-        case 65307:
+        case 65307:             // ESC
             gtk_main_quit();
             break;
     }
@@ -347,14 +343,12 @@ static gboolean button_release_event(GtkWidget *widget, GdkEventButton *event) {
  *
  */
 int main(int argc, char *argv[]) {
-
     //
     timing = calloc(1, sizeof(struct timing));
     timing->refresh = 1;
     timing->selection = -1;
     //
     GtkWidget *window;
-    GtkWidget *fixed;
     GtkWidget *frame;
 
     //
@@ -369,45 +363,22 @@ int main(int argc, char *argv[]) {
     gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
     printf("window ok\n");
 
-    // layout
-//    fixed = gtk_fixed_new();
-//    gtk_container_add(GTK_CONTAINER(window), fixed);
-//    printf("fixed ok\n");
-
-    // Image
-//    GList *visuals = gdk_list_visuals();
-//    void tst(gpointer data, gpointer udata) {
-//        if (((GdkVisual*) data)->depth == 32) printf(
-//                "visual :\n\ttype = %d\n\ttype = %d\n\tdepth = %d\n\tbits/rgb = %d\n\torder = %d\n\tred = %08X\n\tgreen = %08X\n\tblue = %08X\n",
-//                ((GdkVisual*) data)->type, ((GdkVisual*) data)->colormap_size, ((GdkVisual*) data)->depth,
-//                ((GdkVisual*) data)->bits_per_rgb, ((GdkVisual*) data)->byte_order, ((GdkVisual*) data)->red_mask,
-//                ((GdkVisual*) data)->green_mask, ((GdkVisual*) data)->blue_mask);
-//    }
-//    g_list_foreach(visuals, &tst, NULL);
-//    GdkVisual *visu = gdk_visual_get_best_with_depth(32);
-//    GdkImage *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
-//    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n", gdimg->bpp, gdimg->bpl,
-//            gdimg->bits_per_pixel, gdimg->mem);
-
     //
     brodge = brodge_init(928, 522, 2);
     bgra_alloc650(&bgra1, brodge->width, brodge->height);
 
-    //
-    bgra_alloc650(&bgra0, width, height);
-    bgra_fill650(&bgra0, 0xff000000);
-    printf("bgra alloc ok ::\n");
+    // Desk
+    desk = desk_create654(width, height);
+    printf("desk create ok ::\n");
 
     // Image
-    img = gdk_pixbuf_new_from_data((guchar*) bgra0.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
+    img = gdk_pixbuf_new_from_data((guchar*) desk->bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
     printf("PixBuf new ok\n");
     frame = gtk_image_new_from_pixbuf(img);
-//    gtk_fixed_put(GTK_FIXED(fixed), frame, 0, 0);
     gtk_container_add(GTK_CONTAINER(window), frame);
     printf("image ok\n");
 
     // Events
-//    g_signal_connect(darea, "expose-event", G_CALLBACK (on_expose_event), NULL);
     g_signal_connect(frame, "expose-event", G_CALLBACK(on_expose_event), NULL);
 
     g_signal_connect(window, "key_press_event", G_CALLBACK (key_press_event), NULL);
@@ -428,7 +399,6 @@ int main(int argc, char *argv[]) {
     g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
     // Show
-//    gtk_widget_show(fixed);
     gtk_widget_show_all(window);
 
     // Timer
@@ -439,3 +409,20 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+
+
+
+// Image
+//    GList *visuals = gdk_list_visuals();
+//    void tst(gpointer data, gpointer udata) {
+//        if (((GdkVisual*) data)->depth == 32) printf(
+//                "visual :\n\ttype = %d\n\ttype = %d\n\tdepth = %d\n\tbits/rgb = %d\n\torder = %d\n\tred = %08X\n\tgreen = %08X\n\tblue = %08X\n",
+//                ((GdkVisual*) data)->type, ((GdkVisual*) data)->colormap_size, ((GdkVisual*) data)->depth,
+//                ((GdkVisual*) data)->bits_per_rgb, ((GdkVisual*) data)->byte_order, ((GdkVisual*) data)->red_mask,
+//                ((GdkVisual*) data)->green_mask, ((GdkVisual*) data)->blue_mask);
+//    }
+//    g_list_foreach(visuals, &tst, NULL);
+//    GdkVisual *visu = gdk_visual_get_best_with_depth(32);
+//    GdkImage *gdimg = gdk_image_new(GDK_IMAGE_SHARED, visu, width, height);
+//    printf("GdkImage : bytes/pix = %d, linesize = %d, bits/pix = %d ; mem = %p\n", gdimg->bpp, gdimg->bpl,
+//            gdimg->bits_per_pixel, gdimg->mem);

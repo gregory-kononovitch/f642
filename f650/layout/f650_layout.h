@@ -114,6 +114,7 @@ struct _desk654_ {
 // Desk
 desk654 *desk_create654(int width, int height);
 void desk_free654(desk654 **desk);
+
 //
 void desk_layout(desk654 *desk);
 void desk_layout_zone(desk654 *desk, zone654 *zone);

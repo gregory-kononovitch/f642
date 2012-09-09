@@ -17,5 +17,6 @@
 
 #include "../f650/f650.h"
 #include "../f650/brodge/brodge650.h"
+#include "../f650/layout/f650_layout.h"
 
 #endif /* F690_H_ */

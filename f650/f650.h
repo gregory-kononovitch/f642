@@ -515,7 +515,4 @@ double poly2a650(double *coe, int len2, double x);
 void *memseta650(void *align_x16, uint32_t col, size_t size);
 
 
-#include "layout/f650_layout.h"
-
-
 #endif /* F650_H_ */
