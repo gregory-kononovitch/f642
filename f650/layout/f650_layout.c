@@ -44,6 +44,9 @@ desk654 *desk_create654(int width, int height) {
         //
         l = &desk->levels[i];
     }
+    //
+    pthread_spin_init(&desk->spin_spool, 1);
+    pthread_mutex_init(&desk->mutex_paint, NULL);
 
     // Zones
     desk->nb_max_zones = 512;
@@ -54,8 +57,6 @@ desk654 *desk_create654(int width, int height) {
     }
     desk->zones[0].links.pool_next = NULL;
     desk->zones[desk->nb_max_zones - 1].links.pool_next = &desk->zones[desk->nb_max_zones - 2];
-    desk->free_first = &desk->nb_max_zones[1];
-    desk->used_first = &desk->nb_max_zones[0];  // root
     // root
     desk->root = desk->zones;
     desk->nb_zones = 1;
@@ -90,9 +91,6 @@ desk654 *desk_create654(int width, int height) {
     desk->foreground.value = 0xff606060;
 
     //
-    pthread_spin_init(&desk->spin_spool, 1);
-    pthread_mutex_init(&desk->mutex_paint, NULL);
-    //
     return desk;
 }
 
@@ -107,6 +105,7 @@ void desk_free654(desk654 **desk) {
  * before adding lock
  */
 zone654 *desk_get_zone(desk654 *desk) {
+    pthread_spin_lock(&desk->spin_spool);
     if (desk->free_first) {
         zone654 *z = desk->free_first;
         if (z->links.pool_next) {
@@ -126,13 +125,39 @@ zone654 *desk_get_zone(desk654 *desk) {
             z->links.pool_next = NULL;
             desk->used_first = z;
         }
+        desk->nb_used++;
+        pthread_spin_unlock(&desk->spin_spool);
         return z;
     }
+    pthread_spin_unlock(&desk->spin_spool);
     return NULL;
 }
 
 void desk_put_zone(desk654 *desk, zone654 *zone) {
-
+    pthread_spin_lock(&desk->spin_spool);
+    if (zone->links.pool_prev) {
+        zone->links.pool_prev->links.pool_next = zone->links.pool_next;
+        if (zone->links.pool_next) {
+            zone->links.pool_next->links.pool_prev = zone->links.pool_prev;
+        }
+    } else if (zone->links.pool_next) {
+        zone->links.pool_next->links.pool_prev = zone->links.pool_prev;
+    } else {
+        desk->used_first = NULL;
+    }
+    //
+    if (desk->free_first) {
+        zone->links.pool_prev = NULL;
+        zone->links.pool_next = desk->free_first;
+        desk->free_first->links.pool_prev = zone;
+        desk->free_first;
+    } else {
+        zone->links.pool_prev = zone->links.pool_next = NULL;
+        desk->free_first;
+    }
+    //
+    desk->nb_used--;
+    pthread_spin_unlock(&desk->spin_spool);
 }
 
 

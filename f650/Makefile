@@ -14,7 +14,7 @@ EXC_DIR=exc
 
 # Librarires
 INCLUDE=
-LIBS=-lm
+LIBS=-lm -lpthread
 
 #
 # source-files

@@ -296,6 +296,15 @@ rgb:		; make rgb
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 osc1:
+			; ###
+;			movaps			xmm0, pp
+			mulps			pp, pp
+;			mulps			pp, xmm0
+			movaps			xmm0, oword [rbp - o_h]
+			mulps			xmm0, xmm0
+;			mulps  			xmm0, oword [rbp - o_h]
+			movaps			oword [rbp - o_h], xmm0
+
 			; type / flags
 			movaps			xmm0, oword [ONEp]
 			movaps			xmm1, oword [ZEROp]
@@ -447,19 +456,27 @@ osc1:
 
 
 .round		; dist : circle / ellipse
+;			movaps			xmm6, xmm4
 			mulps			xmm4, xmm4					; ^2
+;			mulps			xmm4, xmm6					; ^3
+;			movaps			xmm6, xmm5
 			mulps			xmm5, xmm5					; ^2
+;			mulps			xmm5, xmm6					; ^3
 			addps			xmm4, xmm5					; +
-			sqrtps			xmm4, xmm4					; sqrt dist
+;			sqrtps			xmm4, xmm4					; sqrt
 			jmp				.draw
 
 
 .hyperbole	; tsid : hyperbole
+;			movaps			xmm6, xmm4
 			mulps			xmm4, xmm4					; ^2
+;			mulps			xmm4, xmm6					; ^3
+;			movaps			xmm6, xmm5
 			mulps			xmm5, xmm5					; ^2
+;			mulps			xmm5, xmm6					; ^3
 			subps			xmm4, xmm5					; -
 			andps			xmm4, xmm7					; abs
-			sqrtps			xmm4, xmm4					; sqrt dist
+;			sqrtps			xmm4, xmm4					; sqrt dist
 
 ; ----------
 .draw
