@@ -100,17 +100,31 @@ typedef struct {
  *  Graphics oriented
  *  + int (float)
  */
-typedef struct _pos650i_ pos650i_;
-
-struct _pos650i_ {
+typedef struct {
+    float       x;
+    float       y;
+} pos650f_;
+typedef struct {
     int         x;
     int         y;
-};
+} pos650i_;
+typedef struct {
+    short       x;
+    short       y;
+} pos650s_;
 
+typedef struct {
+    float       width;
+    float       height;
+} dim650f_;
 typedef struct {
     int         width;
     int         height;
 } dim650i_;
+typedef struct {
+    short       width;
+    short       height;
+} dim650s_;
 
 typedef union {
     struct {

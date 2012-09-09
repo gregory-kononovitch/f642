@@ -318,7 +318,7 @@ static void maj_layout() {
     int color = rand();
     color |= 0xff000000;
     l1 = ReadTSC();
-    imgfill1a650(&desk->bgra, color, ((void*)zsta) + 104);
+    imgfille1a650(&desk->bgra, color, ((void*)zsta) + 104);
     l2 = ReadTSC();
     //
 //    l1 = ReadTSC();
