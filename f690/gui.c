@@ -26,7 +26,7 @@ static int timer_delay = 65;
 static long upd = 1000 / 65;
 //
 static brodge650 *brodge;
-extern void inserta650(bgra650 *img, bgra650 *into);
+extern void inserta16a650(bgra650 *img16a, bgra650 *into16a);
 
 struct timing {
     long frame;
@@ -322,7 +322,7 @@ static void maj_layout() {
     l2 = ReadTSC();
     //
 //    l1 = ReadTSC();
-    inserta650(&bgra1, &desk->bgra);
+    inserta16a650(&bgra1, &desk->bgra);
 //    l2 = ReadTSC();
 //    //
 //    l1 = ReadTSC();

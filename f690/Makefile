@@ -22,6 +22,7 @@ gtk : $(_gtk)
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./graphics3.ao ../f650/asm/graphics3.asm
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./brodge.ao ../f650/asm/brodge.asm
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./rdtsc64.ao ../f650/asm/rdtsc64.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o ./layout1.ao ../f650/asm/layout1.asm
 	
 #	gcc -o f690-gui.xo $(f690) $(BASE_LIBS) $(GTK_LIBS) \
 #	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o \
@@ -31,7 +32,7 @@ gtk : $(_gtk)
 	gcc -o gtk.xo $(_gtk) $(BASE_LIBS) $(GTK_LIBS) \
 	../f650/layout/f650_layout.o		\
 	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o ../f650/brodge/brodge650.o \
-	graphics.ao graphics2.ao graphics3.ao std1.ao rdtsc64.ao brodge.ao
+	graphics.ao graphics2.ao graphics3.ao std1.ao rdtsc64.ao brodge.ao layout1.ao
 	
 	
 gui.o : gui.c
