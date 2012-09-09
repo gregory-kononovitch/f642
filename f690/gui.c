@@ -22,10 +22,13 @@ static zone654 *zsta;
 //
 static bgra650 bgra1;
 static GdkPixbuf *img = NULL;
-static int timer_delay = 65;
-static long upd = 1000 / 65;
+static int timer_delay = 30;
+static long upd = 1000 / 30;
 //
 static brodge650 *brodge;
+static bgra650   *bgra;
+
+
 extern void inserta16a650(bgra650 *img16a, bgra650 *into16a);
 
 struct timing {
@@ -313,6 +316,8 @@ static void maj_brodge() {
 
 static void maj_layout() {
     long l1, l2;
+    static bgra650 *last = NULL;
+    //
     tick_layout1();
     //
     int color = rand();
@@ -321,13 +326,13 @@ static void maj_layout() {
     imgfill1a650(&desk->bgra, color, &zsta->pties);
     l2 = ReadTSC();
     //
-//    l1 = ReadTSC();
-    inserta16a650(&bgra1, &desk->bgra);
-//    l2 = ReadTSC();
-//    //
-//    l1 = ReadTSC();
-//    memcpy(desk->bgra.data, bgra1.data, bgra1.size << 2);
-//    l2 = ReadTSC();
+    if (bgra && last != bgra) {
+        // l1 = ReadTSC();
+        inserta16a650(bgra, &desk->bgra);
+        // l2 = ReadTSC();
+        last = bgra;
+    }
+
     //
     tick_layout2(l2 - l1);
 }
@@ -372,6 +377,7 @@ static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event) {
             brodge_rebase(brodge);
             break;
         case 65307:             // ESC
+            brodge_stop(brodge);
             gtk_main_quit();
             break;
     }
@@ -422,13 +428,14 @@ int main(int argc, char *argv[]) {
     printf("window ok\n");
 
     //
-    //brodge = brodge_init(928, 522, 2);
-    //brodge = brodge_init(752, 416, 2);
-    brodge = brodge_init(640, 360, 2);
+    brodge = brodge_init(928, 522, 2);
+//    brodge = brodge_init(752, 416, 2);
+//    brodge = brodge_init(640, 360, 2);
 //    brodge = brodge_init(544, 288, 2);
 //    brodge = brodge_init(432, 240, 2);
 //    brodge = brodge_init(320, 176, 2);
-    bgra_alloc650(&bgra1, brodge->width, brodge->height);
+    //
+//    bgra_alloc650(&bgra1, brodge->width, brodge->height);
 
     // Desk
     desk = desk_create654(width, height);
@@ -487,28 +494,43 @@ int main(int argc, char *argv[]) {
         desk654     *desk;
         zone654     *zbrd;
         brodge650   *brodge;
+        bgra650     *img1;
+        bgra650     *img2;
+        int         img;
     };
     int callback(void *prm0) {
-//        LOG("Callback %p", prm0);
+        LOG("Callback img%d", ((struct _prm_*)prm0)->img);
         if (!prm0) return 0;
         struct _prm_ *prm = (struct _prm_*)prm0;
+        if (prm->img == 1) bgra = prm->img1;
+        else bgra = prm->img2;
+
         brodge_anim(prm->brodge);
+        if (timing->selection > -1) {
+            brodge->sources[timing->selection]->x = timing->mousex - zimg->pties.posa.x;
+            brodge->sources[timing->selection]->y = timing->mousey - zimg->pties.posa.y;
+        }
         return 0;
     }
     struct _prm_ *prm = calloc(1, sizeof(struct _prm_));
     prm->desk = desk;
     prm->zbrd = zimg;
     prm->brodge = brodge;
+    prm->img1 = calloc(1, sizeof(bgra650));
+    bgra_alloc650(prm->img1, brodge->width, brodge->height);
+    prm->img2 = calloc(1, sizeof(bgra650));
+    bgra_alloc650(prm->img2, brodge->width, brodge->height);
+
     brodge->callback = &callback;
     brodge->prm = prm;
-    int r = brodge_start(brodge, &bgra1, 65000);
+    int r = brodge_start(brodge, NULL, 45000);
     LOG("brodge start return %d", r);
 
     //
     gtk_main();
 
     //
-    brodge_stop(brodge);
+    //brodge_stop(brodge);
 
     return 0;
 }

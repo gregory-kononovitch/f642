@@ -111,21 +111,35 @@ struct brodge_thread {
     bgra650         *bgra;
     pthread_attr_t  attr;
 };
+struct _prm_ {
+    void     *desk;
+    void     *zbrd;
+    brodge650   *brodge;
+    bgra650     *img1;
+    bgra650     *img2;
+    int         img;
+};
+
 
 static void *brodge_loop(void *prm) {
     struct timeval tv1, tv2;
     struct brodge_thread *bt = (struct brodge_thread*) prm;
     if (!bt) return NULL;
     brodge650 *brodge = bt->brodge;
-    if (!brodge || !bt->bgra) return NULL;
+    if (!brodge) return NULL;
+    // ### from gui.c
+    bgra650 *img1 = ((struct _prm_*)brodge->prm)->img1;
+    bgra650 *img2 = ((struct _prm_*)brodge->prm)->img2;
+    int *img = &((struct _prm_*)brodge->prm)->img;
+    *img = 2;
     //
     gettimeofday(&tv1, NULL);
-    brodge_exec(brodge, bt->bgra);
+    brodge_exec(brodge, img2);
     brodge->callback(brodge->prm);
     brodge->frame++;
     //
     while(brodge->running) {
-//        FOG("Thread Brodge : frame = %ld for %.3f s", brodge->frame, brodge->time);
+        FOG("Thread Brodge : frame = %ld for %.3f s", brodge->frame, brodge->time);
         // wait
         gettimeofday(&tv2, NULL);
         timersub(&tv2, &tv1, &tv2);
@@ -136,23 +150,30 @@ static void *brodge_loop(void *prm) {
         }
         // exec
         gettimeofday(&tv1, NULL);
-        brodge_exec(brodge, bt->bgra);
+        if (*img == 2) {
+            brodge_exec(brodge, img1);
+            *img = 1;
+        } else {
+            brodge_exec(brodge, img2);
+            *img = 2;
+        }
         if (brodge->callback) brodge->callback(brodge->prm);
         brodge->frame++;
         // pause
-        if (brodge->pause) {
-            pthread_mutex_lock(brodge->mutex);
-            while(brodge->pause) {
-                pthread_cond_wait(brodge->cond, brodge->mutex);
-            }
-            pthread_mutex_unlock(brodge->mutex);
-        }
+//        if (brodge->pause) {
+//            pthread_mutex_lock(brodge->mutex);
+//            while(brodge->pause) {
+//                pthread_cond_wait(brodge->cond, brodge->mutex);
+//            }
+//            pthread_mutex_unlock(brodge->mutex);
+//        }
     }
     brodge->running = 0;
     brodge->pause   = 0;
     if (brodge->thread) free(brodge->thread);
     brodge->thread = NULL;
     free(prm);
+    FOG("Brodge loop ended");
     return NULL;
 }
 

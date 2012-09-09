@@ -132,13 +132,13 @@ struct zone_graphics {
 //
 struct _zone654_ {
     // pties
-    struct zone_pties   pties;          // 0
+    struct zone_pties       pties;          // 0
 
     // ptr
-    struct zone_ptr     links;
+    struct zone_ptr         links;
 
     // drawing
-
+    struct zone_graphics    graphics;
 
 };
 
