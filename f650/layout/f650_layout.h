@@ -111,6 +111,7 @@ struct _zone654_ {
 };
 
 /*
+ * pool or reference?
  *
  */
 struct _desk654_ {
@@ -159,6 +160,8 @@ void desk_free654(desk654 **desk);
 //
 void desk_layout(desk654 *desk);
 void desk_layout_zone(desk654 *desk, zone654 *zone);
+zone654 *desk_get_zone(desk654 *desk);
+void desk_put_zone(desk654 *desk, zone654 *zone);
 
 // Zone
 zone654 *zone_add_item(desk654 *desk, zone654 *head, int level);

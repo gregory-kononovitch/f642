@@ -46,11 +46,19 @@ desk654 *desk_create654(int width, int height) {
     }
 
     // Zones
-    desk->zones = calloc(512, sizeof(zone654));
     desk->nb_max_zones = 512;
-    desk->nb_zones = 1;
-    desk->root = desk->zones;
+    desk->zones = calloc(desk->nb_max_zones, sizeof(zone654));
+    for(i = 1 ; i < desk->nb_max_zones - 1 ; i++) {
+        desk->zones[i].links.pool_prev = &desk->zones[i-1];
+        desk->zones[i].links.pool_next = &desk->zones[i+1];
+    }
+    desk->zones[0].links.pool_next = NULL;
+    desk->zones[desk->nb_max_zones - 1].links.pool_next = &desk->zones[desk->nb_max_zones - 2];
+    desk->free_first = &desk->nb_max_zones[1];
+    desk->used_first = &desk->nb_max_zones[0];  // root
     // root
+    desk->root = desk->zones;
+    desk->nb_zones = 1;
     desk->root->pties.flags = 0;
     desk->root->pties.posr.x = 0;
     desk->root->pties.posr.y = 0;
@@ -90,6 +98,39 @@ void desk_free654(desk654 **desk) {
     free((*desk)->levels);
     free(*desk);
 }
+
+/*
+ * before adding lock
+ */
+zone654 *desk_get_zone(desk654 *desk) {
+    if (desk->free_first) {
+        zone654 *z = desk->free_first;
+        if (z->links.pool_next) {
+            z->links.pool_next->links.pool_prev = NULL;
+            desk->free_first = z;
+        } else {
+            desk->free_first = NULL;
+        }
+        //
+        if (desk->used_first) {
+            desk->used_first->links.pool_prev = z;
+            z->links.pool_prev = NULL;
+            z->links.pool_next = desk->used_first;
+            desk->used_first = z;
+        } else {
+            z->links.pool_prev = NULL;
+            z->links.pool_next = NULL;
+            desk->used_first = z;
+        }
+        return z;
+    }
+    return NULL;
+}
+
+void desk_put_zone(desk654 *desk, zone654 *zone) {
+
+}
+
 
 
 /*
