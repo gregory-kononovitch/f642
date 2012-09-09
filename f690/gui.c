@@ -6,6 +6,12 @@
  * License : GNU Library or "Lesser" General Public License version 3.0 (LGPLv3)
  * There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
+
+/*
+ * BROKEN, fork to gui2.c
+ */
+
+
 #include <errno.h>
 #include <time.h>
 #include <sys/types.h>

@@ -118,8 +118,8 @@ typedef struct {
     color650    col2_sel;
     color650    col3_sel;
     //
-    int         (*unbor)(desk654 *desk, zone654 *zone, void *properties);
-    int         (*borde)(desk654 *desk, zone654 *zone, void *properties);
+    int         (*unbord)(desk654 *desk, zone654 *zone, void *properties);
+    int         (*border)(desk654 *desk, zone654 *zone, void *properties);
 } border654;
 
 struct zone_graphics {

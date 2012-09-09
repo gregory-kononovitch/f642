@@ -11,7 +11,7 @@ GTK_INCLUDE=-I/usr/include/gtk-2.0 -I/usr/lib/gtk-2.0/include -I/usr/include/atk
 GTK_LIBS=-lgtk-x11-2.0 -lgobject-2.0 -lglib-2.0 -lcairo -lgdk-x11-2.0 -lgdk_pixbuf-2.0
 	
 ################################
-_gtk = gui.o
+_gtk = gui2.o
 
 f690 = f690_gui.o
 
@@ -28,22 +28,15 @@ gtk : $(_gtk)
 #	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o \
 #	./graphics.ao ./graphics2.ao ./graphics3.ao ./std1.ao
 #	
-	gcc -O3 -Wall -c gui.c -o gui.o $(BASE_INCLUDE) $(GTK_INCLUDE)
+	gcc -O3 -Wall -c gui2.c -o gui2.o $(BASE_INCLUDE) $(GTK_INCLUDE)
 	gcc -o gtk.xo $(_gtk) $(BASE_LIBS) $(GTK_LIBS) \
 	../f650/layout/f650_layout.o		\
 	../f650/f650_graphics.o ../f650/f650_geometry1.o ../f650/f650_monospaced.o ../f650/brodge/brodge650.o \
 	graphics.ao graphics2.ao graphics3.ao std1.ao rdtsc64.ao brodge.ao layout1.ao
 	
 	
-gui.o : gui.c
-	gcc -O3 -Wall -c gui.c -o gui.o $(BASE_INCLUDE) $(GTK_INCLUDE)
-
-#f650_layout.o : ../f650/layout/f650_layout.c
-#	gcc -O3 -Wall -c ../f650/layout/f650_layout.c -o f650_layout.o $(BASE_INCLUDE)
-
-
-f690_gui.o : f690_gui.c
-	gcc -O3 -Wall -c f690_gui.c -o f690_gui.o $(BASE_INCLUDE) $(GTK_INCLUDE)
+gui2.o : gui2.c
+	gcc -O3 -Wall -c gui2.c -o gui2.o $(BASE_INCLUDE) $(GTK_INCLUDE)
 
 ###################
 
