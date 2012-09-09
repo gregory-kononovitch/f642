@@ -321,7 +321,9 @@ static void maj_layout() {
     imgfill1a650(&desk->bgra, color, ((void*)zsta) + 104);
     l2 = ReadTSC();
     //
+//    l1 = ReadTSC();
     inserta650(&bgra1, &desk->bgra);
+//    l2 = ReadTSC();
 //    //
 //    l1 = ReadTSC();
 //    memcpy(desk->bgra.data, bgra1.data, bgra1.size << 2);
@@ -430,7 +432,7 @@ int main(int argc, char *argv[]) {
     zone_set_dimension(zimg, brodge->width, brodge->height);
     zsta = zone_add_item(desk, desk->root, 1);
     zone_set_location(zsta, 22, 5);
-    zone_set_dimension(zsta, 802, 20);
+    zone_set_dimension(zsta, 60, 20);
     desk_layout(desk);
     printf("desk layout ok :\n");
     desk_dump(desk);

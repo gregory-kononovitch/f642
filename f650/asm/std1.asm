@@ -15,7 +15,9 @@ global memseta650:		function
 global memset2a650:		function
 global inserta650:		function
 ;
-global imgfill1a650:	function
+global imgfille1a650:	function
+global imgfillo1a650:	function
+
 global imgfill2a650:	function
 global imgfill12a650:	function
 global imgfill123a650:	function
@@ -104,7 +106,9 @@ inserta650:
 .cootx:
 			add				rdi, 16
 			add				rsi, 16
-			loop			.loopx
+			sub				ecx, 1
+			jnz				.loopx
+;			loop			.loopx
 			;
 .cooty:		;
 			sub				eax, 1
@@ -115,8 +119,8 @@ inserta650:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; long imgfill1a650(bgra650 *dest, uint32_t color, void *pties)
-imgfill1a650:
+; long imgfille1a650(bgra650 *dest, uint32_t color, void *pties)
+imgfille1a650:
 			;
 			mov				rdi, [rdi]
 			mov				eax, dword [rdx]		; offset0
@@ -125,20 +129,63 @@ imgfill1a650:
 			;
 			mov				r10d, dword [rdx + 4]	; dword1
 			mov				r9d, dword [rdx + 20]	; hsrc
-			;
+			; even
+			mov				eax, esi
+			shl				rsi, 32
+			or				rsi, rax
+			shr				r10d, 1
 .loopy
 			mov				ecx, r10d				; dword1
 .loopx
-			mov				dword [rdi], esi
+			mov				qword [rdi], rsi
 			;
-			add				rdi, 4
-			loop			.loopx
+			add				rdi, 8
+			sub				ecx, 1
+			jnz				.loopx
+;			loop			.loopx
 			;
 			add				rdi, r8
 			sub				r9d, 1					; h
 			jnz				.loopy
 			;
 			ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; long imgfillo1ea650(bgra650 *dest, uint32_t color, void *pties)
+imgfillo1a650:
+			;
+			mov				rdi, [rdi]
+			mov				eax, dword [rdx]		; offset0
+			add				rdi, rax				; + offset0
+			mov				r8d, dword [rdx + 16]	; offset4
+			;
+			mov				r10d, dword [rdx + 4]	; dword1
+			mov				r9d, dword [rdx + 20]	; hsrc
+			; odd
+			mov				eax, esi
+			shl				rsi, 32
+			or				rsi, rax
+			shr				r10d, 1
+			add				r8d, 4
+.loopy
+			mov				ecx, r10d				; dword1
+			;
+.loopx
+			mov				qword [rdi], rsi
+			;
+			add				rdi, 8
+			sub				ecx, 1
+			jnz				.loopx
+;			loop			.loopx
+			;
+			mov				dword [rdi], esi
+			;
+			add				rdi, r8
+			sub				r9d, 1					; h
+			jnz				.loopy
+			;
+			ret
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; long imgfill2a650(bgra650 *dest, uint32_t color, void *pties)
@@ -150,7 +197,7 @@ imgfill2a650:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; long imgfill12a650(bgra650 *dest, uint32_t color, void *pties)
-imgfill12a650:
+imgfill12a650:		; ### broken
 			;
 			mov				rdi, [rdi]
 			mov				eax, dword [rdx]		; offset0

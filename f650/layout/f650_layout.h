@@ -67,15 +67,17 @@ struct _zone654_ {
     zone654             *up;            // 80
 
     // work
-    pos650i_            _posa;
-    int                 _visible;       // 96
-    int                 _pad1;
-    int                 _obytes0;       // offset nw
-    int                 _udword1;
-    int                 _aoword2;       // 112
-    int                 _udword3;
-    int                 _obytes4;       // next seg
-    int                 _height;
+    pos650i_            _posa;          // 88
+    int                 _flags;         // 96 <- enter of properties (will struct)
+    int                 _obytes0;       // 100 offset nw
+    short               _udword1;       // 104
+    short               _aoword2;       // 106
+    short               _udword3;       // 108
+    short               _obytes4;       // 110 next seg
+    short               _height;        // 112
+
+    //
+    char pad[14];
                                         // 128
 };
 
@@ -130,7 +132,8 @@ void desk_dump(desk654 *desk);
 
 
 // ASM
-long imgfill1a650(bgra650 *dest, uint32_t color, void *pties);
+long imgfille1a650(bgra650 *dest, uint32_t color, void *pties);
+long imgfillo1a650(bgra650 *dest, uint32_t color, void *pties);
 long imgfill2a650(bgra650 *dest, uint32_t color, void *pties);
 long imgfill12a650(bgra650 *dest, uint32_t color, void *pties);
 long imgfill123a650(bgra650 *dest, uint32_t color, void *pties);
