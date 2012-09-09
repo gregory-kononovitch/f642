@@ -336,7 +336,7 @@ static gboolean time_handler(GtkWidget *widget) {
     tick_timer();
     //
     //tst_bgra();
-    maj_brodge();
+    //maj_brodge();
     //
     maj_layout();
     //
@@ -422,7 +422,12 @@ int main(int argc, char *argv[]) {
     printf("window ok\n");
 
     //
-    brodge = brodge_init(928, 522, 2);
+    //brodge = brodge_init(928, 522, 2);
+    //brodge = brodge_init(752, 416, 2);
+    brodge = brodge_init(640, 360, 2);
+//    brodge = brodge_init(544, 288, 2);
+//    brodge = brodge_init(432, 240, 2);
+//    brodge = brodge_init(320, 176, 2);
     bgra_alloc650(&bgra1, brodge->width, brodge->height);
 
     // Desk
@@ -477,7 +482,33 @@ int main(int argc, char *argv[]) {
     // Timer
     g_timeout_add(timer_delay, (GSourceFunc)time_handler, (gpointer)frame);
 
+    // brodge thread
+    struct _prm_ {
+        desk654     *desk;
+        zone654     *zbrd;
+        brodge650   *brodge;
+    };
+    int callback(void *prm0) {
+//        LOG("Callback %p", prm0);
+        if (!prm0) return 0;
+        struct _prm_ *prm = (struct _prm_*)prm0;
+        brodge_anim(prm->brodge);
+        return 0;
+    }
+    struct _prm_ *prm = calloc(1, sizeof(struct _prm_));
+    prm->desk = desk;
+    prm->zbrd = zimg;
+    prm->brodge = brodge;
+    brodge->callback = &callback;
+    brodge->prm = prm;
+    int r = brodge_start(brodge, &bgra1, 65000);
+    LOG("brodge start return %d", r);
+
+    //
     gtk_main();
+
+    //
+    brodge_stop(brodge);
 
     return 0;
 }

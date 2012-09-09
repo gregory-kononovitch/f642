@@ -12,6 +12,7 @@
 #ifndef BRODGE650_H_
 #define BRODGE650_H_
 
+#include <pthread.h>
 
 #include "../f650.h"
 
@@ -70,6 +71,22 @@ typedef struct {
     int         nb_src;     // 24
     //
     int         flags;      // 28
+
+    // Threading
+    long        us;         // 32
+    int         running;
+    int         pause;
+    //
+    int         (*callback)(void *prm);
+    void        *prm;
+    //
+    long        frame;
+    double      time;
+    //
+    pthread_t           *thread;
+    pthread_mutex_t     *mutex;  // 48
+    pthread_cond_t      *cond;
+
 } brodge650;
 
 //
@@ -86,5 +103,9 @@ void brodge_scale_src(brodge650 *brodge, bsource650 *src, float a, float b);
 int brodge_anim(brodge650 *brodge);
 void brodge_rebase(brodge650 *brodge);
 int brodge_exec(brodge650 *brodge, bgra650 *img);
+
+//
+int brodge_start(brodge650 *brodge, bgra650 *bgra, long us);
+void brodge_stop(brodge650 *brodge);
 
 #endif /* BRODGE650_H_ */

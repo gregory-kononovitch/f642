@@ -104,8 +104,7 @@ void desk_free654(desk654 **desk) {
 /*
  * before adding lock
  */
-zone654 *desk_get_zone(desk654 *desk) {
-    pthread_spin_lock(&desk->spin_spool);
+zone654 *desk_get_zone_unsync(desk654 *desk) {
     if (desk->free_first) {
         zone654 *z = desk->free_first;
         if (z->links.pool_next) {
@@ -126,15 +125,12 @@ zone654 *desk_get_zone(desk654 *desk) {
             desk->used_first = z;
         }
         desk->nb_used++;
-        pthread_spin_unlock(&desk->spin_spool);
         return z;
     }
-    pthread_spin_unlock(&desk->spin_spool);
     return NULL;
 }
 
-void desk_put_zone(desk654 *desk, zone654 *zone) {
-    pthread_spin_lock(&desk->spin_spool);
+void desk_put_zone_unsync(desk654 *desk, zone654 *zone) {
     if (zone->links.pool_prev) {
         zone->links.pool_prev->links.pool_next = zone->links.pool_next;
         if (zone->links.pool_next) {
@@ -157,7 +153,6 @@ void desk_put_zone(desk654 *desk, zone654 *zone) {
     }
     //
     desk->nb_used--;
-    pthread_spin_unlock(&desk->spin_spool);
 }
 
 

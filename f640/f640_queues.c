@@ -259,6 +259,7 @@ wait:
         if (block) {
             pthread_cond_wait(&queue->cond, &queue->mutex);
             if (!queue->run) {
+                pthread_mutex_unlock(&queue->mutex);
                 return -1;
             }
         } else {

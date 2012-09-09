@@ -100,6 +100,35 @@ struct zone_ptr {
     // 96
 };
 
+typedef struct {
+    short       dx;
+    short       dy;
+    short       da;
+    short       db;
+    //
+    color650    main;
+    color650    col2;
+    color650    col3;
+    //
+    color650    main_mo;
+    color650    col2_mo;
+    color650    col3_mo;
+    //
+    color650    main_sel;
+    color650    col2_sel;
+    color650    col3_sel;
+    //
+    int         (*unbor)(desk654 *desk, zone654 *zone, void *properties);
+    int         (*borde)(desk654 *desk, zone654 *zone, void *properties);
+} border654;
+
+struct zone_graphics {
+    void                *properties;
+    border654           *border;
+    int                 (*erase)(desk654 *desk, zone654 *zone, void *properties);
+    int                 (*paint)(desk654 *desk, zone654 *zone, void *properties);
+};
+
 //
 struct _zone654_ {
     // pties
@@ -107,6 +136,9 @@ struct _zone654_ {
 
     // ptr
     struct zone_ptr     links;
+
+    // drawing
+
 
 };
 
@@ -161,8 +193,9 @@ void desk_free654(desk654 **desk);
 //
 void desk_layout(desk654 *desk);
 void desk_layout_zone(desk654 *desk, zone654 *zone);
-zone654 *desk_get_zone(desk654 *desk);
-void desk_put_zone(desk654 *desk, zone654 *zone);
+//
+zone654 *desk_get_zone_unsync(desk654 *desk);
+void desk_put_zone_unsync(desk654 *desk, zone654 *zone);
 
 // Zone
 zone654 *zone_add_item(desk654 *desk, zone654 *head, int level);
