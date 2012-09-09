@@ -51,20 +51,23 @@ desk654 *desk_create654(int width, int height) {
     desk->nb_zones = 1;
     desk->root = desk->zones;
     // root
-    desk->root->posr.x = 0;
-    desk->root->posr.y = 0;
-    desk->root->dim.width  = width;
-    desk->root->dim.height = height;
-    desk->root->num = 0;
-    desk->root->flags = 1;
-    desk->root->zones = desk->zones;
-    desk->root->head  = NULL;
-    desk->root->items = NULL;
-    desk->root->prev  = NULL;
-    desk->root->next  = NULL;
-    desk->root->level = desk->level0;
-    desk->root->down  = NULL;
-    desk->root->up    = NULL;
+    desk->root->pties.flags = 0;
+    desk->root->pties.posr.x = 0;
+    desk->root->pties.posr.y = 0;
+    desk->root->pties.dim.width  = width;
+    desk->root->pties.dim.height = height;
+
+    //
+    desk->root->links.key = 0;
+    desk->root->links.flags = 1;
+    //
+    desk->root->links.head  = NULL;
+    desk->root->links.items = NULL;
+    desk->root->links.prev  = NULL;
+    desk->root->links.next  = NULL;
+    desk->root->links.level = desk->level0;
+    desk->root->links.down  = NULL;
+    desk->root->links.up    = NULL;
     //
     desk->level0->first = desk->root;
     desk->level0->last  = desk->root;
@@ -95,45 +98,45 @@ void desk_free654(desk654 **desk) {
  */
 static void zone_compute_heap64(desk654 *desk, zone654 *zone) {
     // _obytes0;       // offset
-    zone->_obytes0 = (zone->_posa.x + zone->_posa.y * desk->width) * desk->col_bepth;
-    // _udword1;
-    zone->_udword1 = 4 - (zone->_posa.x & 0x03);
-    zone->_udword1 &= 0x03;
-    // _udword3;
-    zone->_udword3 = (zone->_posa.x + zone->dim.width) & 0x03;
-    // _aoword2;
-    zone->_aoword2 = zone->dim.width - zone->_udword1 - zone->_udword3;
-    if (zone->_aoword2 < 40) {
-        zone->_udword1 = zone->dim.width;
-        zone->_udword3 = 0;
-        zone->_aoword2 = 0;
+    zone->pties.obytes0 = (zone->pties.posa.x + zone->pties.posa.y * desk->width) * desk->col_bepth;
+    // pties.udword1;
+    zone->pties.udword1 = 4 - (zone->pties.posa.x & 0x03);
+    zone->pties.udword1 &= 0x03;
+    // pties.udword3;
+    zone->pties.udword3 = (zone->pties.posa.x + zone->pties.dim.width) & 0x03;
+    // pties.aoword2;
+    zone->pties.aoword2 = zone->pties.dim.width - zone->pties.udword1 - zone->pties.udword3;
+    if (zone->pties.aoword2 < 40) {
+        zone->pties.udword1 = zone->pties.dim.width;
+        zone->pties.udword3 = 0;
+        zone->pties.aoword2 = 0;
     } else {
-        zone->_aoword2 >>= 2;
+        zone->pties.aoword2 >>= 2;
     }
-    // _obytes4;
-    zone->_obytes4 = (desk->width - zone->dim.width) * desk->col_bepth;
-    // _height
-    zone->_height = zone->dim.height;
+    // pties.obytes4;
+    zone->pties.obytes4 = (desk->width - zone->pties.dim.width) * desk->col_bepth;
+    // pties.height
+    zone->pties.rows = zone->pties.dim.height;
 
     // ### test : all in udword1 (opt later)
-    zone->_udword1 = zone->dim.width;
-    zone->_aoword2 = 0;
-    zone->_udword3 = 0;
+    zone->pties.udword1 = zone->pties.dim.width;
+    zone->pties.aoword2 = 0;
+    zone->pties.udword3 = 0;
 }
 
 /*
  * Assuming zone is updated
  */
 static void desk_layout_iter(desk654 *desk, zone654 *zone) {
-    zone = zone->items;
+    zone = zone->links.items;
     while(zone) {
-        zone->_posa.x = zone->posr.x + zone->head->_posa.x;
-        zone->_posa.y = zone->posr.y + zone->head->_posa.y;
+        zone->pties.posa.x = zone->pties.posr.x + zone->links.head->pties.posa.x;
+        zone->pties.posa.y = zone->pties.posr.y + zone->links.head->pties.posa.y;
         zone_compute_heap64(desk, zone);
         //
         desk_layout_iter(desk, zone);
         //
-        zone = zone->next;
+        zone = zone->links.next;
     }
 }
 
@@ -141,11 +144,11 @@ static void desk_layout_iter(desk654 *desk, zone654 *zone) {
  * Assuming no other zone above has been changed
  */
 void desk_layout_zone(desk654 *desk, zone654 *zone) {
-    zone->_posa.x = zone->posr.x;
-    zone->_posa.y = zone->posr.y;
-    if (zone->head) {
-        zone->_posa.x += zone->head->_posa.x;
-        zone->_posa.y += zone->head->_posa.y;
+    zone->pties.posa.x = zone->pties.posr.x;
+    zone->pties.posa.y = zone->pties.posr.y;
+    if (zone->links.head) {
+        zone->pties.posa.x += zone->links.head->pties.posa.x;
+        zone->pties.posa.y += zone->links.head->pties.posa.y;
         zone_compute_heap64(desk, zone);
     }
     //
@@ -170,26 +173,26 @@ zone654 *zone_add_item(desk654 *desk, zone654 *head, int level) {
     //
     zone654 *zone = &desk->zones[desk->nb_zones];     // @@@
     //
-    zone->num = desk->nb_zones;
-    zone->flags = 0;
-    zone->zones = desk->zones;
+    zone->links.key = desk->nb_zones;
+    zone->links.flags = 0;
+    zone->links.header = NULL;      // @@@
     //
-    zone->posr.x = 0;
-    zone->posr.y = 0;
-    zone->dim.width  = 0;
-    zone->dim.height = 0;
+    zone->pties.posr.x = 0;
+    zone->pties.posr.y = 0;
+    zone->pties.dim.width  = 0;
+    zone->pties.dim.height = 0;
     //
-    zone->head  = head;
-    zone->items = NULL;
-    zone->prev  = NULL;
-    zone->next  = head->items;
-    if (head->items) head->items->prev = zone;
-    head->items = zone;
+    zone->links.head  = head;
+    zone->links.items = NULL;
+    zone->links.prev  = NULL;
+    zone->links.next  = head->links.items;
+    if (head->links.items) head->links.items->links.prev = zone;
+    head->links.items = zone;
     //
-    zone->level = &desk->levels[level];
-    zone->down  = zone->level->last;
-    if (zone->level->last) zone->level->last->up = zone;
-    zone->up    = NULL;
+    zone->links.level = &desk->levels[level];
+    zone->links.down  = zone->links.level->last;
+    if (zone->links.level->last) zone->links.level->last->links.up = zone;
+    zone->links.up    = NULL;
     //
     desk->nb_zones++;
 
@@ -201,36 +204,36 @@ zone654 *zone_add_item(desk654 *desk, zone654 *head, int level) {
  * Without laying out
  */
 void zone_set_location(zone654 *zone, int x, int y) {
-    zone->posr.x = x;
-    zone->posr.y = y;
+    zone->pties.posr.x = x;
+    zone->pties.posr.y = y;
 }
 
 /*
  * Without laying out
  */
 void zone_set_dimension(zone654 *zone, int w, int h) {
-    zone->dim.width  = w;
-    zone->dim.height = h;
+    zone->pties.dim.width  = w;
+    zone->pties.dim.height = h;
 }
 
 static void zone_dump_iter(zone654 *zone, char *tab) {
     char tabi[33];
-    zone = zone->items;
+    zone = zone->links.items;
     snprintf(tabi, 33, "\t%s", tab);
     while(zone) {
-        LOG("%sZone %d : %dx%d at (%d, %d)", tab, zone->num, zone->dim.width, zone->dim.height, zone->_posa.x, zone->_posa.y);
-        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; ob4 = %d ; h = %d", tab, zone->_obytes0, zone->_udword1, zone->_aoword2, zone->_udword3, zone->_obytes4, zone->_height);
+        LOG("%sZone %d : %dx%d at (%d, %d)", tab, zone->links.key, zone->pties.dim.width, zone->pties.dim.height, zone->pties.posa.x, zone->pties.posa.y);
+        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; ob4 = %d ; h = %d", tab, zone->pties.obytes0, zone->pties.udword1, zone->pties.aoword2, zone->pties.udword3, zone->pties.obytes4, zone->pties.rows);
         //
         zone_dump_iter(zone, tabi);
         //
-        zone = zone->next;
+        zone = zone->links.next;
     }
 }
 
 void zone_dump(zone654 *zone, int tree) {
     //static char *tab = "\t";
-    LOG("Zone %d : %dx%d at (%d, %d)", zone->num, zone->dim.width, zone->dim.height, zone->_posa.x, zone->_posa.y);
-    LOG(" - ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d", zone->_obytes0, zone->_udword1, zone->_aoword2, zone->_udword3, zone->_height);
+    LOG("Zone %d : %dx%d at (%d, %d)", zone->links.key, zone->pties.dim.width, zone->pties.dim.height, zone->pties.posa.x, zone->pties.posa.y);
+    LOG(" - ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d", zone->pties.obytes0, zone->pties.udword1, zone->pties.aoword2, zone->pties.udword3, zone->pties.rows);
     if (tree) zone_dump_iter(zone, "\t");
 }
 

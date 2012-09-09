@@ -47,38 +47,56 @@ struct _level654_ {
 /*
  *
  */
-struct _zone654_ {
-    // rect650i
-    pos650i_            posr;
-    dim650i_            dim;
+struct zone_pties {
+    int                 flags;          // 0
+    pos650s_            posr;           // 4
+    dim650s_            dim;            // 8
+    pos650s_            posa;           // 12
+    // rect
+    int                 obytes0;        // 16 offset nw
+    short               udword1;        // 20
+    short               aoword2;        // 22
+    short               udword3;        // 24
+    short               obytes4;        // 26 next seg
+    short               rows;           // 28
+
+    //
+    char pad[36];
+                                        // 64
+};
+
+struct zone_ptr {
+    // zone
+    int                 key;
+    int                 flags;
+    zone654             *header;
 
     // zones
-    int                 num;            // 16
-    int                 flags;          // (pixed, opaque,...)
-    zone654             *zones;
-    zone654             *head;          // 32
+    zone654             *head;          // 16
     zone654             *items;
-    zone654             *prev;          // 48
+    zone654             *prev;
     zone654             *next;
 
     // level
-    level654            *level;         // 64
+    level654            *level;         // 48
     zone654             *down;
-    zone654             *up;            // 80
+    zone654             *up;
 
-    // work
-    pos650i_            _posa;          // 88
-    int                 _flags;         // 96 <- enter of properties (will struct)
-    int                 _obytes0;       // 100 offset nw
-    short               _udword1;       // 104
-    short               _aoword2;       // 106
-    short               _udword3;       // 108
-    short               _obytes4;       // 110 next seg
-    short               _height;        // 112
+    // pool
+    zone654             *pool_last;
+    zone654             *pool_next;      // 72
 
-    //
-    char pad[14];
-                                        // 128
+    // 80
+};
+
+//
+struct _zone654_ {
+    // pties
+    struct zone_pties   pties;          // 0
+
+    // ptr
+    struct zone_ptr     links;
+
 };
 
 /*
@@ -132,8 +150,7 @@ void desk_dump(desk654 *desk);
 
 
 // ASM
-long imgfille1a650(bgra650 *dest, uint32_t color, void *pties);
-long imgfillo1a650(bgra650 *dest, uint32_t color, void *pties);
+long imgfill1a650(bgra650 *dest, uint32_t color, void *pties);
 long imgfill2a650(bgra650 *dest, uint32_t color, void *pties);
 long imgfill12a650(bgra650 *dest, uint32_t color, void *pties);
 long imgfill123a650(bgra650 *dest, uint32_t color, void *pties);
