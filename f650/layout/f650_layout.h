@@ -137,12 +137,12 @@ struct _desk654_ {
     int                 pad1;
 
     // used/free zones pool
-    volatile int        spool_spin;         // pthread_spinlock_t, volatile int
+    volatile int        spin_spool;         // pthread_spinlock_t, volatile int
     zone654             *free_first;
     zone654             *used_first;
 
     // repaint pool
-    volatile int        spin_paint;         // pthread_spinlock_t, volatile int
+    volatile int        mutex_paint;         // pthread_spinlock_t, volatile int
     zone654             *paint_first;
 
 };

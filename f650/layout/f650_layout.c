@@ -88,6 +88,10 @@ desk654 *desk_create654(int width, int height) {
     desk->col_bepth = 4;
     desk->background.value = BLACK650;
     desk->foreground.value = 0xff606060;
+
+    //
+    pthread_spin_init(&desk->spin_spool, 1);
+    pthread_mutex_init(&desk->mutex_paint, NULL);
     //
     return desk;
 }
