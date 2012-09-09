@@ -318,7 +318,7 @@ static void maj_layout() {
     int color = rand();
     color |= 0xff000000;
     l1 = ReadTSC();
-    imgfill1a650(&desk->bgra, color, ((void*)zsta) + 104);
+    imgfill1a650(&desk->bgra, color, &zsta->pties);
     l2 = ReadTSC();
     //
 //    l1 = ReadTSC();
@@ -417,6 +417,7 @@ int main(int argc, char *argv[]) {
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_container_set_border_width(GTK_CONTAINER(window), 0);
     gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+    gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
     printf("window ok\n");
 

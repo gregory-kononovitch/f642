@@ -89,9 +89,9 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
         ((vect650*)src[i]->parm)->z = v.z / 100.;
         ((vect650*)src[i]->parm)->t = 0;
     }
-    src[0]->flags = BRDG_XLINE;
+    src[0]->flags = BRDG_HYPERBOLE;
     if (brodge->nb_src > 1) src[1]->flags = BRDG_ELLIPSE;
-    if (brodge->nb_src > 2) src[2]->flags = BRDG_HYPERBOLE;
+    if (brodge->nb_src > 2) src[2]->flags = BRDG_XLINE;
 //    brodge_scale_src(brodge, src[0], 9./16., 1);
 //    brodge_turn_src(brodge, src[0], .707, .707);
     //

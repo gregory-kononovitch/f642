@@ -17,6 +17,15 @@ global imgfill2a650:	function
 global imgfill12a650:	function
 global imgfill123a650:	function
 
+; zone properties
+%define     obytes0     16
+%define     udword1     20
+%define     aoword2     22
+%define     udword3     24
+%define     obytes4     26
+%define     rows        28
+
+
 
 SECTION .data
 
@@ -87,18 +96,18 @@ inserta16a650:
 ; long imgfill1a650(bgra650 *dest, uint32_t color, void *pties)
 imgfill1a650:
 			;
-			mov				rdi, [rdi]				; img
-			mov				eax, dword [rdx + 16]	; offset0
-			add				rdi, rax				; + offset0
+			mov				rdi, [rdi]					; img
+			mov				eax, dword [rdx + obytes0]	; offset0
+			add				rdi, rax					; + offset0
 			;
 			xor				r10, r10
-			mov				r10w, word [rdx + 20]	; dword1
+			mov				r10w, word [rdx + udword1]	; dword1
 			;
 			xor				r8, r8
-			mov				r8w, word [rdx + 26]	; offset4
+			mov				r8w, word [rdx + obytes4]	; offset4
 			;
 			xor				r9, r9
-			mov				r9w, word [rdx + 28]	; hsrc
+			mov				r9w, word [rdx + rows]		; hsrc
 			; even
 			mov				eax, esi
 			shl				rsi, 32

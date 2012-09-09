@@ -205,6 +205,13 @@ typedef union {
     };
 } color650;
 
+typedef struct {
+    float blue;
+    float green;
+    float red;
+    float alpha;
+} teinte650;
+
 typedef union _vect650_ vect650;
 
 union _vect650_ {

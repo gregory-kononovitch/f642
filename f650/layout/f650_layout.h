@@ -45,20 +45,25 @@ struct _level654_ {
 };
 
 /*
- *
+%define     obytes0     16
+%define     udword1     20
+%define     aoword2     22
+%define     udword3     24
+%define     obytes4     26
+%define     rows        28
  */
 struct zone_pties {
-    int                 flags;          // 0
+    uint32_t            flags;          // 0
     pos650s_            posr;           // 4
     dim650s_            dim;            // 8
     pos650s_            posa;           // 12
-    // rect
-    int                 obytes0;        // 16 offset nw
-    short               udword1;        // 20
-    short               aoword2;        // 22
-    short               udword3;        // 24
-    short               obytes4;        // 26 next seg
-    short               rows;           // 28
+    // outter rect
+    int32_t             obytes0;        // 16 offset nw
+    int16_t             udword1;        // 20
+    int16_t             aoword2;        // 22
+    int16_t             udword3;        // 24
+    int16_t             obytes4;        // 26 next seg
+    int16_t             rows;           // 28
 
     //
     char pad[36];
