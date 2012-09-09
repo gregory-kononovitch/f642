@@ -12,6 +12,8 @@
 #ifndef F650_LAYOUT_H_
 #define F650_LAYOUT_H_
 
+#define __USE_XOPEN2K 1
+#include <pthread.h>
 
 #include "../f650.h"
 
@@ -88,10 +90,14 @@ struct zone_ptr {
     zone654             *up;
 
     // pool
-    zone654             *pool_last;
+    zone654             *pool_prev;
     zone654             *pool_next;      // 72
 
-    // 80
+    // repaint
+    zone654             *repaint_prev;
+    zone654             *repaint_next;      // 88
+
+    // 96
 };
 
 //
@@ -128,6 +134,16 @@ struct _desk654_ {
     color650            background;
     color650            foreground;
     int                 pad1;
+
+    // used/free zones pool
+    volatile int        spool_spin;         // pthread_spinlock_t, volatile int
+    zone654             *free_first;
+    zone654             *used_first;
+
+    // repaint pool
+    volatile int        spin_paint;         // pthread_spinlock_t, volatile int
+    zone654             *paint_first;
+
 };
 
 

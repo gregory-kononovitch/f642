@@ -302,8 +302,8 @@ static void maj_brodge() {
         //bgra_clear650(&bgra0);
         brodge_anim(brodge);
         if (timing->selection > -1) {
-            brodge->sources[timing->selection]->x = timing->mousex;
-            brodge->sources[timing->selection]->y = timing->mousey;
+            brodge->sources[timing->selection]->x = timing->mousex - zimg->pties.posa.x;
+            brodge->sources[timing->selection]->y = timing->mousey - zimg->pties.posa.y;
         }
         brodge_exec(brodge, &bgra1);
         tick_maj2();

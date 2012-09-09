@@ -35,6 +35,7 @@
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1231441050" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GDK_DISABLE_DEPRECATED"/>
+									<listOptionValue builtIn="false" value="__USE_XOPEN2K=1"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.428279663" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
