@@ -114,6 +114,11 @@ static void zone_compute_heap64(desk654 *desk, zone654 *zone) {
     zone->_obytes4 = (desk->width - zone->dim.width) * desk->col_bepth;
     // _height
     zone->_height = zone->dim.height;
+
+    // ### test : all in udword1 (opt later)
+    zone->_udword1 = zone->dim.width;
+    zone->_aoword2 = 0;
+    zone->_udword3 = 0;
 }
 
 /*
@@ -214,7 +219,7 @@ static void zone_dump_iter(zone654 *zone, char *tab) {
     snprintf(tabi, 33, "\t%s", tab);
     while(zone) {
         LOG("%sZone %d : %dx%d at (%d, %d)", tab, zone->num, zone->dim.width, zone->dim.height, zone->_posa.x, zone->_posa.y);
-        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d", tab, zone->_obytes0, zone->_udword1, zone->_aoword2, zone->_udword3, zone->_height);
+        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; ob4 = %d ; h = %d", tab, zone->_obytes0, zone->_udword1, zone->_aoword2, zone->_udword3, zone->_obytes4, zone->_height);
         //
         zone_dump_iter(zone, tabi);
         //

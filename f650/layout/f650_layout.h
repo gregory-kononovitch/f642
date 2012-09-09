@@ -131,6 +131,9 @@ void desk_dump(desk654 *desk);
 
 // ASM
 long imgfill1a650(bgra650 *dest, uint32_t color, void *pties);
+long imgfill2a650(bgra650 *dest, uint32_t color, void *pties);
+long imgfill12a650(bgra650 *dest, uint32_t color, void *pties);
+long imgfill123a650(bgra650 *dest, uint32_t color, void *pties);
 
 
 

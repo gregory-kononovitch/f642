@@ -16,6 +16,10 @@ global memset2a650:		function
 global inserta650:		function
 ;
 global imgfill1a650:	function
+global imgfill2a650:	function
+global imgfill12a650:	function
+global imgfill123a650:	function
+
 
 SECTION .data
 
@@ -111,7 +115,7 @@ inserta650:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; long imgfill1a650(bgra *dest, uint32_t color, void *pties)
+; long imgfill1a650(bgra650 *dest, uint32_t color, void *pties)
 imgfill1a650:
 			;
 			mov				rdi, [rdi]
@@ -136,4 +140,60 @@ imgfill1a650:
 			;
 			ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; long imgfill2a650(bgra650 *dest, uint32_t color, void *pties)
+imgfill2a650:
 
+
+			ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; long imgfill12a650(bgra650 *dest, uint32_t color, void *pties)
+imgfill12a650:
+			;
+			mov				rdi, [rdi]
+			mov				eax, dword [rdx]		; offset0
+			add				rdi, rax				; + offset0
+			;
+			mov				r10d, dword [rdx + 4]	; dword1
+			mov				r11d, dword [rdx + 8]	; oword2
+			mov				r8d, dword [rdx + 16]	; offset4
+			mov				r9d, dword [rdx + 20]	; hsrc
+			;
+			mov				dword [rsp - 16], esi
+			mov				dword [rsp - 12], esi
+			mov				dword [rsp - 8], esi
+			mov				dword [rsp - 4], esi
+			movdqa			xmm0, oword [rsp - 16]
+.loopy
+			mov				ecx, r10d				; dword1
+.loopx1
+			mov				dword [rdi], esi
+			;
+			add				rdi, 4
+			loop			imgfill12a650.loopx1
+			;
+			mov				ecx, r11d				; oword2
+			;
+.loopx2
+			movdqa			oword [rdi], xmm0
+			;
+			add				rdi, 16
+			loop			imgfill12a650.loopx2
+			;
+			;
+.cooty
+			add				rdi, r8
+			sub				r9d, 1					; h
+			jnz				imgfill12a650.loopy
+			;
+			ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; long imgfill123a650(bgra650 *dest, uint32_t color, void *pties)
+imgfill123a650:
+
+
+			ret
