@@ -35,6 +35,12 @@ typedef struct {
     //
 } x11gui691;
 
+static int xerror = 0;
+static int handle_xerror(Display* display, XErrorEvent* err) {
+    FOG("Error %d", err->type)
+    xerror = 1;
+    return 0;
+}
 
 int create_window(x11gui691 *gui, int width, int height, int shm) {
     int r;
@@ -71,6 +77,8 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
         FOG("Can not open display, returning");
         return -1;
     }
+    //
+    //XSetErrorHandler(&handle_xerror);
 
     //
     if (shm && XShmQueryExtension(gui->display)) {
@@ -140,7 +148,7 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
 
     // Map gui->window
     XMapWindow(gui->display, gui->window);
-    FOG("Map window start");
+    FOG("Map window wait");
 
     // Wait for map.
     do {
@@ -198,7 +206,7 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
         XShmGetImage(gui->display, tmp, gui->ximg, 0, 0, AllPlanes);
         XFreeGC(gui->display, gc);
         XFreePixmap(gui->display, tmp);
-    } else if (shm) {
+    } else if (gui->shm) {
         gui->ximg = XShmCreateImage(gui->display, vinfo.visual
                 , vinfo.depth, ZPixmap, NULL
                 , &gui->shm_info
@@ -212,7 +220,7 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
             );
             FOG("shmget return %d - %p", gui->shm_info.shmid, gui->shm_info.shmaddr);
             //
-            gui->shm_info.shmaddr = (char *)shmat(gui->shm_info.shmid, 0, 0);
+            gui->shm_info.shmaddr = (char*)shmat(gui->shm_info.shmid, 0, 0);
             FOG("shmat return %p", gui->shm_info.shmaddr);
             gui->shm_info.readOnly = False;
             //
@@ -221,6 +229,8 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
             //
             r = shmctl(gui->shm_info.shmid, IPC_RMID, 0);
             FOG("shmctl return %d", r);
+            //
+            gui->ximg->data = gui->shm_info.shmaddr;
         } else {
             FOG("XShmCreateImage failed");
         }
@@ -232,18 +242,39 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
                 , AllPlanes, ZPixmap);
         FOG("XGetImage return %p", gui->ximg);
         //
-        if (gui->ximg) {
-            Status st = XInitImage(gui->ximg);
-            FOG("XInitImage return %d", st);
-        }
+//        if (gui->ximg) {
+//            Status st = XInitImage(gui->ximg);
+//            FOG("XInitImage return %d", st);
+//        }
+    } else {
+        //
+//        if (gui->ximg) {
+//            Status st = XInitImage(gui->ximg);
+//            FOG("XInitImage return %d", st);
+//        }
     }
 
     r = XSync(gui->display, False);
     FOG("XSync return %d", r);
 
     //
-    bgra_link650(&gui->bgra, gui->ximg->data, gui->width, gui->height);
+    gui->shm_info.shmid = shmget(IPC_PRIVATE
+            , gui->ximg->bytes_per_line * gui->ximg->height
+            , IPC_CREAT | 0777
+    );
+    FOG("shmget return %d - %p", gui->shm_info.shmid, gui->shm_info.shmaddr);
+    //
+    gui->shm_info.shmaddr = (char*)shmat(gui->shm_info.shmid, 0, 0);
+    FOG("shmat return %p", gui->shm_info.shmaddr);
+    gui->shm_info.readOnly = False;
+
+    r = shmctl(gui->shm_info.shmid, IPC_RMID, 0);
+    FOG("shmctl return %d", r);
+    bgra_link650(&gui->bgra, gui->shm_info.shmaddr, gui->width, gui->height);
+
+//    bgra_link650(&gui->bgra, gui->ximg->data, gui->width, gui->height);
     bgra_fill2650(&gui->bgra, 0xff507010);
+    FOG("bgra fill ok");
 
     //
     if (gui->ximg && !gui->shm) {
@@ -262,29 +293,7 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
     return 0;
 }
 
-void show_image(x11gui691 *gui) {
-  FOG("void DisplayX11::gui->display_image(ximage, unsigned char *dithered_image)");
 
-#ifdef SH_MEM                            // gui->display dithered image
-  if (shmem_flag==2) return;
-#endif
-
-
-  // check for geometry changes
-//  if (XCheckWindowEvent(gui->display, gui->window, StructureNotifyMask, &event))  resize();
-
-#ifdef SH_MEM
-  if (shmem_flag==1){
-    XShmPutImage(gui->display, gui->window, gui->gc, ximg, 0,0,0,0,ximg->width,ximg->height,True);
-    XFlush(gui->display);
-  }
-  else
-#endif // SH_MEM
-  {
-    gui->ximg->data=(char*) gui->bgra.data;
-    XPutImage(gui->display, gui->window, gui->gc, gui->ximg, 0, 0, 0, 0, gui->ximg->width, gui->ximg->height);
-  }
-}
 
 int resize(x11gui691 *gui) {
   FOG("int DisplayX11::resize()");
@@ -357,7 +366,7 @@ int main() {
     int r;
     x11gui691 *gui = calloc(1, sizeof(x11gui691));
 
-    r = create_window(gui, 640, 360, 1);
+    r = create_window(gui, 640, 360, 0);
     FOG("Create window return %d", r);
 
     //
@@ -371,7 +380,7 @@ int main() {
     struct timeval tv1, tv2;
     brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
     gettimeofday(&tv2, NULL);
-    while(0) {
+    while(1) {
         brodge_anim(brodge);
         brodge_exec(brodge, &gui->bgra);
         //
@@ -392,7 +401,7 @@ int main() {
         //
         XSync(gui->display, 0);
 
-        usleep(30);
+        usleep(30000);
     }
 
 
