@@ -362,11 +362,11 @@ int show_properties() {
 }
 
 
-int main() {
+int main0() {
     int r;
     x11gui691 *gui = calloc(1, sizeof(x11gui691));
 
-    r = create_window(gui, 640, 360, 1);
+    r = create_window(gui, 1024, 600, 1);
     FOG("Create window return %d", r);
 
     //
@@ -377,6 +377,7 @@ int main() {
 //    LOG("XWindowEvent return %d", r);
 
     //
+    long l = 0;
     struct timeval tv1, tv2;
     brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
     gettimeofday(&tv2, NULL);
@@ -398,7 +399,7 @@ int main() {
         //
         XSync(gui->display, 0);
 
-        usleep(20000);
+        usleep(10000);
     }
 
 

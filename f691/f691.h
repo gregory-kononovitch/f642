@@ -24,4 +24,25 @@
 #include "../f650/layout/f650_layout.h"
 
 
+typedef struct {
+    int         width;
+    int         height;
+
+    // X
+    Display     *display;
+    int         screen;
+    Window      window;
+    GC          gc;
+
+    //
+    int             shm;
+    XShmSegmentInfo shm_info;
+
+    //
+    XImage      *ximg;
+
+} x11gui691;
+
+
+
 #endif /* F691_H_ */
