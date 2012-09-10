@@ -14,6 +14,9 @@
 
 
 #include <X11/Xlib-xcb.h>
+#include <X11/Xutil.h>
+#include <X11/extensions/XShm.h>
+
 
 #include "../f650/f650.h"
 #include "../f650/brodge/brodge650.h"

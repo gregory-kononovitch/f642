@@ -31,6 +31,19 @@ int bgra_alloc650(bgra650 *img, int width, int height) {
     return img->data != NULL ? 0 : -1;
 }
 
+int bgra_link650(bgra650 *img, char *data, int width, int height) {
+    if (!img) return -1;
+    img->data   = (uint32_t*)data;
+    img->width  = width;
+    img->height = height;
+    img->size   = width * height;
+    img->x0 = 0;
+    img->y0 = 0;
+    img->sx = 1;
+    img->sy = 1;
+    return img->data != NULL ? 0 : -1;
+}
+
 int bgraz_alloc650(bgraz650 *img, int width, int height) {
     if (!img) return -1;
     if (bgra_alloc650((bgra650*)img, width, height) != 0) return -1;

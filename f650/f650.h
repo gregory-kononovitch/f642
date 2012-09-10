@@ -66,6 +66,8 @@ typedef struct {
 
 // init
 int  bgra_alloc650(bgra650 *img, int width, int height);
+int  bgra_link650(bgra650 *img, char *data, int width, int height);
+
 int  bgraz_alloc650(bgraz650 *img, int width, int height);
 void bgra_origin650(bgra650 *img, double x0, double y0);
 void bgra_scale650(bgra650 *img, double sx, double sy);
