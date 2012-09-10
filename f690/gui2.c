@@ -62,6 +62,7 @@ struct gui690tmp {
     long updlog;
     //
     brodge650 *brodge;
+    bgra650   *brdimg;
     //
     struct timing *timing;
 };
@@ -112,7 +113,7 @@ static void tick_maj1(struct gui690tmp *gui) {
         timeradd(&gui->timing->timing, &tv, &gui->timing->timing);
     }
 }
-static void tick_maj2(struct gui690tmp *gui) {
+static void tick_maj2(struct gui690tmp *gui, long l) {
     if (gui->timing) {
         struct timeval tv;
         gettimeofday(&gui->timing->tv_maj2, NULL);
@@ -190,32 +191,45 @@ static gboolean after_expose_event(GtkWidget *widget, GdkEventExpose *event, str
     return FALSE;
 }
 
+static void maj_brodge(struct gui690tmp *gui) {
+    long l1, l2;
+    if (!gui->brodge || !gui->brdimg) return;
+    //
+    tick_maj1(gui);
+    //
+    brodge_anim(gui->brodge);
+    l1 = ReadTSC();
+    brodge_exec(gui->brodge, gui->brdimg);
+    l2 = ReadTSC();
+    //
 
+    //
+    tick_maj2(gui, l2 - l1);
+}
+
+long inserta650(bgra650 *srcax16, bgra650 *dstax16);
 static void maj_layout(struct gui690tmp *gui) {
     long l1, l2;
     //
     tick_layout1(gui);
     //
-    int color = rand();
-    color |= 0xff000000;
     l1 = ReadTSC();
-//    imgfill1a650(&gui->desk->bgra, color, &zsta->pties);
-    bgra_fill2650(&gui->desk->bgra, color);
+    inserta650(gui->brdimg, &gui->desk->bgra);
     l2 = ReadTSC();
-    //
-
     //
     tick_layout2(gui, l2 - l1);
 }
 
 static gboolean time_handler(struct gui690tmp *gui) {
-//    tick_timer(gui);
-//
-//    maj_layout(gui);
-//
-//    tick_queued(gui);
-//
-//    gtk_widget_queue_draw(gui->window);
+    tick_timer(gui);
+
+    maj_brodge(gui);
+
+    maj_layout(gui);
+
+    tick_queued(gui);
+
+    gtk_widget_queue_draw_area(gui->window, 320, 180, 320, 180);
     return TRUE;
 }
 
@@ -321,6 +335,7 @@ static struct gui690tmp *create_gui690(int width, int height, int rms) {
 
     //
     new->timer_delay = rms;
+    new->updlog      = 1000 / rms;
 
     FOG("Gui created");
     return new;
@@ -334,7 +349,12 @@ int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
     //
-    struct gui690tmp *tmp = create_gui690(800, 448, 65);
+    struct gui690tmp *tmp = create_gui690(960, 540, 33);
+
+    //
+    tmp->brodge = brodge_init(320, 180, 2);
+    tmp->brdimg = calloc(1, sizeof(bgra650));
+    bgra_alloc650(tmp->brdimg, tmp->brodge->width, tmp->brodge->height);
 
 
     // Show
@@ -342,7 +362,7 @@ int main(int argc, char *argv[]) {
     gtk_widget_show_all(tmp->window);
 
     // Timer
-    //g_timeout_add(tmp->timer_delay, (GSourceFunc)time_handler, (gpointer)tmp);
+    g_timeout_add(tmp->timer_delay, (GSourceFunc)time_handler, (gpointer)tmp);
 
     //
     FOG("Going to gtk_main");

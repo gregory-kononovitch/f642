@@ -37,14 +37,19 @@ memseta650:
 .loop:
 		movntdq		oword [rax], xmm0
 		add			rax, 16
-		loop		.loop
+		sub			ecx, 1
+		jnz			.loop
+;		loop		.loop
 .end:
 		ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; memseta650(void *align_x16, uint32_t fill, uin64_t size)
+; - bon que memseta
 memset2a650:
 		mov			eax, esi
+		shl			rax, 32
+		or			rax, rsi
 		mov			rcx, rdx
 		rep stosq
 		ret

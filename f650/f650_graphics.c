@@ -68,9 +68,13 @@ void bgraz_gray650(bgraz650 *img, uint8_t gray) {
     memset(img->zi, 0x52, img->size << 3);
 }
 
+/*
+ *  > fill2
+ */
 void bgra_fill650(bgra650 *img, uint32_t color) {
     memseta650(img->data, color, img->size << 4);
 }
+// < fill1
 void bgra_fill2650(bgra650 *img, uint32_t color) {
     memset2a650(img->data, color, img->size >> 1);
 }
