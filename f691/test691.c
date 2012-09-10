@@ -42,6 +42,15 @@ static int handle_xerror(Display* display, XErrorEvent* err) {
     return 0;
 }
 
+
+static void dum_ximage(XImage *img) {
+    FOG("XImage : pad = %d unit = %d bpp = %d", img->bitmap_pad, img->bitmap_unit, img->bits_per_pixel);
+    FOG("\t bperl = %d data = %p depth = %d", img->bytes_per_line, img->data, img->depth);
+    FOG("\t format = %d height = %d obdata = %d", img->format, img->height, img->obdata);
+    FOG("\t width = %d offset = %d", img->width, img->xoffset);
+    FOG("\t f = %d", img->f);
+}
+
 int create_window(x11gui691 *gui, int width, int height, int shm) {
     int r;
     // X11 related variables
@@ -96,9 +105,10 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
     gui->screen = DefaultScreen(gui->display);
 
     // find best gui->display
-    if (XMatchVisualInfo(gui->display, gui->screen, 32, TrueColor, &vinfo)) {
-        FOG("Math TrueColor 32 : %d bits per rgb", vinfo.bits_per_rgb);
-    } else if (XMatchVisualInfo(gui->display, gui->screen, 24, TrueColor, &vinfo)) {
+//    if (XMatchVisualInfo(gui->display, gui->screen, 32, TrueColor, &vinfo)) {
+//        FOG("Math TrueColor 32 : %d bits per rgb", vinfo.bits_per_rgb);
+//    } else
+    if (XMatchVisualInfo(gui->display, gui->screen, 24, TrueColor, &vinfo)) {
         FOG("Math TrueColor 24 : %d bits per rgb", vinfo.bits_per_rgb);
     } else if (XMatchVisualInfo(gui->display, gui->screen, 16, TrueColor, &vinfo)) {
     } else if (XMatchVisualInfo(gui->display, gui->screen, 8, PseudoColor, &vinfo)) {
@@ -118,7 +128,7 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
     if (vinfo.class == TrueColor && vinfo.depth == 24) {
         FOG("XCreateWindow");
         cmap = XCreateColormap(gui->display, DefaultRootWindow(gui->display), vinfo.visual, AllocNone);
-
+        FOG("CMap created");
         XSetWindowAttributes xswa;
         xswa.colormap = cmap;
         xswa.event_mask = StructureNotifyMask;
@@ -126,7 +136,7 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
 
         gui->window = XCreateWindow(gui->display, DefaultRootWindow(gui->display)
                 , hint.x, hint.y, hint.width, hint.height, 2
-                , vinfo.depth, vinfo.class //InputOutput
+                , vinfo.depth, InputOutput
                 , vinfo.visual
                 , CWBorderPixel | CWColormap | CWEventMask, &xswa);
     } else {
@@ -223,30 +233,34 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
             gui->shm_info.shmaddr = (char*)shmat(gui->shm_info.shmid, 0, 0);
             FOG("shmat return %p", gui->shm_info.shmaddr);
             gui->shm_info.readOnly = False;
+            gui->ximg->data = gui->shm_info.shmaddr;
+            bgra_link650(&gui->bgra, gui->ximg->data, gui->width, gui->height);
             //
             Status st = XShmAttach(gui->display, &gui->shm_info);
             FOG("XShmAttach return %d - %p", st, gui->shm_info.shmaddr);
+            r = XSync(gui->display, False);
+            FOG("XSync return %d", r);
             //
             r = shmctl(gui->shm_info.shmid, IPC_RMID, 0);
             FOG("shmctl return %d", r);
-            //
-            gui->ximg->data = gui->shm_info.shmaddr;
         } else {
             FOG("XShmCreateImage failed");
         }
-    }
-    if (!gui->ximg) {
-        gui->shm  = 0;
-        gui->ximg = XGetImage(gui->display, gui->window
-                , 0, 0, gui->width, gui->height
-                , AllPlanes, ZPixmap);
-        FOG("XGetImage return %p", gui->ximg);
-        //
-//        if (gui->ximg) {
-//            Status st = XInitImage(gui->ximg);
-//            FOG("XInitImage return %d", st);
-//        }
     } else {
+        gui->shm  = 0;
+//        gui->ximg = XGetImage(gui->display, gui->window
+//                , 0, 0, gui->width, gui->height
+//                , AllPlanes, ZPixmap);
+//        FOG("XGetImage return %p", gui->ximg);
+        bgra_alloc650(&gui->bgra, gui->width, gui->height);
+        gui->ximg = XCreateImage(gui->display, vinfo.visual
+                , vinfo.depth, ZPixmap, 0
+                , (char*)gui->bgra.data
+                , gui->width, gui->height
+                , vinfo.visual->bits_per_rgb
+                , 4 * gui->width
+                );
+        FOG("XCreateImage return %p", gui->ximg);
         //
 //        if (gui->ximg) {
 //            Status st = XInitImage(gui->ximg);
@@ -257,22 +271,8 @@ int create_window(x11gui691 *gui, int width, int height, int shm) {
     r = XSync(gui->display, False);
     FOG("XSync return %d", r);
 
-    //
-    gui->shm_info.shmid = shmget(IPC_PRIVATE
-            , gui->ximg->bytes_per_line * gui->ximg->height
-            , IPC_CREAT | 0777
-    );
-    FOG("shmget return %d - %p", gui->shm_info.shmid, gui->shm_info.shmaddr);
-    //
-    gui->shm_info.shmaddr = (char*)shmat(gui->shm_info.shmid, 0, 0);
-    FOG("shmat return %p", gui->shm_info.shmaddr);
-    gui->shm_info.readOnly = False;
+    dum_ximage(gui->ximg);
 
-    r = shmctl(gui->shm_info.shmid, IPC_RMID, 0);
-    FOG("shmctl return %d", r);
-    bgra_link650(&gui->bgra, gui->shm_info.shmaddr, gui->width, gui->height);
-
-//    bgra_link650(&gui->bgra, gui->ximg->data, gui->width, gui->height);
     bgra_fill2650(&gui->bgra, 0xff507010);
     FOG("bgra fill ok");
 
@@ -366,7 +366,7 @@ int main() {
     int r;
     x11gui691 *gui = calloc(1, sizeof(x11gui691));
 
-    r = create_window(gui, 640, 360, 0);
+    r = create_window(gui, 640, 360, 1);
     FOG("Create window return %d", r);
 
     //
@@ -389,19 +389,16 @@ int main() {
         if (gui->ximg && !gui->shm) {
             r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg
                     , 0, 0, 0, 0, gui->ximg->width, gui->ximg->height);
-            FOG("XPutImage image return %d", r);
         } else if (gui->ximg && gui->shm) {
             r = XShmPutImage(gui->display, gui->window, gui->gc, gui->ximg
                     , 0, 0, 0, 0, gui->ximg->width, gui->ximg->height, 1);
-            FOG("XShmPutImage return %d", r);
             //
             r = XFlush(gui->display);
-            FOG("XFlush return %d", r);
         }
         //
         XSync(gui->display, 0);
 
-        usleep(30000);
+        usleep(20000);
     }
 
 
