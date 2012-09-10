@@ -35,9 +35,11 @@ struct timing {
     struct timeval  tv_queued;
     long            nb_queued;
     // Expose
-    struct timeval  tv_exposed;
-    long            nb_exposed;
+    struct timeval  tv_exposed1;
     struct timeval  delay;
+    struct timeval  tv_exposed2;
+    struct timeval  expose;
+    long            nb_exposed;
     //
     int mousex;
     int mousey;
@@ -75,17 +77,19 @@ static void tick_timer(struct gui690tmp *gui) {
             double m = gui->timing->maj.tv_sec + 0.000001 * gui->timing->maj.tv_usec;
             double l = gui->timing->layout.tv_sec + 0.000001 * gui->timing->layout.tv_usec;
             double d = gui->timing->delay.tv_sec + 0.000001 * gui->timing->delay.tv_usec;
-            printf("Frame %ld : Timer : %ld | %ld Maj %.1fms (%lu) | %ld Layout %.3fms (%ld) | Queue %ld | Expose %ld : %.2fms\n"
+            double e = gui->timing->expose.tv_sec + 0.000001 * gui->timing->expose.tv_usec;
+            printf("Frame %ld : Timer : %ld | %ld Maj %.1fms (%lu) | %ld Layout %.3fms (%ld) | Queue %ld | %ld Expose %.2fms - %.2fms\n"
                     , gui->timing->frame
                     , gui->timing->nb_timed
                     , gui->timing->nb_maj, 1000. * m / gui->updlog, gui->timing->pixels / 1000
                     , gui->timing->nb_layout, 1000. * l / gui->updlog, gui->timing->ops_layout / gui->updlog
                     , gui->timing->nb_queued
-                    , gui->timing->nb_exposed, 1000. * d / gui->updlog);
+                    , gui->timing->nb_exposed, 1000. * d / gui->updlog, 1000. * e / gui->updlog);
             memset(&gui->timing->timing, 0, sizeof(struct timeval));
             memset(&gui->timing->maj, 0, sizeof(struct timeval));
             memset(&gui->timing->layout, 0, sizeof(struct timeval));
             memset(&gui->timing->delay, 0, sizeof(struct timeval));
+            memset(&gui->timing->expose, 0, sizeof(struct timeval));
             gui->timing->pixels = 0;
             gui->timing->nb_timed = 0;
             gui->timing->nb_maj = 0;
@@ -141,12 +145,20 @@ static void tick_queued(struct gui690tmp *gui) {
         gui->timing->nb_queued++;
     }
 }
-static void tick_expose(struct gui690tmp *gui) {
+static void tick_expose1(struct gui690tmp *gui) {
     if (gui->timing) {
         struct timeval tv;
-        gettimeofday(&gui->timing->tv_exposed, NULL);
-        timersub(&gui->timing->tv_exposed, &gui->timing->tv_queued, &tv);
+        gettimeofday(&gui->timing->tv_exposed1, NULL);
+        timersub(&gui->timing->tv_exposed1, &gui->timing->tv_queued, &tv);
         timeradd(&gui->timing->delay, &tv, &gui->timing->delay);
+    }
+}
+static void tick_expose2(struct gui690tmp *gui) {
+    if (gui->timing) {
+        struct timeval tv;
+        gettimeofday(&gui->timing->tv_exposed2, NULL);
+        timersub(&gui->timing->tv_exposed2, &gui->timing->tv_exposed1, &tv);
+        timeradd(&gui->timing->expose, &tv, &gui->timing->expose);
         gui->timing->nb_exposed++;
     }
 }
@@ -170,7 +182,11 @@ static void destroy(GtkWidget *widget, struct gui690tmp *gui) {
  *
  */
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *event, struct gui690tmp *gui) {
-    tick_expose(gui);
+    tick_expose1(gui);
+    return FALSE;
+}
+static gboolean after_expose_event(GtkWidget *widget, GdkEventExpose *event, struct gui690tmp *gui) {
+    tick_expose2(gui);
     return FALSE;
 }
 
@@ -184,6 +200,7 @@ static void maj_layout(struct gui690tmp *gui) {
     color |= 0xff000000;
     l1 = ReadTSC();
 //    imgfill1a650(&gui->desk->bgra, color, &zsta->pties);
+    bgra_fill2650(&gui->desk->bgra, color);
     l2 = ReadTSC();
     //
 
@@ -192,12 +209,13 @@ static void maj_layout(struct gui690tmp *gui) {
 }
 
 static gboolean time_handler(struct gui690tmp *gui) {
-    tick_timer(gui);
-    //
-    maj_layout(gui);
-    //
-    tick_queued(gui);
-    gtk_widget_queue_draw(gui->window);
+//    tick_timer(gui);
+//
+//    maj_layout(gui);
+//
+//    tick_queued(gui);
+//
+//    gtk_widget_queue_draw(gui->window);
     return TRUE;
 }
 
@@ -212,7 +230,6 @@ static gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event, st
         gui->timing->mousey = event->y;
         state = event->state;
     }
-//    if (state & GDK_BUTTON1_MASK && pixmap != NULL) draw_brush(widget, x, y);
     return TRUE;
 }
 
@@ -220,7 +237,7 @@ static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event, struct gu
     printf("Keyval = %d\n", event->keyval);
     switch(event->keyval) {
         case 32:                // space
-            brodge_rebase(gui->brodge);
+            if (gui->brodge) brodge_rebase(gui->brodge);
             break;
         case 65307:             // ESC
             exit_gui(gui);
@@ -230,7 +247,7 @@ static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event, struct gu
 }
 
 static gboolean button_press_event(GtkWidget *widget, GdkEventButton *event, struct gui690tmp *gui) {
-    if (event->button == 1) {
+    if (gui->brodge && event->button == 1) {
         gui->timing->selection++;
         if (gui->timing->selection == gui->brodge->nb_src) {
             gui->timing->selection = -1;
@@ -253,7 +270,8 @@ static struct gui690tmp *create_gui690(int width, int height, int rms) {
 
     // Desk
     new->desk = desk_create654(width, height);
-    printf("desk create ok :\n");
+    bgra_fill650(&new->desk->bgra, 0xff0000ff);
+    FOG("desk create ok :");
 
     // Window
     new->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -263,14 +281,15 @@ static struct gui690tmp *create_gui690(int width, int height, int rms) {
     gtk_window_set_default_size(GTK_WINDOW(new->window), width, height);
     gtk_window_set_decorated(GTK_WINDOW(new->window), FALSE);
     gtk_window_set_keep_above(GTK_WINDOW(new->window), TRUE);
-    printf("window ok\n");
+    FOG("window ok");
 
     // Image
-    new->img = gdk_pixbuf_new_from_data((guchar*) new->desk->bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, NULL, NULL);
+    void pbd(guchar *pixels, gpointer data) { printf("PixBuf free\n"); return; }
+    new->img = gdk_pixbuf_new_from_data((guchar*) new->desk->bgra.data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width << 2, &pbd, NULL);
     printf("PixBuf new ok\n");
     new->frame = gtk_image_new_from_pixbuf(new->img);
     gtk_container_add(GTK_CONTAINER(new->window), new->frame);
-    printf("image ok\n");
+    FOG("image ok");
 
     // Events
     gtk_widget_set_events(
@@ -283,22 +302,27 @@ static struct gui690tmp *create_gui690(int width, int height, int rms) {
     );
 
     // Signals
-    g_signal_connect(new->frame, "expose-event", G_CALLBACK(on_expose_event), new->desk);
+    g_signal_connect(new->frame, "expose-event", G_CALLBACK(on_expose_event), new);
+    g_signal_connect_after(new->frame, "expose-event", G_CALLBACK(after_expose_event), new);
 
-    g_signal_connect(new->window, "key_press_event", G_CALLBACK (key_press_event), new->desk);
-    g_signal_connect(new->window, "motion_notify_event", G_CALLBACK (motion_notify_event), new->desk);
-    g_signal_connect(new->window, "button_press_event", G_CALLBACK (button_press_event), new->desk);
-    g_signal_connect(new->window, "button_release_event", G_CALLBACK (button_release_event), new->desk);
+    g_signal_connect(new->window, "key_press_event", G_CALLBACK (key_press_event), new);
+    g_signal_connect(new->window, "motion_notify_event", G_CALLBACK (motion_notify_event), new);
+    g_signal_connect(new->window, "button_press_event", G_CALLBACK (button_press_event), new);
+    g_signal_connect(new->window, "button_release_event", G_CALLBACK (button_release_event), new);
 
-    g_signal_connect(new->window, "delete-event", G_CALLBACK(delete_event), new->desk);
-    g_signal_connect(new->window, "destroy", G_CALLBACK(destroy), new->desk);
+    g_signal_connect(new->window, "delete-event", G_CALLBACK(delete_event), new);
+    g_signal_connect(new->window, "destroy", G_CALLBACK(destroy), new);
+    FOG("Signals connected");
 
     //
     new->timing = calloc(1, sizeof(struct timing));
     new->timing->refresh = 1;
     new->timing->selection = -1;
 
+    //
+    new->timer_delay = rms;
 
+    FOG("Gui created");
     return new;
 }
 
@@ -310,17 +334,20 @@ int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
     //
-    struct gui690tmp *tmp = create_gui690(1024, 600, 20);
+    struct gui690tmp *tmp = create_gui690(800, 448, 65);
 
 
     // Show
+    gtk_widget_show(tmp->frame);
     gtk_widget_show_all(tmp->window);
 
     // Timer
-    g_timeout_add(tmp->timer_delay, (GSourceFunc)time_handler, (gpointer)tmp);
+    //g_timeout_add(tmp->timer_delay, (GSourceFunc)time_handler, (gpointer)tmp);
 
     //
+    FOG("Going to gtk_main");
     gtk_main();
+    FOG("Exit gtk_main");
 
     return 0;
 }
