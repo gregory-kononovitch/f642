@@ -1,6 +1,6 @@
 /*
  * file    : test691.c
- * project : f640
+ * project : f640 (f642 / t508.f640)
  *
  * Created on: Sep 10, 2012
  * Author and copyright (C) 2012 : Gregory Kononovitch

@@ -1,6 +1,6 @@
 /*
  * file    : f691.h
- * project : f640
+ * project : f640 (f642 / t508.f640)
  *
  * Created on: Sep 10, 2012
  * Author and copyright (C) 2012 : Gregory Kononovitch
@@ -35,14 +35,24 @@ typedef struct {
     GC          gc;
 
     //
-    int             shm;
-    XShmSegmentInfo shm_info;
+    char        *title;
 
     //
-    XImage      *ximg;
+    int             shm;
+    XShmSegmentInfo shm_info;
+    XShmSegmentInfo shm_info2;
 
-} x11gui691;
+    //
+    XImage      *ximg1;
+    XImage      *ximg2;
+
+} xgui691;
 
 
+
+/*
+ *
+ */
+xgui691 *xgui_create691(int width, int height, int shm);
 
 #endif /* F691_H_ */
