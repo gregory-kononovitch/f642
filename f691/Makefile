@@ -42,7 +42,7 @@ objects_ao:=$(patsubst %$(EXTENSION_A),%.ao,$(sources_a))
 all: exec
 
 exec: $(objects) $(objects_ao)
-	gcc -o f691-test.xo test691.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o f691-test.xo $(objects) $(objects_ao) $(LIBS)
 
 
 # Build rules
