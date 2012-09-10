@@ -23,15 +23,8 @@ static int handle_xerror(Display* display, XErrorEvent* err) {
 }
 
 
-xgui691 *xgui_create691(int width, int height, int shm, const char *title) {
+xgui691 *xgui_create691(int width, int height, int shm) {
     int r;
-    // x
-    XVisualInfo vinfo;
-    //
-    Colormap cmap;
-    XColor xcolor;
-    XSizeHints hint;
-    XWindowAttributes xwa;
 
     xgui691 *gui = calloc(1, sizeof(xgui691));
     if (!gui) {
@@ -70,8 +63,8 @@ xgui691 *xgui_create691(int width, int height, int shm, const char *title) {
     }
 
     //
-    if (XMatchVisualInfo(gui->display, gui->screen, 24, TrueColor, &vinfo)) {
-        FOG("Found Match TrueColor depth 24 : %d bits per rgb", vinfo.bits_per_rgb);
+    if (XMatchVisualInfo(gui->display, gui->screen, 24, TrueColor, &gui->vinfo)) {
+        FOG("Found Match TrueColor depth 24 : %d bits per rgb", gui->vinfo.bits_per_rgb);
     } else {
         LOG("No visual found, returning");
         XCloseDisplay(gui->display);
@@ -79,54 +72,6 @@ xgui691 *xgui_create691(int width, int height, int shm, const char *title) {
         return NULL;
     }
 
-    // Window
-    int x, y;
-    unsigned int w, h, b, d;
-    Window root_window;
-    XGetGeometry(gui->display, DefaultRootWindow(gui->display), &root_window, &x, &y, &w, &h, &b, &d);
-    hint.x      = x + ( (w - width) < 0 ? 0 : (w - width) / 2);
-    hint.x      = y + ( (h - height) < 0 ? 0 : (h - height) / 2);
-    hint.width  = width;
-    hint.height = height;
-    hint.flags  = PPosition | PSize;
-
-    //
-    cmap = XCreateColormap(gui->display, DefaultRootWindow(gui->display), vinfo.visual, AllocNone);
-    FOG("CMap created");
-    XSetWindowAttributes xswa;
-    xswa.colormap     = cmap;
-    xswa.event_mask   = StructureNotifyMask;
-    xswa.border_pixel = BlackPixel(gui->display, gui->screen);
-
-    gui->window = XCreateWindow(gui->display, DefaultRootWindow(gui->display)
-            , hint.x, hint.y, hint.width, hint.height, 2
-            , vinfo.depth, InputOutput
-            , vinfo.visual
-            , CWBorderPixel | CWColormap | CWEventMask, &xswa);
-    if (xerror) {
-        LOG("Cannot create window, exiting");
-        XCloseDisplay(gui->display);
-        free(gui);
-        return NULL;
-    }
-    FOG("Window created");
-
-    // Event
-    XSetStandardProperties(gui->display, gui->window, title, title, None, NULL, 0, &hint);
-    FOG("Standrd properties set");
-
-    // Map gui->window
-    XMapWindow(gui->display, gui->window);
-    FOG("Map window wait");
-
-    // Wait for map.
-    XEvent event;
-    do {
-        XNextEvent(gui->display, &event);
-    } while (event.type != MapNotify || event.xmap.event != gui->window);
-    FOG("Map window done");
-
-    XSelectInput(gui->display, gui->window, NoEventMask);
 
     // GC
     gui->gc = DefaultGC(gui->display, gui->screen);
@@ -168,14 +113,14 @@ xgui691 *xgui_create691(int width, int height, int shm, const char *title) {
         FOG("shmctl return %d", r);
 
         //
-        gui->ximg1 = XShmCreateImage(gui->display, vinfo.visual
-                , vinfo.depth, ZPixmap, gui->shm_info.shmaddr
+        gui->ximg1 = XShmCreateImage(gui->display, gui->vinfo.visual
+                , gui->vinfo.depth, ZPixmap, gui->shm_info.shmaddr
                 , &gui->shm_info
                 , gui->width, gui->height
         );
         memcpy(&gui->shm_info2, sizeof(XShmSegmentInfo), &gui.shm_info);
-        gui->ximg2 = XShmCreateImage(gui->display, vinfo.visual
-                , vinfo.depth, ZPixmap, gui->shm_info.shmaddr + (4 * width * height)
+        gui->ximg2 = XShmCreateImage(gui->display, gui->vinfo.visual
+                , gui->vinfo.depth, ZPixmap, gui->shm_info.shmaddr + (4 * width * height)
                 , &gui->shm_info2
                 , gui->width, gui->height
         );
@@ -195,11 +140,11 @@ xgui691 *xgui_create691(int width, int height, int shm, const char *title) {
     }
     if (!gui->shm) {
         char *tmp = calloc(2, 4 * width * height);
-        gui->ximg1 = XCreateImage(gui->display, vinfo.visual
-                , vinfo.depth, ZPixmap, 0
+        gui->ximg1 = XCreateImage(gui->display, gui->vinfo.visual
+                , gui->vinfo.depth, ZPixmap, 0
                 , tmp
                 , gui->width, gui->height
-                , vinfo.visual->bits_per_rgb
+                , gui->vinfo.visual->bits_per_rgb
                 , 4 * gui->width
                 );
         FOG("XCreateImage 1 return %p", gui->ximg1);
@@ -211,11 +156,11 @@ xgui691 *xgui_create691(int width, int height, int shm, const char *title) {
         }
         //
         tmp += 4 * width * height;
-        gui->ximg2 = XCreateImage(gui->display, vinfo.visual
-                , vinfo.depth, ZPixmap, 0
+        gui->ximg2 = XCreateImage(gui->display, gui->vinfo.visual
+                , gui->vinfo.depth, ZPixmap, 0
                 , tmp
                 , gui->width, gui->height
-                , vinfo.visual->bits_per_rgb
+                , gui->vinfo.visual->bits_per_rgb
                 , 4 * gui->width
                 );
         FOG("XCreateImage 2 return %p", gui->ximg1);
@@ -227,9 +172,66 @@ xgui691 *xgui_create691(int width, int height, int shm, const char *title) {
         }
     }
 
+    //
+    r = XSync(gui->display, False);
+    FOG("XSync return %d", r);
+
+    //
+    return gui;
 }
 
 
+int xgui_open_window691(xgui691 *gui, char *title) {
+    // Window
+    int x, y;
+    unsigned int w, h, b, d;
+    Window root_window;
+    XGetGeometry(gui->display, DefaultRootWindow(gui->display), &root_window, &x, &y, &w, &h, &b, &d);
+    gui->hint.x      = x + ( (w - gui->width) < 0 ? 0 : (w - gui->width) / 2);
+    gui->hint.x      = y + ( (h - gui->height) < 0 ? 0 : (h - gui->height) / 2);
+    gui->hint.width  = gui->width;
+    gui->hint.height = gui->height;
+    gui->hint.flags  = PPosition | PSize;
+
+    //
+    gui->color_map = XCreateColormap(gui->display, DefaultRootWindow(gui->display), gui->vinfo.visual, AllocNone);
+    FOG("CMap created");
+    XSetWindowAttributes xswa;
+    xswa.colormap     = gui->color_map;
+    xswa.event_mask   = StructureNotifyMask;
+    xswa.border_pixel = BlackPixel(gui->display, gui->screen);
+
+    gui->window = XCreateWindow(gui->display, DefaultRootWindow(gui->display)
+            , gui->hint.x, gui->hint.y, gui->hint.width, gui->hint.height, 0
+            , gui->vinfo.depth, InputOutput
+            , gui->vinfo.visual
+            , CWBorderPixel | CWColormap | CWEventMask, &xswa);
+    if (xerror) {
+        LOG("Cannot create window, exiting");
+        XCloseDisplay(gui->display);
+        free(gui);
+        return NULL;
+    }
+    FOG("Window created");
+
+    // Event
+    XSetStandardProperties(gui->display, gui->window, title, title, None, NULL, 0, &gui->hint);
+    FOG("Standrd properties set");
+
+    // Map gui->window
+    XMapWindow(gui->display, gui->window);
+    FOG("Map window wait");
+
+    // Wait for map.
+    XEvent event;
+    do {
+        XNextEvent(gui->display, &event);
+    } while (event.type != MapNotify || event.xmap.event != gui->window);
+    FOG("Map window done");
+
+    XSelectInput(gui->display, gui->window, NoEventMask);
+
+}
 
 
 
