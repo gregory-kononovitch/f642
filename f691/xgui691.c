@@ -279,6 +279,82 @@ int xgui_close_window691(xgui691 *gui) {
     return 0;
 }
 
+
+/* --------------------------------------------------------
+ *
+ *                      EVENTS
+ *
+   -------------------------------------------------------- */
+typedef int (*event691)    (XEvent evt);
+
+int xgui_listen691(xgui691 *gui) {
+    long mask =
+              KeyPressMask
+            | KeyReleaseMask
+            | ButtonPressMask
+            | ButtonReleaseMask
+            | EnterWindowMask
+            | LeaveWindowMask
+            | PointerMotionMask
+            | PointerMotionHintMask
+            | Button1MotionMask
+            | ButtonMotionMask
+            | ExposureMask
+            | VisibilityChangeMask
+            | StructureNotifyMask
+            | ResizeRedirectMask
+            | FocusChangeMask
+            | OwnerGrabButtonMask
+    ;
+
+    XSelectInput(gui->display, gui->window, mask);
+    return 0;
+}
+
+
+struct _event_thread691_ {
+    xgui691         *gui;
+    int             run;
+    long            events_mask;
+
+    //
+    event691        procs[LASTEvent];
+};
+
+static void *event_loop691(void *prm) {
+    int r;
+    XEvent event;
+    struct _event_thread691_ *info = (struct _event_thread691_*)prm;
+    xgui691 *gui = info->gui;
+
+
+    long emask;
+    while(info->run) {
+        r = XNextEvent(gui->display, &event);
+        if (event.xmap.event != gui->window) continue;
+
+        emask = 1L << event.type;
+        if (info->events_mask & emask == 0) continue;
+
+    switch(event.type) {
+         case MotionNotify:
+             break;
+         case KeyPress:
+             break;
+         case KeyRelease:
+             break;
+         case Expose:
+             break;
+         case GraphicsExpose:
+             break;
+    }
+    return NULL;
+}
+
+
+/*
+ *
+ */
 static void test() {
     int r;
 
@@ -339,7 +415,6 @@ static void test() {
         XSync(gui->display, 0);
 
         usleep(10000);
-
     }
 }
 
