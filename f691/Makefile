@@ -13,7 +13,7 @@ EXC_DIR=.
 
 # Librarires
 INCLUDE=
-LIBS=-lX11 -lm -lpthread
+LIBS=-lX11 -lXext -lm -lpthread
 
 #
 # source-files
