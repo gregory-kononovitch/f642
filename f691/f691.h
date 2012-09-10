@@ -63,4 +63,8 @@ void xgui_free691(xgui691 **gui);
 int xgui_open_window691(xgui691 *gui, const char *title);
 int xgui_close_window691(xgui691 *gui);
 
+//
+int xgui_listen691(xgui691 *gui);
+
+
 #endif /* F691_H_ */

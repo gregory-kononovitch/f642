@@ -285,8 +285,29 @@ int xgui_close_window691(xgui691 *gui) {
  *                      EVENTS
  *
    -------------------------------------------------------- */
-typedef int (*event691)    (XEvent evt);
+static void *event_loop691(void *prm);
+typedef int (*event691)(struct _event_thread691_ *thread, XEvent *evt);
+struct _event_thread691_ {
+    xgui691         *gui;
+    int             run;
+    long            events_mask;
 
+    //
+    event691        procs[LASTEvent];
+};
+static struct _event_thread691_ event_thread691;
+
+//
+static int repeat_test[LASTEvent];
+static void clear_test691() {
+    memset(repeat_test, 0, 4 * LASTEvent);
+}
+static int event_test_timing691(struct _event_thread691_ *thread, XEvent *evt) {
+    repeat_test[evt->type]++;
+    return 0;
+}
+
+//
 int xgui_listen691(xgui691 *gui) {
     long mask =
               KeyPressMask
@@ -307,19 +328,22 @@ int xgui_listen691(xgui691 *gui) {
             | OwnerGrabButtonMask
     ;
 
+    //
+    event_thread691.gui = gui;
+    event_thread691.events_mask = 0xFFFFFFFFFFFFFFL;
+    event_thread691.run = 0;
+    int i;
+    for(i = 0 ; i < LASTEvent ; i++) {
+        event_thread691.procs[i] = &event_test_timing691;
+    }
+    clear_test691();
+
+    //
     XSelectInput(gui->display, gui->window, mask);
     return 0;
 }
 
 
-struct _event_thread691_ {
-    xgui691         *gui;
-    int             run;
-    long            events_mask;
-
-    //
-    event691        procs[LASTEvent];
-};
 
 static void *event_loop691(void *prm) {
     int r;
@@ -336,17 +360,8 @@ static void *event_loop691(void *prm) {
         emask = 1L << event.type;
         if (info->events_mask & emask == 0) continue;
 
-    switch(event.type) {
-         case MotionNotify:
-             break;
-         case KeyPress:
-             break;
-         case KeyRelease:
-             break;
-         case Expose:
-             break;
-         case GraphicsExpose:
-             break;
+        //
+        info->procs[event.type](info, &event);
     }
     return NULL;
 }
