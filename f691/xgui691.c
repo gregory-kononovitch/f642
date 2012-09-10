@@ -47,6 +47,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     if (!gui->display || xerror) {
         LOG("Cannot open display, returning");
         free(gui);
+        XSetErrorHandler(NULL);
         return NULL;
     }
 
@@ -59,6 +60,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
         LOG("Cannot get screen, returning");
         XCloseDisplay(gui->display);
         free(gui);
+        XSetErrorHandler(NULL);
         return NULL;
     }
 
@@ -69,6 +71,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
         LOG("No visual found, returning");
         XCloseDisplay(gui->display);
         free(gui);
+        XSetErrorHandler(NULL);
         return NULL;
     }
 
@@ -89,7 +92,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     }
 
     while (shm) {
-        //
+        // ###
         gui->shm_info.shmid = shmget(IPC_PRIVATE, 2 * 4 * width * height, IPC_CREAT | 0777);
         FOG("shmget return %d - %p", gui->shm_info.shmid, gui->shm_info.shmaddr);
         //
@@ -118,13 +121,13 @@ xgui691 *xgui_create691(int width, int height, int shm) {
                 , &gui->shm_info
                 , gui->width, gui->height
         );
-        memcpy(&gui->shm_info2, sizeof(XShmSegmentInfo), &gui.shm_info);
+        FOG("XShmCreateImage 1 return img %p, pix %p,  err = %d", gui->ximg1, gui->ximg1->data, xerror);        memcpy(&gui->shm_info2, &gui->shm_info, sizeof(XShmSegmentInfo));
         gui->ximg2 = XShmCreateImage(gui->display, gui->vinfo.visual
                 , gui->vinfo.depth, ZPixmap, gui->shm_info.shmaddr + (4 * width * height)
                 , &gui->shm_info2
                 , gui->width, gui->height
         );
-        FOG("XShmCreateImage2 return %p, err = %d", gui->ximg2, xerror);
+        FOG("XShmCreateImage 2 return img %p, pix %p,  err = %d", gui->ximg2, gui->ximg2->data, xerror);
         if (gui->ximg1 && gui->ximg2 && !xerror) {
             LOG("XShmImages created");
             break;
@@ -147,12 +150,14 @@ xgui691 *xgui_create691(int width, int height, int shm) {
                 , gui->vinfo.visual->bits_per_rgb
                 , 4 * gui->width
                 );
-        FOG("XCreateImage 1 return %p", gui->ximg1);
+        FOG("XCreateImage 1 return img %p, pix %p", gui->ximg1, gui->ximg1->data);
         if (!gui->ximg1 || xerror) {
             LOG("Failed to create XImage img1");
             free(tmp);
             XCloseDisplay(gui->display);
             free(gui);
+            XSetErrorHandler(NULL);
+            return NULL;
         }
         //
         tmp += 4 * width * height;
@@ -163,12 +168,14 @@ xgui691 *xgui_create691(int width, int height, int shm) {
                 , gui->vinfo.visual->bits_per_rgb
                 , 4 * gui->width
                 );
-        FOG("XCreateImage 2 return %p", gui->ximg1);
+        FOG("XCreateImage 2 return img %p, pix %p", gui->ximg2, gui->ximg2->data);
         if (!gui->ximg2 || xerror) {
             LOG("Failed to create XImage img1");
             free(tmp);
             XCloseDisplay(gui->display);
             free(gui);
+            XSetErrorHandler(NULL);
+            return NULL;
         }
     }
 
@@ -177,15 +184,45 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     FOG("XSync return %d", r);
 
     //
+    XSetErrorHandler(NULL);
+
+    //
     return gui;
 }
 
 
-int xgui_open_window691(xgui691 *gui, char *title) {
+void xgui_free691(xgui691 **gui) {
+    if ((*gui)->window) xgui_close_window691(*gui);
+    //
+    if ((*gui)->shm) {
+        XShmDetach((*gui)->display, &(*gui)->shm_info);
+        XSync((*gui)->display, True);
+        //
+        shmdt((*gui)->shm_info.shmaddr);
+        free((*gui)->ximg1);
+        free((*gui)->ximg2);
+    } else {
+        free((*gui)->ximg1->data);
+        free((*gui)->ximg2->data);
+        free((*gui)->ximg1);
+        free((*gui)->ximg2);
+    }
+    //
+    XCloseDisplay((*gui)->display);
+    free(*gui);
+    *gui = NULL;
+    return;
+}
+
+int xgui_open_window691(xgui691 *gui, const char *title) {
     // Window
     int x, y;
     unsigned int w, h, b, d;
     Window root_window;
+    //
+    xerror = 0;
+    XSetErrorHandler(&handle_xerror);
+    //
     XGetGeometry(gui->display, DefaultRootWindow(gui->display), &root_window, &x, &y, &w, &h, &b, &d);
     gui->hint.x      = x + ( (w - gui->width) < 0 ? 0 : (w - gui->width) / 2);
     gui->hint.x      = y + ( (h - gui->height) < 0 ? 0 : (h - gui->height) / 2);
@@ -208,9 +245,8 @@ int xgui_open_window691(xgui691 *gui, char *title) {
             , CWBorderPixel | CWColormap | CWEventMask, &xswa);
     if (xerror) {
         LOG("Cannot create window, exiting");
-        XCloseDisplay(gui->display);
-        free(gui);
-        return NULL;
+        XSetErrorHandler(NULL);
+        return -1;
     }
     FOG("Window created");
 
@@ -231,11 +267,83 @@ int xgui_open_window691(xgui691 *gui, char *title) {
 
     XSelectInput(gui->display, gui->window, NoEventMask);
 
+    XSetErrorHandler(NULL);
+    return 0;
 }
 
 
+int xgui_close_window691(xgui691 *gui) {
+    XUnmapWindow(gui->display, gui->window);
+    XDestroyWindow(gui->display, gui->window);
+    gui->window = 0;
+    return 0;
+}
+
+static void test() {
+    int r;
+
+    //
+    xgui691 *gui = xgui_create691(800, 448, 1);
+    if (!gui) return;
+    //
+    r = xgui_open_window691(gui, "Test");
+    if (r) {
+        LOG("Can't open window, returning");
+        return;
+    }
+
+    //
+    int i;
+    long l;
+    struct timeval tv1, tv2;
+    brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
+    bgra650   bgra;
+    bgra_link650(&bgra, NULL, gui->width, gui->height);
+
+    //
+    i = 0;
+    while(1) {
+        if (i % 2 == 0) {
+            bgra.data = (uint32_t*)gui->ximg2->data;
+        } else {
+            bgra.data = (uint32_t*)gui->ximg1->data;
+        }
+        //
+        brodge_anim(brodge);
+        brodge_exec(brodge, &bgra);
+        //
+        if (!gui->shm) {
+            if (i % 2 == 0) {
+                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
+                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
+                i = 1;
+            } else {
+                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+                i = 0;
+            }
+        } else if (gui->shm) {
+            if (i % 2 == 0) {
+                r = XShmPutImage(gui->display, gui->window, gui->gc, gui->ximg2
+                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height, 1);
+                r = XFlush(gui->display);
+                i = 1;
+            } else {
+                r = XShmPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height, 1);
+                r = XFlush(gui->display);
+                i = 0;
+            }
+        }
+        //
+        XSync(gui->display, 0);
+
+        usleep(10000);
+
+    }
+}
 
 
 int main() {
-
+    test();
 }

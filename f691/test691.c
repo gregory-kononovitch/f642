@@ -366,7 +366,7 @@ int main0() {
     int r;
     x11gui691 *gui = calloc(1, sizeof(x11gui691));
 
-    r = create_window(gui, 1024, 600, 1);
+    r = create_window(gui, 800, 448, 1);
     FOG("Create window return %d", r);
 
     //

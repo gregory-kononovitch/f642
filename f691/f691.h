@@ -25,23 +25,21 @@
 
 
 typedef struct {
-    int         width;
-    int         height;
+    int             width;
+    int             height;
 
-    // X
-    Display     *display;
-    XVisualInfo vinfo;
-    int         screen;
-    GC          gc;
-    // W
-    Window      window;
-    Colormap    color_map;
-    XSizeHints  hint;
+    // display
+    Display         *display;
+    XVisualInfo     vinfo;
+    int             screen;
+    GC              gc;
+
+
+    // window
+    Window          window;
+    Colormap        color_map;
+    XSizeHints      hint;
     XWindowAttributes xwa;
-
-
-    //
-    char        *title;
 
     //
     int             shm;
@@ -49,8 +47,8 @@ typedef struct {
     XShmSegmentInfo shm_info2;
 
     //
-    XImage      *ximg1;
-    XImage      *ximg2;
+    XImage          *ximg1;
+    XImage          *ximg2;
 
 } xgui691;
 
@@ -60,6 +58,9 @@ typedef struct {
  *
  */
 xgui691 *xgui_create691(int width, int height, int shm);
-int xgui_open_window691(xgui691 *gui);
+void xgui_free691(xgui691 **gui);
+
+int xgui_open_window691(xgui691 *gui, const char *title);
+int xgui_close_window691(xgui691 *gui);
 
 #endif /* F691_H_ */
