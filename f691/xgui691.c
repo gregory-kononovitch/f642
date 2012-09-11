@@ -383,61 +383,63 @@ static void *event_loop691(void *prm) {
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     while(info->run) {
-        repeat_test[2]++;
-//        r = XPending(gui->display);
-        FOG("Wait for next event, pending %d", r);
-        r = XNextEvent(gui->display, &event);
-//        r = XMaskEvent(gui->display, mask, &event);
-        FOG("XNextEvent return %d for event %d", r, event.type);
-        if (event.xmap.event != gui->window) continue;
+        pthread_mutex_lock(&event_thread691.mutex);
+        while((r = XPending(gui->display))) {
+            repeat_test[2]++;
+            printf("Wait for next event, pending %d", r);
+            r = XNextEvent(gui->display, &event);
+            printf(" : XNextEvent return %d for event %d\n", r, event.type);
+            if (event.xmap.event != gui->window) continue;
 
-//        emask = 1L << event.type;
-//        if (info->events_mask & emask == 0) continue;
+    //        emask = 1L << event.type;
+    //        if (info->events_mask & emask == 0) continue;
 
-        if (event.type == GraphicsExpose) {
-            if (event.xgraphicsexpose.minor_code == 2) {
-                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
-                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
-            } else {
-                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
-                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+//            if (event.type == GraphicsExpose) {
+//                if (event.xgraphicsexpose.minor_code == 2) {
+//                    r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
+//                            , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
+//                } else {
+//                    r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+//                            , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+//                }
+//            } else if (event.type == Expose) {
+//                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+//                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+//            }
+
+            repeat_test[3]++;
+            //
+            //info->procs[event.type](info, &event);
+            event_test_timing691(info, &event);
+
+            //
+    //        XSync(gui->display, False);
+    //        XMaskEvent(gui->display, mask, &event);
+    //        if (event.type == Expose) XPutBackEvent(gui->display, &event);
+    //        if (event.type == VisibilityNotify) XPutBackEvent(gui->display, &event);
+    //        if (event.type == MotionNotify) XPutBackEvent(gui->display, &event);
+
+            //
+            gettimeofday(&tv2, NULL);
+            timersub(&tv2, &tv1, &tv3);
+            if (tv3.tv_sec > 0) {
+                LOG("Events loop : mo %d | kp %d | kr %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d"
+                        , repeat_test[MotionNotify]
+                        , repeat_test[KeyPress]
+                        , repeat_test[KeyRelease]
+                        , repeat_test[Expose]
+                        , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[2], repeat_test[3]
+                );
+                for(i = 0 ; i < LASTEvent ; i++) {
+                    printf("%d|", repeat_test[i]);
+                }
+                printf("\n");
+                clear_test691();
+                tv1.tv_sec  = tv2.tv_sec;
+                tv1.tv_usec = tv2.tv_usec;
             }
-        } else if (event.type == Expose) {
-            r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
-                    , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
         }
-
-        repeat_test[3]++;
-        //
-        //info->procs[event.type](info, &event);
-        event_test_timing691(info, &event);
-
-        //
-//        XSync(gui->display, False);
-//        XMaskEvent(gui->display, mask, &event);
-//        if (event.type == Expose) XPutBackEvent(gui->display, &event);
-//        if (event.type == VisibilityNotify) XPutBackEvent(gui->display, &event);
-//        if (event.type == MotionNotify) XPutBackEvent(gui->display, &event);
-
-        //
-        gettimeofday(&tv2, NULL);
-        timersub(&tv2, &tv1, &tv3);
-        if (tv3.tv_sec > 0) {
-            LOG("Events loop : mo %d | kp %d | kr %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d"
-                    , repeat_test[MotionNotify]
-                    , repeat_test[KeyPress]
-                    , repeat_test[KeyRelease]
-                    , repeat_test[Expose]
-                    , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[2], repeat_test[3]
-            );
-            for(i = 0 ; i < LASTEvent ; i++) {
-                printf("%d|", repeat_test[i]);
-            }
-            printf("\n");
-            clear_test691();
-            tv1.tv_sec  = tv2.tv_sec;
-            tv1.tv_usec = tv2.tv_usec;
-        }
+        pthread_mutex_unlock(&event_thread691.mutex);
     }
     FOG("Thread ended");
     return NULL;
@@ -511,23 +513,23 @@ static void test() {
         if (!gui->shm) {
             if (i % 2 == 0) {
                 eevent->minor_code = 2;
-                printf("Sending event 2...\n");
-                XSendEvent(gui->display, gui->window, True, ExposureMask, (XEvent*)eevent);
-                printf("done\n");
-//                pthread_mutex_lock(&event_thread691.mutex);
-//                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
-//                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
-//                pthread_mutex_unlock(&event_thread691.mutex);
+//                printf("Sending event 2...\n");
+//                Status st = XSendEvent(gui->display, gui->window, False, ExposureMask, (XEvent*)eevent);
+//                printf("done whith status = %d\n", st);
+                pthread_mutex_lock(&event_thread691.mutex);
+                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
+                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
+                pthread_mutex_unlock(&event_thread691.mutex);
                 i = 1;
             } else {
                 eevent->minor_code = 1;
-                printf("Sending event 1...\n");
-                XSendEvent(gui->display, gui->window, True, ExposureMask, (XEvent*)eevent);
-                printf("done\n");
-//                pthread_mutex_lock(&event_thread691.mutex);
-//                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
-//                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
-//                pthread_mutex_unlock(&event_thread691.mutex);
+//                printf("Sending event 1...\n");
+//                Status st = XSendEvent(gui->display, gui->window, False, ExposureMask, (XEvent*)eevent);
+//                printf("done whith status = %d\n", st);
+                pthread_mutex_lock(&event_thread691.mutex);
+                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+                pthread_mutex_unlock(&event_thread691.mutex);
                 i = 0;
             }
         } else if (gui->shm) {
