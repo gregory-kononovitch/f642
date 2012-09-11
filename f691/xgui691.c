@@ -385,10 +385,10 @@ static void *event_loop691(void *prm) {
     while(info->run) {
         repeat_test[2]++;
 //        r = XPending(gui->display);
-//        FOG("Wait for next event, pending %d", r);
+        FOG("Wait for next event, pending %d", r);
         r = XNextEvent(gui->display, &event);
 //        r = XMaskEvent(gui->display, mask, &event);
-//        FOG("XNextEvent return %d for event %d", r, event.type);
+        FOG("XNextEvent return %d for event %d", r, event.type);
         if (event.xmap.event != gui->window) continue;
 
 //        emask = 1L << event.type;
@@ -402,6 +402,9 @@ static void *event_loop691(void *prm) {
                 r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
                         , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
             }
+        } else if (event.type == Expose) {
+            r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+                    , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
         }
 
         repeat_test[3]++;
@@ -470,8 +473,8 @@ static void test() {
     struct timeval tv1, tv2;
     brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
     bgra650   bgra;
-    bgra_link650(&bgra, NULL, gui->width, gui->height);
-
+    bgra_link650(&bgra, gui->ximg1->data, gui->width, gui->height);
+    brodge_exec(brodge, &bgra);
     //
     xgui_listen691(gui);
 
@@ -487,7 +490,7 @@ static void test() {
     eevent->width = gui->width;
     eevent->height = gui->height;
     eevent->count = 0;
-    eevent->major_code = X_CopyArea;
+    eevent->major_code = X_CopyPlane;
     eevent->minor_code = 0;
     //
     long frame = 0;
