@@ -320,6 +320,7 @@ struct _event_thread691_;
 typedef int (*event691)(struct _event_thread691_ *thread, XEvent *evt);
 struct _event_thread691_ {
     xgui691         *gui;
+    Display         *dpy;
     int             run;
     long            events_mask;
 
@@ -357,12 +358,14 @@ int xgui_listen691(xgui691 *gui) {
     pthread_mutex_init(&event_thread691.mutex, NULL);
     clear_test691();
 
+    event_thread691.dpy = XOpenDisplay(":0");
+
     //
     event_thread691.run = 1;
     pthread_create(&event_thread691.thread, NULL, &event_loop691, &event_thread691);
 
     //
-    XSelectInput(gui->display, gui->window, mask);
+    XSelectInput(event_thread691.dpy, gui->window, mask);
 
     FOG("Listen done");
     return 0;
@@ -383,12 +386,13 @@ static void *event_loop691(void *prm) {
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     while(info->run) {
-        pthread_mutex_lock(&event_thread691.mutex);
-        while((r = XPending(gui->display))) {
+        printf("XPending\n");
+//        pthread_mutex_lock(&event_thread691.mutex);
+        while((r = XPending(info->dpy))) {
             repeat_test[2]++;
-            printf("Wait for next event, pending %d", r);
-            r = XNextEvent(gui->display, &event);
-            printf(" : XNextEvent return %d for event %d\n", r, event.type);
+            printf("Wait for next event, pending %d\n", r);
+            r = XNextEvent(info->dpy, &event);
+//            printf(" : XNextEvent return %d for event %d\n", r, event.type);
             if (event.xmap.event != gui->window) continue;
 
     //        emask = 1L << event.type;
@@ -439,7 +443,7 @@ static void *event_loop691(void *prm) {
                 tv1.tv_usec = tv2.tv_usec;
             }
         }
-        pthread_mutex_unlock(&event_thread691.mutex);
+//        pthread_mutex_unlock(&event_thread691.mutex);
     }
     FOG("Thread ended");
     return NULL;
@@ -516,20 +520,24 @@ static void test() {
 //                printf("Sending event 2...\n");
 //                Status st = XSendEvent(gui->display, gui->window, False, ExposureMask, (XEvent*)eevent);
 //                printf("done whith status = %d\n", st);
-                pthread_mutex_lock(&event_thread691.mutex);
+                printf("XputImage\n");
+//                pthread_mutex_lock(&event_thread691.mutex);
                 r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
                         , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
-                pthread_mutex_unlock(&event_thread691.mutex);
+//                pthread_mutex_unlock(&event_thread691.mutex);
+                printf("XputImage done\n");
                 i = 1;
             } else {
                 eevent->minor_code = 1;
 //                printf("Sending event 1...\n");
 //                Status st = XSendEvent(gui->display, gui->window, False, ExposureMask, (XEvent*)eevent);
 //                printf("done whith status = %d\n", st);
-                pthread_mutex_lock(&event_thread691.mutex);
+                printf("XputImage\n");
+//                pthread_mutex_lock(&event_thread691.mutex);
                 r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
                         , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
-                pthread_mutex_unlock(&event_thread691.mutex);
+//                pthread_mutex_unlock(&event_thread691.mutex);
+                printf("XputImage done\n");
                 i = 0;
             }
         } else if (gui->shm) {
