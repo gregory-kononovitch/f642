@@ -109,7 +109,9 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     if (shm && XShmQueryExtension(gui->display)) {
         FOG("XShmQueryExtension : ok");
         XExtCodes *shm_codes = XInitExtension(gui->display, SHMNAME);
-        FOG("XInitExtension(" SHMNAME ") return ext = %d, opcode = %d", shm_codes->extension, shm_codes->major_opcode);
+        FOG("XInitExtension(" SHMNAME ") return ext = %d, opcode = %d, event1 = %d, error1 = %d", shm_codes->extension, shm_codes->major_opcode, shm_codes->first_event, shm_codes->first_error);
+        r = XShmGetEventBase(gui->display);
+        FOG("XShmGetEventBase return %d, XShmCompletionEvent ?", r);
         gui->shm = 1;
     } else {
         FOG("XShmQueryExtension : no");
@@ -328,11 +330,12 @@ struct _event_thread691_ {
 static struct _event_thread691_ event_thread691;
 
 //
-static int repeat_test[LASTEvent];
+static int repeat_test[LASTEvent + 10000];
 static void clear_test691() {
-    memset(repeat_test, 0, 4 * LASTEvent);
+    memset(repeat_test, 0, sizeof(repeat_test));
 }
 static int event_test_timing691(struct _event_thread691_ *thread, XEvent *evt) {
+    if (evt->type > (sizeof(repeat_test) >> 2)) return -1;
     repeat_test[evt->type]++;
     return 0;
 }
@@ -387,7 +390,7 @@ static void *event_loop691(void *prm) {
         repeat_test[1]++;
         //
         //info->procs[event.type](info, &event);
-        if (event.type < LASTEvent) event_test_timing691(info, &event);
+        event_test_timing691(info, &event);
 
         //
         //
@@ -429,7 +432,7 @@ static void test() {
     FOG("XrmInitialize done");
 
     //
-    xgui691 *gui = xgui_create691(800, 448, 1);
+    xgui691 *gui = xgui_create691(800, 448, 0);
     if (!gui) return;
     //
     r = xgui_open_window691(gui, "Test");
@@ -500,6 +503,6 @@ static void test() {
 }
 
 
-int main() {
+int main1() {
     test();
 }

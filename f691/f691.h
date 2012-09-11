@@ -13,7 +13,6 @@
 #define F691_H_
 
 
-#include <X11/Xlib-xcb.h>
 #include <X11/Xutil.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
