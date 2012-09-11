@@ -12,7 +12,7 @@
 #ifndef F691_H_
 #define F691_H_
 
-
+#include <X11/XKBlib.h>
 #include <X11/Xutil.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>

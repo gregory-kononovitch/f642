@@ -330,6 +330,23 @@ struct _event_thread691_ {
     //
     pthread_t       thread;
     pthread_mutex_t mutex;
+
+    // KeyEvents
+    char    escape;
+    char    space;
+    char    enter;
+    char    tab;
+
+    // Mouse
+    int     mousex;
+    int     mousey;
+
+    // uitls
+    int     i0;
+    int     i1;
+    int     i2;
+    int     i3;
+    int     i4;
 };
 static struct _event_thread691_ event_thread691;
 
@@ -351,6 +368,7 @@ int xgui_listen691(xgui691 *gui) {
     event_thread691.gui = gui;
     event_thread691.types_mask = 0xFFFFFFFFFFFFFFL;
     event_thread691.run = 0;
+    event_thread691.i0 = -1;
     int i;
     for(i = 0 ; i < LASTEvent ; i++) {
         event_thread691.procs[i] = &event_test_timing691;
@@ -388,18 +406,42 @@ static void *event_loop691(void *prm) {
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     while(info->run) {
-        pthread_mutex_lock(&event_thread691.mutex);
+        pthread_mutex_lock(&info->mutex);
         while(XCheckMaskEvent(gui->display, mask, &event) && info->run) {
-            repeat_test[2]++;
+            repeat_test[50]++;
             if (event.xany.window != gui->window) continue;     // @@@
 
             emask = 1L << event.type;
             if (info->types_mask & emask == 0) continue;
 
-            repeat_test[3]++;
+            repeat_test[51]++;
             //
             //info->procs[event.type](info, &event);
             event_test_timing691(info, &event);
+
+            if (event.type == MotionNotify) {
+                info->mousex = event.xmotion.x;
+                info->mousey = event.xmotion.y;
+
+            } else if (event.type == KeyPress) {
+                KeySym ky = XKeycodeToKeysym(gui->display, event.xkey.keycode, 0);
+                LOG("Key : %d -> %lu", event.xkey.keycode, ky);
+                switch(ky) {
+                    case XK_Escape:
+                        info->escape = 1;
+                        info->run = 0;
+                        break;
+                    case XK_space:
+                        info->space = 1;
+                        break;
+                    case XK_Return:
+                        info->enter = 1;
+                        break;
+                    case XK_Tab:
+                        info->tab = 1;
+                        break;
+                }
+            }
 
             //
             gettimeofday(&tv2, NULL);
@@ -410,10 +452,11 @@ static void *event_loop691(void *prm) {
                         , repeat_test[KeyPress]
                         , repeat_test[KeyRelease]
                         , repeat_test[Expose]
-                        , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[2], repeat_test[3]
+                        , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[50], repeat_test[51]
                 );
                 for(i = 0 ; i < LASTEvent ; i++) {
                     printf("%d|", repeat_test[i]);
+                    if (i % 5 == 4) printf("| |");
                 }
                 printf("\n");
                 clear_test691();
@@ -421,7 +464,7 @@ static void *event_loop691(void *prm) {
                 tv1.tv_usec = tv2.tv_usec;
             }
         }
-        pthread_mutex_unlock(&event_thread691.mutex);
+        pthread_mutex_unlock(&info->mutex);
         usleep(1000);
     }
     FOG("Thread ended");
@@ -432,7 +475,7 @@ static void *event_loop691(void *prm) {
 /*
  *
  */
-static void test() {
+static int test() {
     int r;
 
     //
@@ -444,20 +487,24 @@ static void test() {
 
     //
     xgui691 *gui = xgui_create691(864, 480, 1);
-    if (!gui) return;
+    if (!gui) return -1;
     gui->period = 57140;
     //
     r = xgui_open_window691(gui, "Test");
     if (r) {
         LOG("Can't open window, returning");
-        return;
+        return -1;
     }
 
     //
     int i;
     long l;
     struct timeval tv0, tv1, tv2, tv3, tv4;
+    struct timeval tvb1, tvb2;
+    long broad;
     brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
+    void *srcs = brodge->sources;
+    int nb_srcs = brodge->nb_src;
     bgra650   bgra;
     bgra_link650(&bgra, gui->ximg1->data, gui->width, gui->height);
     brodge_anim(brodge);
@@ -479,8 +526,9 @@ static void test() {
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     gettimeofday(&tv3, NULL);
-    while(1) {
+    while(event_thread691.run) {
         //
+        gettimeofday(&tvb1, NULL);
         if (!gui->shm) {
             if (i % 2 == 0) {
                 pthread_mutex_lock(&event_thread691.mutex);
@@ -508,6 +556,9 @@ static void test() {
                 i = 0;
             }
         }
+        gettimeofday(&tvb2, NULL);
+        timersub(&tvb2, &tvb1, &tvb2);
+        broad += tvb2.tv_usec;
         //
         if (i % 2 == 0) {
             bgra.data = (uint32_t*)gui->ximg2->data;
@@ -515,7 +566,37 @@ static void test() {
             bgra.data = (uint32_t*)gui->ximg1->data;
         }
         //
+        if (event_thread691.space) {
+            brodge_rebase(brodge);
+            event_thread691.space = 0;
+        }
+        if (event_thread691.tab) {
+            event_thread691.i0++;
+            if (event_thread691.i0 >= brodge->nb_src) {
+                event_thread691.i0 = -1;
+            }
+            event_thread691.tab = 0;
+        }
+        if (event_thread691.enter) {
+            if (event_thread691.i1) event_thread691.i1 = 0;
+            else event_thread691.i1 = 1;
+            event_thread691.enter = 0;
+        }
         brodge_anim(brodge);
+        if (event_thread691.i0 > -1) {
+            brodge->sources[event_thread691.i0]->x = event_thread691.mousex;
+            brodge->sources[event_thread691.i0]->y = event_thread691.mousey;
+//            if (event_thread691.i1) {
+//                brodge->sources = &srcs[event_thread691.i0];
+//                brodge->nb_src = 1;
+//            } else {
+//                brodge->sources = srcs;
+//                brodge->nb_src = nb_srcs;
+//            }
+        } else {
+            brodge->sources = srcs;
+            brodge->nb_src = nb_srcs;
+        }
         brodge_exec(brodge, &bgra);
         frame++;
         //
@@ -534,11 +615,16 @@ static void test() {
         if (frame % 30 == 0) {
             gettimeofday(&tv4, NULL);
             timersub(&tv4, &tv3, &tv4);
-            LOG("Frame %ld for %.3f Hz", frame, 30. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec));
+            LOG("Frame %ld for %.3f Hz for %ld µs", frame, 30. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 30);
+            broad = 0;
             gettimeofday(&tv3, NULL);
         }
         //
     }
+    //
+    xgui_close_window691(gui);
+    xgui_free691(&gui);
+    return 0;
 }
 
 
