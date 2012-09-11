@@ -42,6 +42,7 @@ ONEp		dd		1.0, 1.0, 1.0, 1.0
 FOURp		dd		4.0, 4.0, 4.0, 4.0
 FLUSH		dd		0.0, 1.0, 2.0, 3.0
 ALPHAp		dd		0xff000000, 0xff000000, 0xff000000, 0xff000000
+ALPHBp		dd		0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff
 WHITEp		dd		255.9, 255.9, 255.9, 255.9
 ABSp		dd		0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F
 NEGp		dd		0x80808080, 0x80808080, 0x80808080, 0x80808080
@@ -266,13 +267,13 @@ rgb:		; make rgb
 			mulps			xmm2, xmm5
 			;
 			cvttps2dq		xmm0, xmm0
-;			pslld			xmm0, 16
+			pslld			xmm0, 16
 			por				xmm0, [ALPHAp]
 			cvttps2dq		xmm1, xmm1
 			pslld			xmm1, 8
 			por				xmm0, xmm1
 			cvttps2dq		xmm2, xmm2
-			pslld			xmm2, 16
+;			pslld			xmm2, 8
 			por				xmm0, xmm2
 			;
 			movdqa			oword [rsi], xmm0

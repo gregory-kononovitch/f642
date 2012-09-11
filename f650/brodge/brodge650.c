@@ -21,9 +21,12 @@ void brodge_init_src(brodge650 *brodge, bsource650 *src) {
     src->y = .5 * brodge->height;
     src->i = &lini;
     src->m = 1.f;
-    src->r = .75f;
-    src->g = 1.f;
-    src->b = .25f;
+//    src->r = .75f;
+//    src->g = 1.f;
+//    src->b = .25f;
+    src->r = .5f;
+    src->g = .5f;
+    src->b = .5f;
     //
     src->p = 1. / 150;
     src->h = 0.f;
@@ -278,9 +281,9 @@ int brodge_anim(brodge650 *brodge) {
         //
         random650(&alea);
 //        brodge->sources[i].m = 1.f;
-        brodge->sources[i]->r *= (1 + 0.05 * alea.x);
-        brodge->sources[i]->g *= (1 + 0.05 * alea.y);
-        brodge->sources[i]->b *= (1 + 0.05 * alea.z);
+        brodge->sources[i]->r *= (1 + 0.1 * alea.x);
+        brodge->sources[i]->g *= (1 + 0.1 * alea.y);
+        brodge->sources[i]->b *= (1 + 0.1 * alea.z);
         float max;
         if (brodge->sources[i]->r > brodge->sources[i]->g) {
             if (brodge->sources[i]->r > brodge->sources[i]->b) max = brodge->sources[i]->r;

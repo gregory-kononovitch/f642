@@ -425,7 +425,6 @@ static void *event_loop691(void *prm) {
 
             } else if (event.type == KeyPress) {
                 KeySym ky = XKeycodeToKeysym(gui->display, event.xkey.keycode, 0);
-                LOG("Key : %d -> %lu", event.xkey.keycode, ky);
                 switch(ky) {
                     case XK_Escape:
                         info->escape = 1;
@@ -454,11 +453,11 @@ static void *event_loop691(void *prm) {
                         , repeat_test[Expose]
                         , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[50], repeat_test[51]
                 );
-                for(i = 0 ; i < LASTEvent ; i++) {
-                    printf("%d|", repeat_test[i]);
-                    if (i % 5 == 4) printf("| |");
-                }
-                printf("\n");
+//                for(i = 0 ; i < LASTEvent ; i++) {
+//                    printf("%d|", repeat_test[i]);
+//                    if (i % 5 == 4) printf("| |");
+//                }
+//                printf("\n");
                 clear_test691();
                 tv1.tv_sec  = tv2.tv_sec;
                 tv1.tv_usec = tv2.tv_usec;
@@ -486,7 +485,7 @@ static int test() {
 //    FOG("XrmInitialize done");
 
     //
-    xgui691 *gui = xgui_create691(864, 480, 1);
+    xgui691 *gui = xgui_create691(1024, 600, 1);
     if (!gui) return -1;
     gui->period = 57140;
     //
