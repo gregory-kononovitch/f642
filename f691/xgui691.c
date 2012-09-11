@@ -21,20 +21,20 @@ static long mask =
       | KeyReleaseMask
       | ButtonPressMask
       | ButtonReleaseMask
-      | EnterWindowMask
-      | LeaveWindowMask
+//      | EnterWindowMask
+//      | LeaveWindowMask
       | PointerMotionMask
 //      | PointerMotionHintMask
-      | Button1MotionMask
-      | ButtonMotionMask
+//      | Button1MotionMask
+//      | ButtonMotionMask
       | ExposureMask
-      | VisibilityChangeMask
+//      | VisibilityChangeMask
       | StructureNotifyMask
-      | ResizeRedirectMask
-      | FocusChangeMask
-      | PropertyChangeMask
-      | ColormapChangeMask
-      | OwnerGrabButtonMask
+//      | ResizeRedirectMask
+//      | FocusChangeMask
+//      | PropertyChangeMask
+//      | ColormapChangeMask
+//      | OwnerGrabButtonMask
 ;
 
 static int xerror = 0;
@@ -279,6 +279,7 @@ int xgui_open_window691(xgui691 *gui, const char *title) {
     FOG("Window created");
 
     // Event
+    XSelectInput(gui->display, gui->window, mask);
     XSetStandardProperties(gui->display, gui->window, title, title, None, NULL, 0, &gui->hint);
     FOG("Standrd properties set");
 
@@ -293,7 +294,7 @@ int xgui_open_window691(xgui691 *gui, const char *title) {
     } while (event.type != MapNotify || event.xmap.event != gui->window);
     FOG("Map window done");
 
-    XSelectInput(gui->display, gui->window, NoEventMask);
+//    XSelectInput(gui->display, gui->window, NoEventMask);
 
     XSetErrorHandler(NULL);
     return 0;
@@ -325,7 +326,8 @@ struct _event_thread691_ {
     event691        procs[LASTEvent];
 
     //
-    pthread_t        thread;
+    pthread_t       thread;
+    pthread_mutex_t mutex;
 };
 static struct _event_thread691_ event_thread691;
 
@@ -351,6 +353,7 @@ int xgui_listen691(xgui691 *gui) {
     for(i = 0 ; i < LASTEvent ; i++) {
         event_thread691.procs[i] = &event_test_timing691;
     }
+    pthread_mutex_init(&event_thread691.mutex, NULL);
     clear_test691();
 
     //
@@ -358,7 +361,7 @@ int xgui_listen691(xgui691 *gui) {
     pthread_create(&event_thread691.thread, NULL, &event_loop691, &event_thread691);
 
     //
-    XSelectInput(gui->display, gui->window, mask);
+    XSelectInput(gui->display, gui->window, PointerMotionMask);
 
     FOG("Listen done");
     return 0;
@@ -379,22 +382,31 @@ static void *event_loop691(void *prm) {
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     while(info->run) {
-        repeat_test[0]++;
-        FOG("Wait for next event");
-        //XPending(gui->display);
+        repeat_test[2]++;
+//        r = XPending(gui->display);
+        FOG("Wait for next event, pending %d", r);
+        pthread_mutex_lock(&event_thread691.mutex);
         r = XNextEvent(gui->display, &event);
-        FOG("XNextEvent return %d for event %d", r, event.type);
+        pthread_mutex_unlock(&event_thread691.mutex);
+//        r = XMaskEvent(gui->display, mask, &event);
+//        FOG("XNextEvent return %d for event %d", r, event.type);
         if (event.xmap.event != gui->window) continue;
 
         emask = 1L << event.type;
-        //if (info->events_mask & emask == 0) continue;
+        if (info->events_mask & emask == 0) continue;
 
-        repeat_test[1]++;
+        repeat_test[3]++;
         //
         //info->procs[event.type](info, &event);
         event_test_timing691(info, &event);
 
         //
+//        XSync(gui->display, False);
+//        XMaskEvent(gui->display, mask, &event);
+//        if (event.type == Expose) XPutBackEvent(gui->display, &event);
+//        if (event.type == VisibilityNotify) XPutBackEvent(gui->display, &event);
+//        if (event.type == MotionNotify) XPutBackEvent(gui->display, &event);
+
         //
         gettimeofday(&tv2, NULL);
         timersub(&tv2, &tv1, &tv3);
@@ -404,7 +416,7 @@ static void *event_loop691(void *prm) {
                     , repeat_test[KeyPress]
                     , repeat_test[KeyRelease]
                     , repeat_test[Expose]
-                    , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[0], repeat_test[1]
+                    , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[2], repeat_test[3]
             );
             for(i = 0 ; i < LASTEvent ; i++) {
                 printf("%d|", repeat_test[i]);
@@ -430,8 +442,8 @@ static void test() {
     Status st = XInitThreads();
     FOG("XInitThreads return %d",st);
     //
-    XrmInitialize();
-    FOG("XrmInitialize done");
+//    XrmInitialize();
+//    FOG("XrmInitialize done");
 
     //
     xgui691 *gui = xgui_create691(800, 448, 0);
@@ -455,6 +467,21 @@ static void test() {
     xgui_listen691(gui);
 
     //
+    XGraphicsExposeEvent *eevent = calloc(1, sizeof(XGraphicsExposeEvent));
+    eevent->type = GraphicsExpose;
+    eevent->serial = 0;
+    eevent->send_event = True;
+    eevent->display = gui->display;
+    eevent->drawable= gui->window;
+    eevent->x = 0;
+    eevent->y = 0;
+    eevent->width = gui->width;
+    eevent->height = gui->height;
+    eevent->x = 0;
+    eevent->x = 0;
+    eevent->x = 0;
+    eevent->x = 0;
+    //
     long frame = 0;
     i = 0;
     gettimeofday(&tv1, NULL);
@@ -470,14 +497,20 @@ static void test() {
         frame++;
         //
 //        FOG("Frame %ld", frame);
+        while(XPending(gui->display));
         if (!gui->shm) {
             if (i % 2 == 0) {
+                XSendEvent()
+                pthread_mutex_lock(&event_thread691.mutex);
                 r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
                         , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
+                pthread_mutex_unlock(&event_thread691.mutex);
                 i = 1;
             } else {
+                pthread_mutex_lock(&event_thread691.mutex);
                 r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
                         , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+                pthread_mutex_unlock(&event_thread691.mutex);
                 i = 0;
             }
         } else if (gui->shm) {
@@ -496,15 +529,15 @@ static void test() {
 //        FOG("Frame %ld done", frame);
 
 //        //
-//        XSync(gui->display, 0);
+//        XSync(gui->display, True);
 
-        if (frame % 30 ==0) {
+        if (frame % 30 == 0) {
             gettimeofday(&tv2, NULL);
             timersub(&tv2, &tv1, &tv2);
             LOG("Frame %ld for %ld.%06lu s", frame, tv2.tv_sec, tv2.tv_usec);
             gettimeofday(&tv1, NULL);
         }
-        usleep(10000);
+        usleep(20000);
     }
 }
 
