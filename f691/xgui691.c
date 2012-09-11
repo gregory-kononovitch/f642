@@ -24,7 +24,7 @@ static long mask =
       | EnterWindowMask
       | LeaveWindowMask
       | PointerMotionMask
-      | PointerMotionHintMask
+//      | PointerMotionHintMask
       | Button1MotionMask
       | ButtonMotionMask
       | ExposureMask
@@ -379,9 +379,11 @@ static void *event_loop691(void *prm) {
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     while(info->run) {
-//        XPending(gui->display);
         repeat_test[0]++;
+        FOG("Wait for next event");
+        //XPending(gui->display);
         r = XNextEvent(gui->display, &event);
+        FOG("XNextEvent return %d for event %d", r, event.type);
         if (event.xmap.event != gui->window) continue;
 
         emask = 1L << event.type;
@@ -455,6 +457,7 @@ static void test() {
     //
     long frame = 0;
     i = 0;
+    gettimeofday(&tv1, NULL);
     while(1) {
         if (i % 2 == 0) {
             bgra.data = (uint32_t*)gui->ximg2->data;
@@ -496,13 +499,16 @@ static void test() {
 //        XSync(gui->display, 0);
 
         if (frame % 30 ==0) {
-            LOG("Frame %ld", frame);
+            gettimeofday(&tv2, NULL);
+            timersub(&tv2, &tv1, &tv2);
+            LOG("Frame %ld for %ld.%06lu s", frame, tv2.tv_sec, tv2.tv_usec);
+            gettimeofday(&tv1, NULL);
         }
         usleep(10000);
     }
 }
 
 
-int main1() {
+int main() {
     test();
 }

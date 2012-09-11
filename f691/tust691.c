@@ -111,7 +111,7 @@ int create_gui(x11gui691 *gui, int width, int height, int shm) {
     return 0;
 }
 
-int main() {
+int main1() {
     int r;
     x11gui691 *gui = calloc(1, sizeof(x11gui691));
 
