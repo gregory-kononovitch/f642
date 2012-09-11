@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <X11/Xproto.h>
 
 #include "f691.h"
 
@@ -28,7 +29,7 @@ static long mask =
 //      | Button1MotionMask
 //      | ButtonMotionMask
       | ExposureMask
-//      | VisibilityChangeMask
+      | VisibilityChangeMask
       | StructureNotifyMask
 //      | ResizeRedirectMask
 //      | FocusChangeMask
@@ -361,7 +362,7 @@ int xgui_listen691(xgui691 *gui) {
     pthread_create(&event_thread691.thread, NULL, &event_loop691, &event_thread691);
 
     //
-    XSelectInput(gui->display, gui->window, PointerMotionMask);
+    XSelectInput(gui->display, gui->window, mask);
 
     FOG("Listen done");
     return 0;
@@ -384,16 +385,24 @@ static void *event_loop691(void *prm) {
     while(info->run) {
         repeat_test[2]++;
 //        r = XPending(gui->display);
-        FOG("Wait for next event, pending %d", r);
-        pthread_mutex_lock(&event_thread691.mutex);
+//        FOG("Wait for next event, pending %d", r);
         r = XNextEvent(gui->display, &event);
-        pthread_mutex_unlock(&event_thread691.mutex);
 //        r = XMaskEvent(gui->display, mask, &event);
 //        FOG("XNextEvent return %d for event %d", r, event.type);
         if (event.xmap.event != gui->window) continue;
 
-        emask = 1L << event.type;
-        if (info->events_mask & emask == 0) continue;
+//        emask = 1L << event.type;
+//        if (info->events_mask & emask == 0) continue;
+
+        if (event.type == GraphicsExpose) {
+            if (event.xgraphicsexpose.minor_code == 2) {
+                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
+                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
+            } else {
+                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+            }
+        }
 
         repeat_test[3]++;
         //
@@ -472,15 +481,14 @@ static void test() {
     eevent->serial = 0;
     eevent->send_event = True;
     eevent->display = gui->display;
-    eevent->drawable= gui->window;
+    eevent->drawable = gui->window;
     eevent->x = 0;
     eevent->y = 0;
     eevent->width = gui->width;
     eevent->height = gui->height;
-    eevent->x = 0;
-    eevent->x = 0;
-    eevent->x = 0;
-    eevent->x = 0;
+    eevent->count = 0;
+    eevent->major_code = X_CopyArea;
+    eevent->minor_code = 0;
     //
     long frame = 0;
     i = 0;
@@ -497,20 +505,26 @@ static void test() {
         frame++;
         //
 //        FOG("Frame %ld", frame);
-        while(XPending(gui->display));
         if (!gui->shm) {
             if (i % 2 == 0) {
-                XSendEvent()
-                pthread_mutex_lock(&event_thread691.mutex);
-                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
-                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
-                pthread_mutex_unlock(&event_thread691.mutex);
+                eevent->minor_code = 2;
+                printf("Sending event 2...\n");
+                XSendEvent(gui->display, gui->window, True, ExposureMask, (XEvent*)eevent);
+                printf("done\n");
+//                pthread_mutex_lock(&event_thread691.mutex);
+//                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
+//                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
+//                pthread_mutex_unlock(&event_thread691.mutex);
                 i = 1;
             } else {
-                pthread_mutex_lock(&event_thread691.mutex);
-                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
-                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
-                pthread_mutex_unlock(&event_thread691.mutex);
+                eevent->minor_code = 1;
+                printf("Sending event 1...\n");
+                XSendEvent(gui->display, gui->window, True, ExposureMask, (XEvent*)eevent);
+                printf("done\n");
+//                pthread_mutex_lock(&event_thread691.mutex);
+//                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
+//                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
+//                pthread_mutex_unlock(&event_thread691.mutex);
                 i = 0;
             }
         } else if (gui->shm) {
