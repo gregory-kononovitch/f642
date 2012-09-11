@@ -47,7 +47,10 @@ typedef struct {
 
     //
     XImage          *ximg1;
-    XImage          *ximg2;
+    XImage          *ximg2;     // @@@
+
+    //
+    long            period;
 
 } xgui691;
 
