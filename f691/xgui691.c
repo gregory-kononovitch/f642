@@ -8,10 +8,34 @@
  * There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <errno.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
 
 #include "f691.h"
 
+static long mask =
+        KeyPressMask
+      | KeyReleaseMask
+      | ButtonPressMask
+      | ButtonReleaseMask
+      | EnterWindowMask
+      | LeaveWindowMask
+      | PointerMotionMask
+      | PointerMotionHintMask
+      | Button1MotionMask
+      | ButtonMotionMask
+      | ExposureMask
+      | VisibilityChangeMask
+      | StructureNotifyMask
+      | ResizeRedirectMask
+      | FocusChangeMask
+      | PropertyChangeMask
+      | ColormapChangeMask
+      | OwnerGrabButtonMask
+;
 
 static int xerror = 0;
 static int handle_xerror(Display* display, XErrorEvent* err) {
@@ -84,6 +108,8 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     // Shm
     if (shm && XShmQueryExtension(gui->display)) {
         FOG("XShmQueryExtension : ok");
+        XExtCodes *shm_codes = XInitExtension(gui->display, SHMNAME);
+        FOG("XInitExtension(" SHMNAME ") return ext = %d, opcode = %d", shm_codes->extension, shm_codes->major_opcode);
         gui->shm = 1;
     } else {
         FOG("XShmQueryExtension : no");
@@ -235,7 +261,7 @@ int xgui_open_window691(xgui691 *gui, const char *title) {
     FOG("CMap created");
     XSetWindowAttributes xswa;
     xswa.colormap     = gui->color_map;
-    xswa.event_mask   = StructureNotifyMask;
+    xswa.event_mask   = mask;
     xswa.border_pixel = BlackPixel(gui->display, gui->screen);
 
     gui->window = XCreateWindow(gui->display, DefaultRootWindow(gui->display)
@@ -286,6 +312,7 @@ int xgui_close_window691(xgui691 *gui) {
  *
    -------------------------------------------------------- */
 static void *event_loop691(void *prm);
+struct _event_thread691_;
 typedef int (*event691)(struct _event_thread691_ *thread, XEvent *evt);
 struct _event_thread691_ {
     xgui691         *gui;
@@ -294,6 +321,9 @@ struct _event_thread691_ {
 
     //
     event691        procs[LASTEvent];
+
+    //
+    pthread_t        thread;
 };
 static struct _event_thread691_ event_thread691;
 
@@ -309,24 +339,6 @@ static int event_test_timing691(struct _event_thread691_ *thread, XEvent *evt) {
 
 //
 int xgui_listen691(xgui691 *gui) {
-    long mask =
-              KeyPressMask
-            | KeyReleaseMask
-            | ButtonPressMask
-            | ButtonReleaseMask
-            | EnterWindowMask
-            | LeaveWindowMask
-            | PointerMotionMask
-            | PointerMotionHintMask
-            | Button1MotionMask
-            | ButtonMotionMask
-            | ExposureMask
-            | VisibilityChangeMask
-            | StructureNotifyMask
-            | ResizeRedirectMask
-            | FocusChangeMask
-            | OwnerGrabButtonMask
-    ;
 
     //
     event_thread691.gui = gui;
@@ -339,30 +351,66 @@ int xgui_listen691(xgui691 *gui) {
     clear_test691();
 
     //
+    event_thread691.run = 1;
+    pthread_create(&event_thread691.thread, NULL, &event_loop691, &event_thread691);
+
+    //
     XSelectInput(gui->display, gui->window, mask);
+
+    FOG("Listen done");
     return 0;
 }
 
 
 
 static void *event_loop691(void *prm) {
-    int r;
+    int r, i;
+    struct timeval tv0, tv1, tv2, tv3;
     XEvent event;
     struct _event_thread691_ *info = (struct _event_thread691_*)prm;
     xgui691 *gui = info->gui;
 
+    FOG("Thread launch");
 
     long emask;
+    gettimeofday(&tv0, NULL);
+    gettimeofday(&tv1, NULL);
     while(info->run) {
+//        XPending(gui->display);
+        repeat_test[0]++;
         r = XNextEvent(gui->display, &event);
         if (event.xmap.event != gui->window) continue;
 
         emask = 1L << event.type;
-        if (info->events_mask & emask == 0) continue;
+        //if (info->events_mask & emask == 0) continue;
+
+        repeat_test[1]++;
+        //
+        //info->procs[event.type](info, &event);
+        if (event.type < LASTEvent) event_test_timing691(info, &event);
 
         //
-        info->procs[event.type](info, &event);
+        //
+        gettimeofday(&tv2, NULL);
+        timersub(&tv2, &tv1, &tv3);
+        if (tv3.tv_sec > 0) {
+            LOG("Events loop : mo %d | kp %d | kr %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d"
+                    , repeat_test[MotionNotify]
+                    , repeat_test[KeyPress]
+                    , repeat_test[KeyRelease]
+                    , repeat_test[Expose]
+                    , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[0], repeat_test[1]
+            );
+            for(i = 0 ; i < LASTEvent ; i++) {
+                printf("%d|", repeat_test[i]);
+            }
+            printf("\n");
+            clear_test691();
+            tv1.tv_sec  = tv2.tv_sec;
+            tv1.tv_usec = tv2.tv_usec;
+        }
     }
+    FOG("Thread ended");
     return NULL;
 }
 
@@ -372,6 +420,13 @@ static void *event_loop691(void *prm) {
  */
 static void test() {
     int r;
+
+    //
+    Status st = XInitThreads();
+    FOG("XInitThreads return %d",st);
+    //
+    XrmInitialize();
+    FOG("XrmInitialize done");
 
     //
     xgui691 *gui = xgui_create691(800, 448, 1);
@@ -392,6 +447,10 @@ static void test() {
     bgra_link650(&bgra, NULL, gui->width, gui->height);
 
     //
+    xgui_listen691(gui);
+
+    //
+    long frame = 0;
     i = 0;
     while(1) {
         if (i % 2 == 0) {
@@ -402,7 +461,9 @@ static void test() {
         //
         brodge_anim(brodge);
         brodge_exec(brodge, &bgra);
+        frame++;
         //
+//        FOG("Frame %ld", frame);
         if (!gui->shm) {
             if (i % 2 == 0) {
                 r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
@@ -426,9 +487,14 @@ static void test() {
                 i = 0;
             }
         }
-        //
-        XSync(gui->display, 0);
+//        FOG("Frame %ld done", frame);
 
+//        //
+//        XSync(gui->display, 0);
+
+        if (frame % 30 ==0) {
+            LOG("Frame %ld", frame);
+        }
         usleep(10000);
     }
 }
