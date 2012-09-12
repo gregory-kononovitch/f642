@@ -762,14 +762,14 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
                 pthread_mutex_lock(&ethread->mutex);
                 r = XShmPutImage(gui->display, gui->window, gui->gc
                         , gui->ximg2
-                        , srcx, srcy, destx, desty, width, height, True);
+                        , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);    // @@@ r
                 pthread_mutex_unlock(&ethread->mutex);
             } else {
                 pthread_mutex_lock(&ethread->mutex);
                 r = XShmPutImage(gui->display, gui->window, gui->gc
                         , gui->ximg1
-                        , srcx, srcy, destx, desty, width, height, True);
+                        , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);
                 pthread_mutex_unlock(&ethread->mutex);
             }
