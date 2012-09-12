@@ -23,36 +23,6 @@
 #include "../f650/layout/f650_layout.h"
 
 
-typedef struct {
-    int             width;
-    int             height;
-
-    // display
-    Display         *display;
-    XVisualInfo     vinfo;
-    int             screen;
-    GC              gc;
-
-
-    // window
-    Window          window;
-    Colormap        color_map;
-    XSizeHints      hint;
-    XWindowAttributes xwa;
-
-    //
-    int             shm;
-    XShmSegmentInfo shm_info;
-    XShmSegmentInfo shm_info2;
-
-    //
-    XImage          *ximg1;
-    XImage          *ximg2;     // @@@
-
-    //
-    long            period;
-
-} xgui691;
 
 /*
  *
@@ -88,6 +58,21 @@ typedef struct {
 } events691;
 
 
+typedef struct {
+    int width, height;      /* size of image */
+    int xoffset;            /* number of pixels offset in X direction */
+    int byte_order;         /* data byte order, LSBFirst, MSBFirst */
+    int depth;              /* depth of image */
+    int bytes_per_line;     /* accelarator to next line */
+    int bits_per_pixel;     /* bits per pixel (ZPixmap) */
+    unsigned long red_mask; /* bits in z arrangment */
+    unsigned long green_mask;
+    unsigned long blue_mask;
+
+    void    *pix1;
+    void    *pix2;
+} xgui691;
+
 /*
  *
  */
@@ -98,7 +83,10 @@ int xgui_open_window691(xgui691 *gui, const char *title);
 int xgui_close_window691(xgui691 *gui);
 
 //
-int xgui_listen691(xgui691 *gui, events691 *events);
+int xgui_listen691(xgui691 *gui, events691 *events, void* ext);
+
+//
+int xgui_show691(xgui691 *gui, int i, int srcx, int srcy, int destx, int desty, int width, int height);
 
 
 #endif /* F691_H_ */

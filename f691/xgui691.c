@@ -1,5 +1,5 @@
 /*
- * file    : xgui691.c
+ * file    : xgui691p.c
  * project : f640 (f642 | t508.f640)
  *
  * Created on: Sep 10, 2012
@@ -39,6 +39,54 @@ static long mask =
       | (1L << 32)
 ;
 
+typedef struct _event_thread691_ ethread691;
+
+typedef struct {
+    // public
+    int             width;
+    int             height;
+    int xoffset;            /* number of pixels offset in X direction */
+    int byte_order;         /* data byte order, LSBFirst, MSBFirst */
+    int depth;              /* depth of image */
+    int bytes_per_line;     /* accelarator to next line */
+    int bits_per_pixel;     /* bits per pixel (ZPixmap) */
+    unsigned long red_mask; /* bits in z arrangment */
+    unsigned long green_mask;
+    unsigned long blue_mask;
+
+    void    *pix1;
+    void    *pix2;
+
+    // private @@@
+    // display
+    Display         *display;
+    XVisualInfo     vinfo;
+    int             screen;
+    GC              gc;
+
+    // window
+    Window          window;
+    Colormap        color_map;
+    XSizeHints      hint;
+    XWindowAttributes xwa;
+
+    //
+    int             shm;
+    XShmSegmentInfo shm_info;
+    XShmSegmentInfo shm_info2;
+
+    //
+    XImage          *ximg1;
+    XImage          *ximg2;     // @@@
+
+    //
+    ethread691      *event_thread;
+
+    //
+    long            period;
+
+} xgui691p;
+
 static int xerror = 0;
 static int handle_xerror(Display* display, XErrorEvent* err) {
     FOG("Error %u (%u), request %u, serial %lu, type %d"
@@ -52,7 +100,7 @@ static int handle_xerror(Display* display, XErrorEvent* err) {
 xgui691 *xgui_create691(int width, int height, int shm) {
     int r;
 
-    xgui691 *gui = calloc(1, sizeof(xgui691));
+    xgui691p *gui = calloc(1, sizeof(xgui691p));
     if (!gui) {
         LOG("ENOMEM creating gui, returning");
         return NULL;
@@ -217,34 +265,49 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     XSetErrorHandler(NULL);
 
     //
-    return gui;
+    gui->xoffset        = gui->ximg1->xoffset;
+    gui->byte_order     = gui->ximg1->byte_order;
+    gui->depth          = gui->ximg1->depth;
+    gui->bytes_per_line = gui->ximg1->bytes_per_line;
+    gui->bits_per_pixel = gui->ximg1->bits_per_pixel;
+    gui->red_mask       = gui->ximg1->red_mask;
+    gui->green_mask     = gui->ximg1->green_mask;
+    gui->blue_mask      = gui->ximg1->blue_mask;
+
+    gui->pix1           = gui->ximg1->data;
+    gui->pix2           = gui->ximg2->data;
+
+    //
+    return (xgui691*)gui;
 }
 
 
-void xgui_free691(xgui691 **gui) {
-    if ((*gui)->window) xgui_close_window691(*gui);
+void xgui_free691(xgui691 **xgui) {
+    xgui691p *gui = (xgui691p*)(*xgui);
+    if (gui->window) xgui_close_window691(*xgui);
     //
-    if ((*gui)->shm) {
-        XShmDetach((*gui)->display, &(*gui)->shm_info);
-        XSync((*gui)->display, True);
+    if (gui->shm) {
+        XShmDetach(gui->display, &gui->shm_info);
+        XSync(gui->display, True);
         //
-        shmdt((*gui)->shm_info.shmaddr);
-        free((*gui)->ximg1);
-        free((*gui)->ximg2);
+        shmdt(gui->shm_info.shmaddr);
+        free(gui->ximg1);
+        free(gui->ximg2);
     } else {
-        free((*gui)->ximg1->data);
-        free((*gui)->ximg2->data);
-        free((*gui)->ximg1);
-        free((*gui)->ximg2);
+        free(gui->ximg1->data);
+        free(gui->ximg2->data);
+        free(gui->ximg1);
+        free(gui->ximg2);
     }
     //
-    XCloseDisplay((*gui)->display);
-    free(*gui);
-    *gui = NULL;
+    XCloseDisplay(gui->display);
+    free(gui);
+    *xgui = NULL;
     return;
 }
 
-int xgui_open_window691(xgui691 *gui, const char *title) {
+int xgui_open_window691(xgui691 *xgui, const char *title) {
+    xgui691p *gui = (xgui691p*)xgui;
     // Window
     int x, y;
     unsigned int w, h, b, d;
@@ -303,7 +366,9 @@ int xgui_open_window691(xgui691 *gui, const char *title) {
 }
 
 
-int xgui_close_window691(xgui691 *gui) {
+int xgui_close_window691(xgui691 *xgui) {
+    xgui691p *gui = (xgui691p*)xgui;
+
     XUnmapWindow(gui->display, gui->window);
     XDestroyWindow(gui->display, gui->window);
     gui->window = 0;
@@ -318,13 +383,11 @@ int xgui_close_window691(xgui691 *gui) {
    -------------------------------------------------------- */
 static void *event_loop691(void *prm);
 
-typedef struct _event_thread691_ ethread691;
-
 typedef int (*event691)(struct _event_thread691_ *thread, XEvent *evt);
 
 struct _event_thread691_ {
     //
-    xgui691         *gui;
+    xgui691p         *gui;
     int             run;
     long            types_mask;
 
@@ -366,15 +429,14 @@ struct _event_thread691_ {
     int     i4;
 };
 
-static ethread691 event_thread691;
-
 //
 static void clear_test691(ethread691 *ethread) {
     memset(ethread->repeat_test, 0, sizeof(ethread->repeat_test));
 }
 static int event_test_timing691(ethread691 *ethread, XEvent *evt) {
-    if (evt->type > (sizeof(ethread->repeat_test) >> 2)) return -1;
-    ethread->repeat_test[evt->type]++;
+    if (evt->type < LASTEvent) {
+        ethread->repeat_test[evt->type]++;
+    }
     return 0;
 }
 static int event_monitor_log(ethread691 *ethread) {
@@ -584,63 +646,69 @@ static int window_event691(ethread691 *ethread, XEvent *xevt) {
 }
 
 //
-int xgui_listen691(xgui691 *gui, events691 *events) {
+int xgui_listen691(xgui691 *xgui, events691 *events, void *ext) {
+    //
+    xgui691p *gui = (xgui691p*)xgui;
+    if (gui->event_thread) return -1;
+    gui->event_thread = calloc(1, sizeof(ethread691));
 
     //
-    event_thread691.gui = gui;
-    event_thread691.types_mask = 0xFFFFFFFFFFFFFFL;
-    event_thread691.run = 0;
-    event_thread691.i0 = -1;
+    gui->event_thread->gui = gui;
+    gui->event_thread->types_mask = 0xFFFFFFFFFFFFFFL;
+    gui->event_thread->run = 0;
+    gui->event_thread->i0 = -1;
 
     //
     if (events) {
-        event_thread691.events = events;
+        gui->event_thread->events = events;
+        gui->event_thread->ext    = ext;
     } else {
-        event_thread691.events = calloc(1, sizeof(events691));
+        gui->event_thread->events = calloc(1, sizeof(events691));
+        gui->event_thread->ext    = ext;
     }
 
     //
-    event_thread691.num_event0 = 0;
-    event_thread691.num_event1 = 0;
-    event_thread691.num_event2 = 0;
-    event_thread691.num_event3 = 0;
+    gui->event_thread->num_event0 = 0;
+    gui->event_thread->num_event1 = 0;
+    gui->event_thread->num_event2 = 0;
+    gui->event_thread->num_event3 = 0;
     int i;
     for(i = 0 ; i < LASTEvent ; i++) {
-        event_thread691.procs[i] = event_test_timing691;
+        gui->event_thread->procs[i] = event_test_timing691;
     }
 
     //
-    event_thread691.procs[Expose]           = expose_event691;
-    event_thread691.procs[ConfigureNotify]  = window_event691;
+    gui->event_thread->procs[Expose]           = expose_event691;
+    gui->event_thread->procs[ConfigureNotify]  = window_event691;
 
     //
-    event_thread691.procs[EnterNotify]      = enter_event691;
-    event_thread691.procs[LeaveNotify]      = leave_event691;
+    gui->event_thread->procs[EnterNotify]      = enter_event691;
+    gui->event_thread->procs[LeaveNotify]      = leave_event691;
 
     //
-    event_thread691.procs[FocusIn]          = focusin_event691;
-    event_thread691.procs[FocusOut]         = focusout_event691;
+    gui->event_thread->procs[FocusIn]          = focusin_event691;
+    gui->event_thread->procs[FocusOut]         = focusout_event691;
 
     //
-    event_thread691.procs[KeyPress]         = key_pressed_event691;
-    event_thread691.procs[KeyRelease]       = key_released_event691;
+    gui->event_thread->procs[KeyPress]         = key_pressed_event691;
+    gui->event_thread->procs[KeyRelease]       = key_released_event691;
     //
-    event_thread691.procs[MotionNotify]     = motion_event691;
-    event_thread691.procs[ButtonPress]      = button_pressed_event691;
-    event_thread691.procs[ButtonRelease]    = button_released_event691;
-    event_thread691.procs[KeyPress]         = key_pressed_event691;
-    event_thread691.procs[KeyRelease]       = key_released_event691;
+    gui->event_thread->procs[MotionNotify]     = motion_event691;
+    gui->event_thread->procs[ButtonPress]      = button_pressed_event691;
+    gui->event_thread->procs[ButtonRelease]    = button_released_event691;
+    gui->event_thread->procs[KeyPress]         = key_pressed_event691;
+    gui->event_thread->procs[KeyRelease]       = key_released_event691;
 
     //
-    clear_test691(&event_thread691);
+    clear_test691(gui->event_thread);
 
     //
-    pthread_mutex_init(&event_thread691.mutex, NULL);
+    pthread_mutex_init(&gui->event_thread->mutex, NULL);
 
 
     //
-    event_thread691.run = 1;
-    pthread_create(&event_thread691.thread, NULL, &event_loop691, &event_thread691);
+    gui->event_thread->run = 1;
+    pthread_create(&gui->event_thread->thread, NULL, &event_loop691, gui);
 
     //
     XSelectInput(gui->display, gui->window, mask);
@@ -654,8 +722,9 @@ int xgui_listen691(xgui691 *gui, events691 *events) {
 static void *event_loop691(void *prm) {
     int r, i;
     XEvent event;
-    ethread691 *ethread = (ethread691*)prm;
-    xgui691 *gui = ethread->gui;
+    xgui691p *gui = (xgui691p*)prm;
+    ethread691 *ethread = gui->event_thread;
+
 
     FOG("Thread launch");
 
@@ -691,13 +760,14 @@ static void *event_loop691(void *prm) {
 /*
  *
  */
-static int show691(void *handle, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
+int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
     int r = 0;
     double broad = 0;
     struct timeval tvb1, tvb2;
+    xgui691p *gui = (xgui691p*)xgui;
 
-    ethread691 *ethread = (ethread691*)handle;
-    if (!handle) return -1;
+    if (!gui) return -1;
+    ethread691 *ethread = (ethread691*)gui;
 
     if(ethread->run) {      // @@@ sync
         //
@@ -708,7 +778,7 @@ static int show691(void *handle, int i, int srcx, int srcy, int destx, int desty
                 r = XShmPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
                         , ethread->gui->ximg2
                         , srcx, srcy, destx, desty, width, height, False);
-                r = XFlush(ethread->gui->display);
+                r = XFlush(ethread->gui->display);    // @@@ r
                 pthread_mutex_unlock(&ethread->mutex);
             } else {
                 pthread_mutex_lock(&ethread->mutex);
@@ -797,76 +867,76 @@ static int test() {
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     gettimeofday(&tv3, NULL);
-    while(event_thread691.run) {
-        //
-        gettimeofday(&tvb1, NULL);
-        show691(&event_thread691, i, 0, 0, 0, 0, gui->width, gui->height);
-        i = !i;
-        gettimeofday(&tvb2, NULL);
-        timersub(&tvb2, &tvb1, &tvb2);
-        broad += tvb2.tv_usec;
-        //
-        if (i) {
-            bgra.data = (uint32_t*)gui->ximg2->data;
-        } else {
-            bgra.data = (uint32_t*)gui->ximg1->data;
-        }
-        //
-        if (event_thread691.space) {
-            brodge_rebase(brodge);
-            event_thread691.space = 0;
-        }
-        if (event_thread691.tab) {
-            event_thread691.i0++;
-            if (event_thread691.i0 >= brodge->nb_src) {
-                event_thread691.i0 = -1;
-            }
-            event_thread691.tab = 0;
-        }
-        if (event_thread691.enter) {
-            if (event_thread691.i1) event_thread691.i1 = 0;
-            else event_thread691.i1 = 1;
-            event_thread691.enter = 0;
-        }
-        brodge_anim(brodge);
-        if (event_thread691.i0 > -1) {
-            brodge->sources[event_thread691.i0]->x = event_thread691.mousex;
-            brodge->sources[event_thread691.i0]->y = event_thread691.mousey;
-//            if (event_thread691.i1) {
-//                brodge->sources = &srcs[event_thread691.i0];
-//                brodge->nb_src = 1;
-//            } else {
-//                brodge->sources = srcs;
-//                brodge->nb_src = nb_srcs;
+//    while(event_thread691.run) {
+//        //
+//        gettimeofday(&tvb1, NULL);
+//        show691(&event_thread691, i, 0, 0, 0, 0, gui->width, gui->height);
+//        i = !i;
+//        gettimeofday(&tvb2, NULL);
+//        timersub(&tvb2, &tvb1, &tvb2);
+//        broad += tvb2.tv_usec;
+//        //
+//        if (i) {
+//            bgra.data = (uint32_t*)gui->ximg2->data;
+//        } else {
+//            bgra.data = (uint32_t*)gui->ximg1->data;
+//        }
+//        //
+//        if (event_thread691.space) {
+//            brodge_rebase(brodge);
+//            event_thread691.space = 0;
+//        }
+//        if (event_thread691.tab) {
+//            event_thread691.i0++;
+//            if (event_thread691.i0 >= brodge->nb_src) {
+//                event_thread691.i0 = -1;
 //            }
-        } else {
-            brodge->sources = srcs;
-            brodge->nb_src = nb_srcs;
-        }
-        brodge_exec(brodge, &bgra);
-        frame++;
-        //
-        tv0.tv_usec += gui->period;
-        while(tv0.tv_usec > 999999) {
-            tv0.tv_sec++;
-            tv0.tv_usec -= 1000000;
-        }
-        //
-        gettimeofday(&tv2, NULL);
-        timersub(&tv2, &tv0, &tv1);
-        if (tv1.tv_usec < gui->period && !tv1.tv_sec) {     // @@@ manage ~=
-            usleep(gui->period - tv1.tv_usec);
-        }
-        //
-        if (frame % 70 == 0) {
-            gettimeofday(&tv4, NULL);
-            timersub(&tv4, &tv3, &tv4);
-            LOG("Frame %ld for %.3f Hz for %ld µs", frame, 70. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 70);
-            broad = 0;
-            gettimeofday(&tv3, NULL);
-        }
-        //
-    }
+//            event_thread691.tab = 0;
+//        }
+//        if (event_thread691.enter) {
+//            if (event_thread691.i1) event_thread691.i1 = 0;
+//            else event_thread691.i1 = 1;
+//            event_thread691.enter = 0;
+//        }
+//        brodge_anim(brodge);
+//        if (event_thread691.i0 > -1) {
+//            brodge->sources[event_thread691.i0]->x = event_thread691.mousex;
+//            brodge->sources[event_thread691.i0]->y = event_thread691.mousey;
+////            if (event_thread691.i1) {
+////                brodge->sources = &srcs[event_thread691.i0];
+////                brodge->nb_src = 1;
+////            } else {
+////                brodge->sources = srcs;
+////                brodge->nb_src = nb_srcs;
+////            }
+//        } else {
+//            brodge->sources = srcs;
+//            brodge->nb_src = nb_srcs;
+//        }
+//        brodge_exec(brodge, &bgra);
+//        frame++;
+//        //
+//        tv0.tv_usec += gui->period;
+//        while(tv0.tv_usec > 999999) {
+//            tv0.tv_sec++;
+//            tv0.tv_usec -= 1000000;
+//        }
+//        //
+//        gettimeofday(&tv2, NULL);
+//        timersub(&tv2, &tv0, &tv1);
+//        if (tv1.tv_usec < gui->period && !tv1.tv_sec) {     // @@@ manage ~=
+//            usleep(gui->period - tv1.tv_usec);
+//        }
+//        //
+//        if (frame % 70 == 0) {
+//            gettimeofday(&tv4, NULL);
+//            timersub(&tv4, &tv3, &tv4);
+//            LOG("Frame %ld for %.3f Hz for %ld µs", frame, 70. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 70);
+//            broad = 0;
+//            gettimeofday(&tv3, NULL);
+//        }
+//        //
+//    }
     //
     xgui_close_window691(gui);
     xgui_free691(&gui);
