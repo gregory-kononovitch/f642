@@ -134,9 +134,28 @@ xgui691 *xgui_create691(int width, int height, int shm) {
         return NULL;
     }
 
+    // Find visual info
+    gui->vinfo.depth = 24;
+    gui->vinfo.red_mask = 0x00ff0000;
+    gui->vinfo.green_mask = 0x0000ff00;
+    gui->vinfo.blue_mask = 0x000000ff;
+    gui->vinfo.bits_per_rgb = 8;
+    gui->vinfo.class = TrueColor;
+    int nbvi = 0;
+    XVisualInfo *vinfos = XGetVisualInfo(gui->display
+            , VisualClassMask | VisualDepthMask  | VisualBitsPerRGBMask
+            | VisualRedMaskMask | VisualGreenMaskMask | VisualBlueMaskMask
+            , &gui->vinfo, &nbvi
+            );
     //
+    if (nbvi > 0) {
+        memcpy(&gui->vinfo, vinfos, sizeof(XVisualInfo));
+        FOG("Found %d Match TrueColor depth 24 : %d bits per rgb and good mask, too much", nbvi, gui->vinfo.bits_per_rgb);
+    }
     if (XMatchVisualInfo(gui->display, gui->screen, 24, TrueColor, &gui->vinfo)) {
-        FOG("Found Match TrueColor depth 24 : %d bits per rgb", gui->vinfo.bits_per_rgb);
+        FOG("Get Match TrueColor depth 24 : %d bits per rgb, mask red %08x ; green %08x ; blue %08x"
+                , gui->vinfo.bits_per_rgb
+                , gui->vinfo.red_mask, gui->vinfo.green_mask, gui->vinfo.blue_mask);
     } else {
         LOG("No visual found, returning");
         XCloseDisplay(gui->display);
@@ -703,7 +722,7 @@ int xgui_stop691(xgui691 *xgui) {
     // join
     void *res;
     gui->event_thread->run = 0;
-    pthread_join(&gui->event_thread->thread, &res);
+    pthread_join(gui->event_thread->thread, &res);
     free(gui->event_thread);
     gui->event_thread = NULL;
 }

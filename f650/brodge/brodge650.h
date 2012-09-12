@@ -45,6 +45,13 @@ typedef struct {
 //
 #define BRDG_XYPOLYNOME     1 << 16
 //
+#define BRDG_SATURATE       1 << 24
+#define BRDG_AVERAGE        1 << 25
+#define BRDG_GRAY           1 << 26
+#define BRDG_BeW            1 << 27
+#define BRDG_MONOCHROME     1 << 28
+
+//
 #define BRDG_SIMPLE         BRDG_HYPERBOLE
 
     int         flags;      // 44
