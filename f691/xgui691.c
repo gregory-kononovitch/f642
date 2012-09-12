@@ -397,6 +397,7 @@ struct _event_thread691_ {
     //
     pthread_t       thread;
     pthread_mutex_t mutex;
+    pthread_attr_t  attr;
 
     // Monitoring
     struct timeval  tvm0, tvm1, tvm2, tvm3;
@@ -643,7 +644,7 @@ int xgui_listen691(xgui691 *xgui, events691 *events, void *ext) {
     if (events) {
         gui->event_thread->events = events;
         gui->event_thread->ext    = ext;
-    } else {
+    } else {                        // @@@
         gui->event_thread->events = calloc(1, sizeof(events691));
         gui->event_thread->ext    = ext;
     }
@@ -685,8 +686,9 @@ int xgui_listen691(xgui691 *xgui, events691 *events, void *ext) {
 
     //
     gui->event_thread->run = 1;
+    pthread_attr_setdetachstate(&gui->event_thread->attr, PTHREAD_CREATE_JOINABLE);
     pthread_mutex_init(&gui->event_thread->mutex, NULL);
-    pthread_create(&gui->event_thread->thread, NULL, &event_loop691, gui);
+    pthread_create(&gui->event_thread->thread, &gui->event_thread->attr, &event_loop691, gui);
 
     //
     XSelectInput(gui->display, gui->window, mask);
@@ -697,9 +699,13 @@ int xgui_listen691(xgui691 *xgui, events691 *events, void *ext) {
 
 int xgui_stop691(xgui691 *xgui) {
     xgui691p *gui = (xgui691p*)gui;
-    gui->event_thread->run = 0;
 
-    // @@@ join
+    // join
+    void *res;
+    gui->event_thread->run = 0;
+    pthread_join(&gui->event_thread->thread, &res);
+    free(gui->event_thread);
+    gui->event_thread = NULL;
 }
 
 

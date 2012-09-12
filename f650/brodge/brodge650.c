@@ -38,7 +38,7 @@ void brodge_init_src(brodge650 *brodge, bsource650 *src) {
     src->a = 1.;
     src->b = 1.;
     //
-    src->flags = BRDG_SIMPLE;
+    src->flags = BRDG_ACTIVATED | BRDG_SIMPLE;
 }
 
 void brodge_turn_src(brodge650 *brodge, bsource650 *src, float cos, float sin) {
@@ -92,9 +92,9 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
         ((vect650*)src[i]->parm)->z = v.z / 100.;
         ((vect650*)src[i]->parm)->t = 0;
     }
-    src[0]->flags = BRDG_HYPERBOLE;
-    if (brodge->nb_src > 1) src[1]->flags = BRDG_ELLIPSE;
-    if (brodge->nb_src > 2) src[2]->flags = BRDG_XLINE;
+    src[0]->flags = BRDG_ACTIVATED | BRDG_HYPERBOLE;
+    if (brodge->nb_src > 1) src[1]->flags = BRDG_ACTIVATED | BRDG_ELLIPSE;
+    if (brodge->nb_src > 2) src[2]->flags = BRDG_ACTIVATED | BRDG_XLINE;
 //    brodge_scale_src(brodge, src[0], 9./16., 1);
 //    brodge_turn_src(brodge, src[0], .707, .707);
     //
@@ -165,13 +165,13 @@ static void *brodge_loop(void *prm) {
         if (brodge->callback) brodge->callback(brodge->prm);
         brodge->frame++;
         // pause
-//        if (brodge->pause) {
-//            pthread_mutex_lock(brodge->mutex);
-//            while(brodge->pause) {
-//                pthread_cond_wait(brodge->cond, brodge->mutex);
-//            }
-//            pthread_mutex_unlock(brodge->mutex);
-//        }
+        if (brodge->pause) {
+            pthread_mutex_lock(brodge->mutex);
+            while(brodge->pause) {
+                pthread_cond_wait(brodge->cond, brodge->mutex);
+            }
+            pthread_mutex_unlock(brodge->mutex);
+        }
     }
     brodge->running = 0;
     brodge->pause   = 0;
@@ -245,6 +245,20 @@ void brodge_rebase(brodge650 *brodge) {
         ((vect650*)brodge->sources[i]->parm)->z = v.z / 100.;
         ((vect650*)brodge->sources[i]->parm)->t = 0;
     }
+}
+
+int brodge_select(brodge650 *brodge, int src, int selected) {
+   if (src >= brodge->nb_src || src < 0) return -1;
+   if (selected > 0) {
+       brodge->sources[src]->flags |= BRDG_ACTIVATED;
+       return 1;
+   } else if (selected == 0) {
+       brodge->sources[src]->flags &= ~BRDG_ACTIVATED;
+       return 0;
+   } else {
+       brodge->sources[src]->flags ^= BRDG_ACTIVATED;
+       return 0;
+   }
 }
 
 void brodge_free(brodge650 **brodge) {

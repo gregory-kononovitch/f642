@@ -100,9 +100,9 @@ static int test() {
 //    FOG("XrmInitialize done");
 
     //
-    xgui691 *gui = xgui_create691(800, 448, 1);
+    xgui691 *gui = xgui_create691(752, 416, 1);
     if (!gui) return -1;
-    long period = 57140;
+    long period = 57143;
     //
     r = xgui_open_window691(gui, "Test");
     if (r) {
@@ -118,8 +118,6 @@ static int test() {
     struct timeval tvb1, tvb2;
     long broad;
     brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
-    void *srcs = brodge->sources;
-    int nb_srcs = brodge->nb_src;
     bgra650 bgra;
     bgra_link650(&bgra, gui->pix1, gui->width, gui->height);
     FOG("Bgra linked");
@@ -136,24 +134,16 @@ static int test() {
 
     //
     long frame = 0;
-    i = 0;  // first in ximg1
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
     gettimeofday(&tv3, NULL);
     while(1) {
         //
         gettimeofday(&tvb1, NULL);
-        show691(gui, i, 0, 0, 0, 0, gui->width, gui->height);
-        //i = i ? 0 : 1;
+        show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
         gettimeofday(&tvb2, NULL);
         timersub(&tvb2, &tvb1, &tvb2);
         broad += tvb2.tv_usec;
-        //
-//        if (i) {
-            bgra.data = (uint32_t*)gui->pix1;
-//        } else {
-//            bgra.data = (uint32_t*)gui->pix2;
-//        }
         //
         if (escape) {
             break;
@@ -178,16 +168,16 @@ static int test() {
         if (i0 > -1) {
             brodge->sources[i0]->x = mousex;
             brodge->sources[i0]->y = mousey;
-//            if (event_thread691.i1) {
-//                brodge->sources = &srcs[event_thread691.i0];
-//                brodge->nb_src = 1;
-//            } else {
-//                brodge->sources = srcs;
-//                brodge->nb_src = nb_srcs;
-//            }
-        } else {
-//            brodge->sources = srcs;
-//            brodge->nb_src = nb_srcs;
+            if (i1) {
+                for(i = 0 ; i < brodge->nb_src ; i++) {
+                    brodge_select(brodge, i, 0);
+                }
+                brodge_select(brodge, i0, 1);
+            } else {
+                for(i = 0 ; i < brodge->nb_src ; i++) {
+                    brodge_select(brodge, i, 1);
+                }
+            }
         }
         brodge_exec(brodge, &bgra);
         frame++;

@@ -33,6 +33,8 @@ typedef struct {
 #define BRDG_AXIS           1 << 0
 #define BRDG_SCALE          1 << 1
 //
+#define BRDG_ACTIVATED      1 << 7
+//
 #define BRDG_XLINE          1 << 8
 #define BRDG_YLINE          1 << 9
 #define BRDG_PSQUARE        1 << 10
@@ -98,6 +100,7 @@ void brodge_free(brodge650 **brodge);
 void brodge_init_src(brodge650 *brodge, bsource650 *src);
 void brodge_turn_src(brodge650 *brodge, bsource650 *src, float cos, float sin);
 void brodge_scale_src(brodge650 *brodge, bsource650 *src, float a, float b);
+int  brodge_select(brodge650 *brodge, int src, int selected);
 
 //
 int brodge_anim(brodge650 *brodge);

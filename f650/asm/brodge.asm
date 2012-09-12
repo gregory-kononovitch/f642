@@ -138,6 +138,9 @@ brodga650:
 			shl				osc, 3						; *8
 			add				osc, rsi					; +osc
 			mov				osc, [osc]
+			; activation
+			test			dword [osc + 44], dword 0x80
+			jz				.coot0
 
 			; x0
 			mov				eax, dword [osc]			; x0
@@ -216,7 +219,7 @@ brodga650:
 .ret:		; osc return
 
 
-			sub				ecx, 1
+.coot0		sub				ecx, 1
 			cmp				ecx, 0
 			jge				.loopo
 
