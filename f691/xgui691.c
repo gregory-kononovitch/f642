@@ -562,21 +562,6 @@ static int key_pressed_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, xevt);
     if (ethread->events->notify_key_pressed) {
         KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt->xkey.keycode, 0);
-        switch(ky) {
-            case XK_Escape:
-                ethread->escape = 1;
-                ethread->run = 0;
-                break;
-            case XK_space:
-                ethread->space = 1;
-                break;
-            case XK_Return:
-                ethread->enter = 1;
-                break;
-            case XK_Tab:
-                ethread->tab = 1;
-                break;
-        }
         ethread->events->notify_key_pressed(ethread->ext, ky, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xkey.time);
         //
         LOG("KEYPRES: keycode = %u ; keysym = %lu", xevt->xkey.keycode, ky);
@@ -717,6 +702,12 @@ int xgui_listen691(xgui691 *xgui, events691 *events, void *ext) {
     return 0;
 }
 
+int xgui_stop691(xgui691 *xgui) {
+    xgui691p *gui = (xgui691p*)gui;
+    gui->event_thread->run = 0;
+
+    // @@@ join
+}
 
 
 static void *event_loop691(void *prm) {
@@ -936,6 +927,6 @@ static int test() {
 }
 
 
-int main() {
+int mainjjkjkj() {
     test();
 }

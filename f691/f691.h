@@ -92,6 +92,7 @@ int xgui_close_window691(xgui691 *gui);
 
 //
 int xgui_listen691(xgui691 *gui, events691 *events, void* ext);
+int xgui_stop691(xgui691 *gui);
 
 //
 int xgui_show691(xgui691 *gui, int i, int srcx, int srcy, int destx, int desty, int width, int height);

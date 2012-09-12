@@ -14,13 +14,14 @@ EXC_DIR=exc
 
 # Librarires
 INCLUDE=
-LIBS=-lm -lpthread
+LIBS=-lm -lpthread -lX11 -lxcb -lXext
 
 #
 # source-files
 sources_c:= $(wildcard ${SRC_DIR}/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/brodge/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/layout/*$(EXTENSION_C))
+sources_c+=../f691/xgui691.c
 
 # asm files
 sources_a:=$(wildcard ${ASM_DIR}/*$(EXTENSION_A))
@@ -44,6 +45,7 @@ all: exec
 exec: $(objects) $(objects_ao) $(objects_e)
 	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
 	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o xgui650.xo exc/xgui650.o $(objects) $(objects_ao) $(LIBS)
 
 
 # Build rules
