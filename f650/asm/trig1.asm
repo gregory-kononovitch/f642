@@ -174,6 +174,7 @@ Pb0_2:	; < 0
 		ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; @@@
 radius90:
 			andps			xmm0, oword [ABSpf]
 			movaps			xmm1, xmm0
@@ -182,6 +183,7 @@ radius90:
 			cvtdq2ps		xmm1, xmm1
 			mulps			xmm1, oword [E2PIf]
 			subps			xmm0, xmm1
+			subps			xmm0, oword [EPIf]
 			;
 			movaps			oword [rcx], xmm0
 			ucomiss			xmm0, dword [EPI2f]

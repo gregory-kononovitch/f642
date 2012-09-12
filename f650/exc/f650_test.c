@@ -577,14 +577,16 @@ int trig() {
     printf("\n");
 
     //
-    df = 0;
+    double j;
+    df = 0; d = 0;
     l1 = ReadTSC();
-    for(i = 0.f ; i < 1.5f ; i += 0.0001f) {
-        df += sinf(i);
+//    for(i = 0.f ; i < 1.5f ; i += 0.0001f) {
+    for(j = 0. ; j < 1.5 ; j += 0.0001) {
+        d += sin(j);
     }
     l2 = ReadTSC();
 
-    printf("sin = %.6f / %.6f for %ld µops\n", df, sin(0.5), (l2 - l1)/15000);
+    printf("sin = %.6f / %f for %ld µops\n", d, sin(0.5), (l2 - l1)/15000);
 
     return 0;
 }

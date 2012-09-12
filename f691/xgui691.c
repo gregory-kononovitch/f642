@@ -317,12 +317,20 @@ int xgui_close_window691(xgui691 *gui) {
  *
    -------------------------------------------------------- */
 static void *event_loop691(void *prm);
-struct _event_thread691_;
+
+typedef struct _event_thread691_ ethread691;
+
 typedef int (*event691)(struct _event_thread691_ *thread, XEvent *evt);
+
 struct _event_thread691_ {
+    //
     xgui691         *gui;
     int             run;
     long            types_mask;
+
+    //
+    events691       *events;
+    void            *ext;
 
     //
     event691        procs[LASTEvent];
@@ -330,6 +338,14 @@ struct _event_thread691_ {
     //
     pthread_t       thread;
     pthread_mutex_t mutex;
+
+    //
+    int             repeat_test[LASTEvent];
+    long            num_event0;
+    long            num_event1;
+    long            num_event2;
+    long            num_event3;
+
 
     // KeyEvents
     char    escape;
@@ -348,18 +364,108 @@ struct _event_thread691_ {
     int     i3;
     int     i4;
 };
-static struct _event_thread691_ event_thread691;
+
+static ethread691 event_thread691;
 
 //
-static int repeat_test[LASTEvent + 10000];
-static void clear_test691() {
-    memset(repeat_test, 0, sizeof(repeat_test));
+static void clear_test691(ethread691 *ethread) {
+    memset(ethread->repeat_test, 0, sizeof(ethread->repeat_test));
 }
-static int event_test_timing691(struct _event_thread691_ *thread, XEvent *evt) {
-    if (evt->type > (sizeof(repeat_test) >> 2)) return -1;
-    repeat_test[evt->type]++;
+static int event_test_timing691(ethread691 *ethread, XEvent *evt) {
+    if (evt->type > (sizeof(ethread->repeat_test) >> 2)) return -1;
+    ethread->repeat_test[evt->type]++;
     return 0;
 }
+
+static int motion_event691(ethread691 *ethread, XMotionEvent *xevt) {
+    event_test_timing691(ethread, (XEvent*)xevt);
+    if (ethread->events->notify_mouse_motion) {
+        ethread->events->notify_mouse_motion(ethread->ext, xevt->x, xevt->y, xevt->state, xevt->time);
+    }
+    return 0;
+}
+
+static int button_pressed_event691(ethread691 *ethread, XButtonEvent *xevt) {
+    event_test_timing691(ethread, (XEvent*)xevt);
+
+    if (xevt->button > Button3) {
+        if (ethread->events->notify_scroll) {
+            ethread->events->notify_scroll(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            printf("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                    , xevt.button
+                    , xevt.state
+                    , xevt.x
+                    , xevt.y
+                    , xevt.time
+            );
+            return 0;
+        }
+    } else {
+        if (ethread->events->notify_button_pressed) {
+            ethread->events->notify_button_pressed(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int button_released_event691(ethread691 *ethread, XButtonEvent *xevt) {
+    event_test_timing691(ethread, (XEvent*)xevt);
+
+    if (xevt->button > Button3) {
+        if (ethread->events->notify_scroll) {
+            ethread->events->notify_scroll(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            printf("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                    , xevt.button
+                    , xevt.state
+                    , xevt.x
+                    , xevt.y
+                    , xevt.time
+            );
+            return 0;
+        }
+    } else {
+        if (ethread->events->notify_button_released) {
+            ethread->events->notify_button_released(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int key_pressed_event691(ethread691 *ethread, XKeyEvent *xevt) {
+    event_test_timing691(ethread, (XEvent*)xevt);
+    if (ethread->events->notify_key_pressed) {
+        KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt.keycode, 0);
+        switch(ky) {
+            case XK_Escape:
+                ethread->escape = 1;
+                ethread->run = 0;
+                break;
+            case XK_space:
+                ethread->space = 1;
+                break;
+            case XK_Return:
+                ethread->enter = 1;
+                break;
+            case XK_Tab:
+                ethread->tab = 1;
+                break;
+        }
+
+        ethread->events->notify_key_pressed(ethread->ext, xevt->x, xevt->y, xevt->state, xevt->time);
+    }
+    return 0;
+}
+
+static int key_released_event691(ethread691 *ethread, XKeyEvent *xevt) {
+    event_test_timing691(ethread, (XEvent*)xevt);
+    if (ethread->events->notify_key_released) {
+        ethread->events->notify_key_released(ethread->ext, xevt->x, xevt->y, xevt->state, xevt->time);
+    }
+    return 0;
+}
+
 
 //
 int xgui_listen691(xgui691 *gui) {
@@ -369,16 +475,30 @@ int xgui_listen691(xgui691 *gui) {
     event_thread691.types_mask = 0xFFFFFFFFFFFFFFL;
     event_thread691.run = 0;
     event_thread691.i0 = -1;
+
+    //
+    event_thread691.num_event0 = 0;
+    event_thread691.num_event1 = 0;
+    event_thread691.num_event2 = 0;
+    event_thread691.num_event3 = 0;
     int i;
     for(i = 0 ; i < LASTEvent ; i++) {
-        event_thread691.procs[i] = &event_test_timing691;
+        event_thread691.procs[i] = event_test_timing691;
     }
-    pthread_mutex_init(&event_thread691.mutex, NULL);
-    clear_test691();
+    //
+    event_thread691.procs[KeyPress]   = key_pressed_event691;
+    event_thread691.procs[KeyRelease] = key_released_event691;
+    //
+    event_thread691.procs[MotionNotify]  = motion_event691;
+    event_thread691.procs[ButtonPress]   = button_pressed_event691;
+    event_thread691.procs[ButtonRelease] = button_released_event691;
 
-//    event_thread691.dpy = XOpenDisplay(":0");
-////    XMapWindow(event_thread691.dpy, gui->window);
-////    sleep(500000);
+    //
+    clear_test691(&event_thread691);
+
+    //
+    pthread_mutex_init(&event_thread691.mutex, NULL);
+
 
     //
     event_thread691.run = 1;
@@ -397,73 +517,103 @@ static void *event_loop691(void *prm) {
     int r, i;
     struct timeval tv0, tv1, tv2, tv3;
     XEvent event;
-    struct _event_thread691_ *info = (struct _event_thread691_*)prm;
-    xgui691 *gui = info->gui;
+    ethread691 *ethread = (ethread691*)prm;
+    xgui691 *gui = ethread->gui;
 
     FOG("Thread launch");
 
     long emask;
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
-    while(info->run) {
-        pthread_mutex_lock(&info->mutex);
-        while(XCheckMaskEvent(gui->display, mask, &event) && info->run) {
-            repeat_test[50]++;
-            if (event.xany.window != gui->window) continue;     // @@@
-
-            emask = 1L << event.type;
-            if (info->types_mask & emask == 0) continue;
-
-            repeat_test[51]++;
+    while(ethread->run) {
+        pthread_mutex_lock(&ethread->mutex);
+        while(XCheckMaskEvent(gui->display, mask, &event) && ethread->run) {
             //
-            //info->procs[event.type](info, &event);
-            event_test_timing691(info, &event);
+            ethread->num_event0++;
+            if (event.xany.window != gui->window) continue;     // @@@
+            ethread.num_event1++;
+            //
+            emask = 1L << event.type;
+            if (ethread->types_mask & emask == 0) continue;
+            ethread->num_event2++;
+
+            //
+            if (ethread->procs[event.type]) {
+                ethread->procs[event.type](ethread, &event);
+            }
 
             if (event.type == MotionNotify) {
-                info->mousex = event.xmotion.x;
-                info->mousey = event.xmotion.y;
-
+                thread->mousex = event.xmotion.x;
+                thread->mousey = event.xmotion.y;
+            } else if (event.type == ButtonPress) {
+//                if (event.xbutton.button > -1) {
+//                    if (event.xbutton.state > -1) {
+                        printf("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                                , event.xbutton.button
+                                , event.xbutton.state
+                                , event.xbutton.x
+                                , event.xbutton.y
+                                , event.xbutton.time
+                        );
+//                    }
+//                }
+            } else if (event.type == ButtonRelease) {
+//                if (event.xbutton.button > -1) {
+//                    if (event.xbutton.state > -1) {
+                        printf("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                                , event.xbutton.button
+                                , event.xbutton.state
+                                , event.xbutton.x
+                                , event.xbutton.y
+                                , event.xbutton.time
+                        );
+//                    }
+//                }
             } else if (event.type == KeyPress) {
                 KeySym ky = XKeycodeToKeysym(gui->display, event.xkey.keycode, 0);
                 switch(ky) {
                     case XK_Escape:
-                        info->escape = 1;
-                        info->run = 0;
+                        thread->escape = 1;
+                        thread->run = 0;
                         break;
                     case XK_space:
-                        info->space = 1;
+                        thread->space = 1;
                         break;
                     case XK_Return:
-                        info->enter = 1;
+                        thread->enter = 1;
                         break;
                     case XK_Tab:
-                        info->tab = 1;
+                        thread->tab = 1;
                         break;
                 }
             }
-
-            //
-            gettimeofday(&tv2, NULL);
-            timersub(&tv2, &tv1, &tv3);
-            if (tv3.tv_sec > 0) {
-                LOG("Events loop : mo %d | kp %d | kr %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d"
-                        , repeat_test[MotionNotify]
-                        , repeat_test[KeyPress]
-                        , repeat_test[KeyRelease]
-                        , repeat_test[Expose]
-                        , repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, repeat_test[50], repeat_test[51]
-                );
-//                for(i = 0 ; i < LASTEvent ; i++) {
-//                    printf("%d|", repeat_test[i]);
-//                    if (i % 5 == 4) printf("| |");
-//                }
-//                printf("\n");
-                clear_test691();
-                tv1.tv_sec  = tv2.tv_sec;
-                tv1.tv_usec = tv2.tv_usec;
-            }
+            event.xbutton.state;
         }
-        pthread_mutex_unlock(&info->mutex);
+        pthread_mutex_unlock(&ethread->mutex);
+
+        //
+        gettimeofday(&tv2, NULL);
+        timersub(&tv2, &tv1, &tv3);
+        if (tv3.tv_sec > 0) {
+            LOG("Events loop : mo %d | kp %d | kr %d  | bp %d | br %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d"
+                    , ethread->repeat_test[MotionNotify]
+                    , ethread->repeat_test[KeyPress]
+                    , ethread->repeat_test[KeyRelease]
+                    , ethread->repeat_test[ButtonPress]
+                    , ethread->repeat_test[ButtonRelease]
+                    , ethread->repeat_test[Expose]
+                    , ethread->repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, ethread->repeat_test[50], ethread->repeat_test[51]
+            );
+            for(i = 0 ; i < LASTEvent ; i++) {
+                printf("%d|", ethread->repeat_test[i]);
+                if (i % 5 == 4) printf("| |");
+            }
+            printf("\n");
+            clear_test691(ethread);
+            tv1.tv_sec  = tv2.tv_sec;
+            tv1.tv_usec = tv2.tv_usec;
+        }
+
         usleep(1000);
     }
     FOG("Thread ended");
@@ -485,7 +635,7 @@ static int test() {
 //    FOG("XrmInitialize done");
 
     //
-    xgui691 *gui = xgui_create691(1024, 600, 1);
+    xgui691 *gui = xgui_create691(800, 448, 1);
     if (!gui) return -1;
     gui->period = 57140;
     //

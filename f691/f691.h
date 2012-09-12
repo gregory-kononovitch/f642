@@ -54,6 +54,38 @@ typedef struct {
 
 } xgui691;
 
+/*
+ *
+ */
+typedef struct _notify654_ {
+    // Key
+    int     (*notify_key_pressed)(void *ext, unsigned long key, int x, int y, int mask, uint64_t time);
+    int     (*notify_key_released)(void *ext, unsigned long key, int x, int y, int mask, uint64_t time);
+
+    // Mouse
+    int     (*notify_mouse_motion)(void *ext, int x, int y, int mask, uint64_t time);
+    int     (*notify_button_pressed)(void *ext, int button, int x, int y, int mask, uint64_t time);
+    int     (*notify_button_released)(void *ext, int button, int x, int y, int mask, uint64_t time);
+    int     (*notify_scroll)(void *ext, int button, int x, int y, int mask, uint64_t time);
+
+    // Drag
+    int     (*notify_drag)(void *ext, int button, int x, int y, int mask, uint64_t time);
+
+    // Enter/Leave
+    int     (*notify_enter)(void *ext, int button, int x, int y, int mask, uint64_t time);
+
+    // Focus
+    int     (*notify_focus)(void *ext, int y, int mask, uint64_t time);
+
+    // Window
+    int     (*notify_window)(void *ext, int x, int y, int width, int height, uint64_t time);
+    int     (*notify_visibility)(void *ext, int state, uint64_t time);
+
+    // Expose
+    int     (*notify_expose)(void *ext, int x, int y, int width, int height, uint64_t time);
+
+
+} events691;
 
 
 /*
