@@ -518,6 +518,9 @@ static int key_pressed_event691(ethread691 *ethread, XEvent *xevt) {
         ethread->events->notify_key_pressed(ethread->ext, ky, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xkey.time);
         //
         LOG("KEYPRES: keycode = %u ; keysym = %lu", xevt->xkey.keycode, ky);
+    } else {
+        KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt->xkey.keycode, 0);
+        LOG("KEYPRES: keycode = %u ; keysym = %lu", xevt->xkey.keycode, ky);
     }
     return 0;
 }
@@ -858,7 +861,7 @@ static int test() {
         if (frame % 70 == 0) {
             gettimeofday(&tv4, NULL);
             timersub(&tv4, &tv3, &tv4);
-            LOG("Frame %ld for %.3f Hz for %ld µs", frame, 30. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 30);
+            LOG("Frame %ld for %.3f Hz for %ld µs", frame, 70. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 70);
             broad = 0;
             gettimeofday(&tv3, NULL);
         }
