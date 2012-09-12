@@ -92,18 +92,6 @@ sina050:
 ;		pop				rbp
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-sina050f:
-;		push			rbp
-;		mov				rbp, rsp
-		movss			[rbp - 4], xmm0
-		fld				dword [rbp - 4]
-		fsin
-		fstp			dword [rbp - 4]
-		movss			xmm0, [rbp - 4]
-;		pop				rbp
-		ret
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; double cossina050(double rad, double *res)
@@ -203,7 +191,7 @@ radius90:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-sinta050f0:
+sinta050f:
 			mov				eax, dword [ONEpf]
 			mov				dword [rsp - 24], eax
 			movss			dword [rsp - 20], xmm0
@@ -224,10 +212,6 @@ sinta050f0:
 			mulps			xmm4, oword [rsp - 40]
 			mulps			xmm4, oword [SIN4f]
 			addps			xmm0, xmm4
-
-;			movaps			oword [rdi], xmm0
-;			ret
-
 			movaps			oword [rsp - 40], xmm0
 			addss			xmm0, dword[rsp - 36]
 			addss			xmm0, dword[rsp - 32]
@@ -236,7 +220,7 @@ sinta050f0:
 			ret
 
 ; float sinta050f(float rad, float *res)
-sinta050f:
+sina050f:
 		movss			dword [rsp - 16], xmm0
 		fld				dword [rsp - 16]
 		fsin
