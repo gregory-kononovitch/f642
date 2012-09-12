@@ -10,6 +10,9 @@
 
 #include "f691.h"
 
+#include "../f650/f650.h"
+#include "../f650/brodge/brodge650.h"
+#include "../f650/layout/f650_layout.h"
 
 
 typedef struct {

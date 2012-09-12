@@ -12,16 +12,24 @@
 #ifndef F691_H_
 #define F691_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <time.h>
+#include <sys/time.h>
+#include <stdint.h>
+
 #include <X11/XKBlib.h>
 #include <X11/Xutil.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 
 
-#include "../f650/f650.h"
-#include "../f650/brodge/brodge650.h"
-#include "../f650/layout/f650_layout.h"
 
+//
+#define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
+#define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);
 
 
 /*

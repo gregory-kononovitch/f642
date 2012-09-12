@@ -829,7 +829,7 @@ static int test() {
     //
     xgui691 *gui = xgui_create691(800, 448, 1);
     if (!gui) return -1;
-    gui->period = 57140;
+    long period = 57140;
     //
     r = xgui_open_window691(gui, "Test");
     if (r) {
@@ -843,30 +843,22 @@ static int test() {
     struct timeval tv0, tv1, tv2, tv3, tv4;
     struct timeval tvb1, tvb2;
     long broad;
-    brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
-    void *srcs = brodge->sources;
-    int nb_srcs = brodge->nb_src;
-    bgra650   bgra;
-    bgra_link650(&bgra, gui->ximg1->data, gui->width, gui->height);
-    brodge_anim(brodge);
-    brodge_exec(brodge, &bgra);
-    //
-    xgui_listen691(gui, NULL);
-
-    //
-    XGenericEvent evt;
-    evt.type = GenericEvent;
-    evt.serial = 0;
-    evt.send_event = True;
-    evt.display = gui->display;
-    evt.extension = 234;
-    evt.evtype = 0;
-    //
-    long frame = 0;
-    i = 1;  // first in ximg1
-    gettimeofday(&tv0, NULL);
-    gettimeofday(&tv1, NULL);
-    gettimeofday(&tv3, NULL);
+//    brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
+//    void *srcs = brodge->sources;
+//    int nb_srcs = brodge->nb_src;
+//    bgra650   bgra;
+//    bgra_link650(&bgra, gui->pix1, gui->width, gui->height);
+//    brodge_anim(brodge);
+//    brodge_exec(brodge, &bgra);
+//    //
+//    xgui_listen691(gui, NULL, NULL);
+//
+//    //
+//    long frame = 0;
+//    i = 1;  // first in ximg1
+//    gettimeofday(&tv0, NULL);
+//    gettimeofday(&tv1, NULL);
+//    gettimeofday(&tv3, NULL);
 //    while(event_thread691.run) {
 //        //
 //        gettimeofday(&tvb1, NULL);
