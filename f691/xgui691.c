@@ -135,6 +135,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     }
 
     // Find visual info
+    gui->vinfo.depth = gui->screen;
     gui->vinfo.depth = 24;
     gui->vinfo.red_mask = 0x00ff0000;
     gui->vinfo.green_mask = 0x0000ff00;
@@ -143,18 +144,19 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     gui->vinfo.class = TrueColor;
     int nbvi = 0;
     XVisualInfo *vinfos = XGetVisualInfo(gui->display
-            , VisualClassMask | VisualDepthMask  | VisualBitsPerRGBMask
+            , VisualScreenMask | VisualClassMask | VisualDepthMask  | VisualBitsPerRGBMask
             | VisualRedMaskMask | VisualGreenMaskMask | VisualBlueMaskMask
             , &gui->vinfo, &nbvi
             );
     //
     if (nbvi > 0) {
         memcpy(&gui->vinfo, vinfos, sizeof(XVisualInfo));
-        FOG("Found %d Match TrueColor depth 24 : %d bits per rgb and good mask, too much", nbvi, gui->vinfo.bits_per_rgb);
+        FOG("Found %d Match TrueColor depth 24 : %d bits per rgb and good mask (cmap %d)"
+                , nbvi, gui->vinfo.bits_per_rgb, gui->vinfo.colormap_size);
     }
     if (XMatchVisualInfo(gui->display, gui->screen, 24, TrueColor, &gui->vinfo)) {
-        FOG("Get Match TrueColor depth 24 : %d bits per rgb, mask red %08x ; green %08x ; blue %08x"
-                , gui->vinfo.bits_per_rgb
+        FOG("Get Match TrueColor depth 24 : %d bits per rgb, cmap %d, mask red %08x ; green %08x ; blue %08x"
+                , gui->vinfo.bits_per_rgb, gui->vinfo.colormap_size
                 , gui->vinfo.red_mask, gui->vinfo.green_mask, gui->vinfo.blue_mask);
     } else {
         LOG("No visual found, returning");
