@@ -390,23 +390,33 @@ static int motion_event691(ethread691 *ethread, XEvent *xevt) {
 static int button_pressed_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, (XEvent*)xevt);
 
-    if (xevt->xbutton.button > Button3) {
+    if (xevt->xbutton.button == Button4 || xevt->xbutton.button == Button5) {
         if (ethread->events->notify_scroll) {
             ethread->events->notify_scroll(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
-            printf("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
-                    , xevt->xbutton.button
-                    , xevt->xbutton.state
-                    , xevt->xbutton.x
-                    , xevt->xbutton.y
-                    , xevt->xbutton.time
-            );
             return 0;
         }
-    } else {
+        printf("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                , xevt->xbutton.button
+                , xevt->xbutton.state
+                , xevt->xbutton.x
+                , xevt->xbutton.y
+                , xevt->xbutton.time
+        );
+    } else  if (xevt->xbutton.button && xevt->xbutton.button < Button4) {
         if (ethread->events->notify_button_pressed) {
             ethread->events->notify_button_pressed(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
+        printf("PRESSED: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                , xevt->xbutton.button
+                , xevt->xbutton.state
+                , xevt->xbutton.x
+                , xevt->xbutton.y
+                , xevt->xbutton.time
+        );
+    } else {
+        FOG("Unknown button released");
+        return -1;
     }
     return 1;
 }
@@ -414,23 +424,33 @@ static int button_pressed_event691(ethread691 *ethread, XEvent *xevt) {
 static int button_released_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, (XEvent*)xevt);
 
-    if (xevt->xbutton.button > Button3) {
+    if (xevt->xbutton.button == Button4 || xevt->xbutton.button == Button5) {
         if (ethread->events->notify_scroll) {
             ethread->events->notify_scroll(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
-            printf("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
-                    , xevt->xbutton.button
-                    , xevt->xbutton.state
-                    , xevt->xbutton.x
-                    , xevt->xbutton.y
-                    , xevt->xbutton.time
-            );
             return 0;
         }
-    } else {
+        printf("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                , xevt->xbutton.button
+                , xevt->xbutton.state
+                , xevt->xbutton.x
+                , xevt->xbutton.y
+                , xevt->xbutton.time
+        );
+    } else if (xevt->xbutton.button && xevt->xbutton.button < Button4) {
         if (ethread->events->notify_button_released) {
             ethread->events->notify_button_released(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
+        printf("RELEASE: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+                , xevt->xbutton.button
+                , xevt->xbutton.state
+                , xevt->xbutton.x
+                , xevt->xbutton.y
+                , xevt->xbutton.time
+        );
+    } else {
+        FOG("Unknown button released");
+        return -1;
     }
     return 1;
 }
@@ -560,14 +580,14 @@ static void *event_loop691(void *prm) {
         gettimeofday(&tv2, NULL);
         timersub(&tv2, &tv1, &tv3);
         if (tv3.tv_sec > 0) {
-            LOG("Events loop : mo %d | kp %d | kr %d  | bp %d | br %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d"
+            LOG("Events loop : mo %d | kp %d | kr %d  | bp %d | br %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d - %d"
                     , ethread->repeat_test[MotionNotify]
                     , ethread->repeat_test[KeyPress]
                     , ethread->repeat_test[KeyRelease]
                     , ethread->repeat_test[ButtonPress]
                     , ethread->repeat_test[ButtonRelease]
                     , ethread->repeat_test[Expose]
-                    , ethread->repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, ethread->repeat_test[50], ethread->repeat_test[51]
+                    , ethread->repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, ethread->num_event0, ethread->num_event1, ethread->num_event2
             );
             for(i = 0 ; i < LASTEvent ; i++) {
                 printf("%d|", ethread->repeat_test[i]);
