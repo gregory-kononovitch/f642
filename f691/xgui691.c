@@ -377,66 +377,68 @@ static int event_test_timing691(ethread691 *ethread, XEvent *evt) {
     return 0;
 }
 
-static int motion_event691(ethread691 *ethread, XMotionEvent *xevt) {
-    event_test_timing691(ethread, (XEvent*)xevt);
+static int motion_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
     if (ethread->events->notify_mouse_motion) {
-        ethread->events->notify_mouse_motion(ethread->ext, xevt->x, xevt->y, xevt->state, xevt->time);
+        ethread->mousex = xevt->xmotion.x;
+        ethread->mousey = xevt->xmotion.y;
+        ethread->events->notify_mouse_motion(ethread->ext, xevt->xmotion.x, xevt->xmotion.y, xevt->xmotion.state, xevt->xmotion.time);
     }
     return 0;
 }
 
-static int button_pressed_event691(ethread691 *ethread, XButtonEvent *xevt) {
+static int button_pressed_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, (XEvent*)xevt);
 
-    if (xevt->button > Button3) {
+    if (xevt->xbutton.button > Button3) {
         if (ethread->events->notify_scroll) {
-            ethread->events->notify_scroll(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            ethread->events->notify_scroll(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             printf("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
-                    , xevt.button
-                    , xevt.state
-                    , xevt.x
-                    , xevt.y
-                    , xevt.time
+                    , xevt->xbutton.button
+                    , xevt->xbutton.state
+                    , xevt->xbutton.x
+                    , xevt->xbutton.y
+                    , xevt->xbutton.time
             );
             return 0;
         }
     } else {
         if (ethread->events->notify_button_pressed) {
-            ethread->events->notify_button_pressed(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            ethread->events->notify_button_pressed(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
     }
     return 1;
 }
 
-static int button_released_event691(ethread691 *ethread, XButtonEvent *xevt) {
+static int button_released_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, (XEvent*)xevt);
 
-    if (xevt->button > Button3) {
+    if (xevt->xbutton.button > Button3) {
         if (ethread->events->notify_scroll) {
-            ethread->events->notify_scroll(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            ethread->events->notify_scroll(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             printf("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
-                    , xevt.button
-                    , xevt.state
-                    , xevt.x
-                    , xevt.y
-                    , xevt.time
+                    , xevt->xbutton.button
+                    , xevt->xbutton.state
+                    , xevt->xbutton.x
+                    , xevt->xbutton.y
+                    , xevt->xbutton.time
             );
             return 0;
         }
     } else {
         if (ethread->events->notify_button_released) {
-            ethread->events->notify_button_released(ethread->ext, xevt->button, xevt->x, xevt->y, xevt->state, xevt->time);
+            ethread->events->notify_button_released(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
     }
     return 1;
 }
 
-static int key_pressed_event691(ethread691 *ethread, XKeyEvent *xevt) {
-    event_test_timing691(ethread, (XEvent*)xevt);
+static int key_pressed_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
     if (ethread->events->notify_key_pressed) {
-        KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt.keycode, 0);
+        KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt->xkey.keycode, 0);
         switch(ky) {
             case XK_Escape:
                 ethread->escape = 1;
@@ -453,28 +455,36 @@ static int key_pressed_event691(ethread691 *ethread, XKeyEvent *xevt) {
                 break;
         }
 
-        ethread->events->notify_key_pressed(ethread->ext, xevt->x, xevt->y, xevt->state, xevt->time);
+        ethread->events->notify_key_pressed(ethread->ext, ky, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xkey.time);
     }
     return 0;
 }
 
-static int key_released_event691(ethread691 *ethread, XKeyEvent *xevt) {
-    event_test_timing691(ethread, (XEvent*)xevt);
+static int key_released_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
     if (ethread->events->notify_key_released) {
-        ethread->events->notify_key_released(ethread->ext, xevt->x, xevt->y, xevt->state, xevt->time);
+        KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt->xkey.keycode, 0);
+        ethread->events->notify_key_released(ethread->ext, ky, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xkey.time);
     }
     return 0;
 }
 
 
 //
-int xgui_listen691(xgui691 *gui) {
+int xgui_listen691(xgui691 *gui, events691 *events) {
 
     //
     event_thread691.gui = gui;
     event_thread691.types_mask = 0xFFFFFFFFFFFFFFL;
     event_thread691.run = 0;
     event_thread691.i0 = -1;
+
+    //
+    if (events) {
+        event_thread691.events = events;
+    } else {
+        event_thread691.events = calloc(1, sizeof(events691));
+    }
 
     //
     event_thread691.num_event0 = 0;
@@ -486,12 +496,14 @@ int xgui_listen691(xgui691 *gui) {
         event_thread691.procs[i] = event_test_timing691;
     }
     //
-    event_thread691.procs[KeyPress]   = key_pressed_event691;
-    event_thread691.procs[KeyRelease] = key_released_event691;
+    event_thread691.procs[KeyPress]         = key_pressed_event691;
+    event_thread691.procs[KeyRelease]       = key_released_event691;
     //
-    event_thread691.procs[MotionNotify]  = motion_event691;
-    event_thread691.procs[ButtonPress]   = button_pressed_event691;
-    event_thread691.procs[ButtonRelease] = button_released_event691;
+    event_thread691.procs[MotionNotify]     = motion_event691;
+    event_thread691.procs[ButtonPress]      = button_pressed_event691;
+    event_thread691.procs[ButtonRelease]    = button_released_event691;
+    event_thread691.procs[KeyPress]         = key_pressed_event691;
+    event_thread691.procs[KeyRelease]       = key_released_event691;
 
     //
     clear_test691(&event_thread691);
@@ -531,7 +543,7 @@ static void *event_loop691(void *prm) {
             //
             ethread->num_event0++;
             if (event.xany.window != gui->window) continue;     // @@@
-            ethread.num_event1++;
+            ethread->num_event1++;
             //
             emask = 1L << event.type;
             if (ethread->types_mask & emask == 0) continue;
@@ -541,53 +553,6 @@ static void *event_loop691(void *prm) {
             if (ethread->procs[event.type]) {
                 ethread->procs[event.type](ethread, &event);
             }
-
-            if (event.type == MotionNotify) {
-                thread->mousex = event.xmotion.x;
-                thread->mousey = event.xmotion.y;
-            } else if (event.type == ButtonPress) {
-//                if (event.xbutton.button > -1) {
-//                    if (event.xbutton.state > -1) {
-                        printf("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
-                                , event.xbutton.button
-                                , event.xbutton.state
-                                , event.xbutton.x
-                                , event.xbutton.y
-                                , event.xbutton.time
-                        );
-//                    }
-//                }
-            } else if (event.type == ButtonRelease) {
-//                if (event.xbutton.button > -1) {
-//                    if (event.xbutton.state > -1) {
-                        printf("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
-                                , event.xbutton.button
-                                , event.xbutton.state
-                                , event.xbutton.x
-                                , event.xbutton.y
-                                , event.xbutton.time
-                        );
-//                    }
-//                }
-            } else if (event.type == KeyPress) {
-                KeySym ky = XKeycodeToKeysym(gui->display, event.xkey.keycode, 0);
-                switch(ky) {
-                    case XK_Escape:
-                        thread->escape = 1;
-                        thread->run = 0;
-                        break;
-                    case XK_space:
-                        thread->space = 1;
-                        break;
-                    case XK_Return:
-                        thread->enter = 1;
-                        break;
-                    case XK_Tab:
-                        thread->tab = 1;
-                        break;
-                }
-            }
-            event.xbutton.state;
         }
         pthread_mutex_unlock(&ethread->mutex);
 
@@ -659,7 +624,7 @@ static int test() {
     brodge_anim(brodge);
     brodge_exec(brodge, &bgra);
     //
-    xgui_listen691(gui);
+    xgui_listen691(gui, NULL);
 
     //
     XGenericEvent evt;

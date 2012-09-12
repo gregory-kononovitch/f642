@@ -181,7 +181,7 @@ struct _desk654_ {
 };
 
 
-typedef struct _notify654_ {
+typedef struct {
     // Key
     int     (*notify_key_pressed)(desk654 *desk, unsigned long key, int x, int y, int mask, uint64_t time);
     int     (*notify_key_released)(desk654 *desk, unsigned long key, int x, int y, int mask, uint64_t time);

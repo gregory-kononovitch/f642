@@ -57,7 +57,7 @@ typedef struct {
 /*
  *
  */
-typedef struct _notify654_ {
+typedef struct {
     // Key
     int     (*notify_key_pressed)(void *ext, unsigned long key, int x, int y, int mask, uint64_t time);
     int     (*notify_key_released)(void *ext, unsigned long key, int x, int y, int mask, uint64_t time);
@@ -98,7 +98,7 @@ int xgui_open_window691(xgui691 *gui, const char *title);
 int xgui_close_window691(xgui691 *gui);
 
 //
-int xgui_listen691(xgui691 *gui);
+int xgui_listen691(xgui691 *gui, events691 *events);
 
 
 #endif /* F691_H_ */
