@@ -72,17 +72,17 @@ typedef struct {
     int     (*notify_drag)(void *ext, int button, int x, int y, int mask, uint64_t time);
 
     // Enter/Leave
-    int     (*notify_enter)(void *ext, int button, int x, int y, int mask, uint64_t time);
+    int     (*notify_enter)(void *ext, int inout, int x, int y, uint64_t time);
 
     // Focus
-    int     (*notify_focus)(void *ext, int y, int mask, uint64_t time);
+    int     (*notify_focus)(void *ext, int inout);
 
     // Window
-    int     (*notify_window)(void *ext, int x, int y, int width, int height, uint64_t time);
+    int     (*notify_window)(void *ext, int x, int y, int width, int height);
     int     (*notify_visibility)(void *ext, int state, uint64_t time);
 
     // Expose
-    int     (*notify_expose)(void *ext, int x, int y, int width, int height, uint64_t time);
+    int     (*notify_expose)(void *ext, int x, int y, int width, int height);
 
 
 } events691;

@@ -489,6 +489,54 @@ static int key_released_event691(ethread691 *ethread, XEvent *xevt) {
     return 0;
 }
 
+static int enter_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
+    if (ethread->events->notify_enter) {
+//        ethread->events->notify_enter(ethread->ext, 1, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xany.time);
+    }
+    return 0;
+}
+static int leave_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
+    if (ethread->events->notify_enter) {
+//        ethread->events->notify_enter(ethread->ext, -1, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xany.time);
+    }
+    return 0;
+}
+
+// Focus
+static int focusin_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
+    if (ethread->events->notify_focus) {
+        ethread->events->notify_focus(ethread->ext, +1);
+    }
+    return 0;
+}
+static int focusout_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
+    if (ethread->events->notify_focus) {
+        ethread->events->notify_focus(ethread->ext, -1);    //xevt->xfocus.mode
+    }
+    return 0;
+}
+
+//
+static int expose_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
+    if (ethread->events->notify_expose) {
+        ethread->events->notify_expose(ethread->ext, xevt->xexpose.x, xevt->xexpose.y, xevt->xexpose.width, xevt->xexpose.height);
+    }
+    return 0;
+}
+
+//
+static int window_event691(ethread691 *ethread, XEvent *xevt) {
+    event_test_timing691(ethread, xevt);
+    if (ethread->events->notify_window) {
+        ethread->events->notify_window(ethread->ext, xevt->xexpose.x, xevt->xexpose.y, xevt->xexpose.width, xevt->xexpose.height);
+    }
+    return 0;
+}
 
 //
 int xgui_listen691(xgui691 *gui, events691 *events) {
@@ -515,6 +563,19 @@ int xgui_listen691(xgui691 *gui, events691 *events) {
     for(i = 0 ; i < LASTEvent ; i++) {
         event_thread691.procs[i] = event_test_timing691;
     }
+
+    //
+    event_thread691.procs[Expose]           = expose_event691;
+    event_thread691.procs[ConfigureNotify]  = window_event691;
+
+    //
+    event_thread691.procs[EnterNotify]      = enter_event691;
+    event_thread691.procs[LeaveNotify]      = leave_event691;
+
+    //
+    event_thread691.procs[FocusIn]          = focusin_event691;
+    event_thread691.procs[FocusOut]         = focusout_event691;
+
     //
     event_thread691.procs[KeyPress]         = key_pressed_event691;
     event_thread691.procs[KeyRelease]       = key_released_event691;
