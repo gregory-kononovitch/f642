@@ -339,7 +339,8 @@ struct _event_thread691_ {
     pthread_t       thread;
     pthread_mutex_t mutex;
 
-    //
+    // Monitoring
+    struct timeval  tvm0, tvm1, tvm2, tvm3;
     int             repeat_test[LASTEvent];
     long            num_event0;
     long            num_event1;
@@ -376,6 +377,46 @@ static int event_test_timing691(ethread691 *ethread, XEvent *evt) {
     ethread->repeat_test[evt->type]++;
     return 0;
 }
+static int event_monitor_log(ethread691 *ethread) {
+    int i;
+    struct timeval tv;
+    //
+    if (ethread->num_event0) {
+        gettimeofday(&ethread->tvm2, NULL);
+        timersub(&ethread->tvm2, &ethread->tvm1, &tv);
+        if (tv.tv_sec > 1) {
+            LOG("Events loop : mo %d | kp %d | kr %d  | bp %d | br %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d - %d"
+                    , ethread->repeat_test[MotionNotify]
+                    , ethread->repeat_test[KeyPress]
+                    , ethread->repeat_test[KeyRelease]
+                    , ethread->repeat_test[ButtonPress]
+                    , ethread->repeat_test[ButtonRelease]
+                    , ethread->repeat_test[Expose]
+                    , ethread->repeat_test[GraphicsExpose]
+                    , tv.tv_sec, tv.tv_usec, ethread->num_event0, ethread->num_event1, ethread->num_event2
+            );
+            for(i = 0 ; i < LASTEvent ; i++) {
+                printf("%d|", ethread->repeat_test[i]);
+                if (i % 5 == 4) printf("| |");
+            }
+            printf("\n");
+            clear_test691(ethread);
+            ethread->num_event3 += ethread->num_event0;
+            ethread->num_event0 = 0;
+            ethread->num_event1 = 0;
+            ethread->num_event2 = 0;
+            ethread->tvm1.tv_sec  = ethread->tvm2.tv_sec;
+            ethread->tvm1.tv_usec = ethread->tvm2.tv_usec;
+        }
+    }
+    return 0;
+}
+
+static int event_monitor(ethread691 *ethread) {
+    event_monitor_log(ethread);
+    usleep(1000);
+    return 0;
+}
 
 static int motion_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, xevt);
@@ -395,7 +436,7 @@ static int button_pressed_event691(ethread691 *ethread, XEvent *xevt) {
             ethread->events->notify_scroll(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
-        printf("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+        LOG("SCROLL1: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms"
                 , xevt->xbutton.button
                 , xevt->xbutton.state
                 , xevt->xbutton.x
@@ -407,7 +448,7 @@ static int button_pressed_event691(ethread691 *ethread, XEvent *xevt) {
             ethread->events->notify_button_pressed(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
-        printf("PRESSED: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+        LOG("PRESSED: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms"
                 , xevt->xbutton.button
                 , xevt->xbutton.state
                 , xevt->xbutton.x
@@ -429,7 +470,7 @@ static int button_released_event691(ethread691 *ethread, XEvent *xevt) {
             ethread->events->notify_scroll(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
-        printf("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+        LOG("SCROLL2: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms"
                 , xevt->xbutton.button
                 , xevt->xbutton.state
                 , xevt->xbutton.x
@@ -441,7 +482,7 @@ static int button_released_event691(ethread691 *ethread, XEvent *xevt) {
             ethread->events->notify_button_released(ethread->ext, xevt->xbutton.button, xevt->xbutton.x, xevt->xbutton.y, xevt->xbutton.state, xevt->xbutton.time);
             return 0;
         }
-        printf("RELEASE: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms\n"
+        LOG("RELEASE: button %u ; state = %u ; x = %d ; y = %d ; t = %lu ms"
                 , xevt->xbutton.button
                 , xevt->xbutton.state
                 , xevt->xbutton.x
@@ -474,8 +515,9 @@ static int key_pressed_event691(ethread691 *ethread, XEvent *xevt) {
                 ethread->tab = 1;
                 break;
         }
-
         ethread->events->notify_key_pressed(ethread->ext, ky, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xkey.time);
+        //
+        LOG("KEYPRES: keycode = %u ; keysym = %lu", xevt->xkey.keycode, ky);
     }
     return 0;
 }
@@ -608,7 +650,6 @@ int xgui_listen691(xgui691 *gui, events691 *events) {
 
 static void *event_loop691(void *prm) {
     int r, i;
-    struct timeval tv0, tv1, tv2, tv3;
     XEvent event;
     ethread691 *ethread = (ethread691*)prm;
     xgui691 *gui = ethread->gui;
@@ -616,8 +657,8 @@ static void *event_loop691(void *prm) {
     FOG("Thread launch");
 
     long emask;
-    gettimeofday(&tv0, NULL);
-    gettimeofday(&tv1, NULL);
+    gettimeofday(&ethread->tvm0, NULL);
+    gettimeofday(&ethread->tvm1, NULL);
     while(ethread->run) {
         pthread_mutex_lock(&ethread->mutex);
         while(XCheckMaskEvent(gui->display, mask, &event) && ethread->run) {
@@ -636,31 +677,8 @@ static void *event_loop691(void *prm) {
             }
         }
         pthread_mutex_unlock(&ethread->mutex);
-
         //
-        gettimeofday(&tv2, NULL);
-        timersub(&tv2, &tv1, &tv3);
-        if (tv3.tv_sec) {
-            LOG("Events loop : mo %d | kp %d | kr %d  | bp %d | br %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d - %d"
-                    , ethread->repeat_test[MotionNotify]
-                    , ethread->repeat_test[KeyPress]
-                    , ethread->repeat_test[KeyRelease]
-                    , ethread->repeat_test[ButtonPress]
-                    , ethread->repeat_test[ButtonRelease]
-                    , ethread->repeat_test[Expose]
-                    , ethread->repeat_test[GraphicsExpose], tv3.tv_sec, tv3.tv_usec, ethread->num_event0, ethread->num_event1, ethread->num_event2
-            );
-            for(i = 0 ; i < LASTEvent ; i++) {
-                printf("%d|", ethread->repeat_test[i]);
-                if (i % 5 == 4) printf("| |");
-            }
-            printf("\n");
-            clear_test691(ethread);
-            tv1.tv_sec  = tv2.tv_sec;
-            tv1.tv_usec = tv2.tv_usec;
-        }
-
-        usleep(1000);
+        event_monitor(ethread);
     }
     FOG("Thread ended");
     return NULL;
@@ -671,34 +689,34 @@ static void *event_loop691(void *prm) {
  *
  */
 static int show691(void *handle, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
-    int r;
+    int r = 0;
     double broad = 0;
     struct timeval tvb1, tvb2;
 
     ethread691 *ethread = (ethread691*)handle;
     if (!handle) return -1;
 
-    while(ethread->run) {
+    if(ethread->run) {      // @@@ sync
         //
         gettimeofday(&tvb1, NULL);
         if (ethread->gui->shm) {
-            if (i == 2) {
+            if (i) {
                 pthread_mutex_lock(&ethread->mutex);
                 r = XShmPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
                         , ethread->gui->ximg2
-                        , srcx, srcy, destx, desty, width, height);
+                        , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);
                 pthread_mutex_unlock(&ethread->mutex);
             } else {
                 pthread_mutex_lock(&ethread->mutex);
-                r = XPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
+                r = XShmPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
                         , ethread->gui->ximg1
-                        , srcx, srcy, destx, desty, width, height);
+                        , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);
                 pthread_mutex_unlock(&ethread->mutex);
             }
         } else {
-            if (i == 2) {
+            if (i) {
                 pthread_mutex_lock(&ethread->mutex);
                 r = XPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
                         , ethread->gui->ximg2
@@ -716,6 +734,10 @@ static int show691(void *handle, int i, int srcx, int srcy, int destx, int desty
         timersub(&tvb2, &tvb1, &tvb2);
         broad += tvb2.tv_usec;
         //
+    } else {
+        r = -1;
+    }
+    return r;
 }
 
 /*
@@ -775,38 +797,13 @@ static int test() {
     while(event_thread691.run) {
         //
         gettimeofday(&tvb1, NULL);
-        if (!gui->shm) {
-            if (i % 2 == 0) {
-                pthread_mutex_lock(&event_thread691.mutex);
-                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg2
-                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height);
-                pthread_mutex_unlock(&event_thread691.mutex);
-                i = 1;
-            } else {
-                pthread_mutex_lock(&event_thread691.mutex);
-                r = XPutImage(gui->display, gui->window, gui->gc, gui->ximg1
-                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height);
-                pthread_mutex_unlock(&event_thread691.mutex);
-                i = 0;
-            }
-        } else if (gui->shm) {
-            if (i % 2 == 0) {
-                r = XShmPutImage(gui->display, gui->window, gui->gc, gui->ximg2
-                        , 0, 0, 0, 0, gui->ximg2->width, gui->ximg2->height, 1);
-                r = XFlush(gui->display);
-                i = 1;
-            } else {
-                r = XShmPutImage(gui->display, gui->window, gui->gc, gui->ximg1
-                        , 0, 0, 0, 0, gui->ximg1->width, gui->ximg1->height, 1);
-                r = XFlush(gui->display);
-                i = 0;
-            }
-        }
+        show691(&event_thread691, i, 0, 0, 0, 0, gui->width, gui->height);
+        i = !i;
         gettimeofday(&tvb2, NULL);
         timersub(&tvb2, &tvb1, &tvb2);
         broad += tvb2.tv_usec;
         //
-        if (i % 2 == 0) {
+        if (i) {
             bgra.data = (uint32_t*)gui->ximg2->data;
         } else {
             bgra.data = (uint32_t*)gui->ximg1->data;
@@ -858,7 +855,7 @@ static int test() {
             usleep(gui->period - tv1.tv_usec);
         }
         //
-        if (frame % 30 == 0) {
+        if (frame % 70 == 0) {
             gettimeofday(&tv4, NULL);
             timersub(&tv4, &tv3, &tv4);
             LOG("Frame %ld for %.3f Hz for %ld µs", frame, 30. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 30);
