@@ -640,7 +640,7 @@ static void *event_loop691(void *prm) {
         //
         gettimeofday(&tv2, NULL);
         timersub(&tv2, &tv1, &tv3);
-        if (tv3.tv_sec > 0) {
+        if (tv3.tv_sec) {
             LOG("Events loop : mo %d | kp %d | kr %d  | bp %d | br %d | ex %d | ge %d  |  in %ld.%06lu s / %d - %d - %d"
                     , ethread->repeat_test[MotionNotify]
                     , ethread->repeat_test[KeyPress]
@@ -666,6 +666,57 @@ static void *event_loop691(void *prm) {
     return NULL;
 }
 
+
+/*
+ *
+ */
+static int show691(void *handle, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
+    int r;
+    double broad = 0;
+    struct timeval tvb1, tvb2;
+
+    ethread691 *ethread = (ethread691*)handle;
+    if (!handle) return -1;
+
+    while(ethread->run) {
+        //
+        gettimeofday(&tvb1, NULL);
+        if (ethread->gui->shm) {
+            if (i == 2) {
+                pthread_mutex_lock(&ethread->mutex);
+                r = XShmPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
+                        , ethread->gui->ximg2
+                        , srcx, srcy, destx, desty, width, height);
+                r = XFlush(ethread->gui->display);
+                pthread_mutex_unlock(&ethread->mutex);
+            } else {
+                pthread_mutex_lock(&ethread->mutex);
+                r = XPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
+                        , ethread->gui->ximg1
+                        , srcx, srcy, destx, desty, width, height);
+                r = XFlush(ethread->gui->display);
+                pthread_mutex_unlock(&ethread->mutex);
+            }
+        } else {
+            if (i == 2) {
+                pthread_mutex_lock(&ethread->mutex);
+                r = XPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
+                        , ethread->gui->ximg2
+                        , srcx, srcy, destx, desty, width, height);
+                pthread_mutex_unlock(&ethread->mutex);
+            } else {
+                pthread_mutex_lock(&ethread->mutex);
+                r = XPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
+                        , ethread->gui->ximg1
+                        , srcx, srcy, destx, desty, width, height);
+                pthread_mutex_unlock(&ethread->mutex);
+            }
+        }
+        gettimeofday(&tvb2, NULL);
+        timersub(&tvb2, &tvb1, &tvb2);
+        broad += tvb2.tv_usec;
+        //
+}
 
 /*
  *
