@@ -491,10 +491,6 @@ int math1() {
     l2 = ReadTSC();
     printf("%d racines [%f ; %f]for %ld µops\n", i, d[0], d[1], l2 - l1);
 
-    //test_line650();
-    //test_geo1();
-    //test_ref();
-    //test3();
     return 0;
 }
 
@@ -511,8 +507,8 @@ int trig() {
     r1 = r2 = 0;
     l1 = ReadTSC();
     for(d = 0. ; d < 1000. ; d += 1.) {
-        r1 += cossina050(d, d2);
-        r1 += d2[0];
+        cossina050(d, d2);
+        r1 += d2[0] + d2[1];
     }
     l2 = ReadTSC();
     printf("cossina : %ld\n", (l2 - l1) / 1000);
@@ -562,6 +558,33 @@ int trig() {
 
     printf("cosa050f = %f  | cosf = %f\n", rf1, rf2);
 
+    //
+    float i;
+    df = 0. * sin(0.5);
+    extern float sinta050f(float a, float *tmp);
+    float tmp[8];
+    memset(tmp, 0, 32);
+    l1 = ReadTSC();
+    for(i = 0.f ; i < 1.5f ; i += 0.0001f) {
+        df += sinta050f(i, tmp);
+    }
+    l2 = ReadTSC();
+
+    printf("sin = %.6f / %.6f for %ld µops\n", df, sin(0.5), (l2 - l1)/15000);
+    for(i = 0 ; i < 8 ; i++) {
+        printf("%.12f  |  ", tmp[(int)i]);
+    }
+    printf("\n");
+
+    //
+    df = 0;
+    l1 = ReadTSC();
+    for(i = 0.f ; i < 1.5f ; i += 0.0001f) {
+        df += sinf(i);
+    }
+    l2 = ReadTSC();
+
+    printf("sin = %.6f / %.6f for %ld µops\n", df, sin(0.5), (l2 - l1)/15000);
 
     return 0;
 }
@@ -1230,7 +1253,7 @@ int main() {
 //    ax2();
 //    ax2f();
 
-//    trig();
+    trig();
 
 //    std1();
 
@@ -1252,7 +1275,7 @@ int main() {
 
 //    point1();
 
-    font1();
+//    font1();
 
     return 0;
 }
