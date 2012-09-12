@@ -106,6 +106,8 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     pthread_mutex_init(brodge->mutex, NULL);
     pthread_cond_init (brodge->cond , NULL);
 
+    //
+    FOG("Brodge created");
     return brodge;
 }
 

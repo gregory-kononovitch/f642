@@ -36,6 +36,7 @@ default rel
 global 	brodga650:			function
 
 SECTION .data
+ALIGN		16
 ZEROp		dd		0.0, 0.0, 0.0, 0.0
 ONEpi		dd		1, 1, 1, 1
 ONEp		dd		1.0, 1.0, 1.0, 1.0

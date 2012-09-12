@@ -25,6 +25,7 @@ global sinta050f:	function
 
 
 SECTION .data
+ALIGN		16
 ;
 ZEROpf		dd		0.0, 0.0, 0.0, 0.0
 ONEpi		dd		1, 1, 1, 1

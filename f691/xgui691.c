@@ -81,10 +81,6 @@ typedef struct {
 
     //
     ethread691      *event_thread;
-
-    //
-    long            period;
-
 } xgui691p;
 
 static int xerror = 0;
@@ -688,17 +684,14 @@ int xgui_listen691(xgui691 *xgui, events691 *events, void *ext) {
     clear_test691(gui->event_thread);
 
     //
-    pthread_mutex_init(&gui->event_thread->mutex, NULL);
-
-
-    //
     gui->event_thread->run = 1;
+    pthread_mutex_init(&gui->event_thread->mutex, NULL);
     pthread_create(&gui->event_thread->thread, NULL, &event_loop691, gui);
 
     //
     XSelectInput(gui->display, gui->window, mask);
 
-    FOG("Listen done");
+    FOG("Listen initialized");
     return 0;
 }
 
@@ -722,6 +715,7 @@ static void *event_loop691(void *prm) {
     long emask;
     gettimeofday(&ethread->tvm0, NULL);
     gettimeofday(&ethread->tvm1, NULL);
+    FOG("Listen started run = %d", ethread->run);
     while(ethread->run) {
         pthread_mutex_lock(&ethread->mutex);
         while(XCheckMaskEvent(gui->display, mask, &event) && ethread->run) {
@@ -731,7 +725,7 @@ static void *event_loop691(void *prm) {
             ethread->num_event1++;
             //
             emask = 1L << event.type;
-            if (ethread->types_mask & emask == 0) continue;
+            if (ethread->types_mask & emask == 0) continue;     // @@@
             ethread->num_event2++;
 
             //
@@ -758,7 +752,7 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
     xgui691p *gui = (xgui691p*)xgui;
 
     if (!gui) return -1;
-    ethread691 *ethread = (ethread691*)gui;
+    ethread691 *ethread = (ethread691*)gui->event_thread;
 
     if(ethread->run) {      // @@@ sync
         //
@@ -766,30 +760,30 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
         if (ethread->gui->shm) {
             if (i) {
                 pthread_mutex_lock(&ethread->mutex);
-                r = XShmPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
-                        , ethread->gui->ximg2
-                        , srcx, srcy, destx, desty, width, height, False);
+                r = XShmPutImage(gui->display, gui->window, gui->gc
+                        , gui->ximg2
+                        , srcx, srcy, destx, desty, width, height, True);
                 r = XFlush(ethread->gui->display);    // @@@ r
                 pthread_mutex_unlock(&ethread->mutex);
             } else {
                 pthread_mutex_lock(&ethread->mutex);
-                r = XShmPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
-                        , ethread->gui->ximg1
-                        , srcx, srcy, destx, desty, width, height, False);
+                r = XShmPutImage(gui->display, gui->window, gui->gc
+                        , gui->ximg1
+                        , srcx, srcy, destx, desty, width, height, True);
                 r = XFlush(ethread->gui->display);
                 pthread_mutex_unlock(&ethread->mutex);
             }
         } else {
             if (i) {
                 pthread_mutex_lock(&ethread->mutex);
-                r = XPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
-                        , ethread->gui->ximg2
+                r = XPutImage(gui->display, gui->window, gui->gc
+                        , gui->ximg2
                         , srcx, srcy, destx, desty, width, height);
                 pthread_mutex_unlock(&ethread->mutex);
             } else {
                 pthread_mutex_lock(&ethread->mutex);
-                r = XPutImage(ethread->gui->display, ethread->gui->window, ethread->gui->gc
-                        , ethread->gui->ximg1
+                r = XPutImage(gui->display, gui->window, gui->gc
+                        , gui->ximg1
                         , srcx, srcy, destx, desty, width, height);
                 pthread_mutex_unlock(&ethread->mutex);
             }
@@ -797,7 +791,6 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
         gettimeofday(&tvb2, NULL);
         timersub(&tvb2, &tvb1, &tvb2);
         broad += tvb2.tv_usec;
-        //
     } else {
         r = -1;
     }
