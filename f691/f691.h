@@ -32,6 +32,17 @@
 #define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
 #define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);
 
+//
+#define F691_5HZ        200000
+#define F691_10HZ       100000
+#define F691_12_5HZ     80000
+#define F691_15HZ       66665
+#define F691_17_5HZ     57143
+#define F691_20HZ       50000
+#define F691_24HZ       41700
+#define F691_25HZ       41667
+#define F691_30HZ       33332
+
 
 /*
  *

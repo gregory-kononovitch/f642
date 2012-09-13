@@ -31,7 +31,7 @@ static int notify_key_released0(void *ext, unsigned long key, int x, int y, int 
     return 0;
 }
 
-    // Mouse
+// Mouse
 static int notify_mouse_motion0(void *ext, int x, int y, int mask, uint64_t time) {
     desk654 *desk = (desk654*)ext;
 
@@ -79,16 +79,30 @@ static int test() {
     long period = 57143;
     //
     r = xgui_open_window691(gui, "Test");
-    if (r) {
-        LOG("Can't open window, returning");
-        return -1;
-    }
+    if (r) { LOG("Can't open window, returning"); return -1; }
     LOG("Window opened %p :%dx%d", gui->pix1, gui->width, gui->height);
 
     // Bgra
     bgra650 bgra;
     bgra_link650(&bgra, gui->pix1, gui->width, gui->height);
     FOG("Bgra linked");
+
+    // Desk
+    desk654 *desk = desk_create654(gui->width, gui->height);
+    FOG("desk created");
+    // Center
+    zone654 *zimg = zone_add_item(desk, desk->root, 2);
+    zone_set_dimension(zimg, 8 * gui->width / 10, 8 * gui->height / 10);
+    zone_set_location(zimg, (gui->width - zimg->pties.dim.width) / 2, (gui->height - zimg->pties.dim.height) / 2);
+    // Widget1
+    zone654 *zsta = zone_add_item(desk, desk->root, 1);
+    zone_set_location(zsta, 22, 5);
+    zone_set_dimension(zsta, 24, 24);
+    //
+    desk_layout(desk);
+    FOG("desk layout");
+    desk_dump(desk);
+
 
     // Events
     events691 events;
