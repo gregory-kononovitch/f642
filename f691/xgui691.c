@@ -604,14 +604,14 @@ static int key_released_event691(ethread691 *ethread, XEvent *xevt) {
 static int enter_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, xevt);
     if (ethread->events->notify_enter) {
-//        ethread->events->notify_enter(ethread->ext, 1, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xany.time);
+        ethread->events->notify_enter(ethread->ext, 1);
     }
     return 0;
 }
 static int leave_event691(ethread691 *ethread, XEvent *xevt) {
     event_test_timing691(ethread, xevt);
     if (ethread->events->notify_enter) {
-//        ethread->events->notify_enter(ethread->ext, -1, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xany.time);
+        ethread->events->notify_enter(ethread->ext, -1);
     }
     return 0;
 }

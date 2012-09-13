@@ -62,7 +62,7 @@ typedef struct {
     int     (*notify_drag)(void *ext, int button, int x, int y, int mask, uint64_t time);
 
     // Enter/Leave
-    int     (*notify_enter)(void *ext, int inout, int x, int y, uint64_t time);
+    int     (*notify_enter)(void *ext, int inout);
 
     // Focus
     int     (*notify_focus)(void *ext, int inout);

@@ -25,6 +25,7 @@ typedef struct _xgui_test2_ {
     color650    c_wbg;
     color650    c_wfg;
     color650    c_wbp;
+    color650    c_wbo;
     color650    c_wbs;
 
     //
@@ -49,9 +50,35 @@ static int notify_key_released0(void *ext, unsigned long key, int x, int y, int 
     return 0;
 }
 
+static void find_set_iter(desk654 *desk, zone654 *zone, int x, int y, int flag) {
+    if (zone->pties.posa.x <= x && x < zone->pties.posa.x + zone->pties.dim.width
+     && zone->pties.posa.y <= y && y < zone->pties.posa.y + zone->pties.dim.height) {
+        zone->pties.flags |= flag;
+    } else {
+        zone->pties.flags &= ~flag;
+    }
+    //
+    zone654 *z = zone->links.items;
+    while(z) {
+        find_set_iter(desk, z, x, y, flag);
+        z = z->links.next;
+    }
+}
+
 // Mouse
 static int notify_mouse_motion0(void *ext, int x, int y, int mask, uint64_t time) {
     desk654 *desk = (desk654*)ext;
+
+    find_set_iter(desk, desk->root, x, y, MOUSEOVER_MASK650);
+
+    return 0;
+}
+
+// Mouse
+static int notify_enter0(void *ext, int inout) {
+    desk654 *desk = (desk654*)ext;
+
+    find_set_iter(desk, desk->root, -1, -1, MOUSEOVER_MASK650);
 
     return 0;
 }
@@ -144,7 +171,11 @@ static long draw_layout_iter(desk654 *desk, zone654 *head, t2st654 *appli) {
     zone654 *z;
     if (!head) return 0;
     // Head
-    imgfill1a650(&desk->bgra, appli->c_wbp.value, &head->pties.out);
+    if (head->pties.flags & MOUSEOVER_MASK650) {
+        imgfill1a650(&desk->bgra, appli->c_wbo.value, &head->pties.out);
+    } else if (head->pties.flags & PLAIN_MASK650) {
+        imgfill1a650(&desk->bgra, appli->c_wbp.value, &head->pties.out);
+    }
     imgfill1a650(&desk->bgra, appli->c_wbg.value, &head->pties.in);
     //
     z = head->links.items;
@@ -175,11 +206,12 @@ static int test() {
     //
     t2st654 appli;
     appli.c_bg.value  = BLACK650;
-    appli.c_fg.value  = 0xff60c010;
+    appli.c_fg.value  = 0xff60ff10;
     appli.c_wbg.value = 0xff203030;
-    appli.c_wfg.value = 0xff60c010;
-    appli.c_wbp.value = 0xff60c010;
-    appli.c_wbs.value = 0xffc01010;
+    appli.c_wfg.value = 0xff60ff10;
+    appli.c_wbp.value = 0xff60ff10;
+    appli.c_wbo.value = 0xffff1010;
+    appli.c_wbs.value = 0xff1010ff;
 
     //
     Status st = XInitThreads();
@@ -214,6 +246,7 @@ static int test() {
     events.notify_button_pressed    = notify_button_pressed0;
     events.notify_button_released   = notify_button_released0;
     events.notify_scroll            = notify_scroll0;
+    events.notify_enter             = notify_enter0;
     xgui_listen691(gui, &events, desk);
 
     // Loop
@@ -267,7 +300,6 @@ static int test() {
 
 end:
     //
-    FOG("gui = %p", gui);
     xgui_stop691(gui);
     xgui_close_window691(gui);
     xgui_free691(&gui);

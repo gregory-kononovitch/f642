@@ -65,15 +65,21 @@ typedef struct asmrect {
 %define     rows        12
 %define     flags       14
  */
+#define PLAIN_MASK650       (1 << 1)
+#define SELECTED_MASK650    (1 << 2)
+#define MOUSEOVER_MASK650   (1 << 3)
+#define FOCUSED_MASK650     (1 << 4)
+#define DISABLED_MASK650    (1 << 5)
+
 struct zone_pties {
     pos650s_            posr;           // 0
     dim650s_            dim;            // 4
     pos650s_            posa;           // 8
     pos650s_            hborder;        // 12
     pos650s_            vborder;        // 16
-
+    uint16_t            flags;          // 20
     //
-    char pad[12];
+    char pad[10];
 
     // outter rect
     struct {

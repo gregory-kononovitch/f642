@@ -249,6 +249,7 @@ zone654 *zone_add_item(desk654 *desk, zone654 *head, int level) {
     }
     //
     zone654 *zone = &desk->zones[desk->nb_zones];     // @@@
+    zone->pties.flags = PLAIN_MASK650;
     //
     zone->links.key = desk->nb_zones;
     zone->links.flags = 0;
