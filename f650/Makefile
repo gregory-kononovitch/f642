@@ -45,7 +45,7 @@ all: exec
 exec: $(objects) $(objects_ao) $(objects_e)
 	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
 	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
-	gcc -o xgui650.xo exc/xgui650.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o xgui650-1t.xo exc/xgui650_test1.o $(objects) $(objects_ao) $(LIBS)
 
 
 # Build rules
