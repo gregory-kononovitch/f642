@@ -175,7 +175,7 @@ struct _desk654_ {
     int                 nb_used;
 
     // repaint pool
-    pthread_mutex_t     mutex_paint;         // pthread_spinlock_t, volatile int
+    pthread_mutex_t     mutex_paint;
     zone654             *paint_first;
 
 };

@@ -1,5 +1,5 @@
 /*
- * file    : xgui650_test1.c (refact xgui650.c)
+ * file    : xgui650_test0.c
  * project : f640 (| f642 | t508.f640)
  *
  * Created on: Sep 12, 2012
@@ -17,33 +17,10 @@
 #include "../../f691/f691.h"
 
 
-//
-static char     escape = 0;
-static char     space = 0;
-static int      i0 = -1;
-static char     tab = 0;
-static char     enter = 0;
-static int      i1 = 0;
-static int      mousex = 0;
-static int      mousey = 0;
 
 static int notify_key_pressed0(void *ext, unsigned long key, int x, int y, int mask, uint64_t time) {
     desk654 *desk = (desk654*)ext;
 
-    switch(key) {
-        case XK_Escape:
-            escape = 1;
-            break;
-        case XK_space:
-            space = 1;
-            break;
-        case XK_Return:
-            enter = 1;
-            break;
-        case XK_Tab:
-            tab = 1;
-            break;
-    }
     return 0;
 }
 
@@ -57,9 +34,6 @@ static int notify_key_released0(void *ext, unsigned long key, int x, int y, int 
     // Mouse
 static int notify_mouse_motion0(void *ext, int x, int y, int mask, uint64_t time) {
     desk654 *desk = (desk654*)ext;
-
-    mousex = x;
-    mousey = y;
 
     return 0;
 }
@@ -99,7 +73,7 @@ static int test() {
 //    XrmInitialize();
 //    FOG("XrmInitialize done");
 
-    //
+    // Gui
     xgui691 *gui = xgui_create691(752, 416, 1);
     if (!gui) return -1;
     long period = 57143;
@@ -111,28 +85,31 @@ static int test() {
     }
     LOG("Window opened %p :%dx%d", gui->pix1, gui->width, gui->height);
 
-    //
+    // Bgra
+    bgra650 bgra;
+    bgra_link650(&bgra, gui->pix1, gui->width, gui->height);
+    FOG("Bgra linked");
+
+    // Events
+    events691 events;
+    memset(&events, 0, sizeof(events691));
+    events.notify_key_pressed       = notify_key_pressed0;
+    events.notify_key_pressed       = notify_key_released0;
+    events.notify_mouse_motion      = notify_mouse_motion0;
+    events.notify_button_pressed    = notify_button_pressed0;
+    events.notify_button_released   = notify_button_released0;
+    events.notify_scroll            = notify_scroll0;
+    events.notify_key_pressed       = notify_key_released0;
+    events.notify_key_pressed       = notify_key_pressed0;
+    events.notify_key_pressed       = notify_key_released0;
+    xgui_listen691(gui, &events, NULL);
+
+    // Loop
     int i;
     long l;
     struct timeval tv0, tv1, tv2, tv3, tv4;
     struct timeval tvb1, tvb2;
     long broad;
-    brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
-    bgra650 bgra;
-    bgra_link650(&bgra, gui->pix1, gui->width, gui->height);
-    FOG("Bgra linked");
-    brodge_anim(brodge);
-    FOG("Brodge anim done");
-    brodge_exec(brodge, &bgra);
-    FOG("Brodge exec done");
-    //
-    events691 events;
-    memset(&events, 0, sizeof(events691));
-    events.notify_key_pressed  = notify_key_pressed0;
-    events.notify_mouse_motion = notify_mouse_motion0;
-    xgui_listen691(gui, &events, NULL);
-
-    //
     long frame = 0;
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
@@ -145,41 +122,8 @@ static int test() {
         timersub(&tvb2, &tvb1, &tvb2);
         broad += tvb2.tv_usec;
         //
-        if (escape) {
-            break;
-        }
-        if (space) {
-            brodge_rebase(brodge);
-            space = 0;
-        }
-        if (tab) {
-            i0++;
-            if (i0 >= brodge->nb_src) {
-                i0 = -1;
-            }
-            tab = 0;
-        }
-        if (enter) {
-            if (i1) i1 = 0;
-            else i1 = 1;
-            enter = 0;
-        }
-        brodge_anim(brodge);
-        if (i0 > -1) {
-            brodge->sources[i0]->x = mousex;
-            brodge->sources[i0]->y = mousey;
-            if (i1) {
-                for(i = 0 ; i < brodge->nb_src ; i++) {
-                    brodge_select(brodge, i, 0);
-                }
-                brodge_select(brodge, i0, 1);
-            } else {
-                for(i = 0 ; i < brodge->nb_src ; i++) {
-                    brodge_select(brodge, i, 1);
-                }
-            }
-        }
-        brodge_exec(brodge, &bgra);
+
+        //
         frame++;
         //
         tv0.tv_usec += period;
@@ -213,9 +157,7 @@ static int test() {
 
 
 int main() {
-
     test();
-
 
     return 0;
 }
