@@ -191,6 +191,14 @@ static void zone_compute_heap64(desk654 *desk, zone654 *zone) {
     zone->pties.out.udword1 = zone->pties.dim.width;
     zone->pties.out.aoword2 = 0;
     zone->pties.out.udword3 = 0;
+
+    // ### test : all in udword1 (opt later)
+    zone->pties.in.obytes0 = (zone->pties.posa.x + zone->pties.hborder.left + (zone->pties.posa.y + zone->pties.vborder.above) * desk->width) * desk->col_bepth;
+    zone->pties.in.udword1 = zone->pties.dim.width - zone->pties.hborder.left - zone->pties.hborder.right;
+    zone->pties.in.aoword2 = 0;
+    zone->pties.in.udword3 = 0;
+    zone->pties.in.obytes4 = (desk->width - zone->pties.dim.width + zone->pties.hborder.left + zone->pties.hborder.right) * desk->col_bepth;
+    zone->pties.in.rows    = zone->pties.dim.height - zone->pties.vborder.above - zone->pties.vborder.below;
 }
 
 /*
@@ -303,6 +311,8 @@ static void zone_dump_iter(zone654 *zone, char *tab) {
         LOG("%sZone %d : %dx%d at (%d, %d)", tab, zone->links.key, zone->pties.dim.width, zone->pties.dim.height, zone->pties.posa.x, zone->pties.posa.y);
         LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; ob4 = %d ; h = %d", tab
                 , zone->pties.out.obytes0, zone->pties.out.udword1, zone->pties.out.aoword2, zone->pties.out.udword3, zone->pties.out.obytes4, zone->pties.out.rows);
+        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; ob4 = %d ; h = %d", tab
+                , zone->pties.in.obytes0, zone->pties.in.udword1, zone->pties.in.aoword2, zone->pties.in.udword3, zone->pties.in.obytes4, zone->pties.in.rows);
         //
         zone_dump_iter(zone, tabi);
         //
@@ -315,6 +325,8 @@ void zone_dump(zone654 *zone, int tree) {
     LOG("Zone %d : %dx%d at (%d, %d)", zone->links.key, zone->pties.dim.width, zone->pties.dim.height, zone->pties.posa.x, zone->pties.posa.y);
     LOG(" - ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d"
             , zone->pties.out.obytes0, zone->pties.out.udword1, zone->pties.out.aoword2, zone->pties.out.udword3, zone->pties.out.rows);
+    LOG(" - ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d"
+            , zone->pties.in.obytes0, zone->pties.in.udword1, zone->pties.in.aoword2, zone->pties.in.udword3, zone->pties.in.rows);
     if (tree) zone_dump_iter(zone, "\t");
 }
 

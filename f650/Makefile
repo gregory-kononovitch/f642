@@ -7,6 +7,9 @@ ifeq (yes,$(DEBUG))
 DEBUGFLAGS=-g -DDEBUG
 endif
 
+COMPILEFLAGS=-g -DDEBUG
+
+
 # Path
 SRC_DIR=.
 ASM_DIR=asm
@@ -43,10 +46,10 @@ objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
 all: exec
 
 exec: $(objects) $(objects_ao) $(objects_e)
-	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
-	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
-	gcc -o xgui650-1t.xo exc/xgui650_test1.o $(objects) $(objects_ao) $(LIBS)
-	gcc -o xgui650-2t.xo exc/xgui650_test2.o $(objects) $(objects_ao) $(LIBS)
+#	gcc -o f650-brodge.xo exc/f650_brodge.o $(objects) $(objects_ao) $(LIBS)
+#	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
+#	gcc -o xgui650-1t.xo exc/xgui650_test1.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o xgui650-2t.xo exc/xgui650_test2.o $(objects) $(objects_ao) $(LIBS) $(COMPILEFLAGS)
 
 
 # Build rules

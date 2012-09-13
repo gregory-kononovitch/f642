@@ -206,6 +206,8 @@ struct _desk654_ {
     pthread_mutex_t     mutex_paint;
     zone654             *paint_first;
 
+    // ext
+    void                *appli;
 };
 
 

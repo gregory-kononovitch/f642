@@ -584,10 +584,10 @@ static int key_pressed_event691(ethread691 *ethread, XEvent *xevt) {
         KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt->xkey.keycode, 0);
         ethread->events->notify_key_pressed(ethread->ext, ky, xevt->xkey.x, xevt->xkey.y, xevt->xkey.state, xevt->xkey.time);
         //
-        LOG("KEYPRES: keycode = %u ; keysym = %lu", xevt->xkey.keycode, ky);
+        LOG("KEYPRES: keycode = %u ; keysym = %lu O->", xevt->xkey.keycode, ky);
     } else {
         KeySym ky = XKeycodeToKeysym(ethread->gui->display, xevt->xkey.keycode, 0);
-        LOG("KEYPRES: keycode = %u ; keysym = %lu", xevt->xkey.keycode, ky);
+        LOG("KEYPRES: keycode = %u ; keysym = %lu X->", xevt->xkey.keycode, ky);
     }
     return 0;
 }
@@ -721,7 +721,7 @@ int xgui_listen691(xgui691 *xgui, events691 *events, void *ext) {
 }
 
 int xgui_stop691(xgui691 *xgui) {
-    xgui691p *gui = (xgui691p*)gui;
+    xgui691p *gui = (xgui691p*)xgui;
 
     // join
     if (gui->event_thread) {
@@ -780,7 +780,6 @@ static void *event_loop691(void *prm) {
  */
 int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
     int r = 0;
-    double broad = 0;
     struct timeval tvb1, tvb2;
     xgui691p *gui = (xgui691p*)xgui;
 
@@ -823,7 +822,7 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
         }
         gettimeofday(&tvb2, NULL);
         timersub(&tvb2, &tvb1, &tvb2);
-        broad += tvb2.tv_usec;
+        r = tvb2.tv_usec;
     } else {
         r = -1;
     }
