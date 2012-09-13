@@ -142,10 +142,12 @@ xgui691 *xgui_create691(int width, int height, int shm) {
     gui->vinfo.blue_mask = 0x000000ff;
     gui->vinfo.bits_per_rgb = 8;
     gui->vinfo.class = TrueColor;
+    gui->vinfo.colormap_size = 256;
     int nbvi = 0;
     XVisualInfo *vinfos = XGetVisualInfo(gui->display
             , VisualScreenMask | VisualClassMask | VisualDepthMask  | VisualBitsPerRGBMask
             | VisualRedMaskMask | VisualGreenMaskMask | VisualBlueMaskMask
+            | VisualColormapSizeMask
             , &gui->vinfo, &nbvi
             );
     //
@@ -822,131 +824,4 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
         r = -1;
     }
     return r;
-}
-
-/*
- *
- */
-static int test() {
-    int r;
-
-    //
-    Status st = XInitThreads();
-    FOG("XInitThreads return %d",st);
-    //
-//    XrmInitialize();
-//    FOG("XrmInitialize done");
-
-    //
-    xgui691 *gui = xgui_create691(800, 448, 1);
-    if (!gui) return -1;
-    long period = 57140;
-    //
-    r = xgui_open_window691(gui, "Test");
-    if (r) {
-        LOG("Can't open window, returning");
-        return -1;
-    }
-
-    //
-    int i;
-    long l;
-    struct timeval tv0, tv1, tv2, tv3, tv4;
-    struct timeval tvb1, tvb2;
-    long broad;
-//    brodge650 *brodge = brodge_init(gui->width, gui->height, 2);
-//    void *srcs = brodge->sources;
-//    int nb_srcs = brodge->nb_src;
-//    bgra650   bgra;
-//    bgra_link650(&bgra, gui->pix1, gui->width, gui->height);
-//    brodge_anim(brodge);
-//    brodge_exec(brodge, &bgra);
-//    //
-//    xgui_listen691(gui, NULL, NULL);
-//
-//    //
-//    long frame = 0;
-//    i = 1;  // first in ximg1
-//    gettimeofday(&tv0, NULL);
-//    gettimeofday(&tv1, NULL);
-//    gettimeofday(&tv3, NULL);
-//    while(event_thread691.run) {
-//        //
-//        gettimeofday(&tvb1, NULL);
-//        show691(&event_thread691, i, 0, 0, 0, 0, gui->width, gui->height);
-//        i = !i;
-//        gettimeofday(&tvb2, NULL);
-//        timersub(&tvb2, &tvb1, &tvb2);
-//        broad += tvb2.tv_usec;
-//        //
-//        if (i) {
-//            bgra.data = (uint32_t*)gui->ximg2->data;
-//        } else {
-//            bgra.data = (uint32_t*)gui->ximg1->data;
-//        }
-//        //
-//        if (event_thread691.space) {
-//            brodge_rebase(brodge);
-//            event_thread691.space = 0;
-//        }
-//        if (event_thread691.tab) {
-//            event_thread691.i0++;
-//            if (event_thread691.i0 >= brodge->nb_src) {
-//                event_thread691.i0 = -1;
-//            }
-//            event_thread691.tab = 0;
-//        }
-//        if (event_thread691.enter) {
-//            if (event_thread691.i1) event_thread691.i1 = 0;
-//            else event_thread691.i1 = 1;
-//            event_thread691.enter = 0;
-//        }
-//        brodge_anim(brodge);
-//        if (event_thread691.i0 > -1) {
-//            brodge->sources[event_thread691.i0]->x = event_thread691.mousex;
-//            brodge->sources[event_thread691.i0]->y = event_thread691.mousey;
-////            if (event_thread691.i1) {
-////                brodge->sources = &srcs[event_thread691.i0];
-////                brodge->nb_src = 1;
-////            } else {
-////                brodge->sources = srcs;
-////                brodge->nb_src = nb_srcs;
-////            }
-//        } else {
-//            brodge->sources = srcs;
-//            brodge->nb_src = nb_srcs;
-//        }
-//        brodge_exec(brodge, &bgra);
-//        frame++;
-//        //
-//        tv0.tv_usec += gui->period;
-//        while(tv0.tv_usec > 999999) {
-//            tv0.tv_sec++;
-//            tv0.tv_usec -= 1000000;
-//        }
-//        //
-//        gettimeofday(&tv2, NULL);
-//        timersub(&tv2, &tv0, &tv1);
-//        if (tv1.tv_usec < gui->period && !tv1.tv_sec) {     // @@@ manage ~=
-//            usleep(gui->period - tv1.tv_usec);
-//        }
-//        //
-//        if (frame % 70 == 0) {
-//            gettimeofday(&tv4, NULL);
-//            timersub(&tv4, &tv3, &tv4);
-//            LOG("Frame %ld for %.3f Hz for %ld µs", frame, 70. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 70);
-//            broad = 0;
-//            gettimeofday(&tv3, NULL);
-//        }
-//        //
-//    }
-    //
-    xgui_close_window691(gui);
-    xgui_free691(&gui);
-    return 0;
-}
-
-
-int mainjjkjkj() {
-    test();
 }

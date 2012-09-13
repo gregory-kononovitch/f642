@@ -181,36 +181,6 @@ struct _desk654_ {
 };
 
 
-typedef struct {
-    // Key
-    int     (*notify_key_pressed)(desk654 *desk, unsigned long key, int x, int y, int mask, uint64_t time);
-    int     (*notify_key_released)(desk654 *desk, unsigned long key, int x, int y, int mask, uint64_t time);
-
-    // Mouse
-    int     (*notify_mouse_motion)(desk654 *desk, int x, int y, int mask, uint64_t time);
-    int     (*notify_button_pressed)(desk654 *desk, int button, int x, int y, int mask, uint64_t time);
-    int     (*notify_button_released)(desk654 *desk, int button, int x, int y, int mask, uint64_t time);
-    int     (*notify_scroll)(desk654 *desk, int button, int x, int y, int mask, uint64_t time);
-
-    // Drag
-    int     (*notify_drag)(desk654 *desk, int button, int x, int y, int mask, uint64_t time);
-
-    // Enter/Leave
-    int     (*notify_enter)(desk654 *desk, int button, int x, int y, int mask, uint64_t time);
-
-    // Focus
-    int     (*notify_focus)(desk654 *desk, int y, int mask, uint64_t time);
-
-    // Window
-    int     (*notify_window)(desk654 *desk, int x, int y, int width, int height, uint64_t time);
-    int     (*notify_visibility)(desk654 *desk, int state, uint64_t time);
-
-    // Expose
-    int     (*notify_expose)(desk654 *desk, int x, int y, int width, int height, uint64_t time);
-
-
-} notify654;
-
 /*
  *
  */
