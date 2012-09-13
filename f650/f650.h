@@ -110,9 +110,27 @@ typedef struct {
     int         x;
     int         y;
 } pos650i_;
-typedef struct {
-    short       x;
-    short       y;
+typedef union {
+    struct {
+        short       x;
+        short       y;
+    };
+    struct {
+        short       left;
+        short       right;
+    };
+    struct {
+        short       above;
+        short       below;
+    };
+    struct {
+        short       north;
+        short       south;
+    };
+    struct {
+        short       west;
+        short       east;
+    };
 } pos650s_;
 
 typedef struct {

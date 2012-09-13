@@ -46,29 +46,57 @@ struct _level654_ {
     void                *pad2;
 };
 
+typedef struct asmrect {
+    int32_t             obytes0;        // offset nw
+    int16_t             udword1;        //
+    int16_t             aoword2;        //
+    int16_t             udword3;        //
+    int16_t             obytes4;        // next seg
+    int16_t             rows;           //
+    int16_t             flags;          //
+} asmrect;
+
 /*
-%define     obytes0     16
-%define     udword1     20
-%define     aoword2     22
-%define     udword3     24
-%define     obytes4     26
-%define     rows        28
+%define     obytes0     0
+%define     udword1     4
+%define     aoword2     6
+%define     udword3     8
+%define     obytes4     10
+%define     rows        12
+%define     flags       14
  */
 struct zone_pties {
-    uint32_t            flags;          // 0
-    pos650s_            posr;           // 4
-    dim650s_            dim;            // 8
-    pos650s_            posa;           // 12
-    // outter rect
-    int32_t             obytes0;        // 16 offset nw
-    int16_t             udword1;        // 20
-    int16_t             aoword2;        // 22
-    int16_t             udword3;        // 24
-    int16_t             obytes4;        // 26 next seg
-    int16_t             rows;           // 28
+    pos650s_            posr;           // 0
+    dim650s_            dim;            // 4
+    pos650s_            posa;           // 8
+    pos650s_            hborder;        // 12
+    pos650s_            vborder;        // 16
 
     //
-    char pad[36];
+    char pad[12];
+
+    // outter rect
+    struct {
+        int32_t             obytes0;        // offset nw
+        int16_t             udword1;        //
+        int16_t             aoword2;        //
+        int16_t             udword3;        //
+        int16_t             obytes4;        // next seg
+        int16_t             rows;           //
+        int16_t             flags;          //
+    } out;
+
+    // insider rect
+    struct {
+        int32_t             obytes0;        // offset nw
+        int16_t             udword1;        //
+        int16_t             aoword2;        //
+        int16_t             udword3;        //
+        int16_t             obytes4;        // next seg
+        int16_t             rows;           //
+        int16_t             flags;          //
+    } in;
+
                                         // 64
 };
 
@@ -199,6 +227,7 @@ void desk_put_zone_unsync(desk654 *desk, zone654 *zone);
 zone654 *zone_add_item(desk654 *desk, zone654 *head, int level);
 void zone_set_location(zone654 * zone, int x, int y);
 void zone_set_dimension(zone654 * zone, int w, int h);
+void zone_set_borders(zone654 *zone, int a, int r, int b, int l);
 
 // Utils
 void zone_dump(zone654 *zone, int tree);

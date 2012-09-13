@@ -60,6 +60,91 @@ static int notify_scroll0(void *ext, int button, int x, int y, int mask, uint64_
 }
 
 
+static void make_desk(desk654 *desk) {
+    int i, x, y;
+    zone654 *z;
+
+    // Center
+    zone654 *center = zone_add_item(desk, desk->root, 2);
+    zone_set_dimension(center, 8 * desk->width / 10, 8 * desk->height / 10);
+    zone_set_location(center, (desk->width - center->pties.dim.width) / 2, (desk->height - center->pties.dim.height) / 2);
+
+    // North
+    x = center->pties.posr.x;
+    y = 10;
+    while(x + 20 < center->pties.posr.x + center->pties.dim.width) {
+        z = zone_add_item(desk, desk->root, 1);
+        zone_set_location(z, x, y);
+        zone_set_dimension(z, 20, 20);
+        zone_set_borders(z, 2, 2, 2, 2);
+        x += 20 + 2;
+    }
+    // East
+    x = 10;
+    y = center->pties.posr.y;
+    z = zone_add_item(desk, desk->root, 1);
+    zone_set_location(z, x, y);
+    zone_set_dimension(z, 16, center->pties.dim.height/2 - 2);
+    zone_set_borders(z, 2, 2, 2, 2);
+    //
+    y += center->pties.dim.height/2 + 2;
+    z = zone_add_item(desk, desk->root, 1);
+    zone_set_location(z, x, y);
+    zone_set_dimension(z, 16, center->pties.dim.height/2 - 2);
+    zone_set_borders(z, 2, 2, 2, 2);
+
+    // West
+    x = desk->root->pties.dim.width - 10;
+    y = center->pties.posr.y;
+    z = zone_add_item(desk, desk->root, 1);
+    zone_set_location(z, x, y);
+    zone_set_dimension(z, 16, center->pties.dim.height/2 - 2);
+    zone_set_borders(z, 2, 2, 2, 2);
+    //
+    y += center->pties.dim.height/2 + 2;
+    z = zone_add_item(desk, desk->root, 1);
+    zone_set_location(z, x, y);
+    zone_set_dimension(z, 16, center->pties.dim.height/2 - 2);
+    zone_set_borders(z, 2, 2, 2, 2);
+
+    // South
+    z = zone_add_item(desk, desk->root, 1);
+    zone_set_location(z, center->pties.posr.x, desk->root->pties.dim.height - 28);
+    zone_set_dimension(z, center->pties.dim.width, 20);
+    zone_set_borders(z, 2, 2, 2, 2);
+
+    //
+    desk_layout(desk);
+    FOG("desk layed out");
+    desk_dump(desk);
+}
+
+static long draw_layout_iter(desk654 *desk, zone654 *head, long cin, long cbor) {
+    long l = 0;
+    zone654 *z;
+    if (!head) return 0;
+    // Head
+    imgfill1a650(&desk->bgra, cin, &head->pties.out);
+    //
+    z = head->links.items;
+    while(z) {
+        l += draw_layout_iter(desk, z, cin, cbor);
+        z = z->links.next;
+    }
+    return 0;
+}
+
+static long draw_layout(desk654 *desk, long cin, long cbor) {
+    long l = 0;
+    zone654 *z = desk->root->links.items;
+
+    while(z) {
+        l += draw_layout_iter(desk, z, cin, cbor);
+        z = z->links.next;
+    }
+    return l;
+}
+
 /*
  *
  */
@@ -82,27 +167,12 @@ static int test() {
     if (r) { LOG("Can't open window, returning"); return -1; }
     LOG("Window opened %p :%dx%d", gui->pix1, gui->width, gui->height);
 
-    // Bgra
-    bgra650 bgra;
-    bgra_link650(&bgra, gui->pix1, gui->width, gui->height);
-    FOG("Bgra linked");
-
     // Desk
     desk654 *desk = desk_create654(gui->width, gui->height);
     FOG("desk created");
-    // Center
-    zone654 *zimg = zone_add_item(desk, desk->root, 2);
-    zone_set_dimension(zimg, 8 * gui->width / 10, 8 * gui->height / 10);
-    zone_set_location(zimg, (gui->width - zimg->pties.dim.width) / 2, (gui->height - zimg->pties.dim.height) / 2);
-    // Widget1
-    zone654 *zsta = zone_add_item(desk, desk->root, 1);
-    zone_set_location(zsta, 22, 5);
-    zone_set_dimension(zsta, 24, 24);
-    //
-    desk_layout(desk);
-    FOG("desk layout");
-    desk_dump(desk);
-
+    bgra_link650(&desk->bgra, gui->pix1, gui->width, gui->height);
+    FOG("Bgra linked");
+    make_desk(desk);
 
     // Events
     events691 events;
@@ -130,15 +200,19 @@ static int test() {
     gettimeofday(&tv3, NULL);
     while(1) {
         //
+        int cins = 0xff505070;
+        int cbor = 0xff80ff10;
+        bgra_fill650(&desk->bgra, 0xff000000);
+        draw_layout(desk, cins, cbor);
+        frame++;
+
+        //
         gettimeofday(&tvb1, NULL);
         show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
         gettimeofday(&tvb2, NULL);
         timersub(&tvb2, &tvb1, &tvb2);
         broad += tvb2.tv_usec;
-        //
 
-        //
-        frame++;
         //
         tv0.tv_usec += period;
         while(tv0.tv_usec > 999999) {
@@ -161,6 +235,9 @@ static int test() {
         }
         //
     }
+
+
+end:
     //
     xgui_stop691(gui);
     xgui_close_window691(gui);

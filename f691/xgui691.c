@@ -724,11 +724,15 @@ int xgui_stop691(xgui691 *xgui) {
     xgui691p *gui = (xgui691p*)gui;
 
     // join
-    void *res;
-    gui->event_thread->run = 0;
-    pthread_join(gui->event_thread->thread, &res);
-    free(gui->event_thread);
-    gui->event_thread = NULL;
+    if (gui->event_thread) {
+        void *res;
+        gui->event_thread->run = 0;
+        pthread_join(gui->event_thread->thread, &res);
+        free(gui->event_thread);
+        gui->event_thread = NULL;
+        return 0;
+    }
+    return -1;
 }
 
 

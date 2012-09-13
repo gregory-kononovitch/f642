@@ -60,11 +60,15 @@ desk654 *desk_create654(int width, int height) {
     // root
     desk->root = desk->zones;
     desk->nb_zones = 1;
-    desk->root->pties.flags = 0;
     desk->root->pties.posr.x = 0;
     desk->root->pties.posr.y = 0;
     desk->root->pties.dim.width  = width;
     desk->root->pties.dim.height = height;
+    desk->root->pties.hborder.left  = 8;
+    desk->root->pties.hborder.right = 8;
+    desk->root->pties.vborder.above = 8;
+    desk->root->pties.vborder.below = 8;
+    desk->root->pties.out.flags = 0;
 
     //
     desk->root->links.key = 0;
@@ -163,30 +167,30 @@ void desk_put_zone_unsync(desk654 *desk, zone654 *zone) {
  */
 static void zone_compute_heap64(desk654 *desk, zone654 *zone) {
     // _obytes0;       // offset
-    zone->pties.obytes0 = (zone->pties.posa.x + zone->pties.posa.y * desk->width) * desk->col_bepth;
+    zone->pties.out.obytes0 = (zone->pties.posa.x + zone->pties.posa.y * desk->width) * desk->col_bepth;
     // pties.udword1;
-    zone->pties.udword1 = 4 - (zone->pties.posa.x & 0x03);
-    zone->pties.udword1 &= 0x03;
+    zone->pties.out.udword1 = 4 - (zone->pties.posa.x & 0x03);
+    zone->pties.out.udword1 &= 0x03;
     // pties.udword3;
-    zone->pties.udword3 = (zone->pties.posa.x + zone->pties.dim.width) & 0x03;
+    zone->pties.out.udword3 = (zone->pties.posa.x + zone->pties.dim.width) & 0x03;
     // pties.aoword2;
-    zone->pties.aoword2 = zone->pties.dim.width - zone->pties.udword1 - zone->pties.udword3;
-    if (zone->pties.aoword2 < 40) {
-        zone->pties.udword1 = zone->pties.dim.width;
-        zone->pties.udword3 = 0;
-        zone->pties.aoword2 = 0;
+    zone->pties.out.aoword2 = zone->pties.dim.width - zone->pties.out.udword1 - zone->pties.out.udword3;
+    if (zone->pties.out.aoword2 < 40) {
+        zone->pties.out.udword1 = zone->pties.dim.width;
+        zone->pties.out.udword3 = 0;
+        zone->pties.out.aoword2 = 0;
     } else {
-        zone->pties.aoword2 >>= 2;
+        zone->pties.out.aoword2 >>= 2;
     }
     // pties.obytes4;
-    zone->pties.obytes4 = (desk->width - zone->pties.dim.width) * desk->col_bepth;
+    zone->pties.out.obytes4 = (desk->width - zone->pties.dim.width) * desk->col_bepth;
     // pties.height
-    zone->pties.rows = zone->pties.dim.height;
+    zone->pties.out.rows = zone->pties.dim.height;
 
     // ### test : all in udword1 (opt later)
-    zone->pties.udword1 = zone->pties.dim.width;
-    zone->pties.aoword2 = 0;
-    zone->pties.udword3 = 0;
+    zone->pties.out.udword1 = zone->pties.dim.width;
+    zone->pties.out.aoword2 = 0;
+    zone->pties.out.udword3 = 0;
 }
 
 /*
@@ -281,13 +285,24 @@ void zone_set_dimension(zone654 *zone, int w, int h) {
     zone->pties.dim.height = h;
 }
 
+/*
+ * Without laying out
+ */
+void zone_set_borders(zone654 *zone, int a, int r, int b, int l) {
+    zone->pties.hborder.above = a;
+    zone->pties.hborder.below = b;
+    zone->pties.vborder.left  = l;
+    zone->pties.vborder.right = r;
+}
+
 static void zone_dump_iter(zone654 *zone, char *tab) {
     char tabi[33];
     zone = zone->links.items;
     snprintf(tabi, 33, "\t%s", tab);
     while(zone) {
         LOG("%sZone %d : %dx%d at (%d, %d)", tab, zone->links.key, zone->pties.dim.width, zone->pties.dim.height, zone->pties.posa.x, zone->pties.posa.y);
-        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; ob4 = %d ; h = %d", tab, zone->pties.obytes0, zone->pties.udword1, zone->pties.aoword2, zone->pties.udword3, zone->pties.obytes4, zone->pties.rows);
+        LOG("%s + ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; ob4 = %d ; h = %d", tab
+                , zone->pties.out.obytes0, zone->pties.out.udword1, zone->pties.out.aoword2, zone->pties.out.udword3, zone->pties.out.obytes4, zone->pties.out.rows);
         //
         zone_dump_iter(zone, tabi);
         //
@@ -298,7 +313,8 @@ static void zone_dump_iter(zone654 *zone, char *tab) {
 void zone_dump(zone654 *zone, int tree) {
     //static char *tab = "\t";
     LOG("Zone %d : %dx%d at (%d, %d)", zone->links.key, zone->pties.dim.width, zone->pties.dim.height, zone->pties.posa.x, zone->pties.posa.y);
-    LOG(" - ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d", zone->pties.obytes0, zone->pties.udword1, zone->pties.aoword2, zone->pties.udword3, zone->pties.rows);
+    LOG(" - ob0 = %d ; ud1 = %d ; ao2 = %d ; ud3 = %d ; h = %d"
+            , zone->pties.out.obytes0, zone->pties.out.udword1, zone->pties.out.aoword2, zone->pties.out.udword3, zone->pties.out.rows);
     if (tree) zone_dump_iter(zone, "\t");
 }
 

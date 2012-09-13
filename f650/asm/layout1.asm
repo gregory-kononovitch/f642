@@ -18,12 +18,13 @@ global imgfill12a650:	function
 global imgfill123a650:	function
 
 ; zone properties
-%define     obytes0     16
-%define     udword1     20
-%define     aoword2     22
-%define     udword3     24
-%define     obytes4     26
-%define     rows        28
+%define     obytes0     0
+%define     udword1     4
+%define     aoword2     6
+%define     udword3     8
+%define     obytes4     10
+%define     rows        12
+%define     flags       14
 
 
 
@@ -65,7 +66,6 @@ inserta16a650:
 			;
 			mov				rdi, [rdi]
 			shr				r10d, 2					; wsrc * 4 / 16
-;			shr				r10d, 1
 			;
 			mov				eax, r11d
 .loopy:
@@ -73,8 +73,6 @@ inserta16a650:
 			mov				ecx, r10d
 			;
 .loopx:		;
-;			movdqa			xmm1, oword [rdi + 16]
-;			movdqa			oword [rsi + 16], xmm1
 			movdqa			xmm0, oword [rdi]
 			movdqa			oword [rsi], xmm0
 			;
@@ -83,7 +81,6 @@ inserta16a650:
 			add				rsi, 16
 			sub				ecx, 1
 			jnz				.loopx
-;			loop			.loopx
 			;
 .cooty:		;
 			sub				eax, 1
@@ -108,10 +105,11 @@ imgfill1a650:
 			;
 			xor				r9, r9
 			mov				r9w, word [rdx + rows]		; hsrc
-			; even
+			; color
 			mov				eax, esi
 			shl				rsi, 32
 			or				rsi, rax
+			; even / odd
 			test			r10d, 0x01
 			jnz				odd
 			shr				r10d, 1
@@ -131,10 +129,6 @@ imgfill1a650:
 			ret
 ; ---------------------------------
 odd:
-			mov				eax, esi
-			shl				esi, 32
-			or				rsi, rax				; color
-			;
 			shr				r10d, 1
 			add				r8d, 4
 .loopy
@@ -146,7 +140,6 @@ odd:
 			add				rdi, 8
 			sub				ecx, 1
 			jnz				.loopx
-;			loop			.loopx
 			;
 			mov				dword [rdi], esi		; odd
 			;
