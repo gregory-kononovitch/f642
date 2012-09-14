@@ -84,7 +84,7 @@ static int test() {
 //    FOG("XrmInitialize done");
 
     //
-    xgui691 *gui = xgui_create691(800, 448, 1);
+    xgui691 *gui = xgui_create691(640, 480, 1);
     if (!gui) return -1;
     long period = 57143;
     //
@@ -104,7 +104,7 @@ static int test() {
     struct f641_v4l2_parameters v4l2;
     struct v4l2_buffer frame;
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
-    f641_setup_v4l2(&v4l2, "/dev/video1", 800, 448, 0x56595559, 24, 2);
+    f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 2);
     f641_prepare_buffers(&v4l2);
 
     //
