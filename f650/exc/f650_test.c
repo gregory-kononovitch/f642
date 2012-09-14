@@ -1251,11 +1251,50 @@ int font1() {
     printf("Read char %c wrotte %ld pixels for %ld µ, %.3fs\n", c, l, l2 - l1, (l2 - l1) / 1.5e9);
 }
 
+
+
+extern long yuv422togray(void *gray, void *yuv422, int width2x16, int height);
+extern long yuv422tosgray(void *gray, void *yuv422, int width2x16, int height, int shift);
+
+int test_yuv2gray650() {
+    int i, width = 1600, height = 1200, size = width * height;
+    long l1, l2;
+    struct timeval tv1, tv2;
+    unsigned char *yuv422 = malloc(2 * width * height);
+    unsigned char *gray   = calloc(height, width);
+
+    //
+    unsigned char *tmp = yuv422;
+    for(i = 2 * size ; i > 0 ; i--) {
+        if (i % 2 == 0) *tmp = 135;
+        else if (i % 4 == 1) *tmp = 2;
+        else *tmp = 3;
+        tmp++;
+    }
+
+    //
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+
+    yuv422tosgray(gray, yuv422, width, height, 3);
+
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    //
+    printf("yuv2gray : %.1f ms for %ld µops\n", 0.001 * tv2.tv_usec, l2 -l1);
+
+    printf("0:%02x ; 1:%02x ; 2:%02x ; 3:%02x ; -4:%02x ; -3:%02x ; -2:%02x ; -1:%02x\n"
+            , gray[0], gray[1], gray[2], gray[3]
+            , gray[size-4], gray[size-3], gray[size-2], gray[size-1]
+    );
+}
+
 int main() {
 //    ax2();
 //    ax2f();
 
-    trig();
+//    trig();
 
 //    std1();
 
@@ -1278,6 +1317,9 @@ int main() {
 //    point1();
 
 //    font1();
+
+    test_yuv2gray650();
+
 
     return 0;
 }

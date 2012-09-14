@@ -35,8 +35,7 @@ default rel
 
 global 	brodga650:			function
 
-SECTION .data
-ALIGN		16
+SECTION .data		ALIGN=16
 ZEROp		dd		0.0, 0.0, 0.0, 0.0
 ONEpi		dd		1, 1, 1, 1
 ONEp		dd		1.0, 1.0, 1.0, 1.0
@@ -48,7 +47,7 @@ WHITEp		dd		255.9, 255.9, 255.9, 255.9
 ABSp		dd		0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F
 NEGp		dd		0x80808080, 0x80808080, 0x80808080, 0x80808080
 
-
+SECTION .text  		align=16
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; long brodga650(brodge650 *brodge, bgra650 *img)
 ;
