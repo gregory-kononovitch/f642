@@ -14,12 +14,19 @@ default rel
 
 global 	yuv422togray:		function
 global 	yuv422tosgray:		function
+global 	yuv422togray32:		function
 global	yuv422torgb:		function
 
 
+
 SECTION .data	ALIGN=16
+ALPHA			db		0,0,0,255,0,0,0,255,0,0,0,255,0,0,0,255
+;
 SHUF0			db		0,2,4,6,8,10,12,14,128,128,128,128,128,128,128,128
 SHUF1			db		128,128,128,128,128,128,128,128,0,2,4,6,8,10,12,14
+;
+SHUFGR321		db		0,0,0,128,2,2,2,128,4,4,4,128,6,6,6,128
+SHUFGR322		db		8,8,8,128,10,10,10,128,12,12,12,128,14,14,14,128
 ;
 SHUFRGB1		db		128,128,128,128,0,128,128,128,1,128,128,128,128,128,128,128
 SHUFRGB2		db		1,128,128,128,2,128,128,128,3,128,128,128,128,128,128,128
@@ -94,6 +101,33 @@ return
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; yuv422togray32(void *gray32, void *yuv422, int widtha16, int height)
+yuv422togray32:
+			shr				rdx, 3
+			imul			rdx, rcx
+			movaps			xmm2, oword [SHUFGR321]
+			movaps			xmm3, oword [SHUFGR322]
+			;
+.loop:
+			movaps			xmm0, oword [rsi]
+			movaps			xmm1, xmm0
+			pshufb			xmm0, xmm2
+			movaps			oword [rdi], xmm0
+			add				rdi, 16
+			pshufb			xmm1, xmm3
+			movaps			oword [rdi], xmm1
+			;
+			add				rsi, 16
+			add				rdi, 16
+			;
+			sub				rdx, 1
+			jnz				.loop
+			;
+ret
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; yuv422torgb(void *rgb32, void *yuv422, int width2x16, int height)
 yuv422torgb:
 			begin			32
@@ -108,13 +142,13 @@ yuv422torgb:
 			pextrw			r8d, xmm1, 7				; svg
 			;
 			pshufb			xmm0, oword [SHUFRGB1]
-			cvtpi2ps		xmm0, xmm0					; uyv0
+;			cvtpi2ps		xmm0, xmm0					; uyv0
 			subps			xmm0, oword [M128]
 			movaps			xmm2, xmm0					; svg
 			;
 			mulps			xmm0, oword [RED1]			; red
 			movaps			oword [rbp - 32], xmm0
-			movss			xmm3, oword [rbp - 28]		; y
+;			movss			xmm3, oword [rbp - 28]		; y
 			addss			xmm0, xmm3					; red
 			cvttss2si		eax, xmm0
 			mov				byte [rbp-1], al			; red
@@ -122,9 +156,9 @@ yuv422torgb:
 			movaps			xmm0, xmm2
 			mulps			xmm0, oword [GREEN1]
 			movaps			oword [rbp - 32], xmm0
-			movss			xmm3, oword [rbp - 28]		; y
+;			movss			xmm3, oword [rbp - 28]		; y
 			addss			xmm0, xmm3					;
-			movss			xmm3, oword [rbp - 24]		; v
+;			movss			xmm3, oword [rbp - 24]		; v
 			addss			xmm0, xmm3					; green
 			cvttss2si		eax, xmm0
 			mov				byte [rbp-2], al			; green
@@ -132,9 +166,9 @@ yuv422torgb:
 			movaps			xmm0, xmm2
 			mulps			xmm0, oword [BLUE1]
 			movaps			oword [rbp - 32], xmm0
-			movss			xmm3, oword [rbp - 28]		; y
+;			movss			xmm3, oword [rbp - 28]		; y
 			addss			xmm0, xmm3					;
-			movss			xmm3, oword [rbp - 24]		; v
+;			movss			xmm3, oword [rbp - 24]		; v
 			addss			xmm0, xmm3					; blue
 			cvttss2si		eax, xmm0
 			mov				byte [rbp-3], al			; blue

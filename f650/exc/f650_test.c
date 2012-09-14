@@ -1255,13 +1255,14 @@ int font1() {
 
 extern long yuv422togray(void *gray, void *yuv422, int width2x16, int height);
 extern long yuv422tosgray(void *gray, void *yuv422, int width2x16, int height, int shift);
+extern long yuv422togray32(void *gray32, void *yuv422, int widtha16, int height);
 
 int test_yuv2gray650() {
     int i, width = 1600, height = 1200, size = width * height;
     long l1, l2;
     struct timeval tv1, tv2;
     unsigned char *yuv422 = malloc(2 * width * height);
-    unsigned char *gray   = calloc(height, width);
+    unsigned char *gray   = calloc(4, height * width);
 
     //
     gettimeofday(&tv1, NULL);
@@ -1281,7 +1282,8 @@ int test_yuv2gray650() {
     l1 = ReadTSC();
 
 //    yuv422togray(gray, yuv422, width, height);
-    yuv422tosgray(gray, yuv422, width, height, 3);
+//    yuv422tosgray(gray, yuv422, width, height, 3);
+      yuv422togray32(gray, yuv422, width, height);
 
     l2 = ReadTSC();
     gettimeofday(&tv2, NULL);
