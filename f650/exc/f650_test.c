@@ -1264,18 +1264,23 @@ int test_yuv2gray650() {
     unsigned char *gray   = calloc(height, width);
 
     //
+    gettimeofday(&tv1, NULL);
     unsigned char *tmp = yuv422;
-    for(i = 2 * size ; i > 0 ; i--) {
-        if (i % 2 == 0) *tmp = 135;
-        else if (i % 4 == 1) *tmp = 2;
-        else *tmp = 3;
-        tmp++;
+    for(i = size >> 1; i > 0 ; i--) {
+        *(tmp++) = 135;
+        *(tmp++) = 2;
+        *(tmp++) = 135;
+        *(tmp++) = 3;
     }
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("fill yuv : %.1f ms\n", 0.001 * tv2.tv_usec);
 
     //
     gettimeofday(&tv1, NULL);
     l1 = ReadTSC();
 
+//    yuv422togray(gray, yuv422, width, height);
     yuv422tosgray(gray, yuv422, width, height, 3);
 
     l2 = ReadTSC();
