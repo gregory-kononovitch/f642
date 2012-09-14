@@ -126,7 +126,7 @@ static int test() {
         memset(&frame, 0, sizeof(struct v4l2_buffer));
         frame.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         frame.memory = V4L2_MEMORY_MMAP;
-        if(ioctl(v4l2.fd, VIDIOC_DQBUF, frame) == -1) {
+        if(ioctl(v4l2.fd, VIDIOC_DQBUF, &frame) == -1) {
             FOG("VIDIOC_DQBUF: %s\n", strerror(errno));
             break;
         }
@@ -145,7 +145,7 @@ static int test() {
         broad += tvb2.tv_usec;
 
         // EnQueue
-        if(ioctl(v4l2.fd, VIDIOC_QBUF, frame) == -1) {
+        if(ioctl(v4l2.fd, VIDIOC_QBUF, &frame) == -1) {
             FOG("VIDIOC_QBUF: %s\n", strerror(errno));
             break;
         }
