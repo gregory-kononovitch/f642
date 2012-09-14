@@ -843,7 +843,7 @@ void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *dev, int width, int
         printf("No v4l2 parameters, returning\n");
         return;
     }
-    prm->DEBUG = 0;
+    prm->debug = 0;
     snprintf(prm->dev, sizeof(prm->dev), dev);
     prm->fd  = open(prm->dev, O_RDWR);
     snprintf(prm->source, sizeof(prm->source), dev);
@@ -851,6 +851,7 @@ void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *dev, int width, int
     prm->height      = height;
     prm->frames_pers = rate;
     prm->palette     = palette;   //0x47504A4D;   // 0x56595559
+    prm->memory      = V4L2_MEMORY_MMAP;
     prm->capture         = 1;
     prm->verbose         = 1;
     prm->quiet           = 0;

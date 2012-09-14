@@ -25,6 +25,8 @@ sources_c:= $(wildcard ${SRC_DIR}/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/brodge/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/layout/*$(EXTENSION_C))
 sources_c+=../f691/xgui691.c
+sources_c+=../f640/f641/f641_v4l2.c
+
 
 # asm files
 sources_a:=$(wildcard ${ASM_DIR}/*$(EXTENSION_A))
@@ -50,6 +52,7 @@ exec: $(objects) $(objects_ao) $(objects_e)
 	gcc -o f650-test.xo exc/f650_test.o $(objects) $(objects_ao) $(LIBS)
 #	gcc -o xgui650-1t.xo exc/xgui650_test1.o $(objects) $(objects_ao) $(LIBS)
 #	gcc -o xgui650-2t.xo exc/xgui650_test2.o $(objects) $(objects_ao) $(LIBS) $(COMPILEFLAGS)
+	gcc -o xgui650-3t.xo exc/xgui650_test3.o $(objects) $(objects_ao) $(LIBS)
 
 
 # Build rules
