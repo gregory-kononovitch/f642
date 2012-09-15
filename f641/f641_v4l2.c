@@ -851,7 +851,7 @@ struct f641_v4l2_parameters *f641_init_v4l2(struct f641_appli *appli, uint32_t p
         return NULL;
     }
 
-    prm->DEBUG = 0;
+    prm->debug = 0;
     snprintf(prm->dev, sizeof(prm->dev), appli->device);
     prm->fd  = open(prm->dev, O_RDWR);
     appli->fd = prm->fd;

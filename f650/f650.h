@@ -26,6 +26,14 @@
 
 #define ASM650
 
+
+#define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
+#define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);
+
+
+/*
+ *
+ */
 typedef struct {
     uint32_t    *data;          // 0
     int16_t     width;          // 8
@@ -58,6 +66,8 @@ typedef struct {
 
 // init
 int  bgra_alloc650(bgra650 *img, int width, int height);
+int  bgra_link650(bgra650 *img, char *data, int width, int height);
+
 int  bgraz_alloc650(bgraz650 *img, int width, int height);
 void bgra_origin650(bgra650 *img, double x0, double y0);
 void bgra_scale650(bgra650 *img, double sx, double sy);
@@ -93,10 +103,60 @@ typedef struct {
  *  + int (float)
  */
 typedef struct {
+    float       x;
+    float       y;
+} pos650f_;
+typedef struct {
     int         x;
     int         y;
+} pos650i_;
+typedef union {
+    struct {
+        short       x;
+        short       y;
+    };
+    struct {
+        short       left;
+        short       right;
+    };
+    struct {
+        short       above;
+        short       below;
+    };
+    struct {
+        short       north;
+        short       south;
+    };
+    struct {
+        short       west;
+        short       east;
+    };
+} pos650s_;
+
+typedef struct {
+    float       width;
+    float       height;
+} dim650f_;
+typedef struct {
     int         width;
     int         height;
+} dim650i_;
+typedef struct {
+    short       width;
+    short       height;
+} dim650s_;
+
+typedef union {
+    struct {
+        int         x;
+        int         y;
+        int         width;
+        int         height;
+    };
+    struct {
+        pos650i_    pos;
+        dim650i_    dim;
+    };
 } rect650i;
 
 typedef struct {
@@ -164,6 +224,13 @@ typedef union {
         uint8_t alpha;
     };
 } color650;
+
+typedef struct {
+    float blue;
+    float green;
+    float red;
+    float alpha;
+} teinte650;
 
 typedef union _vect650_ vect650;
 
@@ -484,11 +551,10 @@ double polya650(double *coe, int len, double x);
 double poly2a650(double *coe, int len2, double x);
 
 
-
-
 /*
  *
  */
 void *memseta650(void *align_x16, uint32_t col, size_t size);
+
 
 #endif /* F650_H_ */

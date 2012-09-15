@@ -491,10 +491,6 @@ int math1() {
     l2 = ReadTSC();
     printf("%d racines [%f ; %f]for %ld µops\n", i, d[0], d[1], l2 - l1);
 
-    //test_line650();
-    //test_geo1();
-    //test_ref();
-    //test3();
     return 0;
 }
 
@@ -511,8 +507,8 @@ int trig() {
     r1 = r2 = 0;
     l1 = ReadTSC();
     for(d = 0. ; d < 1000. ; d += 1.) {
-        r1 += cossina050(d, d2);
-        r1 += d2[0];
+        cossina050(d, d2);
+        r1 += d2[0] + d2[1];
     }
     l2 = ReadTSC();
     printf("cossina : %ld\n", (l2 - l1) / 1000);
@@ -562,6 +558,35 @@ int trig() {
 
     printf("cosa050f = %f  | cosf = %f\n", rf1, rf2);
 
+    //
+    float i;
+    df = 0. * sin(0.5);
+    extern float sinta050f(float a, float *tmp);
+    float tmp[8];
+    memset(tmp, 0, 32);
+    l1 = ReadTSC();
+    for(i = 0.f ; i < 1.5f ; i += 0.0001f) {
+        df += sinta050f(i, tmp);
+    }
+    l2 = ReadTSC();
+
+    printf("sin = %.6f / %.6f for %ld µops\n", df, sin(0.5), (l2 - l1)/15000);
+    for(i = 0 ; i < 8 ; i++) {
+        printf("%.12f  |  ", tmp[(int)i]);
+    }
+    printf("\n");
+
+    //
+    double j;
+    df = 0; d = 0;
+    l1 = ReadTSC();
+//    for(i = 0.f ; i < 1.5f ; i += 0.0001f) {
+    for(j = 0. ; j < 1.5 ; j += 0.0001) {
+        d += sin(j);
+    }
+    l2 = ReadTSC();
+
+    printf("sin = %.6f / %f for %ld µops\n", d, sin(0.5), (l2 - l1)/15000);
 
     return 0;
 }
@@ -1226,6 +1251,52 @@ int font1() {
     printf("Read char %c wrotte %ld pixels for %ld µ, %.3fs\n", c, l, l2 - l1, (l2 - l1) / 1.5e9);
 }
 
+
+
+extern long yuv422togray(void *gray, void *yuv422, int width2x16, int height);
+extern long yuv422tosgray(void *gray, void *yuv422, int width2x16, int height, int shift);
+extern long yuv422togray32(void *gray32, void *yuv422, int widtha16, int height);
+
+int test_yuv2gray650() {
+    int i, width = 1600, height = 1200, size = width * height;
+    long l1, l2;
+    struct timeval tv1, tv2;
+    unsigned char *yuv422 = malloc(2 * width * height);
+    unsigned char *gray   = calloc(4, height * width);
+
+    //
+    gettimeofday(&tv1, NULL);
+    unsigned char *tmp = yuv422;
+    for(i = size >> 1; i > 0 ; i--) {
+        *(tmp++) = 135;
+        *(tmp++) = 2;
+        *(tmp++) = 135;
+        *(tmp++) = 3;
+    }
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("fill yuv : %.1f ms\n", 0.001 * tv2.tv_usec);
+
+    //
+    gettimeofday(&tv1, NULL);
+    l1 = ReadTSC();
+
+//    yuv422togray(gray, yuv422, width, height);
+//    yuv422tosgray(gray, yuv422, width, height, 3);
+      yuv422togray32(gray, yuv422, width, height);
+
+    l2 = ReadTSC();
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    //
+    printf("yuv2gray : %.1f ms for %ld µops\n", 0.001 * tv2.tv_usec, l2 -l1);
+
+    printf("0:%02x ; 1:%02x ; 2:%02x ; 3:%02x ; -4:%02x ; -3:%02x ; -2:%02x ; -1:%02x\n"
+            , gray[0], gray[1], gray[2], gray[3]
+            , gray[size-4], gray[size-3], gray[size-2], gray[size-1]
+    );
+}
+
 int main() {
 //    ax2();
 //    ax2f();
@@ -1252,7 +1323,10 @@ int main() {
 
 //    point1();
 
-    font1();
+//    font1();
+
+    test_yuv2gray650();
+
 
     return 0;
 }

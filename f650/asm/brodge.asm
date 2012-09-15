@@ -35,18 +35,19 @@ default rel
 
 global 	brodga650:			function
 
-SECTION .data
+SECTION .data		ALIGN=16
 ZEROp		dd		0.0, 0.0, 0.0, 0.0
 ONEpi		dd		1, 1, 1, 1
 ONEp		dd		1.0, 1.0, 1.0, 1.0
 FOURp		dd		4.0, 4.0, 4.0, 4.0
 FLUSH		dd		0.0, 1.0, 2.0, 3.0
 ALPHAp		dd		0xff000000, 0xff000000, 0xff000000, 0xff000000
+ALPHBp		dd		0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff
 WHITEp		dd		255.9, 255.9, 255.9, 255.9
 ABSp		dd		0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F, 0x7F7F7F7F
 NEGp		dd		0x80808080, 0x80808080, 0x80808080, 0x80808080
 
-
+SECTION .text  		align=16
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; long brodga650(brodge650 *brodge, bgra650 *img)
 ;
@@ -136,6 +137,9 @@ brodga650:
 			shl				osc, 3						; *8
 			add				osc, rsi					; +osc
 			mov				osc, [osc]
+			; activation
+			test			dword [osc + 44], dword 0x80
+			jz				.coot0
 
 			; x0
 			mov				eax, dword [osc]			; x0
@@ -214,7 +218,7 @@ brodga650:
 .ret:		; osc return
 
 
-			sub				ecx, 1
+.coot0		sub				ecx, 1
 			cmp				ecx, 0
 			jge				.loopo
 
@@ -266,13 +270,13 @@ rgb:		; make rgb
 			mulps			xmm2, xmm5
 			;
 			cvttps2dq		xmm0, xmm0
-;			pslld			xmm0, 16
+			pslld			xmm0, 16
 			por				xmm0, [ALPHAp]
 			cvttps2dq		xmm1, xmm1
 			pslld			xmm1, 8
 			por				xmm0, xmm1
 			cvttps2dq		xmm2, xmm2
-			pslld			xmm2, 16
+;			pslld			xmm2, 8
 			por				xmm0, xmm2
 			;
 			movdqa			oword [rsi], xmm0
@@ -296,6 +300,15 @@ rgb:		; make rgb
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 osc1:
+			; ###
+;			movaps			xmm0, pp
+			mulps			pp, pp
+;			mulps			pp, xmm0
+			movaps			xmm0, oword [rbp - o_h]
+			mulps			xmm0, xmm0
+;			mulps  			xmm0, oword [rbp - o_h]
+			movaps			oword [rbp - o_h], xmm0
+
 			; type / flags
 			movaps			xmm0, oword [ONEp]
 			movaps			xmm1, oword [ZEROp]
@@ -424,13 +437,14 @@ osc1:
 			; mul & sum : ax + b lines
 
 
-.psquare	; abs+ : square
+.psquare	; abs+ : psquare
 			andps			xmm4, xmm7					; abs(xi - x0)
+			andps			xmm5, xmm7					; abs(yi - y0)
 			addps			xmm4, xmm5
 			jmp				.draw
 
 
-.hsquare	; abs- : square
+.hsquare	; abs- : hsquare
 			andps			xmm4, xmm7					; abs(xi - x0)
 			andps			xmm5, xmm7					; abs(yi - y0)
 			subps			xmm4, xmm5
@@ -446,19 +460,27 @@ osc1:
 
 
 .round		; dist : circle / ellipse
+;			movaps			xmm6, xmm4
 			mulps			xmm4, xmm4					; ^2
+;			mulps			xmm4, xmm6					; ^3
+;			movaps			xmm6, xmm5
 			mulps			xmm5, xmm5					; ^2
+;			mulps			xmm5, xmm6					; ^3
 			addps			xmm4, xmm5					; +
-			sqrtps			xmm4, xmm4					; sqrt dist
+;			sqrtps			xmm4, xmm4					; sqrt
 			jmp				.draw
 
 
 .hyperbole	; tsid : hyperbole
+;			movaps			xmm6, xmm4
 			mulps			xmm4, xmm4					; ^2
+;			mulps			xmm4, xmm6					; ^3
+;			movaps			xmm6, xmm5
 			mulps			xmm5, xmm5					; ^2
+;			mulps			xmm5, xmm6					; ^3
 			subps			xmm4, xmm5					; -
 			andps			xmm4, xmm7					; abs
-			sqrtps			xmm4, xmm4					; sqrt dist
+;			sqrtps			xmm4, xmm4					; sqrt dist
 
 ; ----------
 .draw

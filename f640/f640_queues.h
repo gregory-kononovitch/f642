@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stddef.h>
+#define __USE_XOPEN2K
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>

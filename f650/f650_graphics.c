@@ -31,6 +31,19 @@ int bgra_alloc650(bgra650 *img, int width, int height) {
     return img->data != NULL ? 0 : -1;
 }
 
+int bgra_link650(bgra650 *img, char *data, int width, int height) {
+    if (!img) return -1;
+    img->data   = (uint32_t*)data;
+    img->width  = width;
+    img->height = height;
+    img->size   = width * height;
+    img->x0 = 0;
+    img->y0 = 0;
+    img->sx = 1;
+    img->sy = 1;
+    return img->data != NULL ? 0 : -1;
+}
+
 int bgraz_alloc650(bgraz650 *img, int width, int height) {
     if (!img) return -1;
     if (bgra_alloc650((bgra650*)img, width, height) != 0) return -1;
@@ -68,9 +81,13 @@ void bgraz_gray650(bgraz650 *img, uint8_t gray) {
     memset(img->zi, 0x52, img->size << 3);
 }
 
+/*
+ *  > fill2
+ */
 void bgra_fill650(bgra650 *img, uint32_t color) {
     memseta650(img->data, color, img->size << 4);
 }
+// < fill1
 void bgra_fill2650(bgra650 *img, uint32_t color) {
     memset2a650(img->data, color, img->size >> 1);
 }

@@ -40,7 +40,6 @@ typedef struct {
 } v4l2_buffer_t;
 
 struct f641_v4l2_parameters {
-    int DEBUG;
 
     // Parameters (in)
     char dev[32];               // in
@@ -87,5 +86,7 @@ extern void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *device, int 
 extern int  f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int white, int expo);
 extern int  f641_prepare_buffers(struct f641_v4l2_parameters *prm);
 extern int  f641_stream_on(struct f641_v4l2_parameters *prm);
+extern int  f641_stream_off(struct f641_v4l2_parameters *prm);
+
 
 #endif /* F641_V4L2_H_ */
