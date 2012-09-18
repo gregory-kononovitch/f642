@@ -17,10 +17,74 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 #include <time.h>
 #include <sys/time.h>
 
 #include <math.h>
+
+#define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
+#define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);
+
+
+//
+enum _marker645 {
+      SOI = 0
+    , EOI
+    , SOF0
+    , SOS
+    , DQT
+    , DRI
+    , APP0
+    , RST0
+    , RST1
+    , RST2
+    , RST3
+    , RST4
+    , RST5
+    , RST6
+    , RST7
+    , UNKN
+    , LAST
+};
+
+typedef struct {
+    uint16_t        key;
+    char            flags;
+    char            code[5];
+    char            desc[33];
+    //
+    uint16_t        length;
+} marker645;
+
+extern marker645    markers645[LAST];
+
+//
+typedef struct {
+    // in
+    uint8_t     *data;
+    int         size;
+
+    // out
+    int         width;
+    int         height;
+
+    // work
+    uint8_t     *ptr;
+    int         offset;
+} mjpeg645_img;
+
+/**
+ * ASM
+ */
+extern long huffman645(void *dseg, void *dest);
+
+
+/**
+ *
+ */
+extern int next_marker645(mjpeg645_img *img);
+
 
 
 #endif /* MJPEG645_H_ */

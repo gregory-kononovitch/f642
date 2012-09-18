@@ -34,6 +34,6 @@ SECTION .data		ALIGN=16
 SECTION .text		ALIGN=16
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
+; extern long huffman645(void *dseg, void *dest);
 huffman645:
 
