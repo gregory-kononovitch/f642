@@ -105,6 +105,7 @@ static int test() {
     struct v4l2_buffer frame;
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
     f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
+    //f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, 30, 3);
     f641_prepare_buffers(&v4l2);
 
     //
@@ -115,6 +116,9 @@ static int test() {
 
     //
     f641_stream_on(&v4l2);
+
+//    // ###
+//    FILE *filp = fopen("y800x448-422.dat", "wb");
 
     //
     long num_frame = 0;
@@ -135,6 +139,11 @@ static int test() {
 
         // Convert
         yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
+
+//        // ###
+//        if (num_frame >= 100 && num_frame < 101) {
+//            fwrite(gui->pix1, 1, gui->width * gui->height, filp);
+//        }
 
         // Put
         show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
@@ -161,6 +170,9 @@ static int test() {
         }
         //
     }
+    // ###
+//    fflush(filp);
+//    fclose(filp);
     //
     f641_stream_off(&v4l2);
     //
