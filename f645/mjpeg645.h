@@ -50,6 +50,7 @@ enum _marker645 {
 
 typedef struct {
     uint16_t        key;
+    uint8_t         index;
     char            flags;
     char            code[5];
     char            desc[33];
@@ -57,7 +58,6 @@ typedef struct {
     uint16_t        length;
 } marker645;
 
-extern marker645    markers645[LAST];
 
 //
 typedef struct {
@@ -70,8 +70,12 @@ typedef struct {
     int         height;
 
     // work
+    int         flags;
     uint8_t     *ptr;
     int         offset;
+
+    //
+    marker645   *markers;
 } mjpeg645_img;
 
 /**
@@ -83,6 +87,9 @@ extern long huffman645(void *dseg, void *dest);
 /**
  *
  */
+extern mjpeg645_img *alloc_mjpeg645_image(void *data, int size);
+extern void free_mjpeg645_image(mjpeg645_img **img);
+
 extern int next_marker645(mjpeg645_img *img);
 
 
