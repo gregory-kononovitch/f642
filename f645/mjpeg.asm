@@ -36,13 +36,18 @@ SECTION .text		ALIGN=16
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long huffman645(void *dseg, void *dest);
+%define		tree	rdx
+%define		data	rdi
+%define		bit		rax
+%define		loff	r8
 huffman645:
 				;
-				mov			rdx, HUFDCL
 				xor			rax, rax
 				xor			rcx, rcx
+				xor			r8, r8
 				mov			rax, 7
 				;
+.reinit			mov			rdx, HUFDCL
 				;
 .loop:			bt			[rdi], rax
 				jnc			.case0
@@ -53,9 +58,7 @@ huffman645:
 				test		byte [rdx], 16
 				jnz			.coot
 				; ok
-				xor			rax, rax
-				mov			al, byte [rdx]
-				ret
+				jmp		.done
 
 .case0:			;
 				mov			cl, byte [rdx + 1]
@@ -63,15 +66,43 @@ huffman645:
 				test		byte [rdx], 16
 				jnz			.coot
 				; ok
-				xor			rax, rax
-				mov			al, byte [rdx]
-				ret
+				jmp			.done
 
 .coot:			;
 				sub			rax, 1
-				jnz			.loop
+				jns			.loop
 				;
 				mov			rax, 7
 				add			rdi, 1
 				jmp			.loop
+
+.done			; svg
+				mov			cl, byte [rdx]
+				mov			byte [rsi], cl
+				add			rsi, 1
+				;
+				; cpt svg
+				add			r8, 1
+				cmp			r8, 32
+				jz			.end
+				;
+				; rax
+				sub			rax, 1
+				jns			.reinit
+				;
+				mov			rax, 7
+				add			rdi, 1
+				jmp			.reinit
+
+
+
+.end:			ret
+
+
+
+
+
+
+
+
 
