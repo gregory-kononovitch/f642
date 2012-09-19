@@ -36,22 +36,39 @@
 
 //
 enum _marker645 {
+#define     M645_SOI    0
       SOI = 0
+#define     M645_EOI    1
     , EOI
+#define     M645_SOF0   2
     , SOF0
+#define     M645_SOS    3
     , SOS
+#define     M645_DQT    4
     , DQT
+#define     M645_DRI    5
     , DRI
+#define     M645_APP0   6
     , APP0
+#define     M645_RST0   7
     , RST0
+#define     M645_RST1   8
     , RST1
+#define     M645_RST2   9
     , RST2
+#define     M645_RST3   10
     , RST3
+#define     M645_RST4   11
     , RST4
+#define     M645_RST5   12
     , RST5
+#define     M645_RST6   13
     , RST6
+#define     M645_RST7   14
     , RST7
+#define     M645_UNKN   15
     , UNKN
+#define     M645_LAST   16
     , LAST
 };
 
@@ -82,8 +99,12 @@ typedef struct {
     uint8_t     *eof;
     int         offset;
 
+    // in
+    int         log;
+
     //
     marker645   *markers;
+    int         lm;
 } mjpeg645_img;
 
 /**
@@ -98,7 +119,7 @@ extern long huffman645(void *dseg, void *dest);
 extern mjpeg645_img *alloc_mjpeg645_image(void *data, int size);
 extern void free_mjpeg645_image(mjpeg645_img **img);
 
-extern int next_marker645(mjpeg645_img *img);
+extern int load_next_marker645(mjpeg645_img *img);
 
 
 

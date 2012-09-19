@@ -1,5 +1,6 @@
 # Options
 EXTENSION_C=.c
+EXTENSION_H=.h
 EXTENSION_A=.asm
 
 ifeq (yes,$(DEBUG))
@@ -10,6 +11,7 @@ COMPILEFLAGS=-g -DDEBUG
 
 
 # Path
+HDR_DIR=.
 SRC_DIR=.
 ASM_DIR=.
 EXC_DIR=exc
@@ -21,6 +23,9 @@ LIBS=-lm -lpthread -lX11 -lxcb -lXext
 #
 # source-files
 sources_c:= $(wildcard ${SRC_DIR}/*$(EXTENSION_C))
+
+# header-files
+sources_h:= $(wildcard ${SRC_DIR}/*$(EXTENSION_H))
 
 # asm files
 sources_a:=$(wildcard ${ASM_DIR}/*$(EXTENSION_A))

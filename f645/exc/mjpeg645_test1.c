@@ -23,7 +23,7 @@ static void dump645(mjpeg645_img *img, int len) {
 
 
 int main() {
-    int lenb = 100 * 1024;
+    int lenb = 72027;
     void *tmp = calloc(1, lenb);
 
     //
@@ -38,7 +38,7 @@ int main() {
     LOG("Scan:");
     dump645(src, 40);
     int m;
-    while( (m = next_marker645(src)) > -1 ) {
+    while( (m = load_next_marker645(src)) > -1 ) {
         LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
                 , src->markers[m].key
                 , src->markers[m].code

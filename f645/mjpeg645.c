@@ -21,20 +21,20 @@ static int _get_marker645(mjpeg645_img *img) {
     int i;
     uint16_t key = phtobe16p(img->ptr);
 
-    printf("Key = %04X ; pos = %ld\n", key, img->ptr - img->data);
+    if (img->log > 2) printf("Key = %04X ; pos = %ld\n", key, img->ptr - img->data);
     for(i = 0 ; i < LAST ; i++) {
-//        printf("Marker %04X (%04X) %s-\"%s\" at position %d\n"
-//                , img->markers[i].key, key
-//                , img->markers[i].code
-//                , img->markers[i].desc
-//                , img->offset
-//        );
+        if (img->log > 3) printf("Marker %04X (%04X) %s-\"%s\" at position %d\n"
+                , img->markers[i].key, key
+                , img->markers[i].code
+                , img->markers[i].desc
+                , img->offset
+        );
 
         if (img->markers[i].key == key) {
-            printf("\tkey = %04X found, flags = %d\n", key, img->markers[i].flags);
+            if (img->log > 3) printf("\tkey = %04X found, flags = %d\n", key, img->markers[i].flags);
             if (img->markers[i].flags & 0x01) {
                 img->markers[i].length = phtobe16p(img->ptr + 2);
-                printf("\t\tkey = %04X found, length = %d\n", key, img->markers[i].length);
+                if (img->log > 3) printf("\t\tkey = %04X found, length = %d\n", key, img->markers[i].length);
             }
             return i;
         }
@@ -43,9 +43,28 @@ static int _get_marker645(mjpeg645_img *img) {
 }
 
 /**
- * Stop at FF of next marker
+ *
  */
-int next_marker645(mjpeg645_img *img) {
+static int skip_dsegment645(mjpeg645_img *img) {
+    while(img->ptr < img->eof) {
+        if (*img->ptr != 0xFF) {
+            img->ptr++;
+            img->offset++;
+        } else if (phtobe16p(img->ptr) != 0xFF00) {
+            return 0;
+        } else {
+            img->ptr++;
+            img->offset++;
+        }
+    }
+    return -1;
+}
+
+
+/**
+ * Load and stop at end of next marker
+ */
+int load_next_marker645(mjpeg645_img *img) {
     int m;
 
     if (img->offset + 2 >= img->size) {
@@ -53,15 +72,18 @@ int next_marker645(mjpeg645_img *img) {
         return EOF;
     }
     if (*img->ptr != 0xFF) {
-        LOG("Bad alignment, no marker here");
-        return -ENODATA;
+        if ((img->lm >= M645_RST0 && img->lm <= M645_RST7) || img->lm == M645_SOS) {
+            skip_dsegment645(img);
+        } else {
+            LOG("Bad alignment, no marker here");
+            return -ENODATA;
+        }
     }
     m = _get_marker645(img);
     if (m < 0) {
         LOG("Unmanaged / Unkonwn marker");
         return -ENODATA;
     }
-
 
     if (img->offset + 2 + img->markers[m].length >= img->size) {
         LOG("Payload reached end of file");
@@ -70,6 +92,7 @@ int next_marker645(mjpeg645_img *img) {
     //
     img->ptr    += 2 + img->markers[m].length;
     img->offset += 2 + img->markers[m].length;
+    img->lm = m;
 
     //
     return m;
@@ -113,14 +136,18 @@ mjpeg645_img *alloc_mjpeg645_image(void *data, int size) {
     if (data) {
         img->data = data;
         img->size = size;
+        //
         img->ptr  = img->data;
         img->eof  = img->data + size;
+        img->lm   = -1;
     } else {
         img->data = calloc(1, size);
         img->size = size;
+        //
         img->ptr  = img->data;
         img->eof  = img->data + size;
         img->flags |= (1 << 31);
+        img->lm   = -1;
     }
     //
     img->markers = calloc(LAST, sizeof(marker645));
