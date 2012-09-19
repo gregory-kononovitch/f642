@@ -42,7 +42,7 @@ objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
 all: exec
 
 exec: $(objects) $(objects_ao) $(objects_e)
-	gcc -o mjpeg645.xo exc/mjpeg645_test1.o $(objects) $(objects_ao) $(LIBS)
+	gcc -o mjpeg645-test1.xo exc/mjpeg645_test1.o $(objects) $(objects_ao) $(LIBS)
 
 
 # Build rules

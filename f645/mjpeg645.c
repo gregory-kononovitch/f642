@@ -17,11 +17,18 @@
 /**
  * helper function, @@@ no check
  */
-static int get_marker645(mjpeg645_img *img) {
+static int _get_marker645(mjpeg645_img *img) {
     int i;
-    uint16_t key = *((uint16_t*)(img->ptr));
+    uint16_t key = (*img->ptr << 8) | *(img->ptr + 1);
 
     for(i = 0 ; i < LAST ; i++) {
+//        printf("Marker %04X (%04X) %s-\"%s\" at position %d\n"
+//                , img->markers[i].key, key
+//                , img->markers[i].code
+//                , img->markers[i].desc
+//                , img->offset
+//        );
+
         if (img->markers[i].key == key) {
             if (img->markers[i].flags & 0x01) {
                 img->markers[i].length = *((uint16_t*)(img->ptr + 2));
@@ -37,7 +44,6 @@ static int get_marker645(mjpeg645_img *img) {
  */
 int next_marker645(mjpeg645_img *img) {
     int m;
-    uint16_t dep;
 
     if (img->offset + 2 >= img->size) {
         LOG("End of file");
@@ -47,7 +53,7 @@ int next_marker645(mjpeg645_img *img) {
         LOG("Bad alignment, no marker here");
         return -ENODATA;
     }
-    m = get_marker645(img);
+    m = _get_marker645(img);
     if (m < 0) {
         LOG("Unmanaged / Unkonwn marker");
         return -ENODATA;

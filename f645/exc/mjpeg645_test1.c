@@ -13,6 +13,13 @@
 
 #include "../mjpeg645.h"
 
+static void dump645(mjpeg645_img *img, int len) {
+    int i;
+    for(i = 0 ; i < len ; i++) {
+        printf("%02X ", *(img->ptr + i));
+    }
+    printf("\n");
+}
 
 
 int main() {
@@ -27,6 +34,18 @@ int main() {
     //
     mjpeg645_img *src = alloc_mjpeg645_image(tmp, lenb);
 
+    // Scan
+    LOG("Scan:");
+    dump645(src, 32);
+    int m;
+    while( (m = next_marker645(src)) > -1 ) {
+        LOG("Found marker %04X %s-\"%s\" at position %d"
+                , src->markers[m].key
+                , src->markers[m].code
+                , src->markers[m].desc
+                , src->offset
+        );
+    }
 
     return 0;
 }
