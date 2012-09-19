@@ -12,6 +12,8 @@
 #ifndef MJPEG645_H_
 #define MJPEG645_H_
 
+//#define __USE_BSD
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -21,11 +23,16 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include <endian.h>
+#include <byteswap.h>
 #include <math.h>
+
 
 #define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
 #define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);
 
+
+#define phtobe16p(p) (  htobe16(  *((uint16_t*)p)  )  )
 
 //
 enum _marker645 {
@@ -72,6 +79,7 @@ typedef struct {
     // work
     int         flags;
     uint8_t     *ptr;
+    uint8_t     *eof;
     int         offset;
 
     //

@@ -19,19 +19,20 @@
  */
 static int _get_marker645(mjpeg645_img *img) {
     int i;
-    uint16_t key = (*img->ptr << 8) | *(img->ptr + 1);
+    uint16_t key = phtobe16p(img->ptr);
 
+    printf("Key = %04X\n", key);
     for(i = 0 ; i < LAST ; i++) {
-//        printf("Marker %04X (%04X) %s-\"%s\" at position %d\n"
-//                , img->markers[i].key, key
-//                , img->markers[i].code
-//                , img->markers[i].desc
-//                , img->offset
-//        );
+        printf("Marker %04X (%04X) %s-\"%s\" at position %d\n"
+                , img->markers[i].key, key
+                , img->markers[i].code
+                , img->markers[i].desc
+                , img->offset
+        );
 
         if (img->markers[i].key == key) {
             if (img->markers[i].flags & 0x01) {
-                img->markers[i].length = *((uint16_t*)(img->ptr + 2));
+                img->markers[i].length = htobe16(*(img->ptr + 2));
             }
             return i;
         }
@@ -96,7 +97,7 @@ static marker645 markers645[] = {
   , {.key = 0xFFD5, .index = RST5, .flags = 0 , .code = "RST5", .desc = "Restart 5"}
   , {.key = 0xFFD6, .index = RST6, .flags = 0 , .code = "RST6", .desc = "Restart 6"}
   , {.key = 0xFFD7, .index = RST7, .flags = 0 , .code = "RST7", .desc = "Restart 7"}
-  , {.key = 0xFF00, .index = UNKN, .flags = 0 , .code = "UNKN", .desc = "UNKNOWN MARKER"}
+  , {.key = 0x0000, .index = UNKN, .flags = 0 , .code = "UNKN", .desc = "UNKNOWN MARKER"}
 };
 
 
@@ -111,10 +112,12 @@ mjpeg645_img *alloc_mjpeg645_image(void *data, int size) {
         img->data = data;
         img->size = size;
         img->ptr  = img->data;
+        img->eof  = img->data + size;
     } else {
         img->data = calloc(1, size);
         img->size = size;
         img->ptr  = img->data;
+        img->eof  = img->data + size;
         img->flags |= (1 << 31);
     }
     //

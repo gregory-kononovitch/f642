@@ -36,7 +36,7 @@ int main() {
 
     // Scan
     LOG("Scan:");
-    dump645(src, 32);
+    dump645(src, 40);
     int m;
     while( (m = next_marker645(src)) > -1 ) {
         LOG("Found marker %04X %s-\"%s\" at position %d"

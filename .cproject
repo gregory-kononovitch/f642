@@ -39,6 +39,7 @@
 									<listOptionValue builtIn="false" value="__USE_GNU=1"/>
 									<listOptionValue builtIn="false" value="__USE_UNIX98=1"/>
 									<listOptionValue builtIn="false" value="XLIB_ILLEGAL_ACCESS=1"/>
+									<listOptionValue builtIn="false" value="__USE_BSD"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.428279663" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
