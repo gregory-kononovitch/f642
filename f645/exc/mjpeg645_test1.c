@@ -31,75 +31,79 @@ int main() {
     void *tmp = calloc(1, lenb);
 
     //
-    //FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
-    FILE *filp = fopen("hdc.dat", "rb");
+    FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+//    FILE *filp = fopen("hdc.dat", "rb");
     fread(tmp, 1, lenb, filp);
     fclose(filp);
 
     //
     mjpeg645_img *src = alloc_mjpeg645_image(tmp, lenb);
+    uint8_t *hres = calloc(1024, 1024);
 
-//    // Scan
-//    LOG("Scan:");
-//    dump645(src, 35);
-//    int m;
-//    while( (m = load_next_marker645(src)) > -1 ) {
-//        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
-//                , src->markers[m].key
-//                , src->markers[m].code
-//                , src->markers[m].desc
-//                , src->markers[m].flags
-//                , src->offset
-//                , src->markers[m].length
-//        );
-//        if (m == M645_SOS) break;
-//    }
-//
-//    // Data Segment
-//    int off1 = src->offset;
-//    dump645(src, 8);
-//    m = load_next_marker645(src);
-//    if (m != M645_RST0) {
-//        LOG("Didn't found RST0 after SOS, returning");
-//        goto err;
-//    }
-//    int off2 = src->offset - 2;
-//    LOG("Will try to translate data segment from [%d ; %d[", off1, off2);
-//
-//    //
-//    long symb = huffman645(src->data + off1, NULL);
-//    LOG("Huffman: found symbol %d", symb);
+    // Scan
+    LOG("Scan:");
+    dump645(src, 35);
+    int m;
+    while( (m = load_next_marker645(src)) > -1 ) {
+        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
+                , src->markers[m].key
+                , src->markers[m].code
+                , src->markers[m].desc
+                , src->markers[m].flags
+                , src->offset
+                , src->markers[m].length
+        );
+        if (m == M645_SOS) break;
+    }
+
+    // Data Segment
+    int off1 = src->offset;
+    dump645(src, 8);
+    m = load_next_marker645(src);
+    if (m != M645_RST0) {
+        LOG("Didn't found RST0 after SOS, returning");
+        goto err;
+    }
+    int off2 = src->offset - 2;
+    LOG("Will try to translate data segment from [%d ; %d[", off1, off2);
+
+    //
+    uint8_t *add = huf3man645(src->data + off1, hres);
+    LOG("Huffman: found symbol %d at %ld", hres[0], add - src->data);
+    add = huf4man645(src->data + off1 + 12, hres);
+    LOG("Huffman: found symbol %d at %ld", hres[0], add - src->data);
+
+
 
     // ###
-    long l1, l2;
-    //
-    uint8_t *tres = calloc(1024, 1024);
-    filp = fopen("hdc.out", "rb");
-    fread(tres, 1, 1024*1024, filp);
-    fclose(filp);
-    printf("Results:\n");
-    for(i = 0 ; i < 32 ; i++) printf("%u ", tres[i]);
-    printf("\n");
-    //
-    uint8_t *hres = calloc(1024, 1024);
-    //
-    long symb = 0;
-    uint8_t *add;
-    int cofs = 500000;
-    l1 = ReadTSC();
-    for(i = cofs/50000 ; i >= 0 ; i--) {    // 200 * 50000
-        add = huf3man645(src->data, tres);
-    }
-    l2 = ReadTSC();
-    LOG("Huffman: stop at %ld for %ld = %ld (%ld M - %.1f ms)", add - src->data, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
-    //
-    printf("Asm:\n");
-    for(i = 0 ; i < 32 ; i++) printf("%u ", hres[i]);
-    printf("\n");
-    //
-    i = 0;
-    while(i < 1024*1024 && (hres[i] == tres[i])) i++;
-    printf("Equals n'til %d\n", i);
+//    long l1, l2;
+//    //
+//    uint8_t *tres = calloc(1024, 1024);
+//    filp = fopen("hdc.out", "rb");
+//    fread(tres, 1, 1024*1024, filp);
+//    fclose(filp);
+//    printf("Results:\n");
+//    for(i = 0 ; i < 32 ; i++) printf("%u ", tres[i]);
+//    printf("\n");
+//    //
+//    //
+//    long symb = 0;
+//    uint8_t *add;
+//    int cofs = 500000;
+//    l1 = ReadTSC();
+//    for(i = cofs/50000 ; i >= 0 ; i--) {    // 200 * 50000
+//        add = huf3man645(src->data, tres);
+//    }
+//    l2 = ReadTSC();
+//    LOG("Huffman: stop at %ld for %ld = %ld (%ld M - %.1f ms)", add - src->data, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
+//    //
+//    printf("Asm:\n");
+//    for(i = 0 ; i < 32 ; i++) printf("%u ", hres[i]);
+//    printf("\n");
+//    //
+//    i = 0;
+//    while(i < 1024*1024 && (hres[i] == tres[i])) i++;
+//    printf("Equals n'til %d\n", i);
 
 
 

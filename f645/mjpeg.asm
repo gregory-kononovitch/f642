@@ -28,19 +28,13 @@ default rel
 global 	huffman645:			function
 global 	huf2man645:			function
 global 	huf3man645:			function
+global 	huf4man645:			function
+
 
 SECTION .data		ALIGN=16
-; DCLumin
-HUFDCL		db		16,3,6,16,6,9,16,9,12,0,255,255,16,9,12,16,12,15,16,15,18,1,255,255,2,255,255,3,255,255,4,255,255,5,255,255,16,3,6,6,255,255,16,3,6,7,255,255,16,3,6,8,255,255,16,3,6,9,255,255,16,3,6,10,255,255,16,3,255,11,255,255
+%include "mjpeg_tables.ash"
 
 ALIGN 16
-
-HDCL3		dw		256,1,2,256,2,3,256,3,4,0,256,256,256,3,4,256,4,5,256,5,6,1,256,256,2,256,256,3,256,256,4,256,256,5,256,256,256,1,2,6,256,256,256,1,2,7,256,256,256,1,2,8,256,256,256,1,2,9,256,256,256,1,2,10,256,256,256,1,256,11,256,256
-ALIGN 16
-NHDCL		dd		24
-
-ALIGN 16
-
 
 
 
@@ -130,8 +124,55 @@ huf2man645:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; build hdcl at rax, return to r9
+; build hdcl 2-8-8 at rax, return to r9
 _build_hdcl_:
+				;
+				xor			r8, r8
+				;
+.loop			;
+				xor			r8, r8
+				mov			r8w, word [rdx]
+				mov			word [rax], r8w
+.ptr0			;
+				xor			r8, r8
+				mov			r8w, word [rdx + 2]
+				bt			r8, 8
+				jc			.no0
+				imul		r8, 18
+				add			r8, rax
+				mov			qword [rax + 2], r8
+				jmp			.ptr1
+				;
+.no0			;
+				mov			qword [rax + 2], 0
+				;
+.ptr1			;
+				xor			r8, r8
+				mov			r8w, word [rdx + 4]
+				bt			r8, 8
+				jc			.no1
+				imul		r8, 18
+				add			r8, rax
+				mov			qword [rax + 10], r8
+				jmp			.coop
+				;
+.no1			;
+				mov			qword [rax + 10], 0
+				;
+.coop			;
+				add			rax, 18
+				add			rdx, 6
+				;
+				sub			ecx, 1
+				jnz			.loop
+
+				;
+				jmp			r9
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; build hdcl 2-1-1 at rax, return to r9
+_build_hdcl2_:
 				;
 				mov			ecx, dword [NHDCL]
 				mov			rdx, HDCL3
@@ -182,6 +223,7 @@ _build_hdcl_:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long huf3man645(void *dseg, void *dest);
+; OK, but too much stack for tables
 huf3man645:
 				begin 432
 				;
@@ -190,6 +232,8 @@ huf3man645:
 				mov			rax, rbp
 				sub			rax, 432
 				mov			r10, rax
+				mov			ecx, dword [NHDCL]
+				mov			rdx, HDCL3
 				mov			r9, .frombuild
 				;
 				jmp			_build_hdcl_
@@ -203,6 +247,7 @@ huf3man645:
 				;
 				movbe		r9, qword [rdi]
 				mov			rax, 63
+;				add			rdi, 8	@@@@@@@@@@@@@@@@@@@@@@@@@@
 				;
 .reinit			mov			rdx, r10
 				;
@@ -212,7 +257,7 @@ huf3man645:
 				;
 .case1:
 				mov			rdx, [rdx + 10]
-				test		rdx, 0xffffffffffffffff
+				test		rdx, 0xffffffff
 				jz			.err
 				test		word [rdx], 256
 				jz			.done
@@ -226,7 +271,7 @@ huf3man645:
 
 .case0:			;
 				mov			rdx, [rdx + 2]
-				test		rdx, 0xffffffffffffffff
+				test		rdx, 0xffffffff
 				jz			.err
 				test		word [rdx], 256
 				jz			.done
@@ -241,15 +286,16 @@ huf3man645:
 
 .done			; svg
 				mov			cl, byte [rdx]
-				mov			r11b, byte [rsi]
-				cmp			rcx, r11
-				jnz			.err
+;				mov			r11b, byte [rsi]
+;				cmp			rcx, r11
+;				jnz			.err
 
-;				mov			byte [rsi], cl
+				mov			byte [rsi], cl
 				add			rsi, 1
 				;
 				; cpt svg
 				sub			r8, 1
+				jmp			.end
 				jz			.end
 				;
 				; rax
@@ -272,14 +318,17 @@ huf3man645:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long huf4man645(void *dseg, void *dest);
+; OK, but too much stack for tables
 huf4man645:
-				begin 432
+				begin 5832
+
 				;
-				xor			r11, r11
 				;
 				mov			rax, rbp
-				sub			rax, 432
+				sub			rax, 5832
 				mov			r10, rax
+				mov			ecx, dword [NHACL]
+				mov			rdx, HACL2
 				mov			r9, .frombuild
 				;
 				jmp			_build_hdcl_
@@ -289,32 +338,10 @@ huf4man645:
 				xor			rax, rax
 				xor			rcx, rcx
 				xor			r8, r8
-				mov			r8, 50000
+				mov			r8, 1
 				;
 				movbe		r9, qword [rdi]
 				mov			rax, 63
-				;
-				; Fist codes
-				mov			rdx, r10
-				shl 		r9, 1
-				jc			.case1x
-				; [0x]
-				shl 		r9, 1
-				jc			.case01
-				; [00]
-				sub			rax, 2
-				jmp			.done
-
-.case01
-
-
-.case1x
-
-
-
-
-
-				; Main Loop
 				;
 .reinit			mov			rdx, r10
 				;
@@ -324,7 +351,7 @@ huf4man645:
 				;
 .case1:
 				mov			rdx, [rdx + 10]
-				test		rdx, 0xffffffffffffffff
+				test		rdx, 0xffffffff
 				jz			.err
 				test		word [rdx], 256
 				jz			.done
@@ -338,7 +365,7 @@ huf4man645:
 
 .case0:			;
 				mov			rdx, [rdx + 2]
-				test		rdx, 0xffffffffffffffff
+				test		rdx, 0xffffffff
 				jz			.err
 				test		word [rdx], 256
 				jz			.done
@@ -353,11 +380,7 @@ huf4man645:
 
 .done			; svg
 				mov			cl, byte [rdx]
-				mov			r11b, byte [rsi]
-				cmp			rcx, r11
-				jnz			.err
-
-;				mov			byte [rsi], cl
+				mov			byte [rsi], cl
 				add			rsi, 1
 				;
 				; cpt svg
@@ -379,8 +402,6 @@ huf4man645:
 .end:			;
 				mov			rax, rdi
 				return
-
-
 
 
 
