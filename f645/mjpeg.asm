@@ -28,12 +28,50 @@ default rel
 global 	huffman645:			function
 
 SECTION .data		ALIGN=16
-
-
+; DCLumin
+HUFDCL			db		16,3,6,16,6,9,16,9,12,0,255,255,16,9,12,16,12,15,16,15,18,1,255,255,2,255,255,3,255,255,4,255,255,5,255,255,16,3,6,6,255,255,16,3,6,7,255,255,16,3,6,8,255,255,16,3,6,9,255,255,16,3,6,10,255,255,16,3,255,11,255,255
+ALIGN 16
 
 SECTION .text		ALIGN=16
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long huffman645(void *dseg, void *dest);
 huffman645:
+				;
+				mov			rdx, HUFDCL
+				xor			rax, rax
+				xor			rcx, rcx
+				mov			rax, 7
+				;
+				;
+.loop:			bt			[rdi], rax
+				jnc			.case0
+				;
+.case1:
+				mov			cl, byte [rdx + 2]
+				add			rdx, rcx
+				test		byte [rdx], 16
+				jnz			.coot
+				; ok
+				xor			rax, rax
+				mov			al, byte [rdx]
+				ret
+
+.case0:			;
+				mov			cl, byte [rdx + 1]
+				add			rdx, rcx
+				test		byte [rdx], 16
+				jnz			.coot
+				; ok
+				xor			rax, rax
+				mov			al, byte [rdx]
+				ret
+
+.coot:			;
+				sub			rax, 1
+				jnz			.loop
+				;
+				mov			rax, 7
+				add			rdi, 1
+				jmp			.loop
 

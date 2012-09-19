@@ -36,7 +36,7 @@ int main() {
 
     // Scan
     LOG("Scan:");
-    dump645(src, 40);
+    dump645(src, 35);
     int m;
     while( (m = load_next_marker645(src)) > -1 ) {
         LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
@@ -52,6 +52,7 @@ int main() {
 
     // Data Segment
     int off1 = src->offset;
+    dump645(src, 8);
     m = load_next_marker645(src);
     if (m != M645_RST0) {
         LOG("Didn't found RST0 after SOS, returning");
@@ -59,6 +60,12 @@ int main() {
     }
     int off2 = src->offset - 2;
     LOG("Will try to translate data segment from [%d ; %d[", off1, off2);
+
+    //
+
+    long symb = huffman645(src->data + off1, NULL);
+    LOG("Huffman: found symbol %d", symb);
+
 
     return 0;
 
