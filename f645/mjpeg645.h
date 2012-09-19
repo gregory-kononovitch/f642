@@ -32,7 +32,7 @@
 #define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);
 
 
-#define phtobe16p(p) (  htobe16(  *((uint16_t*)p)  )  )
+#define phtobe16p(p) (  htobe16(  *((uint16_t*)(p))  )  )
 
 //
 enum _marker645 {

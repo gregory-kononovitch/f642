@@ -21,18 +21,20 @@ static int _get_marker645(mjpeg645_img *img) {
     int i;
     uint16_t key = phtobe16p(img->ptr);
 
-    printf("Key = %04X\n", key);
+    printf("Key = %04X ; pos = %ld\n", key, img->ptr - img->data);
     for(i = 0 ; i < LAST ; i++) {
-        printf("Marker %04X (%04X) %s-\"%s\" at position %d\n"
-                , img->markers[i].key, key
-                , img->markers[i].code
-                , img->markers[i].desc
-                , img->offset
-        );
+//        printf("Marker %04X (%04X) %s-\"%s\" at position %d\n"
+//                , img->markers[i].key, key
+//                , img->markers[i].code
+//                , img->markers[i].desc
+//                , img->offset
+//        );
 
         if (img->markers[i].key == key) {
+            printf("\tkey = %04X found, flags = %d\n", key, img->markers[i].flags);
             if (img->markers[i].flags & 0x01) {
-                img->markers[i].length = htobe16(*(img->ptr + 2));
+                img->markers[i].length = phtobe16p(img->ptr + 2);
+                printf("\t\tkey = %04X found, length = %d\n", key, img->markers[i].length);
             }
             return i;
         }

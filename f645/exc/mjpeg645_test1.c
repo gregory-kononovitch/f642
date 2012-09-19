@@ -39,11 +39,13 @@ int main() {
     dump645(src, 40);
     int m;
     while( (m = next_marker645(src)) > -1 ) {
-        LOG("Found marker %04X %s-\"%s\" at position %d"
+        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
                 , src->markers[m].key
                 , src->markers[m].code
                 , src->markers[m].desc
+                , src->markers[m].flags
                 , src->offset
+                , src->markers[m].length
         );
     }
 
