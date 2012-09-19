@@ -207,8 +207,7 @@ huf3man645:
 .reinit			mov			rdx, r10
 				;
 .loop:			;
-;				bt			r9, rax
-				shl			r9, 1
+				shl 		r9, 1
 				jnc			.case0
 				;
 .case1:
@@ -268,6 +267,119 @@ huf3man645:
 .end:			;
 				mov			rax, rdi
 				return
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; extern long huf4man645(void *dseg, void *dest);
+huf4man645:
+				begin 432
+				;
+				xor			r11, r11
+				;
+				mov			rax, rbp
+				sub			rax, 432
+				mov			r10, rax
+				mov			r9, .frombuild
+				;
+				jmp			_build_hdcl_
+				;
+.frombuild		;
+				;
+				xor			rax, rax
+				xor			rcx, rcx
+				xor			r8, r8
+				mov			r8, 50000
+				;
+				movbe		r9, qword [rdi]
+				mov			rax, 63
+				;
+				; Fist codes
+				mov			rdx, r10
+				shl 		r9, 1
+				jc			.case1x
+				; [0x]
+				shl 		r9, 1
+				jc			.case01
+				; [00]
+				sub			rax, 2
+				jmp			.done
+
+.case01
+
+
+.case1x
+
+
+
+
+
+				; Main Loop
+				;
+.reinit			mov			rdx, r10
+				;
+.loop:			;
+				shl 		r9, 1
+				jnc			.case0
+				;
+.case1:
+				mov			rdx, [rdx + 10]
+				test		rdx, 0xffffffffffffffff
+				jz			.err
+				test		word [rdx], 256
+				jz			.done
+				; ko
+				sub			eax, 1
+				jns			.loop
+				add			rdi, 8
+				movbe		r9, qword [rdi]
+				mov			eax, 63
+				jmp			.loop
+
+.case0:			;
+				mov			rdx, [rdx + 2]
+				test		rdx, 0xffffffffffffffff
+				jz			.err
+				test		word [rdx], 256
+				jz			.done
+				; ko
+				sub			eax, 1
+				jns			.loop
+				add			rdi, 8
+				movbe		r9, qword [rdi]
+				mov			eax, 63
+				jmp			.loop
+
+
+.done			; svg
+				mov			cl, byte [rdx]
+				mov			r11b, byte [rsi]
+				cmp			rcx, r11
+				jnz			.err
+
+;				mov			byte [rsi], cl
+				add			rsi, 1
+				;
+				; cpt svg
+				sub			r8, 1
+				jz			.end
+				;
+				; rax
+				sub			rax, 1
+				jns			.reinit
+				add			rdi, 8
+				movbe		r9, qword [rdi]
+				mov			rax, 63
+				jmp			.reinit
+
+.err			;
+				mov			rax, rdi
+				return
+
+.end:			;
+				mov			rax, rdi
+				return
+
 
 
 
