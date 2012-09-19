@@ -49,6 +49,7 @@ SECTION .text		ALIGN=16
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long hu2fman645(void *dseg, int size, void *dest);
 hu2fman645:
+%define		symb	edx
 %define		off		r8d
 %define		bits	r9
 %define		data	r10
@@ -69,7 +70,10 @@ hu2fman645:
 				xor			rdx, rdx
 				xor			rdi, rdi
 				;
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 hdcl:			;
 				shl 		bits, 1
 				jc			.case1x
@@ -78,7 +82,7 @@ hdcl:			;
 				jc			.case01x
 				; 00
 				sub			off, 2
-				mov			rdx, 0
+				mov			symb, 0
 				jmp			.donedcl
 				;
 				; 01x
@@ -87,13 +91,13 @@ hdcl:			;
 				jc			.case011
 				; 010
 				sub			off, 3
-				mov			rdx, 1
+				mov			symb, 1
 				jmp			.donedcl
 
 .case011:
 				; 011
 				sub			off, 3
-				mov			rdx, 2
+				mov			symb, 2
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .case1x:
@@ -104,12 +108,12 @@ hdcl:			;
 				jc			.case101
 				; 100
 				sub			off, 3
-				mov			rdx, 3
+				mov			symb, 3
 				jmp			.donedcl
 
 .case101:		; 101
 				sub			off, 3
-				mov			rdx, 4
+				mov			symb, 4
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -118,7 +122,7 @@ hdcl:			;
 				jc			.case111x
 				; 110
 				sub			off, 3
-				mov			rdx, 5
+				mov			symb, 5
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -127,7 +131,7 @@ hdcl:			;
 				jc			.case4x
 				; 110
 				sub			off, 4
-				mov			rdx, 6
+				mov			symb, 6
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -136,7 +140,7 @@ hdcl:			;
 				jc			.case5x
 				; 110
 				sub			off, 5
-				mov			rdx, 7
+				mov			symb, 7
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -145,7 +149,7 @@ hdcl:			;
 				jc			.case6x
 				; 110
 				sub			off, 6
-				mov			rdx, 8
+				mov			symb, 8
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -154,7 +158,7 @@ hdcl:			;
 				jc			.case7x
 				; 110
 				sub			off, 7
-				mov			rdx, 9
+				mov			symb, 9
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -163,7 +167,7 @@ hdcl:			;
 				jc			.case8x
 				; 110
 				sub			off, 8
-				mov			rdx, 10
+				mov			symb, 10
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -172,7 +176,7 @@ hdcl:			;
 				jc			.err
 				; 110
 				sub			off, 9
-				mov			rdx, 11
+				mov			symb, 11
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

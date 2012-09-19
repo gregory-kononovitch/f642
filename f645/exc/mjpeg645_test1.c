@@ -32,7 +32,12 @@ int main() {
 
     //
 //    FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
-    FILE *filp = fopen("hdc.dat", "rb");
+    FILE *filp = fopen("hdc-1.dat", "rb");
+//    memset(tmp, 0x62, lenb);
+//    fwrite(tmp, 1, lenb, filp);
+//    fclose(filp);
+//    return 0;
+
     fread(tmp, 1, lenb, filp);
     fclose(filp);
 
@@ -93,7 +98,7 @@ int main() {
     int cofs = 500000;
     l1 = ReadTSC();
     for(i = cofs/50000 ; i >= 0 ; i--) {    // 10 * 50000
-        add = hu2fman645(src->data, 50000, hres);
+        add = (uint8_t*)hu2fman645(src->data, 50000, hres);
     }
     l2 = ReadTSC();
     printf("End of asm tests\n");
