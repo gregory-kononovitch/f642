@@ -62,6 +62,11 @@ hu2fman645:
 				mov			off, 64
 				add			data, 8
 				;
+				xor			rcx, rcx
+				mov			rsi, rdx
+				xor			rdx, rdx
+				xor			rdi, rdi
+				;
 
 .loop:			;
 				shl 		bits, 1
@@ -91,45 +96,113 @@ hu2fman645:
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .case1x:
 				shl			bits, 1
-				jc			.case011
-				; 010
+				jc			.case11x
+				; 10x
+				shl			bits, 1
+				jc			.case101
+				; 100
+				sub			off, 3
+				mov			rdx, 3
+				jmp			.donedcl
+
+.case101:		; 101
+				sub			off, 3
+				mov			rdx, 4
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.case11x:
+				shl			bits, 1
+				jc			.case111x
+				; 110
+				sub			off, 3
+				mov			rdx, 5
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.case111x:
+				shl			bits, 1
+				jc			.case4x
+				; 110
+				sub			off, 4
+				mov			rdx, 6
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.case4x:
+				shl			bits, 1
+				jc			.case5x
+				; 110
+				sub			off, 5
+				mov			rdx, 7
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.case5x:
+				shl			bits, 1
+				jc			.case6x
+				; 110
+				sub			off, 6
+				mov			rdx, 8
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.case6x:
+				shl			bits, 1
+				jc			.case7x
+				; 110
+				sub			off, 7
+				mov			rdx, 9
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.case7x:
+				shl			bits, 1
+				jc			.case8x
+				; 110
+				sub			off, 8
+				mov			rdx, 10
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.case8x:
+				shl			bits, 1
+				jc			.err
+				; 110
+				sub			off, 9
+				mov			rdx, 11
+				jmp			.donedcl
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
-
-
-
-
-
-.donedcl		; svg
-				mov			cl, byte [rdx]
-;				mov			r11b, byte [rsi]
-;				cmp			rcx, r11
-;				jnz			.err
-
-				mov			byte [rsi], cl
-				add			rsi, 1
+.donedcl		; cmp
+				mov			dil, byte [rsi]
+				cmp			di, dx
+				jnz			.err
+;				; svg
+;				mov			byte [rsi], dl
+;				add			rsi, 1
 				;
-				; cpt svg
-				sub			r8, 1
-				jmp			.end
-				jz			.end
 				;
-				; rax
-				sub			rax, 1
-				jns			.reinit
-				add			rdi, 8
-				movbe		r9, qword [rdi]
-				mov			rax, 63
-				jmp			.reinit
+				test		off, 32
+				jnz			.loop
+				;
+				movbe		eax, dword [data]
+				add			data, 4
+				mov			ecx, 32
+				sub			ecx, off
+				shl			rax, cl
+				or			bits, rax
+				add			off, 32
+				jmp			.loop
 
 .err			;
-				mov			rax, rdi
+				mov			rax, data
 				return
 
 .end:			;
-				mov			rax, rdi
+				mov			rax, data
 				return
 
