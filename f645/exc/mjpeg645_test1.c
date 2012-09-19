@@ -21,6 +21,8 @@ static void dump645(mjpeg645_img *img, int len) {
     printf("\n");
 }
 
+// asm
+extern int64_t ReadTSC();
 
 int main() {
     int i;
@@ -69,6 +71,7 @@ int main() {
 //    LOG("Huffman: found symbol %d", symb);
 
     // ###
+    long l1, l2;
     //
     uint8_t *tres = calloc(1024, 1024);
     filp = fopen("hdc.out", "rb");
@@ -79,11 +82,27 @@ int main() {
     printf("\n");
     //
     uint8_t *hres = calloc(1024, 1024);
-    long symb = huffman645(src->data, hres);
-    LOG("Huffman: found symbol %d", symb);
+    //
+    long symb = 0;
+    int cofs = 500000;
+    l1 = ReadTSC();
+    for(i = cofs/50000 ; i >= 0 ; i--) {    // 200 * 50000
+        symb = huf2man645(src->data, hres);
+    }
+    l2 = ReadTSC();
+    LOG("Huffman: found symbol %d for %ld = %ld (%ld M - %.1f ms)", symb, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
+    //
     printf("Asm:\n");
     for(i = 0 ; i < 32 ; i++) printf("%u ", hres[i]);
     printf("\n");
+    //
+    i = 0;
+    while(i < 1024*1024 && (hres[i] == tres[i])) i++;
+    printf("Equals n'til %d\n", i);
+
+
+
+
 
     return 0;
 

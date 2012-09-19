@@ -26,6 +26,7 @@ default rel
 
 
 global 	huffman645:			function
+global 	huf2man645:			function
 
 SECTION .data		ALIGN=16
 ; DCLumin
@@ -45,36 +46,40 @@ huffman645:
 				xor			rax, rax
 				xor			rcx, rcx
 				xor			r8, r8
+				mov			r8, 50000
 				mov			rax, 7
 				;
 .reinit			mov			rdx, HUFDCL
 				;
-.loop:			bt			[rdi], rax
+.loop:			;
+;				bt			[rdi], rax
+				bt			dword [rdi], eax
 				jnc			.case0
 				;
 .case1:
 				mov			cl, byte [rdx + 2]
 				add			rdx, rcx
 				test		byte [rdx], 16
-				jnz			.coot
-				; ok
-				jmp		.done
+				jz			.done
+				; ko
+				sub			eax, 1
+				jns			.loop
+				mov			eax, 7
+				add			rdi, 1
+				jmp			.loop
 
 .case0:			;
 				mov			cl, byte [rdx + 1]
 				add			rdx, rcx
 				test		byte [rdx], 16
-				jnz			.coot
-				; ok
-				jmp			.done
-
-.coot:			;
-				sub			rax, 1
+				jz			.done
+				; ko
+				sub			eax, 1
 				jns			.loop
-				;
-				mov			rax, 7
+				mov			eax, 7
 				add			rdi, 1
 				jmp			.loop
+
 
 .done			; svg
 				mov			cl, byte [rdx]
@@ -82,15 +87,14 @@ huffman645:
 				add			rsi, 1
 				;
 				; cpt svg
-				add			r8, 1
-				cmp			r8, 32
+				sub			r8, 1
 				jz			.end
 				;
 				; rax
-				sub			rax, 1
+				sub			eax, 1
 				jns			.reinit
 				;
-				mov			rax, 7
+				mov			eax, 7
 				add			rdi, 1
 				jmp			.reinit
 
@@ -98,6 +102,77 @@ huffman645:
 
 .end:			ret
 
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; extern long huffman645(void *dseg, void *dest);
+%define		tree	rdx
+%define		data	rdi
+%define		bit		rax
+%define		loff	r8
+huf2man645:
+				;
+				xor			rax, rax
+				xor			rcx, rcx
+				xor			r8, r8
+				mov			r8, 50000
+				;
+				movbe		r9, qword [rdi]
+				mov			rax, 63
+				;
+.reinit			mov			rdx, HUFDCL
+				;
+.loop:			bt			r9, rax
+				jnc			.case0
+				;
+.case1:
+				mov			cl, byte [rdx + 2]
+				add			rdx, rcx
+				test		byte [rdx], 16
+				jz			.done
+				; ko
+				sub			rax, 1
+				jns			.loop
+				add			rdi, 8
+				movbe		r9, qword [rdi]
+				mov			rax, 63
+				jmp			.loop
+
+.case0:			;
+				mov			cl, byte [rdx + 1]
+				add			rdx, rcx
+				test		byte [rdx], 16
+				jz			.done
+				; ko
+				sub			rax, 1
+				jns			.loop
+				add			rdi, 8
+				movbe		r9, qword [rdi]
+				mov			rax, 63
+				jmp			.loop
+
+
+.done			; svg
+				mov			cl, byte [rdx]
+				mov			byte [rsi], cl
+				add			rsi, 1
+				;
+				; cpt svg
+				sub			r8, 1
+				jz			.end
+				;
+				; rax
+				sub			rax, 1
+				jns			.reinit
+				add			rdi, 8
+				movbe		r9, qword [rdi]
+				mov			rax, 63
+				jmp			.reinit
+
+
+
+.end:			ret
 
 
 

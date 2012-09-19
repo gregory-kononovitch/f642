@@ -29,6 +29,7 @@ sources_h:= $(wildcard ${SRC_DIR}/*$(EXTENSION_H))
 
 # asm files
 sources_a:=$(wildcard ${ASM_DIR}/*$(EXTENSION_A))
+sources_a+=$(wildcard ../f650/asm/*$(EXTENSION_A))
 
 # main.o files
 sources_e:=$(wildcard ${EXC_DIR}/*$(EXTENSION_C))
