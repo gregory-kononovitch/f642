@@ -54,10 +54,12 @@ hu2fman645:
 %define		data	r10
 %define		eof		r11
 				;
+				begin	64
 				;
 				mov			data, rdi
 				mov			eof, rdi
 				add			eof, rsi
+				mov			dword [rbp - 8], esi
 				movbe		bits, qword [data]
 				mov			off, 64
 				add			data, 8
@@ -68,7 +70,7 @@ hu2fman645:
 				xor			rdi, rdi
 				;
 
-.loop:			;
+hdcl:			;
 				shl 		bits, 1
 				jc			.case1x
 				; 0x
@@ -178,16 +180,19 @@ hu2fman645:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .donedcl		; cmp
-				mov			dil, byte [rsi]
-				cmp			di, dx
-				jnz			.err
-;				; svg
-;				mov			byte [rsi], dl
-;				add			rsi, 1
+;				mov			dil, byte [rsi]
+;				cmp			di, dx
+;				jnz			.err
+				; svg
+				mov			byte [rsi], dl
+				add			rsi, 1
+				sub			dword [rbp - 8], 1
+				jz			.end
+;				return
 				;
 				;
 				test		off, 32
-				jnz			.loop
+				jnz			hdcl
 				;
 				movbe		eax, dword [data]
 				add			data, 4
@@ -196,7 +201,7 @@ hu2fman645:
 				shl			rax, cl
 				or			bits, rax
 				add			off, 32
-				jmp			.loop
+				jmp			hdcl
 
 .err			;
 				mov			rax, data
