@@ -84,13 +84,14 @@ int main() {
     uint8_t *hres = calloc(1024, 1024);
     //
     long symb = 0;
+    uint8_t *add;
     int cofs = 500000;
     l1 = ReadTSC();
     for(i = cofs/50000 ; i >= 0 ; i--) {    // 200 * 50000
-        symb = huf2man645(src->data, hres);
+        add = huf3man645(src->data, tres);
     }
     l2 = ReadTSC();
-    LOG("Huffman: found symbol %d for %ld = %ld (%ld M - %.1f ms)", symb, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
+    LOG("Huffman: stop at %ld for %ld = %ld (%ld M - %.1f ms)", add - src->data, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
     //
     printf("Asm:\n");
     for(i = 0 ; i < 32 ; i++) printf("%u ", hres[i]);

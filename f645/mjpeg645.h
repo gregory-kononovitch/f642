@@ -112,6 +112,7 @@ typedef struct {
  */
 extern long huffman645(void *dseg, void *dest);
 extern long huf2man645(void *dseg, void *dest);
+extern long huf3man645(void *dseg, void *dest);
 
 
 /**
