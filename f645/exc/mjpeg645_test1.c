@@ -47,7 +47,22 @@ int main() {
                 , src->offset
                 , src->markers[m].length
         );
+        if (m == M645_SOS) break;
     }
 
+    // Data Segment
+    int off1 = src->offset;
+    m = load_next_marker645(src);
+    if (m != M645_RST0) {
+        LOG("Didn't found RST0 after SOS, returning");
+        goto err;
+    }
+    int off2 = src->offset - 2;
+    LOG("Will try to translate data segment from [%d ; %d[", off1, off2);
+
     return 0;
+
+err:
+    free_mjpeg645_image(&src);
+    return -1;
 }
