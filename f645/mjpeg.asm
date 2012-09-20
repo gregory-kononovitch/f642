@@ -32,7 +32,7 @@ global 	huf4man645:			function
 
 
 SECTION .data		ALIGN=16
-%include "mjpeg_tables.ash"
+%include "inclu/mjpeg_tables.s"
 
 ALIGN 16
 
@@ -366,7 +366,7 @@ hacl:
 .case1:
 				mov			tree, [tree + 10]
 				test		tree, 0xffffffff
-				jz			.err
+				jz			.herr
 				test		word [tree], 256
 				jz			.done
 				; ko
@@ -380,7 +380,7 @@ hacl:
 .case0:			;
 				mov			tree, [tree + 2]
 				test		tree, 0xffffffff
-				jz			.err
+				jz			.herr
 				test		word [tree], 256
 				jz			.done
 				; ko
@@ -409,7 +409,7 @@ hacl:
 				mov			off, 64
 				jmp			.reinit
 
-.err			;
+.herr			;
 				mov			rax, data
 				return
 

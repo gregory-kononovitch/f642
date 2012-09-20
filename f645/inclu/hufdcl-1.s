@@ -1,5 +1,5 @@
 ;
-; file    : hufdcl-1.asi
+; file    : hufdcl-1.asi (->s)
 ; project : f645 (t508.f640/2)
 ;
 ; Created on: Sep 18, 2012
@@ -125,7 +125,7 @@
 
 .caseerr:
 				sub			off, 9
-				jmp			.err
+				jmp			.herr
 				;
 				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
