@@ -53,6 +53,7 @@ huffman645:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long huf2man645(void *dseg, void *dest);
+; @@@ desynchro but
 %define		tree	rdx
 %define		data	rdi
 %define		bit		rax
@@ -67,7 +68,7 @@ huf2man645:
 				movbe		r9, qword [rdi]
 				mov			rax, 63
 				;
-.reinit			mov			rdx, HUFDCL
+.reinit			mov			rdx, HDCL
 				;
 .loop:			bt			r9, rax
 				jnc			.case0
@@ -175,7 +176,7 @@ _build_hdcl_:
 _build_hdcl2_:
 				;
 				mov			ecx, dword [NHDCL]
-				mov			rdx, HDCL3
+				mov			rdx, HDCL
 				xor			r8, r8
 				;
 .loop			;
@@ -334,7 +335,7 @@ huf4man645:
 				sub			rax, 5840
 				mov			qword [rbp - 8], rax			; tree base address
 				mov			ecx, dword [NHACL]				; nb nodes
-				mov			rdx, HACL2						; tree
+				mov			rdx, HACL						; tree
 				mov			r9, .frombuild					; back here
 				;
 				jmp			_build_hdcl_
