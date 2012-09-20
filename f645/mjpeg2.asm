@@ -175,19 +175,21 @@ hdcl:			;
 
 .case8x:
 				shl			bits, 2
-				jc			.err
+				jc			.caseerr
 				; 111111110
 				sub			off, 9
 				mov			symb, 11
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+.caseerr:
+				sub			off, 9
+				jmp			.err
+
+.donedcl		;
+				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.donedcl		; cmp
-;				mov			dil, byte [rsi]
-;				cmp			di, dx
-;				jnz			.err
 				; svg
 				mov			byte [rsi], dl
 				add			rsi, 1
