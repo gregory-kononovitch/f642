@@ -20,111 +20,111 @@
 ;;;;;;;
 				;
 				shl 		bits, 1
-				jc			.o.case1x
+				jc			.c.case1x
 				; 0x
-				jo			.o.case01x
-				shl			bits, 1
-				; 00
 				sub			off, 2
+				shl			bits, 1
+				jc			.c.case01
+				; 00
 				mov			symb, 0
-				jmp			.donehdcl
-				;
-				; 01x
-.o.case01x:
-				shl			bits, 2
-				jc			.o.case011
-				; 010
-				sub			off, 3
+				jmp			.donehdcc
+.c.case01		; 01
 				mov			symb, 1
-				jmp			.donehdcl
+				jmp			.donehdcc
+				;
 
-.o.case011:
-				; 011
-				sub			off, 3
+				; 1x
+.c.case1x:
+				shl			bits, 1
+				jc			.c.case11x
+				; 10
+				sub			off, 2
 				mov			symb, 2
-				jmp			.donehdcl
-				;;;;;;;;;;;;;;;;;;;;;;;;;;;
-.o.case1x:
-				jno			.o.case11x
-				; 10x
-				shl			bits, 2
-				jc			.o.case101
-				; 100
+				jmp			.donehdcc
+
+.c.case11x:
+				jno			.c.case111x
+				; 110
+				shl			bits, 1
 				sub			off, 3
 				mov			symb, 3
-				jmp			.donehdcl
-
-.o.case101:		; 101
-				sub			off, 3
-				mov			symb, 4
-				jmp			.donehdcl
+				jmp			.donehdcc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.o.case11x:
+.c.case111x:
 				shl			bits, 2
-				jc			.o.case111x
-				; 110
-				sub			off, 3
-				mov			symb, 5
-				jmp			.donehdcl
-				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-.o.case111x:
-				shl			bits, 1
-				jc			.o.case4x
+				jc			.c.case4x
 				; 1110
 				sub			off, 4
-				mov			symb, 6
-				jmp			.donehdcl
+				mov			symb, 4
+				jmp			.donehdcc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.o.case4x:
-				jno			.o.case5x
-				; 11110
+.c.case4x:
 				shl			bits, 1
+				jc			.c.case5x
+				; 11110
 				sub			off, 5
-				mov			symb, 7
-				jmp			.donehdcl
+				mov			symb, 5
+				jmp			.donehdcc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.o.case5x:
-				shl			bits, 2
-				jc			.o.case6x
+.c.case5x:
+				jno			.c.case6x
+				shl			bits, 1
 				; 111110
 				sub			off, 6
-				mov			symb, 8
-				jmp			.donehdcl
+				mov			symb, 6
+				jmp			.donehdcc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.o.case6x:
-				shl			bits, 1
-				jc			.o.case7x
+.c.case6x:
+				shl			bits, 2
+				jc			.c.case7x
 				; 1111110
 				sub			off, 7
-				mov			symb, 9
-				jmp			.donehdcl
+				mov			symb, 7
+				jmp			.donehdcc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.o.case7x:
-				jno			.o.case8x
+.c.case7x:
+				jno			.c.case8x
 				shl			bits, 1
 				; 11111110
 				sub			off, 8
-				mov			symb, 10
-				jmp			.donehdcl
+				mov			symb, 8
+				jmp			.donehdcc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.o.case8x:
+.c.case8x:
 				shl			bits, 2
-				jc			.caseerr
+				jc			.c.case9x
 				; 111111110
 				sub			off, 9
-				mov			symb, 11
-				jmp			.donehdcl
+				mov			symb, 9
+				jmp			.donehdcc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.caseerr:
-				sub			off, 9
+.c.case9x:
+				jno			.c.case10x
+				shl			bits, 1
+				; 111111110
+				sub			off, 10
+				mov			symb, 10
+				jmp			.donehdcc
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.c.case10x:
+				shl			bits, 2
+				jc			.c.caseerr
+				; 111111110
+				sub			off, 11
+				mov			symb, 11
+				jmp			.donehdcc
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.c.caseerr:
+				sub			off, 11
 				jmp			.herr
 				;
 				;
