@@ -54,6 +54,24 @@ SECTION .text		ALIGN=16
 	jmp			%1
 %endmacro
 
+%macro	logbits	2
+	mov			r15, %1
+	mov			r13, bits
+.lt1%2
+	shl			r13, 1
+	jc			.lt11%2
+	mov			byte [rsi], 0
+	jmp			.ct1%2
+	;
+.lt11%2
+	mov			byte [rsi], 1
+.ct1%2
+	add			rsi, 1
+	sub			r15, 1
+	jnz			.lt1%2
+%endmacro
+
+
 ;;;;;;;;;;;;;;;
 ; STACK
 %define		VAR			0x0100
@@ -140,6 +158,7 @@ decode645:
 				movbe		bits, qword [data]
 				add			data, 8
 				mov			off, 64
+				logbits 64,a0 ; ###
 				;
 				mov			rsi, rsi
 				xor			rcx, rcx				; @@@ mag shift
@@ -163,9 +182,11 @@ decode645:
 hdcl:			;
 .loophdcl
 				xor			iz, iz
+				logbits 64,a1; ###
 
 %include "inclu/hufdcl-1.s"
 
+				logbits 64,a2; ###
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;
@@ -189,9 +210,9 @@ hdcl:			;
 				add			iz, rcx					; ???
 
 				; svg
-				add			rsi, rcx				; @@@ ???
-				mov			byte [rsi], symb
-				add			rsi, 1
+;				add			rsi, rcx				; @@@ ???
+;				mov			byte [rsi], symb
+;				add			rsi, 1
 
 				;
 				; feed@@@
@@ -209,14 +230,16 @@ hdcl:			;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 hacl:
 .loop
+				logbits 64,a3; ###
 
 %include "inclu/hufacl-1.s"
 
+				logbits 64,a4; ###
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .herr:
-				mov			byte [rsi], -1
+				mov			byte [rsi], 255
 				mov			rax, data
 				return
 
@@ -244,10 +267,6 @@ hacl:
 ;				add			rsi, rcx				; nz
 ;				mov			byte [rsi], symb
 ;				add			rsi, 1
-				mov			byte [rsi], 111
-				mov			qword [rsi+1], bits
-				mov			byte [rsi+9], 222
-				add			rsi, 10
 
 				;
 				; feed@@@
@@ -261,11 +280,8 @@ hacl:
 
 				;
 .donel:			; EOB | @@@63
-	mov			byte [rsi], 253			; ###
-	add			rsi, 1
-	mov			byte [rsi], r8b
-	mov			qword [rsi+1], bits
-return
+
+	return
 
 	feed32 .hhjjh
 .hhjjh

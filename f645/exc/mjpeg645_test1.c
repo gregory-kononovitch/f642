@@ -82,13 +82,13 @@ int main() {
     LOG("Decode: reached %ld", addr - src->data);
 
     printf("Decode sequence:\n");
-    for(j = 0 ; j < 8 ; j++) {
-        for(i = 0 ; i < 35 ; i++) {
-            printf("%u ", hres[i + 35 * j]);
+    for(j = 0 ; j < 16 ; j++) {
+        for(i = 0 ; i < 64 ; i++) {
+            printf("%u ", hres[i + 64 * j]);
         }
         printf("\n");
     }
-
+    printf("Done\n");
 
 
 
