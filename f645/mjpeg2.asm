@@ -37,6 +37,22 @@ ALIGN 16
 
 SECTION .text		ALIGN=16
 
+%macro feed32 1
+	;
+	; feed@@@
+	;
+	test		off, 32
+	jnz			%1
+	;
+	movbe		eax, dword [data]
+	add			data, 4
+	mov			ecx, 32
+	sub			ecx, off
+	shl			rax, cl
+	or			bits, rax
+	add			off, 32
+	jmp			%1
+%endmacro
 
 ;;;;;;;;;;;;;;;
 ; STACK
@@ -61,7 +77,15 @@ SECTION .text		ALIGN=16
 %define		rowdu		0x30
 %define		coldu		0x34
 
-
+;
+%define		_ri0_us		0x70
+%define		_ri_us		0x72
+%define		_y0_uc		0x74
+%define		_yi_uc		0x75
+%define		_u0_uc		0x76
+%define		_ui_uc		0x77
+%define		_v0_uc		0x78
+%define		_vi_uc		0x79
 
 %define		PTEST		0x80
 
@@ -103,7 +127,12 @@ decode645:
 
 				%include "inclu/huftbl-1.s"
 				;
-
+				; Vars
+				mov			word [rbp - VAR + _ri0_us], 10
+				mov			byte [rbp - VAR + _y0_uc], 2
+				mov			byte [rbp - VAR + _u0_uc], 1
+				mov			byte [rbp - VAR + _v0_uc], 1
+				;
 .ifeed			;
 				; FEED
 				;
@@ -115,12 +144,25 @@ decode645:
 				mov			rsi, rsi
 				xor			rcx, rcx				; @@@ mag shift
 				;
+				;
+				mov			cx, word [rbp - VAR + _ri0_us]
+				mov			word [rbp - VAR + _ri_us], cx
+.loopri			;
+				;
+				mov			cl, byte [rbp - VAR + _y0_uc]
+				mov			byte [rbp - VAR + _yi_uc], cl
+				mov			cl, byte [rbp - VAR + _u0_uc]
+				mov			byte [rbp - VAR + _ui_uc], cl
+				mov			cl, byte [rbp - VAR + _v0_uc]
+				mov			byte [rbp - VAR + _vi_uc], cl
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; rdx (symb) < 256     r8 (off) >= 9     .herr
 ;;;;      -> value in dl
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 hdcl:			;
+.loophdcl
+				xor			iz, iz
 
 %include "inclu/hufdcl-1.s"
 
@@ -129,35 +171,32 @@ hdcl:			;
 				;
 				;
 .herr			;
-				mov			byte [rsi], -1
+				mov			byte [rsi], 254
 				mov			rax, data
 				return
 
 .donehdcl		;
-				; ### value
+				; ### iz / value
 				; ###
+				and			rdx, 0xFF				; @@@
 				mov			ecx, edx				; @@@
 				and			cl, 0x0F
 				shl			bits, cl
 				sub			off, ecx
+				;
+				mov			ecx, edx				; @@@
+				shr			cl, 4
+				add			iz, rcx					; ???
 
 				; svg
+				add			rsi, rcx				; @@@ ???
 				mov			byte [rsi], symb
 				add			rsi, 1
+
 				;
 				; feed@@@
 				;
-				test		off, 32
-				jnz			.donedcl
-				;
-				movbe		eax, dword [data]
-				add			data, 4
-				mov			ecx, 32
-				sub			ecx, off
-				shl			rax, cl
-				or			bits, rax
-				add			off, 32
-				jmp			.donedcl
+				feed32		.donedcl
 
 				;
 .donedcl:		;
@@ -168,8 +207,8 @@ hdcl:			;
 ;;;; tree in [rbp - ]		off >= 1         .herr
 ;;;;	-> value in byte[tree] == [r11]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 hacl:
+.loop
 
 %include "inclu/hufacl-1.s"
 
@@ -186,39 +225,57 @@ hacl:
 				;
 				; ### value
 				; ###
+				and			rdx, 0xFF				; @@@
 				mov			ecx, edx				; @@@
 				and			cl, 0x0F
 				shl			bits, cl
 				sub			off, ecx
 
-				; svg
-				mov			byte [rsi], symb
-				add			rsi, 1
+				; iz @@@
+				mov			ecx, edx
+				shr			cl, 4
+				add			iz, rcx
+
 				; EOB
-				test		dx, 0xFFFF
+				test		symb, 0xFF
 				jz			.donel					; EOB
+
+				; svg
+;				add			rsi, rcx				; nz
+;				mov			byte [rsi], symb
+;				add			rsi, 1
+				mov			byte [rsi], 111
+				mov			qword [rsi+1], bits
+				mov			byte [rsi+9], 222
+				add			rsi, 10
 
 				;
 				; feed@@@
 				;
-				test		off, 32
-				jnz			.doneacl
-				;
-				movbe		eax, dword [data]
-				add			data, 4
-				mov			ecx, 32
-				sub			ecx, off
-				shl			rax, cl
-				or			bits, rax
-				add			off, 32
-				jmp			.doneacl
+				feed32		.doneacl
 
 				;
 .doneacl:		;
-				jmp			hacl
+				; @@@ < 63
+				jmp			hacl.loop
 
 				;
-.donel:			;
+.donel:			; EOB | @@@63
+	mov			byte [rsi], 253			; ###
+	add			rsi, 1
+	mov			byte [rsi], r8b
+	mov			qword [rsi+1], bits
+return
+
+	feed32 .hhjjh
+.hhjjh
+				sub			byte [rbp - VAR + _yi_uc], 1
+				jnz			hdcl.loophdcl
+
+
+
+
+.done			;
 				mov			byte [rsi], 255			; ###
 				mov			rax, data
 				return

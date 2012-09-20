@@ -20,66 +20,66 @@
 ;;;;;;;
 				;
 				shl 		bits, 1
-				jc			.case1x
+				jc			.o.case1x
 				; 0x
-				jo			.case01x
+				jo			.o.case01x
 				shl			bits, 1
 				; 00
 				sub			off, 2
-				xor			symb, symb
+				mov			symb, 0
 				jmp			.donehdcl
 				;
 				; 01x
-.case01x:
+.o.case01x:
 				shl			bits, 2
-				jc			.case011
+				jc			.o.case011
 				; 010
 				sub			off, 3
 				mov			symb, 1
 				jmp			.donehdcl
 
-.case011:
+.o.case011:
 				; 011
 				sub			off, 3
 				mov			symb, 2
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;
-.case1x:
-				jno			.case11x
+.o.case1x:
+				jno			.o.case11x
 				; 10x
 				shl			bits, 2
-				jc			.case101
+				jc			.o.case101
 				; 100
 				sub			off, 3
 				mov			symb, 3
 				jmp			.donehdcl
 
-.case101:		; 101
+.o.case101:		; 101
 				sub			off, 3
 				mov			symb, 4
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.case11x:
+.o.case11x:
 				shl			bits, 2
-				jc			.case111x
+				jc			.o.case111x
 				; 110
 				sub			off, 3
 				mov			symb, 5
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.case111x:
+.o.case111x:
 				shl			bits, 1
-				jc			.case4x
+				jc			.o.case4x
 				; 1110
 				sub			off, 4
 				mov			symb, 6
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.case4x:
-				jno			.case5x
+.o.case4x:
+				jno			.o.case5x
 				; 11110
 				shl			bits, 1
 				sub			off, 5
@@ -87,26 +87,26 @@
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.case5x:
+.o.case5x:
 				shl			bits, 2
-				jc			.case6x
+				jc			.o.case6x
 				; 111110
 				sub			off, 6
 				mov			symb, 8
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.case6x:
+.o.case6x:
 				shl			bits, 1
-				jc			.case7x
+				jc			.o.case7x
 				; 1111110
 				sub			off, 7
 				mov			symb, 9
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.case7x:
-				jno			.case8x
+.o.case7x:
+				jno			.o.case8x
 				shl			bits, 1
 				; 11111110
 				sub			off, 8
@@ -114,7 +114,7 @@
 				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.case8x:
+.o.case8x:
 				shl			bits, 2
 				jc			.caseerr
 				; 111111110

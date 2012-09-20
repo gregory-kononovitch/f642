@@ -22,13 +22,13 @@
 ;;;;;;;
 				;
 				;
-.reinit			mov			tree, qword [rbp - VAR + ptreel]
+.o.reinit		mov			tree, qword [rbp - VAR + ptreel]
 				;
-.loop:			;
+.o.loop:		;
 				shl 		bits, 1
-				jnc			.case0
+				jnc			.o.case0
 				;
-.case1:
+.o.case1:
 				mov			tree, [tree + 10]
 				test		tree, 0xffffffff
 				jz			.herr
@@ -36,13 +36,13 @@
 				jz			.donehacl
 				; ko
 				sub			off, 1
-				jnz			.loop
+				jnz			.o.loop
 				movbe		bits, qword [data]
 				add			data, 8
 				mov			off, 64
-				jmp			.loop
+				jmp			.o.loop
 
-.case0:			;
+.o.case0:		;
 				mov			tree, [tree + 2]
 				test		tree, 0xffffffff
 				jz			.herr
@@ -50,11 +50,11 @@
 				jz			.donehacl
 				; ko
 				sub			off, 1
-				jnz			.loop
+				jnz			.o.loop
 				movbe		bits, qword [data]
 				add			data, 8
 				mov			off, 64
-				jmp			.loop
+				jmp			.o.loop
 				;
 				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

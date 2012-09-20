@@ -25,7 +25,7 @@ static void dump645(mjpeg645_img *img, int len) {
 extern int64_t ReadTSC();
 
 int main() {
-    int i;
+    int i, j;
     int lenb = 72027;
 //    int lenb = 612311;
     void *tmp = calloc(1, lenb);
@@ -82,10 +82,12 @@ int main() {
     LOG("Decode: reached %ld", addr - src->data);
 
     printf("Decode sequence:\n");
-    for(i = 0 ; i < 40 ; i++) {
-        printf("%u ", hres[i]);
+    for(j = 0 ; j < 8 ; j++) {
+        for(i = 0 ; i < 35 ; i++) {
+            printf("%u ", hres[i + 35 * j]);
+        }
+        printf("\n");
     }
-    printf("\n");
 
 
 
