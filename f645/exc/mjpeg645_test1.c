@@ -96,15 +96,17 @@ int main() {
     long symb = 0;
     uint8_t *add;
     int cofs = 500000;
+    uint16_t cod = 255;
     l1 = ReadTSC();
     for(i = cofs/50000 ; i >= 0 ; i--) {    // 10 * 50000
-        add = (uint8_t*)hu2fman645(src->data, 50000, hres);
+        //add = (uint8_t*)hu2fman645(src->data, 50000, hres);
+        add = (uint8_t*)hu2fman645(&cod, 1, hres);
     }
     l2 = ReadTSC();
     printf("End of asm tests\n");
     LOG("Huffman: stop at %ld for %ld = %ld (%ld M - %.1f ms)", add - src->data, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
     //
-    printf("Asm:\n");
+    printf("Asm: %ld\n", add);
     for(i = 0 ; i < 32 ; i++) printf("%u ", hres[i]);
     printf("\n");
     //

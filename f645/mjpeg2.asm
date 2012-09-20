@@ -49,7 +49,7 @@ SECTION .text		ALIGN=16
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long hu2fman645(void *dseg, int size, void *dest);
 hu2fman645:
-%define		symb	edx
+%define		symb	dl
 %define		off		r8d
 %define		bits	r9
 %define		data	r10
@@ -131,7 +131,7 @@ hdcl:			;
 .case111x:
 				shl			bits, 1
 				jc			.case4x
-				; 110
+				; 1110
 				sub			off, 4
 				mov			symb, 6
 				jmp			.donedcl
@@ -167,7 +167,7 @@ hdcl:			;
 .case7x:
 				jno			.case8x
 				shl			bits, 1
-				; 111111110
+				; 11111110
 				sub			off, 8
 				mov			symb, 10
 				jmp			.donedcl
@@ -176,7 +176,7 @@ hdcl:			;
 .case8x:
 				shl			bits, 2
 				jc			.err
-				; 110
+				; 111111110
 				sub			off, 9
 				mov			symb, 11
 				jmp			.donedcl
@@ -213,6 +213,7 @@ hdcl:			;
 				return
 
 .end:			;
-				mov			rax, data
+				;mov			rax, data
+				mov		rax, rdx
 				return
 
