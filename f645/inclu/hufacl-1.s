@@ -10,19 +10,19 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; tree in [rbp - ]		off >= 1         .herr
+;;;; tree in [rbp - ]		off >= 1         .hacl     .herr
 ;;;;	-> value in byte[tree] == [r11]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;
-%define		symb	dl
-%define		off		r8d
-%define		bits	r9
-%define		data	r10
-%define		tree	r11
+;%define		symb	dl
+;%define		off		r8d
+;%define		bits	r9
+;%define		data	r10
+;%define		tree	r11
 ;;;;;;;
 				;
 				;
-.reinit			mov			tree, qword [rbp - 8]
+.reinit			mov			tree, qword [rbp - VAR + ptreel]
 				;
 .loop:			;
 				shl 		bits, 1
@@ -33,7 +33,7 @@
 				test		tree, 0xffffffff
 				jz			.herr
 				test		word [tree], 256
-				jz			.done
+				jz			.donehacl
 				; ko
 				sub			off, 1
 				jnz			.loop
@@ -47,7 +47,7 @@
 				test		tree, 0xffffffff
 				jz			.herr
 				test		word [tree], 256
-				jz			.done
+				jz			.donehacl
 				; ko
 				sub			off, 1
 				jnz			.loop

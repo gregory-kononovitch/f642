@@ -49,11 +49,14 @@ SECTION .text		ALIGN=16
 %define		STACK		0X4000
 
 ; Local variables (RBP - VAR + )
-%define		PTREEL		0x00
+%define		ptreel		0x00
 %define		PTREEC		0x08
 %define		PQUANL		0x10
 %define		PQUANC		0x18
 ;
+%define		pdata		0x20
+%define		pdest		0x28
+
 ;
 %define		rowdu		0x30
 %define		coldu		0x34
@@ -73,32 +76,39 @@ decode645:
 %define		bits	r9
 %define		data	r10
 %define		tree	r11
+%define		dest	rsi
+;
+%define		iz		r12
 ;
 			;
 			begin	STACK
 			;
+				mov			qword [rbp - VAR + pdata], rdi
+				mov			qword [rbp - VAR + pdest], rsi
+				mov			dword [rbp - VAR + PTEST], edx
 				;
 				; AC Lumin tree
 				;
 				mov			rax, rbp
 				sub			rax, [TREEL]
-				mov			qword [rbp - VAR + PTREEL], rax
+				mov			qword [rbp - VAR + ptreel], rax
 				mov			ecx, dword [NHDCL]
 				mov			rdx, HDCL
 				;
+.itbl:
 				%include "inclu/huftbl-1.s"
 				;
 
-				mov			data, rdi
-				mov			dword [rbp - 8], esi
-				movbe		bits, qword [data]
-				mov			off, 64
-				add			data, 8
+.ifeed			;
+				; FEED
 				;
-				xor			rcx, rcx
-				mov			rsi, rdx
-				xor			rdx, rdx
-				xor			rdi, rdi
+				mov			data, rdi
+				movbe		bits, qword [data]
+				add			data, 8
+				mov			off, 64
+				;
+				mov			rsi, rsi
+				xor			rcx, rcx				; @@@ mag shift
 				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; rdx (symb) < 256     r8 (off) >= 9     .herr
@@ -114,20 +124,26 @@ hdcl:			;
 				;
 				;
 .herr			;
+				mov			byte [rsi], -1
 				mov			rax, data
 				return
 
-.donedcl		;
+.donehdcl		;
+				; ### value
+				; ###
+				mov			ecx, edx				; @@@
+				and			cl, 0x0F
+				shl			bits, cl
+				sub			off, ecx
+
 				; svg
-				mov			byte [rsi], dl
+				mov			byte [rsi], symb
 				add			rsi, 1
-				sub			dword [rbp - 8], 1
-				jz			.end
-;				return
 				;
+				; feed@@@
 				;
 				test		off, 32
-				jnz			hdcl
+				jnz			.donedcl
 				;
 				movbe		eax, dword [data]
 				add			data, 4
@@ -136,24 +152,68 @@ hdcl:			;
 				shl			rax, cl
 				or			bits, rax
 				add			off, 32
-				jmp			hdcl
+				jmp			.donedcl
+
+				;
+.donedcl:		;
+				;
 
 
-.end:			;
-				;mov			rax, data
-				mov		rax, rdx
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; tree in [rbp - ]		off >= 1         .herr
+;;;;	-> value in byte[tree] == [r11]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+hacl:
+
+%include "inclu/hufacl-1.s"
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.herr:
+				mov			byte [rsi], -1
+				mov			rax, data
 				return
 
+.donehacl
+				mov			dx, word [tree]			; symb
+				test		dx, 0xFFFF
+				jz			.donel					; EOB
+				;
+				; ### value
+				; ###
+				mov			ecx, edx				; @@@
+				and			cl, 0x0F
+				shl			bits, cl
+				sub			off, ecx
 
+				; svg
+				mov			byte [rsi], symb
+				add			rsi, 1
+				;
+				; feed@@@
+				;
+				test		off, 32
+				jnz			.doneacl
+				;
+				movbe		eax, dword [data]
+				add			data, 4
+				mov			ecx, 32
+				sub			ecx, off
+				shl			rax, cl
+				or			bits, rax
+				add			off, 32
+				jmp			.doneacl
 
+				;
+.doneacl:		;
+				jmp			hacl
 
-
-
-
-
-
-
-
+				;
+.donel:			;
+				mov			rax, data
+				return
 
 
 
@@ -199,7 +259,7 @@ hdcl2:			;
 				mov			rax, data
 				return
 
-.donedcl		;
+.donehdcl		;
 				; svg
 				mov			byte [rsi], dl
 				add			rsi, 1

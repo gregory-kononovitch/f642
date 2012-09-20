@@ -27,7 +27,7 @@
 				; 00
 				sub			off, 2
 				xor			symb, symb
-				jmp			.donedcl
+				jmp			.donehdcl
 				;
 				; 01x
 .case01x:
@@ -36,13 +36,13 @@
 				; 010
 				sub			off, 3
 				mov			symb, 1
-				jmp			.donedcl
+				jmp			.donehdcl
 
 .case011:
 				; 011
 				sub			off, 3
 				mov			symb, 2
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .case1x:
 				jno			.case11x
@@ -52,12 +52,12 @@
 				; 100
 				sub			off, 3
 				mov			symb, 3
-				jmp			.donedcl
+				jmp			.donehdcl
 
 .case101:		; 101
 				sub			off, 3
 				mov			symb, 4
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case11x:
@@ -66,7 +66,7 @@
 				; 110
 				sub			off, 3
 				mov			symb, 5
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case111x:
@@ -75,7 +75,7 @@
 				; 1110
 				sub			off, 4
 				mov			symb, 6
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case4x:
@@ -84,7 +84,7 @@
 				shl			bits, 1
 				sub			off, 5
 				mov			symb, 7
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case5x:
@@ -93,7 +93,7 @@
 				; 111110
 				sub			off, 6
 				mov			symb, 8
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case6x:
@@ -102,7 +102,7 @@
 				; 1111110
 				sub			off, 7
 				mov			symb, 9
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case7x:
@@ -111,7 +111,7 @@
 				; 11111110
 				sub			off, 8
 				mov			symb, 10
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case8x:
@@ -120,7 +120,7 @@
 				; 111111110
 				sub			off, 9
 				mov			symb, 11
-				jmp			.donedcl
+				jmp			.donehdcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .caseerr:
