@@ -82,9 +82,10 @@ int main() {
     LOG("Decode: reached %ld", addr - src->data);
 
     printf("Decode sequence:\n");
+    int w = 35;
     for(j = 0 ; j < 16 ; j++) {
-        for(i = 0 ; i < 64 ; i++) {
-            printf("%u ", hres[i + 64 * j]);
+        for(i = 0 ; i < w ; i++) {
+            printf("%u ", hres[i + w * j]);
         }
         printf("\n");
     }

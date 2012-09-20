@@ -55,20 +55,20 @@ SECTION .text		ALIGN=16
 %endmacro
 
 %macro	logbits	2
-	mov			r15, %1
-	mov			r13, bits
-.lt1%2
-	shl			r13, 1
-	jc			.lt11%2
-	mov			byte [rsi], 0
-	jmp			.ct1%2
-	;
-.lt11%2
-	mov			byte [rsi], 1
-.ct1%2
-	add			rsi, 1
-	sub			r15, 1
-	jnz			.lt1%2
+;	mov			r15, %1
+;	mov			r13, bits
+;.lt1%2
+;	shl			r13, 1
+;	jc			.lt11%2
+;	mov			byte [rsi], 0
+;	jmp			.ct1%2
+;	;
+;.lt11%2
+;	mov			byte [rsi], 1
+;.ct1%2
+;	add			rsi, 1
+;	sub			r15, 1
+;	jnz			.lt1%2
 %endmacro
 
 
@@ -210,9 +210,9 @@ hdcl:			;
 				add			iz, rcx					; ???
 
 				; svg
-;				add			rsi, rcx				; @@@ ???
-;				mov			byte [rsi], symb
-;				add			rsi, 1
+				add			rsi, rcx				; @@@ ???
+				mov			byte [rsi], symb
+				add			rsi, 1
 
 				;
 				; feed@@@
@@ -248,9 +248,8 @@ hacl:
 				;
 				; ### value
 				; ###
-				and			rdx, 0xFF				; @@@
-				mov			ecx, edx				; @@@
-				and			cl, 0x0F
+				mov			cx, dx					; @@@
+				and			rcx, 0x0F
 				shl			bits, cl
 				sub			off, ecx
 
@@ -264,9 +263,9 @@ hacl:
 				jz			.donel					; EOB
 
 				; svg
-;				add			rsi, rcx				; nz
-;				mov			byte [rsi], symb
-;				add			rsi, 1
+				add			rsi, rcx				; nz
+				mov			byte [rsi], symb
+				add			rsi, 1
 
 				;
 				; feed@@@
@@ -281,10 +280,10 @@ hacl:
 				;
 .donel:			; EOB | @@@63
 
-	return
-
-	feed32 .hhjjh
-.hhjjh
+;	return
+;
+;	feed32 .hhjjh
+;.hhjjh
 				sub			byte [rbp - VAR + _yi_uc], 1
 				jnz			hdcl.loophdcl
 

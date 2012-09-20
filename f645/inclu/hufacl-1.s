@@ -25,6 +25,7 @@
 .o.reinit		mov			tree, qword [rbp - VAR + ptreel]
 				;
 .o.loop:		;
+				sub			off, 1
 				shl 		bits, 1
 				jnc			.o.case0
 				;
@@ -35,7 +36,6 @@
 				test		word [tree], 256
 				jz			.donehacl
 				; ko
-				sub			off, 1
 				jnz			.o.loop
 				movbe		bits, qword [data]
 				add			data, 8
@@ -49,7 +49,6 @@
 				test		word [tree], 256
 				jz			.donehacl
 				; ko
-				sub			off, 1
 				jnz			.o.loop
 				movbe		bits, qword [data]
 				add			data, 8
