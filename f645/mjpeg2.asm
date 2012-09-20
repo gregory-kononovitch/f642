@@ -294,6 +294,63 @@ hacl:
 ; --------------------------------- Chrominance ----------------------------
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; rcx (symb) < 256     r8 (off) >= 9     .herr
+;;;;      -> value in dl
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+hdcc:			;
+.loophdcc
+				mov			iz, 1
+				logbits 64,a1; ###
+
+%include "inclu/hufdcc-1.s"
+
+				logbits 64,a2; ###
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;
+				;
+.herr			;
+				mov			byte [rsi], 254
+				mov			rax, data
+				return
+
+.donehdcc		;
+				; @@@ value
+				shl			bits, cl
+				sub			off, cl					;
+				;
+
+				; svg
+				mov			byte [rsi], symb
+				add			rsi, 1
+
+				;
+				; feed@@@
+				;
+				feed32		.donedcc
+
+				;
+.donedcc:		;
+				;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 .done			;
