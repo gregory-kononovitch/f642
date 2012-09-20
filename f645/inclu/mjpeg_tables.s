@@ -1,5 +1,5 @@
 ;
-; file    : mjpeg_tables.h
+; file    : mjpeg_tables.h (->s)
 ; project : f640
 ;
 ; Created on: Sep 19, 2012
