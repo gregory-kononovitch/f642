@@ -90,12 +90,17 @@ decode645:
 				; AC Lumin tree
 				;
 				mov			rax, rbp
-				sub			rax, [TREEL]
+				sub			rax, TREEL
 				mov			qword [rbp - VAR + ptreel], rax
-				mov			ecx, dword [NHDCL]
-				mov			rdx, HDCL
+				mov			ecx, dword [NHACL]
+				mov			rdx, HACL
 				;
 .itbl:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
+;;;; r8 used
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 				%include "inclu/huftbl-1.s"
 				;
 
@@ -178,8 +183,6 @@ hacl:
 
 .donehacl
 				mov			dx, word [tree]			; symb
-				test		dx, 0xFFFF
-				jz			.donel					; EOB
 				;
 				; ### value
 				; ###
@@ -191,6 +194,10 @@ hacl:
 				; svg
 				mov			byte [rsi], symb
 				add			rsi, 1
+				; EOB
+				test		dx, 0xFFFF
+				jz			.donel					; EOB
+
 				;
 				; feed@@@
 				;
@@ -212,6 +219,7 @@ hacl:
 
 				;
 .donel:			;
+				mov			byte [rsi], 255			; ###
 				mov			rax, data
 				return
 
