@@ -14,9 +14,9 @@
 ;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;
-%define		symb	dl
-%define		off		r8d
-%define		bits	r9
+;%define		symb	cl
+;%define		off		r8d
+;%define		bits	r9
 ;;;;;;;
 				;
 				shl 		bits, 1

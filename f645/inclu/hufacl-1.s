@@ -14,7 +14,7 @@
 ;;;;	-> value in byte[tree] == [r11]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;
-;%define		symb	dl
+;%define		symb	cl
 ;%define		off		r8d
 ;%define		bits	r9
 ;%define		data	r10
