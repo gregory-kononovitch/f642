@@ -33,10 +33,10 @@
 				test		word [tree], 256
 				jz			.donehacl
 				; ko
-				jnz			.o.loop
-				movbe		bits, qword [data]
-				add			data, 8
-				mov			off, 64
+;				jnz			.o.loop
+;				movbe		bits, qword [data]
+;				add			data, 8
+;				mov			off, 64
 				jmp			.o.loop
 
 .o.case0:		;
@@ -46,10 +46,10 @@
 				test		word [tree], 256
 				jz			.donehacl
 				; ko
-				jnz			.o.loop
-				movbe		bits, qword [data]
-				add			data, 8
-				mov			off, 64
+;				jnz			.o.loop
+;				movbe		bits, qword [data]
+;				add			data, 8
+;				mov			off, 64
 				jmp			.o.loop
 				;
 				;

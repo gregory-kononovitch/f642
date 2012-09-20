@@ -24,11 +24,13 @@ default rel
 
 
 global 	decode645:			function
+global 	scan645:			function
 
-global 	hu2fman645:			function
 
 
 SECTION .data		ALIGN=16
+FF16			dd	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
+
 %include "inclu/mjpeg_tables.s"
 
 ALIGN 16
@@ -53,6 +55,55 @@ SECTION .text		ALIGN=16
 	add			off, 32
 	jmp			%1
 %endmacro
+
+
+%macro feed 3
+	;
+	;
+	test		off, 32
+	jnz			%1
+	;
+	movdqa		xmm2, qword [FF16]
+	movdqu		xmm1, oword [data]
+	pxor		xmm2, xmm1
+	movdqa		oword [rbp - VAR + ppxor], xmm2
+
+	mov			dl, byte [data]
+	xor			dl, 0xFF
+	jz			.pb1%2
+	mov			dl, byte [data+1]
+	xor			dl, 0xFF
+	jz			.pb2%2
+	mov			dl, byte [data+2]
+	xor			dl, 0xFF
+	jz			.pb3%2
+	mov			dl, byte [data+3]
+	xor			dl, 0xFF
+	jz			.pb4%2
+
+	movbe		eax, dword [data]
+	add			data, 4
+	mov			cl, 32
+	sub			cl, off
+	shl			rax, cl
+	or			bits, rax
+	add			off, 32
+	jmp			%1
+	;
+	;
+.pb1%2:
+	mov			dl, byte [data+1]
+	xor			dl, 0
+	jz			%3
+	add			data,
+
+
+
+
+
+
+%endmacro
+
 
 %macro	logbits	2
 ;	mov			r15, %1
@@ -96,6 +147,8 @@ SECTION .text		ALIGN=16
 %define		coldu		0x34
 
 ;
+%define		ppxor		0x50
+;
 %define		_ri0_us		0x70
 %define		_ri_us		0x72
 %define		_y0_uc		0x74
@@ -137,7 +190,7 @@ decode645:
 				mov			ecx, dword [NHACL]
 				mov			rdx, HACL
 				;
-
+				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
 ;;;; r8 used
@@ -182,6 +235,9 @@ ctree:
 				;
 				mov			rsi, rsi
 				xor			rcx, rcx				; @@@ mag shift
+				;
+				;
+decmain:
 				;
 				;
 				mov			dx, word [rbp - VAR + _ri0_us]
@@ -426,8 +482,13 @@ hacc:
 				sub			byte [rbp - VAR + _ui_uc], 1
 				jnz			hdcc.loophdcc
 
+				; END MCU
+; -----------------------------------------------------------------------------
+				; RESTART
 
-
+.donemcu:		;
+				sub			byte [rbp - VAR + _ri_us], 1
+				jnz			decmain.loopri
 
 
 
@@ -444,77 +505,46 @@ hacc:
 
 .done			;
 				mov			byte [rsi], 255			; ###
+				mov			qword [rsi + 1], bits
 				mov			rax, data
 				return
 
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; extern long hu2fman645(void *dseg, int size, void *dest);
-hu2fman645:
-%define		symb	dl
-%define		off		r8d
-%define		bits	r9
-%define		data	r10
-%define		eof		r11
-				;
-				begin	64
-				;
-				mov			data, rdi
-				mov			eof, rdi
-				add			eof, rsi
-				mov			dword [rbp - 8], esi
-				movbe		bits, qword [data]
-				mov			off, 64
-				add			data, 8
-				;
-				xor			rcx, rcx
-				mov			rsi, rdx
-				xor			rdx, rdx
-				xor			rdi, rdi
-				;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; rdx (symb) < 256     r8 (off) >= 9     .herr
-;;;;      -> value in dl
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-hdcl2:			;
-
-%include "inclu/hufdcl-1.s"
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				;
-				;
-.herr			;
-				mov			rax, data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; scan645(void *ptr, int size)
+scan645:
+				begin 32
+
+				movdqa		xmm2, oword [FF16]
+				movdqu		xmm1, oword [data]
+				pxor		xmm2, xmm1
+				movdqa		oword [rbp - VAR + ppxor], xmm2
+
+
 				return
 
-.donehdcl		;
-				; svg
-				mov			byte [rsi], dl
-				add			rsi, 1
-				sub			dword [rbp - 8], 1
-				jz			.end
-;				return
-				;
-				;
-				test		off, 32
-				jnz			hdcl
-				;
-				movbe		eax, dword [data]
-				add			data, 4
-				mov			ecx, 32
-				sub			ecx, off
-				shl			rax, cl
-				or			bits, rax
-				add			off, 32
-				jmp			hdcl
 
 
-.end:			;
-				;mov			rax, data
-				mov		rax, rdx
-				return
+
 

@@ -83,7 +83,7 @@ int main() {
 
     printf("Decode sequence:\n");
     int w = 35;
-    for(j = 0 ; j < 16 ; j++) {
+    for(j = 0 ; j < 24 ; j++) {
         for(i = 0 ; i < w ; i++) {
             printf("%u ", hres[i + w * j]);
         }

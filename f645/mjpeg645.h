@@ -127,9 +127,11 @@ extern long huf2man645(void *dseg, void *dest);
 extern long huf3man645(void *dseg, void *dest);
 extern long huf4man645(void *dseg, void *dest);
 
-extern long hu2fman645(void *dseg, int size, void *dest);
-
 extern long decode645(void *sos, void *dest, int size);
+
+// test
+extern uint8_t *scan645(uint8_t *ptr, int size);
+
 
 /**
  *
