@@ -1,5 +1,5 @@
 ;
-; file    : hufacl-1.s
+; file    : hufacc-1.s (fork of hufacl-1.s)
 ; project : f645 (t508.f640/2)
 ;
 ; Created on: Sep 20, 2012 (fork of mpeg.asm)

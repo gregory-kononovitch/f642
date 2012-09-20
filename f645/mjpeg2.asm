@@ -223,7 +223,9 @@ hdcl:			;
 hacl:
 .loop
 				logbits 64,a3; ###
-
+				;
+				mov			tree, qword [rbp - VAR + ptreel]
+				;
 %include "inclu/hufacl-1.s"
 
 				logbits 64,a4; ###
@@ -258,7 +260,7 @@ hacl:
 				add			rsi, 1
 
 				; @@@ value
-				and			cl, 0x0F
+				and			symb, 0x0F
 				shl			bits, cl
 				sub			off, cl
 
@@ -283,6 +285,13 @@ hacl:
 .donel:			;
 				sub			byte [rbp - VAR + _yi_uc], 1
 				jnz			hdcl.loophdcl
+
+; ---------------------------------  Luminance -----------------------------
+; --------------------------------------------------------------------------
+
+
+; --------------------------------------------------------------------------
+; --------------------------------- Chrominance ----------------------------
 
 
 

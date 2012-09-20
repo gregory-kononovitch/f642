@@ -1,8 +1,8 @@
 ;
-; file    : hufdcl-1.s (<->asi)
+; file    : hufdcc-1.s (cp of hufdcl-1.s)
 ; project : f645 (t508.f640/2)
 ;
-; Created on: Sep 18, 2012
+; Created on: Sep 20, 2012
 ; Author and copyright (C) 2012 : Gregory Kononovitch
 ; License : GNU Library or "Lesser" General Public License version 3.0 (LGPLv3)
 ; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
