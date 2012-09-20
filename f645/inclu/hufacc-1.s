@@ -21,36 +21,36 @@
 ;%define		tree	r11
 ;;;;;;;
 				;
-.o.loop:		;
+.c.loop:		;
 				sub			off, 1
 				shl 		bits, 1
-				jnc			.o.case0
+				jnc			.c.case0
 				;
-.o.case1:
+.c.case1:
 				mov			tree, [tree + 10]
 				test		tree, 0xffffffff
 				jz			.herr
 				test		word [tree], 256
-				jz			.donehacl
+				jz			.donehacc
 				; ko
-				jnz			.o.loop
+				jnz			.c.loop
 				movbe		bits, qword [data]
 				add			data, 8
 				mov			off, 64
-				jmp			.o.loop
+				jmp			.c.loop
 
-.o.case0:		;
+.c.case0:		;
 				mov			tree, [tree + 2]
 				test		tree, 0xffffffff
 				jz			.herr
 				test		word [tree], 256
-				jz			.donehacl
+				jz			.donehacc
 				; ko
-				jnz			.o.loop
+				jnz			.c.loop
 				movbe		bits, qword [data]
 				add			data, 8
 				mov			off, 64
-				jmp			.o.loop
+				jmp			.c.loop
 				;
 				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -84,7 +84,7 @@ SECTION .text		ALIGN=16
 
 ; Local variables (RBP - VAR + )
 %define		ptreel		0x00
-%define		PTREEC		0x08
+%define		ptreec		0x08
 %define		PQUANL		0x10
 %define		PQUANC		0x18
 ;
@@ -137,18 +137,38 @@ decode645:
 				mov			ecx, dword [NHACL]
 				mov			rdx, HACL
 				;
-.itbl:
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
 ;;;; r8 used
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+ltree:
 				%include "inclu/huftbl-1.s"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;
+				; AC Chrom tree
+				;
+				mov			rax, rbp
+				sub			rax, TREEC
+				mov			qword [rbp - VAR + ptreec], rax
+				mov			ecx, dword [NHACC]
+				mov			rdx, HACC
+				;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
+;;;; r8 used
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ctree:
+				%include "inclu/huftbl-1.s"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 				;
 				; Vars
 				mov			word [rbp - VAR + _ri0_us], 10
 				mov			byte [rbp - VAR + _y0_uc], 2
-				mov			byte [rbp - VAR + _u0_uc], 1
+				mov			byte [rbp - VAR + _u0_uc], 2
 				mov			byte [rbp - VAR + _v0_uc], 1
 				;
 .ifeed			;
@@ -336,6 +356,75 @@ hdcc:			;
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; tree in [rbp - ]		off >= 1         .herr
+;;;;	-> value in byte[tree] == [r11]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+hacc:
+.loop
+				logbits 64,a3; ###
+				;
+				mov			tree, qword [rbp - VAR + ptreec]
+				;
+%include "inclu/hufacc-1.s"
+
+				logbits 64,a4; ###
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.herr:
+				mov			byte [rsi], 255
+				mov			rax, data
+				return
+
+.donehacc
+				mov			symb, byte [tree]		; symb
+
+				;
+				; EOB
+				test		symb, 0xFF
+				jz			.eobc					; EOB
+
+				;
+				; @@@ iz + value
+				; cp
+				mov			edx, ecx				;
+
+				; iz
+				shr			dl, 4
+				add			iz, dl
+
+				; ### svg
+				add			rsi, rdx				; nz
+				mov			byte [rsi], symb
+				add			rsi, 1
+
+				; @@@ value
+				and			symb, 0x0F
+				shl			bits, cl
+				sub			off, cl
+
+				; iz
+				add			iz, 1
+
+				;
+				; feed@@@
+				;
+				feed32		.doneacc
+
+				;
+.doneacc:		;
+				; iz < 63
+				test		iz, 64
+				jnz			.donec
+				jmp			hacc.loop
+
+.eobc			;
+				feed32		.donec
+				;
+.donec:			;
+				sub			byte [rbp - VAR + _ui_uc], 1
+				jnz			hdcc.loophdcc
 
 
 
