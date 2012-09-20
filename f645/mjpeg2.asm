@@ -9,6 +9,7 @@
 ;
 
 default rel
+BITS 	64
 
 %macro  begin 1
 	push    rbp
@@ -532,16 +533,101 @@ hacc:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; scan645(void *ptr, int size)
+; scan645(void *ptr, int size, int[])
+%define		data	r8
+
 scan645:
 				begin 32
+				mov			r8, rdi
+				xor			r9, r9
+				mov			r11, rdx
+.loop:
+				;
+;				movdqa		xmm2, oword [FF16]
+;				movdqu		xmm1, oword [data]
+;				pxor		xmm2, xmm1
+;				movdqa		oword [rbp - 0x20], xmm2
+				;
 
-				movdqa		xmm2, oword [FF16]
-				movdqu		xmm1, oword [data]
-				pxor		xmm2, xmm1
-				movdqa		oword [rbp - VAR + ppxor], xmm2
+				mov			rdx, qword [data]
+				;
+				test		rdx, 0xff
+				jz			.t1
+				shr			rdx, 8
+				test		rdx, 0xff
+				jz			.t1
+				shr			rdx, 8
+				test		rdx, 0xff
+				jz			.t1
+				shr			rdx, 8
+				test		rdx, 0xff
+				jz			.t1
+				shr			rdx, 8
+				test		rdx, 0xff
+				jz			.t1
+				shr			rdx, 8
+				test		rdx, 0xff
+				jz			.t1
+				shr			rdx, 8
+				test		rdx, 0xff
+				jz			.t1
+				shr			rdx, 8
+				test		rdx, 0xff
+				jz			.t1
 
 
+
+;				mov			qword [rbp - 0x20], rdx
+;
+;				test		byte [rbp - 0x20], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x1F], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x1E], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x1D], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x1C], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x1B], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x1A], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x19], 0xff
+;				jz			.t1
+;				;
+;				test		byte [rbp - 0x18], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x17], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x16], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x15], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x14], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x13], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x12], 0xff
+;				jz			.t1
+;				test		byte [rbp - 0x11], 0xff
+;				jz			.t1
+
+
+				mov			eax, dword [rbp - 0x20]
+
+
+.t1:
+				add			r9, 1
+
+.coot:
+				add			data, 8
+				sub			rsi, 8
+				jge			.loop
+
+
+.end:
+				mov			dword [r11], r9d
 				return
 
 

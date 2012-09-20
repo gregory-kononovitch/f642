@@ -24,11 +24,37 @@ static void dump645(mjpeg645_img *img, int len) {
 // asm
 extern int64_t ReadTSC();
 
+
+int test_scan645() {
+    int i, j;
+    int lenb = 72027;   // 612311;
+    uint8_t *tmp = (uint8_t*)calloc(1, lenb);
+
+    FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+    fread(tmp, 1, lenb, filp);
+    fclose(filp);
+
+    // scan test
+    int res[8] = {0};
+    long c1, c2;
+
+    c1 = ReadTSC();
+    uint8_t *ret = scan645(tmp, lenb, res);
+    c2 = ReadTSC();
+
+    printf("Scan : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d  |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3]);
+
+
+
+    return 0;
+}
+
 int main() {
     int i, j;
-    int lenb = 72027;
-//    int lenb = 612311;
-    void *tmp = calloc(1, lenb);
+    int lenb = 72027;   // 612311;
+    uint8_t *tmp = (uint8_t*)calloc(1, lenb);
+
+    return test_scan645();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
