@@ -48,6 +48,8 @@ objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
 all: exec
 
 exec: $(objects) $(objects_ao) $(objects_e)
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg.ao mjpeg.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg2.ao mjpeg2.asm
 	gcc -o mjpeg645-test1.xo exc/mjpeg645_test1.o $(objects) $(objects_ao) $(LIBS)
 
 

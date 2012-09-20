@@ -320,16 +320,22 @@ huf3man645:
 ; extern long huf4man645(void *dseg, void *dest);
 ; OK, but too much stack for tables
 huf4man645:
-				begin 5832
+%define		symb	dl
+%define		off		r8d
+%define		bits	r9
+%define		data	r10
+%define		tree	r11
+
+				begin 5840					; (5832 + 8)
 
 				;
 				;
 				mov			rax, rbp
-				sub			rax, 5832
-				mov			r10, rax
-				mov			ecx, dword [NHACL]
-				mov			rdx, HACL2
-				mov			r9, .frombuild
+				sub			rax, 5840
+				mov			qword [rbp - 8], rax			; tree base address
+				mov			ecx, dword [NHACL]				; nb nodes
+				mov			rdx, HACL2						; tree
+				mov			r9, .frombuild					; back here
 				;
 				jmp			_build_hdcl_
 				;
@@ -337,70 +343,66 @@ huf4man645:
 				;
 				xor			rax, rax
 				xor			rcx, rcx
-				xor			r8, r8
-				mov			r8, 1
+				;;
+				mov			data, rdi
+				;;
+				movbe		bits, qword [rdi]
+				add			data, 8
+				mov			off, 64
 				;
-				movbe		r9, qword [rdi]
-				mov			rax, 63
-				;
-.reinit			mov			rdx, r10
+.reinit			mov			tree, qword [rbp - 8]
 				;
 .loop:			;
-				shl 		r9, 1
+				shl 		bits, 1
 				jnc			.case0
 				;
 .case1:
-				mov			rdx, [rdx + 10]
-				test		rdx, 0xffffffff
+				mov			tree, [tree + 10]
+				test		tree, 0xffffffff
 				jz			.err
-				test		word [rdx], 256
+				test		word [tree], 256
 				jz			.done
 				; ko
-				sub			eax, 1
-				jns			.loop
-				add			rdi, 8
-				movbe		r9, qword [rdi]
-				mov			eax, 63
+				sub			off, 1
+				jnz			.loop
+				movbe		bits, qword [data]
+				add			data, 8
+				mov			off, 64
 				jmp			.loop
 
 .case0:			;
-				mov			rdx, [rdx + 2]
-				test		rdx, 0xffffffff
+				mov			tree, [tree + 2]
+				test		tree, 0xffffffff
 				jz			.err
-				test		word [rdx], 256
+				test		word [tree], 256
 				jz			.done
 				; ko
-				sub			eax, 1
-				jns			.loop
-				add			rdi, 8
-				movbe		r9, qword [rdi]
-				mov			eax, 63
+				sub			off, 1
+				jnz			.loop
+				movbe		bits, qword [data]
+				add			data, 8
+				mov			off, 64
 				jmp			.loop
 
 
-.done			; svg
-				mov			cl, byte [rdx]
-				mov			byte [rsi], cl
-				add			rsi, 1
+.done			;
+				; value
+				mov			symb, byte [tree]
 				;
-				; cpt svg
-				sub			r8, 1
-				jz			.end
-				;
-				; rax
-				sub			rax, 1
-				jns			.reinit
-				add			rdi, 8
-				movbe		r9, qword [rdi]
-				mov			rax, 63
+				; off
+				sub			off, 1
+				jnz			.reinit
+				movbe		bits, qword [data]
+				add			data, 8
+				mov			off, 64
 				jmp			.reinit
 
 .err			;
-				mov			rax, rdi
+				mov			rax, data
 				return
 
 .end:			;
-				mov			rax, rdi
+				mov			rax, data
 				return
 
 

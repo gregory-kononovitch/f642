@@ -71,23 +71,26 @@ hu2fman645:
 				xor			rdi, rdi
 				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;
+;;;; rdx (symb) < 256     r8 (off) >= 9
 ;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 hdcl:			;
+;%include "inclu/hufdcl-1.asi"
+
+				;
 				shl 		bits, 1
 				jc			.case1x
 				; 0x
+				jo			.case01x
 				shl			bits, 1
-				jc			.case01x
 				; 00
 				sub			off, 2
-				mov			symb, 0
+				xor			symb, symb
 				jmp			.donedcl
 				;
 				; 01x
 .case01x:
-				shl			bits, 1
+				shl			bits, 2
 				jc			.case011
 				; 010
 				sub			off, 3
@@ -101,10 +104,9 @@ hdcl:			;
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .case1x:
-				shl			bits, 1
-				jc			.case11x
+				jno			.case11x
 				; 10x
-				shl			bits, 1
+				shl			bits, 2
 				jc			.case101
 				; 100
 				sub			off, 3
@@ -118,7 +120,7 @@ hdcl:			;
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case11x:
-				shl			bits, 1
+				shl			bits, 2
 				jc			.case111x
 				; 110
 				sub			off, 3
@@ -136,18 +138,18 @@ hdcl:			;
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case4x:
+				jno			.case5x
+				; 11110
 				shl			bits, 1
-				jc			.case5x
-				; 110
 				sub			off, 5
 				mov			symb, 7
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case5x:
-				shl			bits, 1
+				shl			bits, 2
 				jc			.case6x
-				; 110
+				; 111110
 				sub			off, 6
 				mov			symb, 8
 				jmp			.donedcl
@@ -156,30 +158,29 @@ hdcl:			;
 .case6x:
 				shl			bits, 1
 				jc			.case7x
-				; 110
+				; 1111110
 				sub			off, 7
 				mov			symb, 9
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case7x:
+				jno			.case8x
 				shl			bits, 1
-				jc			.case8x
-				; 110
+				; 111111110
 				sub			off, 8
 				mov			symb, 10
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .case8x:
-				shl			bits, 1
+				shl			bits, 2
 				jc			.err
 				; 110
 				sub			off, 9
 				mov			symb, 11
 				jmp			.donedcl
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
