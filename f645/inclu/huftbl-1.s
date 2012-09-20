@@ -10,12 +10,10 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   return in r9
+;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
 ;;;; r8 used
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;
-				;
-				xor			r8, r8
 				;
 .loop			;
 				xor			r8, r8
@@ -55,4 +53,4 @@
 				jnz			.loop
 
 				;
-				jmp			r9
+;				jmp			r9

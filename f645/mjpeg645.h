@@ -93,7 +93,7 @@ typedef struct {
     int         width;
     int         height;
 
-    // work
+    // decoder work
     int         flags;
     uint8_t     *ptr;
     uint8_t     *eof;
@@ -102,9 +102,21 @@ typedef struct {
     // in
     int         log;
 
-    //
+    // out
     marker645   *markers;
     int         lm;
+
+    // Qanti
+    float       *quantizY;
+    float       *quantizUV;
+
+    //
+    int         row_du;
+    int         col_du;
+
+
+
+
 } mjpeg645_img;
 
 /**
@@ -117,6 +129,7 @@ extern long huf4man645(void *dseg, void *dest);
 
 extern long hu2fman645(void *dseg, int size, void *dest);
 
+extern long decode645(void *sos, void *dest, int size);
 
 /**
  *

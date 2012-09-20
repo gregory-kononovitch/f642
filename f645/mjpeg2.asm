@@ -23,11 +23,13 @@ default rel
 %endmacro
 
 
+global 	decode645:			function
+
 global 	hu2fman645:			function
 
 
 SECTION .data		ALIGN=16
-;%include "inclu/mjpeg_tables.s"
+%include "inclu/mjpeg_tables.s"
 
 ALIGN 16
 
@@ -43,13 +45,118 @@ SECTION .text		ALIGN=16
 %define		TREEC		0x2EA0
 %define		QUANY		0x2FA0
 %define		QUANC		0x30A0
+
+%define		STACK		0X4000
+
 ; Local variables (RBP - VAR + )
 %define		PTREEL		0x00
 %define		PTREEC		0x08
 %define		PQUANL		0x10
 %define		PQUANC		0x18
 ;
+;
+%define		rowdu		0x30
+%define		coldu		0x34
+
+
+
 %define		PTEST		0x80
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; extern long decode645(void *sos, void *dest, int size)
+decode645:
+%define		symb	dl
+%define		off		r8d
+%define		bits	r9
+%define		data	r10
+%define		tree	r11
+;
+			;
+			begin	STACK
+			;
+				;
+				; AC Lumin tree
+				;
+				mov			rax, rbp
+				sub			rax, [TREEL]
+				mov			qword [rbp - VAR + PTREEL], rax
+				mov			ecx, dword [NHDCL]
+				mov			rdx, HDCL
+				;
+				%include "inclu/huftbl-1.s"
+				;
+
+				mov			data, rdi
+				mov			dword [rbp - 8], esi
+				movbe		bits, qword [data]
+				mov			off, 64
+				add			data, 8
+				;
+				xor			rcx, rcx
+				mov			rsi, rdx
+				xor			rdx, rdx
+				xor			rdi, rdi
+				;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; rdx (symb) < 256     r8 (off) >= 9     .herr
+;;;;      -> value in dl
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+hdcl:			;
+
+%include "inclu/hufdcl-1.s"
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;
+				;
+.herr			;
+				mov			rax, data
+				return
+
+.donedcl		;
+				; svg
+				mov			byte [rsi], dl
+				add			rsi, 1
+				sub			dword [rbp - 8], 1
+				jz			.end
+;				return
+				;
+				;
+				test		off, 32
+				jnz			hdcl
+				;
+				movbe		eax, dword [data]
+				add			data, 4
+				mov			ecx, 32
+				sub			ecx, off
+				shl			rax, cl
+				or			bits, rax
+				add			off, 32
+				jmp			hdcl
+
+
+.end:			;
+				;mov			rax, data
+				mov		rax, rdx
+				return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; extern long hu2fman645(void *dseg, int size, void *dest);
@@ -80,7 +187,7 @@ hu2fman645:
 ;;;;      -> value in dl
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-hdcl:			;
+hdcl2:			;
 
 %include "inclu/hufdcl-1.s"
 

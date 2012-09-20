@@ -234,7 +234,7 @@ huf3man645:
 				sub			rax, 432
 				mov			r10, rax
 				mov			ecx, dword [NHDCL]
-				mov			rdx, HDCL3
+				mov			rdx, HDCL
 				mov			r9, .frombuild
 				;
 				jmp			_build_hdcl_
