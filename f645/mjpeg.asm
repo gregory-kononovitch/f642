@@ -342,6 +342,7 @@ huf4man645:
 .frombuild		;
 				;
 				xor			rax, rax
+				xor			rdx, rdx
 				xor			rcx, rcx
 				;;
 				mov			data, rdi
@@ -388,6 +389,9 @@ huf4man645:
 .done			;
 				; value
 				mov			symb, byte [tree]
+				; ###
+				mov rax, rdx
+				return
 				;
 				; off
 				sub			off, 1

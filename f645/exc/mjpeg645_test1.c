@@ -96,11 +96,12 @@ int main() {
     long symb = 0;
     uint8_t *add;
     int cofs = 500000;
-    uint16_t cod = 255;
+    uint16_t cod = 55807;
     l1 = ReadTSC();
     for(i = cofs/50000 ; i >= 0 ; i--) {    // 10 * 50000
         //add = (uint8_t*)hu2fman645(src->data, 50000, hres);
-        add = (uint8_t*)hu2fman645(&cod, 1, hres);
+        //add = (uint8_t*)hu2fman645(&cod, 1, hres);
+        add = (uint8_t*)huf4man645(&cod, hres);
     }
     l2 = ReadTSC();
     printf("End of asm tests\n");
