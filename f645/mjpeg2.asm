@@ -35,6 +35,62 @@ FF16			dd	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
 %include "inclu/mjpeg_tables.s"
 
 ALIGN 16
+F128		db		128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128
+FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
+
+SECTION .bss		ALIGN=16
+_A0			resb	1
+_A1			resb	1
+_A2			resb	1
+_A3			resb	1
+_A4			resb	1
+_A5			resb	1
+_A6			resb	1
+_A7			resb	1
+_A8			resb	1
+_A9			resb	1
+_AA			resb	1
+_AB			resb	1
+_AC			resb	1
+_AD			resb	1
+_AE			resb	1
+_AF			resb	1
+
+_B0			resb	1
+_B1			resb	1
+_B2			resb	1
+_B3			resb	1
+_B4			resb	1
+_B5			resb	1
+_B6			resb	1
+_B7			resb	1
+_B8			resb	1
+_B9			resb	1
+_BA			resb	1
+_BB			resb	1
+_BC			resb	1
+_BD			resb	1
+_BE			resb	1
+_BF			resb	1
+
+_C0			resb	1
+_C1			resb	1
+_C2			resb	1
+_C3			resb	1
+_C4			resb	1
+_C5			resb	1
+_C6			resb	1
+_C7			resb	1
+_C8			resb	1
+_C9			resb	1
+_CA			resb	1
+_CB			resb	1
+_CC			resb	1
+_CD			resb	1
+_CE			resb	1
+_CF			resb	1
+
+ALIGN 16
 
 
 
@@ -527,98 +583,173 @@ hacc:
 
 
 
-
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; scan645(void *ptr, int size, int[])
+; scan645(void *ptr, int size, int[] res)
 %define		data	r8
 
 scan645:
 				begin 32
 				mov			r8, rdi
 				xor			r9, r9
-				mov			r11, rdx
+				xor			r10, r10
+				xor			r11, r11
+				mov			al, 4
 .loop:
 				;
-;				movdqa		xmm2, oword [FF16]
-;				movdqu		xmm1, oword [data]
-;				pxor		xmm2, xmm1
-;				movdqa		oword [rbp - 0x20], xmm2
+				mov			r12b, byte [data]
+				cmp			r12b, 0xff
+				jz			.ff
+				add			data, 1
+				sub			al, 1
+				mov			byte [_B0 + rax], r12b
+				jmp			.coot
+
+.ff:
+
+
+
+.coot:
+				cmp			al, 0
+				jnz			.loop
+
+.end:
+				return
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; scan645(void *ptr, int size, int[] res)
+%define		data	r8
+
+scan645o:
+				begin 32
+				mov			r8, rdi
+				xor			r9, r9
+				xor			r10, r10
+				xor			r11, r11
+
+.loop:
 				;
-
-				mov			rdx, qword [data]
+				movdqa		xmm2, oword [FF16]
+				movdqu		xmm1, oword [data]
+				pxor		xmm2, xmm1
+				movdqa		oword [_A0], xmm1
+				movdqa		oword [_B0], xmm2
+				movdqa		xmm2, oword [F128]
+				movdqa		oword [_C0], xmm2
 				;
-				test		rdx, 0xff
-				jz			.t1
-				shr			rdx, 8
-				test		rdx, 0xff
-				jz			.t1
-				shr			rdx, 8
-				test		rdx, 0xff
-				jz			.t1
-				shr			rdx, 8
-				test		rdx, 0xff
-				jz			.t1
-				shr			rdx, 8
-				test		rdx, 0xff
-				jz			.t1
-				shr			rdx, 8
-				test		rdx, 0xff
-				jz			.t1
-				shr			rdx, 8
-				test		rdx, 0xff
-				jz			.t1
-				shr			rdx, 8
-				test		rdx, 0xff
-				jz			.t1
+				mov			al, 16
+
+.t0				;
+				sub			al, 1
+				mov			byte [_C0], al
+				test		byte [_B0], 0xff
+				jnz			.t1
+				add			r9, 1
+				test		byte [_A1], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C1], al
+				jmp			.t2
+
+.t1				;
+				sub			al, 1
+				mov			byte [_C1], al
+				test		byte [_B1], 0xff
+				jnz			.t2
+				add			r9, 1
+				test		byte [_A2], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C2], al
+				jmp			.t3
+
+.t2				;
+				sub			al, 1
+				mov			byte [_C2], al
+				test		byte [_B2], 0xff
+				jnz			.t3
+				add			r9, 1
+				test		byte [_A3], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C3], al
+				jmp			.t4
+
+.t3				;
+				sub			al, 1
+				mov			byte [_C3], al
+				test		byte [_B3], 0xff
+				jnz			.t4
+				add			r9, 1
+				test		byte [_A4], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C4], al
+				jmp			.t5
+
+.t4				;
+				sub			al, 1
+				mov			byte [_C4], al
+				test		byte [_B4], 0xff
+				jnz			.t5
+				add			r9, 1
+				test		byte [_A5], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C5], al
+				jmp			.t6
+
+.t5				;
+				sub			al, 1
+				mov			byte [_C5], al
+				test		byte [_B5], 0xff
+				jnz			.t6
+				add			r9, 1
+				test		byte [_A6], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C6], al
+				jmp			.t7
+
+.t6				;
+				sub			al, 1
+				mov			byte [_C6], al
+				test		byte [_B6], 0xff
+				jnz			.t7
+				add			r9, 1
+				test		byte [_A7], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C7], al
+				jmp			.t8
+
+.t7				;
+				sub			al, 1
+				mov			byte [_C7], al
+				test		byte [_B7], 0xff
+				jnz			.t8
+				add			r9, 1
+				test		byte [_A8], 0xff
+				jnz			.marker
+				add			r10, 1
+				sub			al, 2
+				mov			byte [_C8], al
+				jmp			.t9
 
 
+.t8
 
-;				mov			qword [rbp - 0x20], rdx
-;
-;				test		byte [rbp - 0x20], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x1F], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x1E], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x1D], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x1C], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x1B], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x1A], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x19], 0xff
-;				jz			.t1
-;				;
-;				test		byte [rbp - 0x18], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x17], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x16], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x15], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x14], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x13], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x12], 0xff
-;				jz			.t1
-;				test		byte [rbp - 0x11], 0xff
-;				jz			.t1
-
+.t9
 
 				mov			eax, dword [rbp - 0x20]
-
-
-.t1:
-				add			r9, 1
 
 .coot:
 				add			data, 8
@@ -627,10 +758,16 @@ scan645:
 
 
 .end:
-				mov			dword [r11], r9d
+				mov			dword [rdx], r9d
+				mov			dword [rdx+4], r10d
+				mov			dword [rdx+8], r11d
 				return
 
-
-
+.marker:
+				add			r11, 1
+				add			data, 8
+				sub			rsi, 8
+				jge			.loop
+				jmp			.end
 
 

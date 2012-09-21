@@ -26,17 +26,46 @@ extern int64_t ReadTSC();
 
 
 int test_scan645() {
-    int i, j;
+    int i, j, k;
     int lenb = 72027;   // 612311;
+    long c1, c2;
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
     fread(tmp, 1, lenb, filp);
     fclose(filp);
 
+    //
+    j = k = 0;
+    c1 = ReadTSC();
+    for(i = 0 ; i < lenb ; i++) {
+        if (tmp[i] == 0xFF) {
+            j++;
+            if (tmp[i+1] == 0x00) {
+                k++;
+            }
+        }
+    }
+    c2 = ReadTSC();
+    printf("%d FF (%d FF00) in file for %ld\n", j, k, (c2 - c1));
+
+    //
+    i = j = k = 0;
+    uint8_t *ptr = tmp, *lim = tmp + lenb - 1;
+    c1 = ReadTSC();
+    while(ptr < lim) {
+        if (*(ptr++) == 0xFF) {
+            j++;
+            if (*(ptr++) == 0x00) {
+                k++;
+            }
+        }
+    }
+    c2 = ReadTSC();
+    printf("%d FF (%d FF00) in file for %ld\n", j, k, (c2 - c1));
+
     // scan test
     int res[8] = {0};
-    long c1, c2;
 
     c1 = ReadTSC();
     uint8_t *ret = scan645(tmp, lenb, res);
