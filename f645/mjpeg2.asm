@@ -62,11 +62,11 @@ SECTION .text		ALIGN=16
 
 ; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
 %macro feed 5
-	test		off, 32
-	jnz			%1
-	;
-			xor		rax, rax
-			xor		rdx, rdx
+			test		off, 32
+			jnz			%1
+			;							; @@@@@@@@@@@@@@@@@@@@@@@@@@
+			xor		rax, rax		; for now no move at RST (cd .ff)
+;			xor		rdx, rdx
 			mov		cl, 4
 .loop%2
 			mov		dl, byte [data]
@@ -79,7 +79,7 @@ SECTION .text		ALIGN=16
 			sub		cl, 1
 			jnz		.loop%2
 			; 4 ok
-			mov		cl, 32
+.cp%2		mov		cl, 32
 			sub		cl, off
 			shl		rax, cl
 			or		bits, rax
@@ -90,28 +90,39 @@ SECTION .text		ALIGN=16
 
 .ff%2:
 			;
-			add 	data, 1
-			mov 	dl, byte [data]
+;			add 	data, 1
+			mov 	dl, byte [data + 1]
 			cmp		dl, 0x00
 			jnz		.mrk%2
 			; FF00
+			add 	data, 1
 			mov		dl, 0xff
 			jmp		.put%2
 			;
 .mrk%2:
 			;
 			cmp		dl, 0xd9
-			jz		.eoi%2
+			jz		.eoi%2			; eoi
 			shr		dl, 4
 			cmp		dl, 0x0d
-			jnz		.err%2
-			add		data, 1
-			jmp		%3			; RDi
+			jnz		.err%2			; err
+			mov		dl, byte [data + 1]
+			and		dl, 0x0F
+			cmp		dl, 0x08
+			jnl		.err%2			; 0xFFD[A-F]
+;			jz		.soi
+			; RSTi
+;			add		data, 1
+.sh%2		shl		eax, 8
+			sub		cl, 1
+			jnz		.sh%2
+			;
+			jmp		.cp%2
 			;
 
 
 .eoi%2:							; EOI
-			jmp		%4
+			jmp		coopsample.done
 
 .err%2:							; ERR
 			jmp		%5
@@ -238,24 +249,29 @@ ctree:
 				mov			byte [rbp - VAR + _u0_uc], 2
 				mov			byte [rbp - VAR + _v0_uc], 1
 				;
-.ifeed			;
-				; FEED
 				;
 				mov			data, rdi
+				mov			rsi, rsi
+				xor			rcx, rcx				; @@@ mag shift
+				;
+				sub			data, 2		; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ tmp (no RST for first seg)
+				;
+decmain:
+				;
+
+.loopsample:
+				;
+				mov			dx, word [rbp - VAR + _ri0_us]
+				mov			word [rbp - VAR + _ri_us], dx
+
+				; FEED
+				;
+				add			data, 2			; @@@@@@@@@@@@@@@@@@@ RST mngmnt for now
 				movbe		bits, qword [data]
 				add			data, 8
 				mov			off, 64
 				logbits 64,a0 ; ###
-				;
-				mov			rsi, rsi
-				xor			rcx, rcx				; @@@ mag shift
-				;
-				;
-decmain:
-				;
-				;
-				mov			dx, word [rbp - VAR + _ri0_us]
-				mov			word [rbp - VAR + _ri_us], dx
+
 .loopri			;
 				;
 				mov			dl, byte [rbp - VAR + _y0_uc]
@@ -281,8 +297,9 @@ hdcl:			;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;
 				;
-.herr			;
+.herr			; svg
 				mov			byte [rsi], 254
+				mov			byte [rsi+1], 255
 				mov			rax, data
 				return
 
@@ -297,7 +314,7 @@ hdcl:			;
 				add			rsi, 1
 
 				;
-				; feed@@@
+				; feed @@@
 				;
 ;				feed32		.donedcl
 ;				feed  		.donedcl
@@ -323,8 +340,9 @@ hacl:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.herr:
-				mov			byte [rsi], 255
+.herr:			; svg
+				mov			byte [rsi], 254
+				mov			byte [rsi+1], 255
 				mov			rax, data
 				return
 
@@ -346,7 +364,7 @@ hacl:
 				add			iz, dl
 
 				; ### svg
-				add			rsi, rdx				; nz
+;				add			rsi, rdx				; nz
 				mov			byte [rsi], symb
 				add			rsi, 1
 
@@ -371,7 +389,10 @@ hacl:
 				jnz			.donel
 				jmp			hacl.loop
 
-.eobl			;
+.eobl			; svg
+				mov			byte [rsi], 0
+				mov			byte [rsi+1], 255
+				add			rsi, 2
 				;feed32		.donel
 				feed .donel, eobacl, .donel, .donel, .donel
 				;
@@ -403,8 +424,9 @@ hdcc:			;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;
 				;
-.herr			;
+.herr			; svg
 				mov			byte [rsi], 254
+				mov			byte [rsi+1], 255
 				mov			rax, data
 				return
 
@@ -446,8 +468,9 @@ hacc:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.herr:
-				mov			byte [rsi], 255
+.herr:			; svg
+				mov			byte [rsi], 254
+				mov			byte [rsi+1], 255
 				mov			rax, data
 				return
 
@@ -469,7 +492,7 @@ hacc:
 				add			iz, dl
 
 				; ### svg
-				add			rsi, rdx				; nz
+;				add			rsi, rdx				; nz
 				mov			byte [rsi], symb
 				add			rsi, 1
 
@@ -494,7 +517,10 @@ hacc:
 				jnz			.donec
 				jmp			hacc.loop
 
-.eobc			;
+.eobc			; svg
+				mov			byte [rsi], 0
+				mov			byte [rsi+1], 255
+				add			rsi, 2
 				;feed32		.donec
 				feed .donec, eobacc, .donec, .donec, .donec
 				;
@@ -510,22 +536,28 @@ hacc:
 				sub			byte [rbp - VAR + _ri_us], 1
 				jnz			decmain.loopri
 
+;mov byte [rsi], 255
+;add rsi, 1
+;mov qword [rsi], bits
+;add rsi, 8
+;mov byte [rsi], 255
+;add rsi, 1
+;return
 
 
-
-
-
-
-
-
+coopsample:
+				;
+				jmp 		decmain.loopsample
 
 
 
 
 
 .done			;
+				; svg
 				mov			byte [rsi], 255			; ###
 				mov			qword [rsi + 1], bits
+				mov			byte [rsi + 9], 255			; ###
 				mov			rax, data
 				return
 
@@ -533,60 +565,9 @@ hacc:
 
 
 
-lfeed:
-	test		off, 32
-	jnz			hdcl.donedcl
-	;
-			xor 	rax, rax
-			mov		cl, 4
-.loopDCL
-			mov		dl, byte [data]
-			cmp		dl, 0xff
-			jz		.ffDCL
-			; 1 ok
-.putDCL:
-			shl		eax, 8
-			or		eax, edx
-			add		data, 1
-			sub		cl, 1
-			jnz		.loopDCL
-			; 4 ok
-			bswap	eax
-			add		data, 4
-			mov		cl, 32
-			sub		cl, off
-			shl		rax, cl
-			or		bits, rax
-			add		off, 32
-			jmp		hdcl.donedcl
-
-.ffDCL:
-			;
-			add 	data, 1
-			mov 	dl, byte [data]
-			cmp		dl, 0x00
-			jnz		.mrkDCL
-			; FF00
-			mov		dl, 0xff
-			jmp		.putDCL
-			;
-.mrkDCL:
-			;
-			cmp		dl, 0xd9
-			jz		.eoiDCL
-			shr		dl, 4
-			cmp		dl, 0x0d
-			jnz		.errDCL
-			add		data, 1
-			jmp		hdcl.donedcl			; RDi
-			;
 
 
-.eoiDCL:							; EOI
-			jmp		hdcl.donedcl
 
-.errDCL:							; ERR
-			jmp		hdcl.donedcl
 
 
 

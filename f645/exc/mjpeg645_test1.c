@@ -171,16 +171,27 @@ int main() {
     uint8_t *addr = (uint8_t*)decode645(src->data + off1, hres, off2 - off1);
     LOG("Decode: reached %ld", addr - src->data);
 
-    printf("Decode sequence:\n");
-    int w = 35;
-    for(j = 0 ; j < 24 ; j++) {
-        for(i = 0 ; i < w ; i++) {
-            printf("%u ", hres[i + w * j]);
-        }
-        printf("\n");
-    }
-    printf("Done\n");
+//    printf("Decode sequence:\n");
+//    int w = 35;
+//    for(j = 0 ; j < 24 ; j++) {
+//        for(i = 0 ; i < w ; i++) {
+//            printf("%u ", hres[i + w * j]);
+//        }
+//        printf("\n");
+//    }
+//    printf("Done\n");
 
+    printf("Decode sequence:\n|");
+    for(i = 0 ; i < 1024 ; i++) {
+        if (hres[i] != 0xFF) {
+            printf("%3u|", hres[i]);
+        } else {
+            printf(" - |\n|", hres[i]);
+            if (*((long*)(hres + i + 1)) == 0) break;
+        }
+    }
+    printf("\n");
+    printf("Done\n");
 
 
 
