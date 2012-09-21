@@ -13,12 +13,20 @@ BITS 	64
 
 %macro  begin 1
 	push    rbp
+	push	r12
+	push	r13
+	push	r14
+	push	r15
 	mov     rbp, rsp
 	sub     rsp, %1
 %endmacro
 
 %macro  return 0
 	mov     rsp, rbp
+	pop 	r15
+	pop 	r14
+	pop 	r13
+	pop 	r12
     pop     rbp
     ret
 %endmacro
@@ -42,29 +50,14 @@ FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
 SECTION .text		ALIGN=16
 
-%macro feed32 1
-	;
-	; feed@@@
-	;
-	test		off, 32
-	jnz			%1
-	;
-	movbe		eax, dword [data]
-	add			data, 4
-	mov			cl, 32
-	sub			cl, off
-	shl			rax, cl
-	or			bits, rax
-	add			off, 32
-	jmp			%1
-%endmacro
-
-
 ; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
 %macro feed 5
+			;
+			; @@@@
+			;
 			test		off, 32
 			jnz			%1
-			;							; @@@@@@@@@@@@@@@@@@@@@@@@@@
+			;						; @@@@@@@@@@@@@@@@@@@@@@@@@@
 			xor		rax, rax		; for now no move at RST (cd .ff)
 ;			xor		rdx, rdx
 			mov		cl, 4
@@ -101,18 +94,12 @@ SECTION .text		ALIGN=16
 			;
 .mrk%2:
 			;
-			cmp		dl, 0xd9
-			jz		.eoi%2			; eoi
-			shr		dl, 4
-			cmp		dl, 0x0d
-			jnz		.err%2			; err
-			mov		dl, byte [data + 1]
-			and		dl, 0x0F
-			cmp		dl, 0x08
-			jnl		.err%2			; 0xFFD[A-F]
-;			jz		.soi
-			; RSTi
-;			add		data, 1
+			cmp		dl, 0xd8
+			jge		.mrk2%2
+			cmp		dl, 0xcf
+			jle		.mrk1%2
+
+			;    [FFD0 - FFD7]  RSTi
 .sh%2		shl		eax, 8
 			sub		cl, 1
 			jnz		.sh%2
@@ -120,11 +107,41 @@ SECTION .text		ALIGN=16
 			jmp		.cp%2
 			;
 
+.mrk2%2:	; 				>= 0xFFD8
+			je		.soi%2			; ffd8 : SOI*
+			cmp		dl, 0xda		;
+			jl		.eoi%2			; ffd9 : EOI*
+			je		.err%2			; ffda : SOS*
+			cmp		dl, 0xdc
+			jl		.err%2			; ffdb : DQT*
+			je		.err%2			; ffdc : DNL
+			cmp		dl, 0xde
+			jl		.err%2			; ffdd : DRI*
+			je		.err%2			; ffde : DHP
+			cmp		dl, 0xe0
+			jl		.err%2			; ffdf : EXP
+			je		.err%2			; ffe0 : APP0*
+			cmp		dl, 0xf0
+			jl		.err%2			; ffei : APPi
+			je		.err%2			; fff0 : JPG0
+			cmp		dl, 0xfe
+			jl		.err%2			; fffi : JPGn
+			je		.err%2			; fffe : COM
+			;
+			jmp		%5				; error
 
-.eoi%2:							; EOI
+.eoi%2:		; EOI
 			jmp		coopsample.done
 
-.err%2:							; ERR
+.soi%2:		; SOI
+			jmp		%5
+
+.mrk1%2		; < ffd0				; 0xffc[0-15]    SOF0: ffc0, DHT: ffc4, DAC: ffcc, JPEG: ffc8
+			cmp		dl, 0xC0
+			je		.err%2			; ffC0 : SOF0*
+			jmp		%5
+
+.err%2:		; ERR
 			jmp		%5
 
 %endmacro
