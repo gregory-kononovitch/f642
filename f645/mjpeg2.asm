@@ -13,6 +13,7 @@ BITS 	64
 
 %macro  begin 1
 	push    rbp
+	push	rbx
 	push	r12
 	push	r13
 	push	r14
@@ -27,6 +28,7 @@ BITS 	64
 	pop 	r14
 	pop 	r13
 	pop 	r12
+	pop		rbx
     pop     rbp
     ret
 %endmacro
@@ -50,6 +52,7 @@ FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
 SECTION .text		ALIGN=16
 
+; @@@@ jump where?
 ; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
 %macro feed 5
 			;
@@ -57,7 +60,7 @@ SECTION .text		ALIGN=16
 			;
 			test		off, 32
 			jnz			%1
-			bt			flags, 63	; flag stop after a RSTi (not EOI which jump to done for now)
+			bt			flags, 63	; flag stop after a RSTi or EOI (+ flag eoi 62)
 			jc			%1
 			;						; @@@@@@@@@@@@@@@@@@@@@@@@@@
 ;			xor		rax, rax		; for now no move at RST (cd .ff)
@@ -132,7 +135,10 @@ SECTION .text		ALIGN=16
 			jmp		%5				; error
 
 .eoi%2:		; EOI
-			jmp		coopsample.done
+			add		data, 2
+			bts		flags, 63			; stop flag set
+			bts		flags, 62			; eoi flag set
+			jmp		%1
 
 .soi%2:		; SOI
 			jmp		%5
@@ -168,11 +174,30 @@ SECTION .text		ALIGN=16
 
 ;;;;;;;;;;;;;;;
 ; STACK
-%define		VAR			0x0100
-%define		TREEL		0x17D0
-%define		TREEC		0x2EA0
-%define		QUANY		0x2FA0
-%define		QUANC		0x30A0
+%define		VAR			0x200	;0x0200
+
+%define		ZZI			0x300	;0x0200
+%define		ROWZI		0x400	;0x0200
+%define		COLZI		0x500	;0x0200
+%define		UVZI		0x600	;0x0200
+%define		QUANTI		0x700	;0x0200
+%define		DEQUI		0x800	;0x0200
+%define		CVTI		0x900	;0x0200
+%define		COSFI1		0xA00	;0x0200
+%define		COSFI2		0xB00	;0x0200
+%define		VAR0		0xC00	;0x0200
+%define		VAR1		0xD00	;0x0200
+%define		VAR2		0xE00	;0x0200
+%define		VAR3		0xF00	;0x0200
+%define		VAR4		0x1000	;0x0200
+%define		QLUMIN		0x1100	;0x0200
+%define		QCHROM		0x1200	;0x0200
+
+
+%define		WORK		4608	;
+
+%define		TREEL		10448
+%define		TREEC		16288
 
 %define		STACK		0X4000
 
@@ -218,6 +243,7 @@ decode645:
 %define		dest	rsi
 ;
 %define		iz		r12b
+%define		ii		r13
 ;
 			;
 			begin	STACK
@@ -235,14 +261,14 @@ decode645:
 				mov			rdx, HACL
 				;
 				;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
 ;;;; r8 used
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ltree:
 				%include "inclu/huftbl-1.s"
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				;
 				; AC Chrom tree
 				;
@@ -252,14 +278,14 @@ ltree:
 				mov			ecx, dword [NHACC]
 				mov			rdx, HACC
 				;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
 ;;;; r8 used
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ctree:
 				%include "inclu/huftbl-1.s"
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 				;
 				; Vars
@@ -273,19 +299,21 @@ ctree:
 				mov			rsi, rsi
 				xor			rcx, rcx				; @@@ mag shift
 				;
-;				sub			data, 2		; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ tmp (no RST for first seg)
+; -------------------------------------------------------------------------------------
+;
+;
+; -------------------------------------------------------------------------------------
 				;
 decmain:
 				;
 
 .loopsample:
-				;
+				; Ri
 				mov			dx, word [rbp - VAR + _ri0_us]
 				mov			word [rbp - VAR + _ri_us], dx
-
-				; FEED
 				;
-;				add			data, 2			; @@@@@@@@@@@@@@@@@@@ RST mngmnt for now
+				; initial FEED64
+				;
 				btr			flags, 63
 				movbe		bits, qword [data]
 				add			data, 8
@@ -302,20 +330,19 @@ decmain:
 				mov			dl, byte [rbp - VAR + _v0_uc]
 				mov			byte [rbp - VAR + _vi_uc], dl
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; rcx (symb) < 256     r8 (off) >= 9     .herr
-;;;;      -> value in dl
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;						Huffman DCLumin
+;	 rcx (symb) < 256     r8 (off) >= 9     .herr
+;	      -> value in dl
+;           -------------------------------------
+
 hdcl:			;
 .loophdcl
-				mov			iz, 1
-				logbits 64,a1; ###
+				mov			iz, 1			; iz
+				mov			ii, 0
+				%include "inclu/hufdcl-1.s"
 
-%include "inclu/hufdcl-1.s"
-
-				logbits 64,a2; ###
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 				;
 				;
 .herr			; svg
@@ -325,30 +352,51 @@ hdcl:			;
 				return
 
 .donehdcl		;
-				; @@@ value
-				shl			bits, cl
-				sub			off, cl					;
-				;
-
 				; svg
 				mov			byte [rsi], symb
 				add			rsi, 1
 
+;				test		symb, 0
+;				jz			.value
+				; @@@ value
+				mov			r15, bits
+				shl			bits, cl
+				sub			off, cl					;
+;				;
+;				sub			cl, 64
+;				neg			cl
+;				bts			r15, 63
+;				jc			.pos
+;				shr			r15, cl
+;				neg			r15d
+;				jmp			.val
+;.pos:
+;				shr			r15, cl
+;.val:
+;				imul		r15d, dword [QLUMIN]
+;				mov			dword [ZZI], r15d
+;				mov			dword [ROWZI], 0
+;				mov			dword [COLZI], 0
+;				mov			r15d, dword [UVZ]
+;				mov			dword [UVZI], r15d
+;				mov			ii, 1
+;.value:
+
+
 				;
 				; feed @@@
 				;
-;				feed32		.donedcl
-;				feed  		.donedcl
-				feed .donedcl, dcl, .donedcl, .donedcl, .donedcl	; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
+				feed .donedcl, dcl, .donedcl, .donedcl, .herr	; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
 				;
 .donedcl:		;
 				;
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; tree in [rbp - ]		off >= 1         .herr
-;;;;	-> value in byte[tree] == [r11]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;					Huffman ACLumin
+;	 tree in [rbp - ]		off >= 1         .herr
+;		-> value in byte[tree] == [r11]
+;           ----------------------------------
 hacl:
 .loop
 				logbits 64,a3; ###
@@ -359,7 +407,7 @@ hacl:
 
 				logbits 64,a4; ###
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 .herr:			; svg
 				mov			byte [rsi], 254
@@ -378,30 +426,59 @@ hacl:
 				;
 				; @@@ iz + value
 				; cp
-				mov			edx, ecx				;
+				mov			edx, ecx				; duplic symbol with 0..
 
 				; iz
 				shr			dl, 4
-				add			iz, dl
+				add			iz, dl					; @@@ case F0
 
 				; ### svg
-;				add			rsi, rdx				; nz
 				mov			byte [rsi], symb
 				add			rsi, 1
 
-				; @@@ value
+				; @@@ value ###
 				and			symb, 0x0F
 				shl			bits, cl
 				sub			off, cl
 
+;				; value
+;				and			symb, 0x0F
+;				test		symb, 0
+;				jz			.value
+;				; @@@ value
+;				mov			r15, bits
+;				shl			bits, cl
+;				sub			off, cl
+;				;
+;				mov			dl, cl
+;				sub			cl, 63
+;				neg			cl
+;				bts			r15, 63
+;				jc			.pos
+;				shr			r15, cl
+;				neg			r15d
+;				jmp			.val
+;.pos:
+;				shr			r15, cl
+;.val:
+;				imul		r15d, dword [QLUMIN + 4 * r12]
+;				mov			dword [ZZI + 4 * ii], r15d
+;				mov			r15d, dword [ROWZ + 4 * r12]
+;				mov			dword [ROWZI + 4 * ii], r15d
+;				mov			r15d, dword [COLZ + 4 * r12]
+;				mov			dword [COLZI + 4 * ii], r15d
+;				mov			r15d, dword [UVZ + 4 * r12]
+;				mov			dword [UVZI + 4 * ii], r15d
+;				add			ii, 1
+;.value:
+
 				; iz
-				add			iz, 1
+				add			iz, 1			; @@@ check ssss=0 rules
 
 				;
-				; feed@@@
-				;
-				;feed32 .doneacl
-				feed .doneacl, acl, .doneacl, .doneacl, .doneacl
+				; feed @@@
+				; err, a part,
+				feed .doneacl, acl, .doneacl, .doneacl, .herr
 
 				;
 .doneacl:		;
@@ -414,8 +491,9 @@ hacl:
 				mov			byte [rsi], 0
 				mov			byte [rsi+1], 255
 				add			rsi, 2
-				;feed32		.donel
-				feed .donel, eobacl, .donel, .donel, .donel
+
+				; @@@ feed here?
+				feed .donel, eobacl, .donel, .donel, .herr
 				;
 .donel:			;
 				sub			byte [rbp - VAR + _yi_uc], 1
@@ -429,20 +507,20 @@ hacl:
 ; --------------------------------- Chrominance ----------------------------
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; rcx (symb) < 256     r8 (off) >= 9     .herr
-;;;;      -> value in dl
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-hdcc:			;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;					    Huffman DC Chrom
+;	 rcx (symb) < 256     r8 (off) >= 9     .herr
+;	      -> value in dl
+;          ----------------------------------------
+
+hdcc:
 .loophdcc
-				mov			iz, 1
-				logbits 64,a1; ###
+				mov			iz, 1			; iz
+				mov			ii, 1			; ii
 
-%include "inclu/hufdcc-1.s"
+				%include "inclu/hufdcc-1.s"
 
-				logbits 64,a2; ###
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 				;
 				;
 .herr			; svg
@@ -452,19 +530,40 @@ hdcc:			;
 				return
 
 .donehdcc		;
-				; @@@ value
-				shl			bits, cl
-				sub			off, cl					;
-				;
-
 				; svg
 				mov			byte [rsi], symb
 				add			rsi, 1
 
+;				test		symb, 0
+;				jz			.value
+;				; @@@ value
+				mov			r15, bits
+				shl			bits, cl
+				sub			off, cl					;
+;				;
+;				sub			cl, 64
+;				neg			cl
+;				bts			r15, 63
+;				jc			.pos
+;				shr			r15, cl
+;				neg			r15d
+;				jmp			.val
+;.pos:
+;				shr			r15, cl
+;.val:
+;				imul		r15d, dword [QCHROM]
+;				mov			dword [ZZI], r15d
+;				mov			dword [ROWZI], 0
+;				mov			dword [COLZI], 0
+;				mov			r15d, dword [UVZ]
+;				mov			dword [UVZI], r15d
+;				mov			ii, 1
+;.value:
+
+
 				;
 				; feed@@@
 				;
-				;feed32		.donedcc
 				feed .donedcc, dcc, .donedcc, .donedcc, .donedcc
 
 				;
@@ -473,21 +572,23 @@ hdcc:			;
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; tree in [rbp - ]		off >= 1         .herr
-;;;;	-> value in byte[tree] == [r11]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;                     Huffman AC Chrom
+;	 tree in [rbp - ]		off >= 1         .herr
+;		-> value in byte[tree] == [r11]
+;           -----------------------------------
+
 hacc:
 .loop
 				logbits 64,a3; ###
 				;
 				mov			tree, qword [rbp - VAR + ptreec]
 				;
-%include "inclu/hufacc-1.s"
+				%include "inclu/hufacc-1.s"
 
 				logbits 64,a4; ###
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 .herr:			; svg
 				mov			byte [rsi], 254
@@ -528,7 +629,6 @@ hacc:
 				;
 				; feed@@@
 				;
-				;feed32		.doneacc
 				feed .doneacc, acc, .doneacc, .doneacc, .doneacc
 
 				;
@@ -542,8 +642,9 @@ hacc:
 				mov			byte [rsi], 0
 				mov			byte [rsi+1], 255
 				add			rsi, 2
-				;feed32		.donec
-				feed .donec, eobacc, .donec, .donec, .donec
+
+				; feed @@@
+				feed .donec, eobacc, .donec, .donec, .herr
 				;
 .donec:			;
 				sub			byte [rbp - VAR + _ui_uc], 1
@@ -557,26 +658,22 @@ hacc:
 				sub			byte [rbp - VAR + _ri_us], 1
 				jnz			decmain.loopri
 
-;mov byte [rsi], 255
-;add rsi, 1
-;mov qword [rsi], bits
-;add rsi, 8
-;mov byte [rsi], 255
-;add rsi, 1
-;return
-
 
 coopsample:
 				;
-				jmp 		decmain.loopsample
+				bt			flags, 62
+				jnc 		decmain.loopsample
 
 
 
 
 
-.done			;
+
+; -----------------------------------------------------------------------------
+
+decoderdone:	;
 				; svg
-				mov			byte [rsi], 255			; ###
+				mov			byte [rsi], 255				; ###
 				mov			qword [rsi + 1], bits
 				mov			byte [rsi + 9], 255			; ###
 				mov			rax, data
@@ -601,6 +698,111 @@ coopsample:
 
 
 
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+lfeed32:
+%macro testfeed 5
+			; @@@@
+			;
+			test		off, 32
+			jnz			%1
+			bt			flags, 63	; flag stop after a RSTi or EOI (+ flag eoi 62)
+			jc			%1
+			;						; @@@@@@@@@@@@@@@@@@@@@@@@@@
+;			xor		rax, rax		; for now no move at RST (cd .ff)
+;			xor		rdx, rdx
+			mov		cl, 4
+.loop%2		; loop 4 bytes
+			mov		dl, byte [data]
+			cmp		dl, 0xff
+			jz		.ff%2
+			; 1 ok
+.put%2:		shl		eax, 8
+			or		eax, edx
+			add		data, 1
+			sub		cl, 1
+			jnz		.loop%2
+			; 4 bytes done
+.cp%2		mov		cl, 32
+			sub		cl, off
+			shl		rax, cl
+			or		bits, rax
+			add		off, 32
+			xor		rax, rax
+			xor		rdx, rdx
+			jmp		%1
+
+.ff%2:		;
+;			add 	data, 1
+			mov 	dl, byte [data + 1]
+			cmp		dl, 0x00
+			jnz		.marker%2
+			; FF00
+			add 	data, 1				; discard 00
+			mov		dl, 0xff
+			jmp		.put%2
+			;
+
+.marker%2:	;
+			cmp		dl, 0xd8
+			jge		.mrk2%2				; > ffd7
+			cmp		dl, 0xcf
+			jle		.mrk1%2				; < ffd0
+			; RSTi   [ffD0 - ffd7]
+.sh%2		shl		eax, 8				; 0
+			sub		cl, 1
+			jnz		.sh%2
+			bts		flags, 63			; rst stop flag set
+			add		data, 2				; rst discard
+			jmp		.cp%2
+			;
+
+.mrk2%2:	; 				>= 0xFFD8
+			je		.soi%2			; ffd8 : SOI*
+			cmp		dl, 0xda		;
+			jl		.eoi%2			; ffd9 : EOI*
+			je		.err%2			; ffda : SOS*
+			cmp		dl, 0xdc
+			jl		.err%2			; ffdb : DQT*
+			je		.err%2			; ffdc : DNL
+			cmp		dl, 0xde
+			jl		.err%2			; ffdd : DRI*
+			je		.err%2			; ffde : DHP
+			cmp		dl, 0xe0
+			jl		.err%2			; ffdf : EXP
+			je		.err%2			; ffe0 : APP0*
+			cmp		dl, 0xf0
+			jl		.err%2			; ffei : APPi
+			je		.err%2			; fff0 : JPG0
+			cmp		dl, 0xfe
+			jl		.err%2			; fffi : JPGn
+			je		.err%2			; fffe : COM
+			;
+			jmp		%5				; error
+
+.eoi%2:		; EOI
+			add		data, 2
+			bts		flags, 63			; stop flag set
+			bts		flags, 62			; eoi flag set
+			jmp		%1
+
+.soi%2:		; SOI
+			jmp		%5
+
+.mrk1%2		; < ffd0				; 0xffc[0-15]    SOF0: ffc0, DHT: ffc4, DAC: ffcc, JPEG: ffc8
+			cmp		dl, 0xC0
+			je		.err%2			; ffC0 : SOF0*
+			jmp		%5
+
+.err%2:		; ERR
+			jmp		%5
+
+%endmacro
+
+			ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; scan645(void *ptr, int size, int[] res)
