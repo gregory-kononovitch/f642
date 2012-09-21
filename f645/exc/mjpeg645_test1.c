@@ -115,7 +115,8 @@ int test_scan645() {
 
 int main() {
     int i, j;
-    int lenb = 72027;   // 612311;
+    int lenb = 72025;   // 612311;
+    long c1, c2;
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
 //    return test_scan645();
@@ -168,8 +169,10 @@ int main() {
 //    add = huf4man645(src->data + off1 + 12, hres);
 //    LOG("Huffman: found symbol %d at %ld", hres[0], add - src->data);
 
+    c1 = ReadTSC();
     uint8_t *addr = (uint8_t*)decode645(src->data + off1, hres, off2 - off1);
-    LOG("Decode: reached %ld", addr - src->data);
+    c2 = ReadTSC();
+    LOG("Decode: reached %ld for %ld µ", addr - src->data, c2 - c1);
 
 //    printf("Decode sequence:\n");
 //    int w = 35;
