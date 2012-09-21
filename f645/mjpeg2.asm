@@ -79,8 +79,6 @@ SECTION .text		ALIGN=16
 			sub		cl, 1
 			jnz		.loop%2
 			; 4 ok
-;			bswap	eax
-;			add		data, 4
 			mov		cl, 32
 			sub		cl, off
 			shl		rax, cl
@@ -535,7 +533,7 @@ hacc:
 
 
 
-$feed:
+lfeed:
 	test		off, 32
 	jnz			hdcl.donedcl
 	;
