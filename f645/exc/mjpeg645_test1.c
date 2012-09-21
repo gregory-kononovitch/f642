@@ -24,10 +24,26 @@ static void dump645(mjpeg645_img *img, int len) {
 // asm
 extern int64_t ReadTSC();
 
+int asmtest(void *tmp, int lenb) {
+    int j, k;
+    uint8_t *ptr = tmp, *lim = tmp + lenb;
+    while(ptr < lim) {
+        if (*ptr == 0xFF) {
+            j++;
+            if (ptr[1] == 0x00) {
+                k++;
+            }
+            if (ptr[1] == 0xD9) {
+                break;
+            }
+        }
+        ptr++;
+    }
+}
 
 int test_scan645() {
     int i, j, k;
-    int lenb = 72027;   // 612311;
+    int lenb = 72025;   // 612311;
     long c1, c2;
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
@@ -51,18 +67,19 @@ int test_scan645() {
 
     //
     i = j = k = 0;
-    uint8_t *ptr = tmp, *lim = tmp + lenb - 1;
+    uint8_t *ptr = tmp + 220, *lim = tmp + lenb;
     c1 = ReadTSC();
     while(ptr < lim) {
-        if (*(ptr++) == 0xFF) {
+        if (*ptr == 0xFF) {
             j++;
-            if (*(ptr++) == 0x00) {
+            if (ptr[1] == 0x00) {
                 k++;
             }
         }
+        ptr++;
     }
     c2 = ReadTSC();
-    printf("%d FF (%d FF00) in file for %ld\n", j, k, (c2 - c1));
+    printf("%d FF (%d FF00) in file for %ld : %02X%02X\n", j, k, (c2 - c1), tmp[lenb-2], tmp[lenb-1]);
 
     // scan test
     int res[20] = {0};
@@ -72,7 +89,7 @@ int test_scan645() {
     c2 = ReadTSC();
     printf("Scan   : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d / %d |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3], 72027);
 
-    uint8_t *l = (uint8_t*) tmp;
+//    uint8_t *l = (uint8_t*) tmp;
 //    for(i = 0 ; i < 16 ; i++) l[i] = i;
 //    l[2] = 0xFF;
 //    l[3] = 0x00;
@@ -81,15 +98,15 @@ int test_scan645() {
     memset(res, 0, 16);
 
     c1 = ReadTSC();
-    ret = scan645o(tmp, lenb, res);
+    ret = scan645o(tmp + 220, lenb - 220, res);
     c2 = ReadTSC();
 
     char *dump(uint8_t *p) {static char c[89];int i;for(i=0;i<16;i++) snprintf(c+3*i,10,"%02X ",p[i]);return c;}
     printf("Ai : %s\n", dump(la));
     printf("Bi : %s\n", dump(la+16));
     printf("Ci : %s\n", dump(la+32));
-    printf("%016lX : %016lX - %016lX\n", ret, l[0], l[1]);
-    printf("Scan-o : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d - %d |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3], 72027);
+    printf("%016lX : %016lX - %016lX\n", ret);
+    printf("Scan-o : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d - %d |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3], 72025);
 
 
 
@@ -101,7 +118,7 @@ int main() {
     int lenb = 72027;   // 612311;
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
-    return test_scan645();
+//    return test_scan645();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
