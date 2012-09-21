@@ -60,10 +60,13 @@ SECTION .text		ALIGN=16
 %endmacro
 
 
-%macro feed 5	; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
+; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
+%macro feed 5
 	test		off, 32
 	jnz			%1
 	;
+			xor		rax, rax
+			xor		rdx, rdx
 			mov		cl, 4
 .loop%2
 			mov		dl, byte [data]
@@ -76,13 +79,15 @@ SECTION .text		ALIGN=16
 			sub		cl, 1
 			jnz		.loop%2
 			; 4 ok
-			movbe	eax, eax
-			add		data, 4
+;			bswap	eax
+;			add		data, 4
 			mov		cl, 32
 			sub		cl, off
 			shl		rax, cl
 			or		bits, rax
 			add		off, 32
+			xor		rax, rax
+			xor		rdx, rdx
 			jmp		%1
 
 .ff%2:
@@ -296,8 +301,9 @@ hdcl:			;
 				;
 				; feed@@@
 				;
-				feed32		.donedcl
-
+;				feed32		.donedcl
+;				feed  		.donedcl
+				feed .donedcl, dcl, .donedcl, .donedcl, .donedcl	; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
 				;
 .donedcl:		;
 				;
@@ -357,7 +363,8 @@ hacl:
 				;
 				; feed@@@
 				;
-				feed32		.doneacl
+				;feed32 .doneacl
+				feed .doneacl, acl, .doneacl, .doneacl, .doneacl
 
 				;
 .doneacl:		;
@@ -367,7 +374,8 @@ hacl:
 				jmp			hacl.loop
 
 .eobl			;
-				feed32		.donel
+				;feed32		.donel
+				feed .donel, eobacl, .donel, .donel, .donel
 				;
 .donel:			;
 				sub			byte [rbp - VAR + _yi_uc], 1
@@ -415,7 +423,8 @@ hdcc:			;
 				;
 				; feed@@@
 				;
-				feed32		.donedcc
+				;feed32		.donedcc
+				feed .donedcc, dcc, .donedcc, .donedcc, .donedcc
 
 				;
 .donedcc:		;
@@ -477,7 +486,8 @@ hacc:
 				;
 				; feed@@@
 				;
-				feed32		.doneacc
+				;feed32		.doneacc
+				feed .doneacc, acc, .doneacc, .doneacc, .doneacc
 
 				;
 .doneacc:		;
@@ -487,7 +497,8 @@ hacc:
 				jmp			hacc.loop
 
 .eobc			;
-				feed32		.donec
+				;feed32		.donec
+				feed .donec, eobacc, .donec, .donec, .donec
 				;
 .donec:			;
 				sub			byte [rbp - VAR + _ui_uc], 1
@@ -524,6 +535,60 @@ hacc:
 
 
 
+$feed:
+	test		off, 32
+	jnz			hdcl.donedcl
+	;
+			xor 	rax, rax
+			mov		cl, 4
+.loopDCL
+			mov		dl, byte [data]
+			cmp		dl, 0xff
+			jz		.ffDCL
+			; 1 ok
+.putDCL:
+			shl		eax, 8
+			or		eax, edx
+			add		data, 1
+			sub		cl, 1
+			jnz		.loopDCL
+			; 4 ok
+			bswap	eax
+			add		data, 4
+			mov		cl, 32
+			sub		cl, off
+			shl		rax, cl
+			or		bits, rax
+			add		off, 32
+			jmp		hdcl.donedcl
+
+.ffDCL:
+			;
+			add 	data, 1
+			mov 	dl, byte [data]
+			cmp		dl, 0x00
+			jnz		.mrkDCL
+			; FF00
+			mov		dl, 0xff
+			jmp		.putDCL
+			;
+.mrkDCL:
+			;
+			cmp		dl, 0xd9
+			jz		.eoiDCL
+			shr		dl, 4
+			cmp		dl, 0x0d
+			jnz		.errDCL
+			add		data, 1
+			jmp		hdcl.donedcl			; RDi
+			;
+
+
+.eoiDCL:							; EOI
+			jmp		hdcl.donedcl
+
+.errDCL:							; ERR
+			jmp		hdcl.donedcl
 
 
 
