@@ -57,11 +57,13 @@ SECTION .text		ALIGN=16
 			;
 			test		off, 32
 			jnz			%1
+			bt			flags, 63	; flag stop after a RSTi (not EOI which jump to done for now)
+			jc			%1
 			;						; @@@@@@@@@@@@@@@@@@@@@@@@@@
-			xor		rax, rax		; for now no move at RST (cd .ff)
+;			xor		rax, rax		; for now no move at RST (cd .ff)
 ;			xor		rdx, rdx
 			mov		cl, 4
-.loop%2
+.loop%2		; loop 4 bytes
 			mov		dl, byte [data]
 			cmp		dl, 0xff
 			jz		.ff%2
@@ -71,7 +73,7 @@ SECTION .text		ALIGN=16
 			add		data, 1
 			sub		cl, 1
 			jnz		.loop%2
-			; 4 ok
+			; 4 bytes done
 .cp%2		mov		cl, 32
 			sub		cl, off
 			shl		rax, cl
@@ -81,29 +83,28 @@ SECTION .text		ALIGN=16
 			xor		rdx, rdx
 			jmp		%1
 
-.ff%2:
-			;
+.ff%2:		;
 ;			add 	data, 1
 			mov 	dl, byte [data + 1]
 			cmp		dl, 0x00
-			jnz		.mrk%2
+			jnz		.marker%2
 			; FF00
-			add 	data, 1
+			add 	data, 1				; discard 00
 			mov		dl, 0xff
 			jmp		.put%2
 			;
-.mrk%2:
-			;
-			cmp		dl, 0xd8
-			jge		.mrk2%2
-			cmp		dl, 0xcf
-			jle		.mrk1%2
 
-			;    [FFD0 - FFD7]  RSTi
-.sh%2		shl		eax, 8
+.marker%2:	;
+			cmp		dl, 0xd8
+			jge		.mrk2%2				; > ffd7
+			cmp		dl, 0xcf
+			jle		.mrk1%2				; < ffd0
+			; RSTi   [ffD0 - ffd7]
+.sh%2		shl		eax, 8				; 0
 			sub		cl, 1
 			jnz		.sh%2
-			;
+			bts		flags, 63			; rst stop flag set
+			add		data, 2				; rst discard
 			jmp		.cp%2
 			;
 
@@ -210,6 +211,7 @@ SECTION .text		ALIGN=16
 decode645:
 %define		symb	cl
 %define		off		r8b
+%define		flags	r8
 %define		bits	r9
 %define		data	r10
 %define		tree	r11
@@ -271,7 +273,7 @@ ctree:
 				mov			rsi, rsi
 				xor			rcx, rcx				; @@@ mag shift
 				;
-				sub			data, 2		; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ tmp (no RST for first seg)
+;				sub			data, 2		; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ tmp (no RST for first seg)
 				;
 decmain:
 				;
@@ -283,10 +285,12 @@ decmain:
 
 				; FEED
 				;
-				add			data, 2			; @@@@@@@@@@@@@@@@@@@ RST mngmnt for now
+;				add			data, 2			; @@@@@@@@@@@@@@@@@@@ RST mngmnt for now
+				btr			flags, 63
 				movbe		bits, qword [data]
 				add			data, 8
 				mov			off, 64
+
 				logbits 64,a0 ; ###
 
 .loopri			;
