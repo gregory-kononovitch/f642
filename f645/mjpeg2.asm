@@ -670,11 +670,16 @@ scan645o:
 				jnz			.t1
 				add			r9, 1
 				test		byte [_A1], 0xff
-				jnz			.marker
+				jnz			.m0
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C1], al
 				jmp			.t2
+
+.m0
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C0], al
 
 .t1				;
 				sub			al, 1
@@ -771,12 +776,14 @@ scan645o:
 .t8
 
 .t9
-
-				mov			eax, dword [rbp - 0x20]
+				movaps		xmm2, oword [_C0]
+				pshufb		xmm0, xmm2
+				movaps		oword [_A0], xmm0
+				mov			rax, dword [_A0]
 
 .coot:
-				add			data, 8
-				sub			rsi, 8
+				add			data, al
+				sub			rsi, al
 				jge			.loop
 
 
