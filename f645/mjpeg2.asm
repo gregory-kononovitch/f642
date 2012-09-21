@@ -287,6 +287,18 @@ ctree:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;						Workspace initialization
+;              ----------------------------------------
+
+				mov			cx, 32
+				xor			rdx, rdx
+.loop1
+
+
+
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 				;
 				; Vars
 				mov			word [rbp - VAR + _ri0_us], 10
@@ -297,6 +309,7 @@ ctree:
 				;
 				mov			data, rdi
 				mov			rsi, rsi
+				xor			rdx, rdx				; @@@
 				xor			rcx, rcx				; @@@ mag shift
 				;
 ; -------------------------------------------------------------------------------------
@@ -356,31 +369,32 @@ hdcl:			;
 				mov			byte [rsi], symb
 				add			rsi, 1
 
-;				test		symb, 0
-;				jz			.value
+				test		symb, 0x0F				; @@@ ?
+				jz			.value
 				; @@@ value
+				and			symb, 0x0F				; @@@
 				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl					;
-;				;
-;				sub			cl, 64
-;				neg			cl
-;				bts			r15, 63
-;				jc			.pos
-;				shr			r15, cl
-;				neg			r15d
-;				jmp			.val
-;.pos:
-;				shr			r15, cl
-;.val:
-;				imul		r15d, dword [QLUMIN]
-;				mov			dword [ZZI], r15d
-;				mov			dword [ROWZI], 0
-;				mov			dword [COLZI], 0
-;				mov			r15d, dword [UVZ]
-;				mov			dword [UVZI], r15d
-;				mov			ii, 1
-;.value:
+				;
+				sub			cl, 64
+				neg			cl
+				bts			r15, 63
+				jc			.pos
+				shr			r15, cl
+				neg			r15d
+				jmp			.val
+.pos:
+				shr			r15, cl
+.val:
+				imul		r15d, dword [rbp - WORK + QLUMIN]
+				mov			dword [rbp - WORK + ZZI], r15d
+				mov			dword [rbp - WORK + ROWZI], 0
+				mov			dword [rbp - WORK + COLZI], 0
+				mov			r15d, dword [UVZ]
+				mov			dword [rbp - WORK + UVZI], r15d
+				mov			ii, 1
+.value:
 
 
 				;
@@ -534,31 +548,32 @@ hdcc:
 				mov			byte [rsi], symb
 				add			rsi, 1
 
-;				test		symb, 0
-;				jz			.value
-;				; @@@ value
+				test		symb, 0x0F				; 0x0F??
+				jz			.value
+				and			symb, 0x0F
+				; @@@ value
 				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl					;
-;				;
-;				sub			cl, 64
-;				neg			cl
-;				bts			r15, 63
-;				jc			.pos
-;				shr			r15, cl
-;				neg			r15d
-;				jmp			.val
-;.pos:
-;				shr			r15, cl
-;.val:
-;				imul		r15d, dword [QCHROM]
-;				mov			dword [ZZI], r15d
-;				mov			dword [ROWZI], 0
-;				mov			dword [COLZI], 0
-;				mov			r15d, dword [UVZ]
-;				mov			dword [UVZI], r15d
-;				mov			ii, 1
-;.value:
+				;
+				sub			cl, 64
+				neg			cl
+				bts			r15, 63
+				jc			.pos
+				shr			r15, cl
+				neg			r15d
+				jmp			.val
+.pos:
+				shr			r15, cl
+.val:
+				imul		r15d, dword [rbp - VAR + QCHROM]
+				mov			dword [rbp - VAR + ZZI], r15d
+				mov			dword [rbp - VAR + ROWZI], 0
+				mov			dword [rbp - VAR + COLZI], 0
+				mov			r15d, dword [UVZ]
+				mov			dword [rbp - VAR + UVZI], r15d
+				mov			ii, 1
+.value:
 
 
 				;
