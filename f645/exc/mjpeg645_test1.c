@@ -70,8 +70,12 @@ int test_scan645() {
     c1 = ReadTSC();
     uint8_t *ret = scan645(tmp, lenb, res);
     c2 = ReadTSC();
+    printf("Scan   : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d  |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3]);
 
-    printf("Scan : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d  |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3]);
+    c1 = ReadTSC();
+    ret = scan645o(tmp, lenb, res);
+    c2 = ReadTSC();
+    printf("Scan-o : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d  |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3]);
 
 
 

@@ -26,7 +26,7 @@ BITS 	64
 
 global 	decode645:			function
 global 	scan645:			function
-
+global 	scan645o:			function
 
 
 SECTION .data		ALIGN=16
@@ -593,6 +593,9 @@ scan645:
 				xor			r9, r9
 				xor			r10, r10
 				xor			r11, r11
+				xor			rax, rax
+
+.mloop:
 				mov			al, 4
 .loop:
 				;
@@ -605,14 +608,34 @@ scan645:
 				jmp			.coot
 
 .ff:
+				add			r9, 1
+				cmp			byte [data + 1], 0
+				jnz			.marker
+				add			r10, 1
+				add			data, 2
+				sub			rsi, 1
+				sub			al, 1
+				mov			byte [_B0 + rax], 0xFF
+				jmp			.coot
 
 
+.marker
+				add			r11, 1
+				add			data, 2
+				sub			rsi, 1
 
 .coot:
 				cmp			al, 0
 				jnz			.loop
+				mov			ecx, dword [_B0]
+
+.mcoot			sub			rsi, 4
+				jge			.mloop
 
 .end:
+				mov			dword [rdx], r9d
+				mov			dword [rdx+4], r10d
+				mov			dword [rdx+8], r11d
 				return
 
 
