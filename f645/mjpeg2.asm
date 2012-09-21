@@ -650,18 +650,86 @@ scan645o:
 				xor			r9, r9
 				xor			r10, r10
 				xor			r11, r11
+				xor			rax, rax
+				xor			rcx, rcx
+				xor			r12, r12
+				mov			r13, rdx
+				;
+				and			rsi, 0xfffffff0
+				sub			rsi, 8
 
 .loop:
 				;
-				movdqa		xmm2, oword [FF16]
-				movdqu		xmm1, oword [data]
-				pxor		xmm2, xmm1
-				movdqa		oword [_A0], xmm1
-				movdqa		oword [_B0], xmm2
-				movdqa		xmm2, oword [F128]
-				movdqa		oword [_C0], xmm2
+				movdqa		xmm1, oword [FF16]
+				movdqu		xmm0, oword [data]
+				pxor		xmm1, xmm0
+				movdqa		oword [_A0], xmm0
+				movdqa		oword [_B0], xmm1
+				movdqa		xmm1, oword [F128]
+				movdqa		oword [_C0], xmm1
 				;
-				mov			al, 16
+				mov			al, 0
+				mov			cl, 0
+
+.t
+				add			r12, 1							; xx
+				mov			byte [_C0 + rcx], al
+				test		byte [_B0 + rcx], 0xff
+				jnz			.n
+				; FF
+				add			r9, 1							; FF
+				test		byte [_A0 + rcx + 1], 0xff
+				jnz			.m
+				; FF00
+				add			r10, 1							; FF00
+				add			al, 2
+				add			cl, 1
+				mov			byte [_C0 + rcx], al
+				jmp			.n
+
+.m				; 0xFFD9 - EOI
+				add			r11, 1							; FFxx
+				add			al, 2
+				mov			byte [_C0 + rcx], al
+
+
+.n
+				add			al, 1
+				add			cl, 1
+				cmp			cl, 8
+				jl			.t
+
+.c:
+				add			data, rax
+				sub			rsi, rax
+				;
+				movaps		xmm1, oword [_C0]
+				movaps		xmm0, oword [_A0]
+				pshufb		xmm0, xmm1
+				movaps		oword [_B0], xmm0
+
+				movbe		rdx, qword [_B0]
+				;
+
+;movaps			xmm2, oword [_A0]
+;movaps			oword [r13], xmm2
+;movaps			xmm2, oword [_B0]
+;movaps			oword [r13+16], xmm2
+;movaps			xmm2, oword [_C0]
+;movaps			oword [r13+32], xmm2
+
+;mov			rax, rdx
+;return
+				jg			.loop
+
+.e:
+				mov			rax, rdx
+				mov			dword [r13], r9d
+				mov			dword [r13+4], r10d
+				mov			dword [r13+8], r11d
+				mov			dword [r13+12], r12d
+				return
+; ---------------------
 
 .t0				;
 				sub			al, 1
@@ -688,11 +756,16 @@ scan645o:
 				jnz			.t2
 				add			r9, 1
 				test		byte [_A2], 0xff
-				jnz			.marker
+				jnz			.m1
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C2], al
 				jmp			.t3
+
+.m1
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C1], al
 
 .t2				;
 				sub			al, 1
@@ -701,11 +774,16 @@ scan645o:
 				jnz			.t3
 				add			r9, 1
 				test		byte [_A3], 0xff
-				jnz			.marker
+				jnz			.m2
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C3], al
 				jmp			.t4
+
+.m2
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C2], al
 
 .t3				;
 				sub			al, 1
@@ -714,11 +792,16 @@ scan645o:
 				jnz			.t4
 				add			r9, 1
 				test		byte [_A4], 0xff
-				jnz			.marker
+				jnz			.m3
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C4], al
 				jmp			.t5
+
+.m3
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C3], al
 
 .t4				;
 				sub			al, 1
@@ -727,11 +810,16 @@ scan645o:
 				jnz			.t5
 				add			r9, 1
 				test		byte [_A5], 0xff
-				jnz			.marker
+				jnz			.m4
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C5], al
 				jmp			.t6
+
+.m4
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C4], al
 
 .t5				;
 				sub			al, 1
@@ -740,11 +828,16 @@ scan645o:
 				jnz			.t6
 				add			r9, 1
 				test		byte [_A6], 0xff
-				jnz			.marker
+				jnz			.m5
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C6], al
 				jmp			.t7
+
+.m5
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C5], al
 
 .t6				;
 				sub			al, 1
@@ -753,11 +846,16 @@ scan645o:
 				jnz			.t7
 				add			r9, 1
 				test		byte [_A7], 0xff
-				jnz			.marker
+				jnz			.m6
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C7], al
 				jmp			.t8
+
+.m6
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C6], al
 
 .t7				;
 				sub			al, 1
@@ -766,11 +864,16 @@ scan645o:
 				jnz			.t8
 				add			r9, 1
 				test		byte [_A8], 0xff
-				jnz			.marker
+				jnz			.m7
 				add			r10, 1
 				sub			al, 2
 				mov			byte [_C8], al
 				jmp			.t9
+
+.m7
+				add			r11, 1
+				sub			al, 2
+				mov			byte [_C7], al
 
 
 .t8
@@ -779,11 +882,11 @@ scan645o:
 				movaps		xmm2, oword [_C0]
 				pshufb		xmm0, xmm2
 				movaps		oword [_A0], xmm0
-				mov			rax, dword [_A0]
+				mov			eax, dword [_A0]
 
 .coot:
-				add			data, al
-				sub			rsi, al
+				add			data, rax
+				sub			rsi, rax
 				jge			.loop
 
 
@@ -792,12 +895,5 @@ scan645o:
 				mov			dword [rdx+4], r10d
 				mov			dword [rdx+8], r11d
 				return
-
-.marker:
-				add			r11, 1
-				add			data, 8
-				sub			rsi, 8
-				jge			.loop
-				jmp			.end
 
 

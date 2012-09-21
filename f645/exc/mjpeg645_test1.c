@@ -65,17 +65,31 @@ int test_scan645() {
     printf("%d FF (%d FF00) in file for %ld\n", j, k, (c2 - c1));
 
     // scan test
-    int res[8] = {0};
+    int res[20] = {0};
 
     c1 = ReadTSC();
     uint8_t *ret = scan645(tmp, lenb, res);
     c2 = ReadTSC();
-    printf("Scan   : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d  |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3]);
+    printf("Scan   : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d / %d |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3], 72027);
+
+    uint8_t *l = (uint8_t*) tmp;
+//    for(i = 0 ; i < 16 ; i++) l[i] = i;
+//    l[2] = 0xFF;
+//    l[3] = 0x00;
+    //
+    uint8_t *la = (uint8_t*) res;
+    memset(res, 0, 16);
 
     c1 = ReadTSC();
     ret = scan645o(tmp, lenb, res);
     c2 = ReadTSC();
-    printf("Scan-o : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d  |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3]);
+
+    char *dump(uint8_t *p) {static char c[89];int i;for(i=0;i<16;i++) snprintf(c+3*i,10,"%02X ",p[i]);return c;}
+    printf("Ai : %s\n", dump(la));
+    printf("Bi : %s\n", dump(la+16));
+    printf("Ci : %s\n", dump(la+32));
+    printf("%016lX : %016lX - %016lX\n", ret, l[0], l[1]);
+    printf("Scan-o : %ld in %.1f Kµ (%.3f) KHz  |  %d  |  %d  |  %d  |  %d - %d |\n", ret, 0.001*(c2 - c1), 1.5e6 / (c2 - c1), res[0], res[1], res[2], res[3], 72027);
 
 
 
