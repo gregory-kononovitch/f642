@@ -173,6 +173,7 @@ int main() {
     uint8_t *addr = (uint8_t*)decode645(src->data + off1, hres, off2 - off1);
     c2 = ReadTSC();
     LOG("Decode: reached %ld for %ld µ", addr - src->data, c2 - c1);
+    LOG("Return %ld", addr);
 
 //    printf("Decode sequence:\n");
 //    int w = 35;
@@ -184,18 +185,36 @@ int main() {
 //    }
 //    printf("Done\n");
 
+    int stats[64] = {0};
+    int min = 0;
+    int max = 0;
     printf("Decode sequence:\n|");
-    for(i = 0 ; i < 1024 ; i++) {
+    for(i = 0 ; i < 70024 ; i++) {
         if (hres[i] != 0xFF) {
             printf("%3u|", hres[i]);
         } else {
             printf(" - |\n|", hres[i]);
             if (*((long*)(hres + i + 1)) == 0) break;
         }
+        if (hres[i] == 255 && hres[i-2] == 0) {
+            min++;
+            if (hres[i-1] > max) max = hres[i-1];
+            stats[hres[i-1]]++;
+        }
     }
     printf("\n");
     printf("Done\n");
 
+    printf("Stats for %d blocks, max = %d\n", min, max);
+    max = 0;
+    for(i = 0 ; i < 64 ; i++) {
+        max += stats[i];
+    }
+    min = 0;
+    for(i = 0 ; i < 64 ; i++) {
+        min += stats[i];
+        printf("NB[%d] = %d  ( %.2f  -  %.2f )\n", i, stats[i], 100. * stats[i] / max, 100.*min/max);
+    }
 
 
 // --------------------------------------------------------------------------------

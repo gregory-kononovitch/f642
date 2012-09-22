@@ -17,14 +17,14 @@ BITS 	64
 	push	r12
 	push	r13
 	push	r14
-	push	r15
+;	push	r15
 	mov     rbp, rsp
 	sub     rsp, %1
 %endmacro
 
 %macro  return 0
 	mov     rsp, rbp
-	pop 	r15
+;	pop 	r15
 	pop 	r14
 	pop 	r13
 	pop 	r12
@@ -48,6 +48,13 @@ ALIGN 16
 F128		db		128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128
 FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
+PDECAL		dd		0.0, 0.0, 0.0, 0.0
+    		dd		1.0, 0.0, 0.0, 0.0
+    		dd		1.0, 1.0, 0.0, 0.0
+    		dd		1.0, 1.0, 1.0, 0.0
+
+PF8			dd		8.0, 8.0, 8.0, 8.0
+PF128		dd		128.0, 128.0, 128.0, 128.0
 
 
 SECTION .text		ALIGN=16
@@ -185,8 +192,8 @@ SECTION .text		ALIGN=16
 %define		CVTI		0x900	;0x0200
 %define		COSFI1		0xA00	;0x0200
 %define		COSFI2		0xB00	;0x0200
-%define		VAR0		0xC00	;0x0200
-%define		VAR1		0xD00	;0x0200
+%define		SUMHI		0xC00	;0x0200
+%define		PIXFI		0xD00	;0x0200
 %define		VAR2		0xE00	;0x0200
 %define		VAR3		0xF00	;0x0200
 %define		VAR4		0x1000	;0x0200
@@ -216,6 +223,16 @@ SECTION .text		ALIGN=16
 
 ;
 %define		ppxor		0x50
+
+%define		_vc1		0x60
+%define		_vc2		0x61
+%define		_vc3		0x62
+%define		_vc4		0x63
+%define		_vs1		0x64
+%define		_vs2		0x66
+%define		_vi1		0x68
+%define		_vi2		0x6C
+
 ;
 %define		_ri0_us		0x70
 %define		_ri_us		0x72
@@ -351,8 +368,8 @@ decmain:
 
 hdcl:			;
 .loophdcl
-				mov			iz, 1			; iz
-				mov			ii, 0
+				mov			r12, strict qword 1			; iz
+				mov			r13, strict qword 1			; ii
 				%include "inclu/hufdcl-1.s"
 
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -443,48 +460,45 @@ hacl:
 				mov			edx, ecx				; duplic symbol with 0..
 
 				; iz
+;				and			r12, 0xFF				; @@@ somewhere, somenone..
 				shr			dl, 4
 				add			iz, dl					; @@@ case F0
 
 				; ### svg
-				mov			byte [rsi], symb
+				mov			byte [rsi], iz
+;				mov			byte [rsi], symb
 				add			rsi, 1
 
-				; @@@ value ###
+				; value
 				and			symb, 0x0F
+				test		symb, 0xFF
+				jz			.value
+				; @@@ value
+				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl
-
-;				; value
-;				and			symb, 0x0F
-;				test		symb, 0
-;				jz			.value
-;				; @@@ value
-;				mov			r15, bits
-;				shl			bits, cl
-;				sub			off, cl
-;				;
-;				mov			dl, cl
-;				sub			cl, 63
-;				neg			cl
-;				bts			r15, 63
-;				jc			.pos
-;				shr			r15, cl
-;				neg			r15d
-;				jmp			.val
-;.pos:
-;				shr			r15, cl
-;.val:
-;				imul		r15d, dword [QLUMIN + 4 * r12]
-;				mov			dword [ZZI + 4 * ii], r15d
-;				mov			r15d, dword [ROWZ + 4 * r12]
-;				mov			dword [ROWZI + 4 * ii], r15d
-;				mov			r15d, dword [COLZ + 4 * r12]
-;				mov			dword [COLZI + 4 * ii], r15d
-;				mov			r15d, dword [UVZ + 4 * r12]
-;				mov			dword [UVZI + 4 * ii], r15d
-;				add			ii, 1
-;.value:
+				;
+				mov			dl, cl
+				sub			cl, 64
+				neg			cl
+				bts			r15, 63
+				jc			.pos
+				shr			r15, cl
+				neg			r15d
+				jmp			.val
+.pos:
+				shr			r15, cl
+.val:
+				imul		r15d, dword [rbp - WORK + QLUMIN + 4 * r12]
+				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
+				mov			r15d, dword [ROWZ + 4 * r12]
+				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
+				mov			r15d, dword [COLZ + 4 * r12]
+				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
+				mov			r15d, dword [UVZ + 4 * r12]
+				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
+				add			ii, 1
+.value:
 
 				; iz
 				add			iz, 1			; @@@ check ssss=0 rules
@@ -502,14 +516,134 @@ hacl:
 				jmp			hacl.loop
 
 .eobl			; svg
-				mov			byte [rsi], 0
-				mov			byte [rsi+1], 255
-				add			rsi, 2
 
 				; @@@ feed here?
 				feed .donel, eobacl, .donel, .donel, .herr
 				;
 .donel:			;
+				; svg
+				mov			byte [rsi], 0
+				mov			byte [rsi+1], r13b
+				mov			byte [rsi+2], 255
+				add			rsi, 3
+
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;                            DCT Lumin
+;                    -------------------------
+idctl:
+				xor			rcx, rcx			; @@@
+				xor			r14, r14
+				xor			r15, r15
+				xor			rbx, rbx
+				mov			r12d, r13d			; cp ii
+				mov			cl, r13b			; cp ii
+				; raz
+				shr			cl, 2
+				shl			cl, 2
+				test		r12d, 3
+				jz			.m4
+				add			cl, 4
+				mov			byte [rbp - VAR + _vc1], cl			; cp i4i
+				;
+.lraz
+				mov			strict dword [rbp - VAR + ZZI + 4 * r12], strict dword 0
+.craz
+				add			r12d, 1
+				cmp			r12d, ecx
+				jl			.lraz
+
+.m4
+				shr			cl, 2						; ii4
+				mov			r12d, ecx					; svg ii4
+
+				; convert & mult uvz
+.loopcvt
+				shl			ecx, 2
+				cvtdq2ps	xmm0, oword [rbp - VAR + ZZI + 8 * rcx]
+				mulps		xmm0, oword [rbp - VAR + UVZI + 4 * rcx]
+				movaps		oword [rbp - VAR + ZZI + 4 * rcx], xmm0
+				shr			ecx, 2
+				sub			cl, 1
+				jnz			.loopcvt
+
+%define		x		r15d
+%define		y		r14d
+%define		index	dl
+
+.idct:			; IDCT
+				xor			y, y
+				xor			rbx, rbx
+				xor			rdx, rdx
+
+.loopy:
+				xor			x, x
+.loopx:
+
+				; prepar cos
+				xor			ecx, ecx
+				;
+.lprepcos
+				; cos(x, c)
+				mov			ebx, x
+				shl			ebx, 3
+				add			ebx, dword [rbp - VAR + COLZI + 4 * rcx]
+mov rax, rbx
+return
+				mov			ebx, dword [COSF + 4 * rbx]
+return
+				mov			dword [rbp - WORK + COSFI1 + 4 * rcx], ebx
+
+				; cos(y, r)
+				mov			ebx, y
+				shl			ebx, 3
+				add			ebx, dword [rbp - VAR + ROWZI + 4 * rcx]
+				mov			ebx, dword [COSF + 4 * rbx]
+				mov			dword [rbp - WORK + COSFI2 + 4 * rcx], ebx
+				;
+				cmp			ecx, r13d
+				jnz			.lprepcos
+				;
+				mov			ecx, r12d
+				xorps		xmm0, xmm0
+.lsum
+				shl			ecx, 1
+				movaps		xmm1, oword [rbp - WORK + ZZI + 8*rcx]
+				mulps		xmm1, oword [rbp - WORK + COSFI1 + 8 * rcx]
+				mulps		xmm1, oword [rbp - WORK + COSFI2 + 8 * rcx]
+				addps		xmm0, xmm1
+				;
+				shr			ecx, 1
+				sub			cl, 1
+				jnz			.lsum
+				;
+				xorps		xmm1, xmm1
+				movaps		oword [rbp - WORK + SUMHI], xmm1		; raz
+				movaps		oword [rbp - WORK + SUMHI], xmm0
+				addss		xmm0, dword [rbp - WORK + SUMHI + 4]	; @@@ ??
+				addss		xmm0, dword [rbp - WORK + SUMHI + 8]
+				addss		xmm0, dword [rbp - WORK + SUMHI + 12]
+				addss		xmm0, dword [PF128]
+				;
+				movss		dword [rbp - WORK + PIXFI + 4 * rdx], xmm0
+				;
+				add			index, 1
+
+.cootx:
+				add			x, 1
+				cmp			x, 8
+				jl			.loopx
+.cooty:
+				add			y, 1
+				cmp			y, 8
+				jl			.loopy
+
+return
+
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+
+
 				sub			byte [rbp - VAR + _yi_uc], 1
 				jnz			hdcl.loophdcl
 
@@ -629,14 +763,40 @@ hacc:
 				add			iz, dl
 
 				; ### svg
-;				add			rsi, rdx				; nz
-				mov			byte [rsi], symb
+				mov			byte [rsi], iz
+;				mov			byte [rsi], symb
 				add			rsi, 1
 
-				; @@@ value
+				; value
 				and			symb, 0x0F
+				test		symb, 0xFF
+				jz			.value
+				; @@@ value
+				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl
+				;
+				mov			dl, cl
+				sub			cl, 64
+				neg			cl
+				bts			r15, 63
+				jc			.pos
+				shr			r15, cl
+				neg			r15d
+				jmp			.val
+.pos:
+				shr			r15, cl
+.val:
+				imul		r15d, dword [rbp - WORK + QCHROM + 4 * r12]
+				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
+				mov			r15d, dword [ROWZ + 4 * r12]
+				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
+				mov			r15d, dword [COLZ + 4 * r12]
+				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
+				mov			r15d, dword [UVZ + 4 * r12]
+				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
+				add			ii, 1
+.value:
 
 				; iz
 				add			iz, 1
@@ -654,14 +814,17 @@ hacc:
 				jmp			hacc.loop
 
 .eobc			; svg
-				mov			byte [rsi], 0
-				mov			byte [rsi+1], 255
-				add			rsi, 2
 
 				; feed @@@
 				feed .donec, eobacc, .donec, .donec, .herr
 				;
 .donec:			;
+				; svg
+				mov			byte [rsi], 0
+				mov			byte [rsi+1], r13b
+				mov			byte [rsi+2], 255
+				add			rsi, 3
+
 				sub			byte [rbp - VAR + _ui_uc], 1
 				jnz			hdcc.loophdcc
 
