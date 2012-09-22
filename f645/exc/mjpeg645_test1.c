@@ -166,8 +166,10 @@ int main() {
     LOG("Return %ld ", addr);
 
     int *part = (int*)hres;
+    float *fart = (float*)hres;
     for(i = 0 ; i < 96 ; i++) {
-        printf("%d  ", part[i]);
+        //printf("%d  ", part[i]);
+        printf("%f  ", fart[i]);
 //        if (i % 16 == 7) printf(" | ");
 //        if (i % 16 == 15) printf(" |\n");
         if (part[i] == -9999) printf("\n");

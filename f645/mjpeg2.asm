@@ -197,8 +197,8 @@ SECTION .text		ALIGN=16
 %define		VAR2		0xE00	;0x0200
 %define		VAR3		0xF00	;0x0200
 %define		VAR4		0x1000	;0x0200
-%define		QLUMIN		0x1100	;0x0200
-%define		QCHROM		0x1200	;0x0200
+;%define		QLUMIN		0x1100	;0x0200
+;%define		QCHROM		0x1200	;0x0200
 
 
 %define		WORK		4608	;
@@ -413,21 +413,23 @@ hdcl:			;
 				jz			.value
 				; @@@ value
 				and			symb, 0x0F				; @@@
+				mov			edx, 1		; @@@neg
+				shl			edx, cl		;
 				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl					;
 				;
 				sub			cl, 64
 				neg			cl
-				bts			r15, 63
+				bt			r15, 63
 				jc			.pos
 				shr			r15, cl
-				neg			r15d
+				sub			r15d, edx
 				jmp			.val
 .pos:
 				shr			r15, cl
 .val:
-				imul		r15d, dword [rbp - WORK + QLUMIN]
+				imul		r15d, dword [rbp - WORK + QUANTIL]
 				mov			dword [rbp - WORK + ZZI], r15d
 				mov			dword [rbp - WORK + ROWZI], 0
 				mov			dword [rbp - WORK + COLZI], 0
@@ -501,18 +503,20 @@ hacl:
 				shl			bits, cl
 				sub			off, cl
 				;
-				mov			dl, cl
+				mov			edx, 1		; @@@neg
+				shl			edx, cl		;
 				sub			cl, 64
 				neg			cl
-				bts			r15, 63
+				bt			r15, 63
 				jc			.pos
+				; neg @@@@@@@@@@@@@
 				shr			r15, cl
-				neg			r15d
+				sub			r15d, edx
 				jmp			.val
 .pos:
 				shr			r15, cl
 .val:
-;				imul		r15d, dword [rbp - WORK + QLUMIN + 4 * r12]
+				imul		r15d, dword [rbp - WORK + QUANTIL + 4 * r12]
 				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
 				mov			r15d, dword [ROWZ + 4 * r12]
 				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
@@ -535,34 +539,34 @@ hacl:
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;							  DUMP
 ;                 ---------------------------
-%define logs rsi
-;				mov			logs, qword [rbp - VAR + pdest]
-				xor			r15, r15
-				xor			r14, r14
-;.razrsi0:			; 			RAZ RSI
-;				mov         strict qword [rcx + 8 * r14], strict 0
-;				add			r14, 1
-;				cmp			r14, 256
-;				jl			.razrsi0
+;%define logs rsi
+;;				mov			logs, qword [rbp - VAR + pdest]
+;				xor			r15, r15
 ;				xor			r14, r14
-
-				;;;;;;
-
-				mov			dword [logs], r13d		; ii
-				add			logs, 4
-
-.llppoo0:
-;				mov			r15d, dword [rbp - WORK + ROWZI + 4 * r14]
+;;.razrsi0:			; 			RAZ RSI
+;;				mov         strict qword [rcx + 8 * r14], strict 0
+;;				add			r14, 1
+;;				cmp			r14, 256
+;;				jl			.razrsi0
+;;				xor			r14, r14
+;
+;				;;;;;;
+;
+;				mov			dword [logs], r13d		; ii
+;				add			logs, 4
+;
+;.llppoo0:
+;				mov			r15d, dword [rbp - WORK + ZZI + 4 * r14]
 ;				mov			dword [logs], r15d
 ;				add			logs, 4
 ;
 ;				add			r14, 1
 ;				cmp 		r14, r13
 ;				jl			.llppoo0
-
-				mov			dword [logs], -9999		;
-				add			logs, 4
-
+;
+;				mov			dword [logs], -9999		;
+;				add			logs, 4
+;
 ;
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
@@ -584,7 +588,7 @@ hacl:
 ;				mov			byte [rsi+1], r13b
 ;				mov			byte [rsi+2], 255
 ;				add			rsi, 3
-return
+
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;							  DUMP
 ;                 ---------------------------
@@ -604,7 +608,7 @@ return
 				add			rcx, 32
 
 .llppoo
-				mov			r15d, dword [rbp - VAR + ZZI + 4 * r14]
+				mov			r15d, dword [rbp - WORK + ZZI + 4 * r14]
 				mov			dword [rcx], r15d
 
 
@@ -679,12 +683,12 @@ hdcc:
 .pos:
 				shr			r15, cl
 .val:
-				imul		r15d, dword [rbp - VAR + QCHROM]
-				mov			dword [rbp - VAR + ZZI], r15d
-				mov			dword [rbp - VAR + ROWZI], 0
-				mov			dword [rbp - VAR + COLZI], 0
+				imul		r15d, dword [rbp - WORK + QUANTIC]
+				mov			dword [rbp - WORK + ZZI], r15d
+				mov			dword [rbp - WORK + ROWZI], 0
+				mov			dword [rbp - WORK + COLZI], 0
 				mov			r15d, dword [UVZ]
-				mov			dword [rbp - VAR + UVZI], r15d
+				mov			dword [rbp - WORK + UVZI], r15d
 				mov			ii, 1
 .value:
 
@@ -766,7 +770,7 @@ hacc:
 .pos:
 				shr			r15, cl
 .val:
-				imul		r15d, dword [rbp - WORK + QCHROM + 4 * r12]
+				imul		r15d, dword [rbp - WORK + QUANTIC + 4 * r12]
 				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
 				mov			r15d, dword [ROWZ + 4 * r12]
 				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
