@@ -187,8 +187,8 @@ SECTION .text		ALIGN=16
 %define		ROWZI		0x400	;0x0200
 %define		COLZI		0x500	;0x0200
 %define		UVZI		0x600	;0x0200
-%define		QUANTI		0x700	;0x0200
-%define		DEQUI		0x800	;0x0200
+%define		QUANTIL		0x700	;0x0200
+%define		QUANTIC		0x800	;0x0200
 %define		CVTI		0x900	;0x0200
 %define		COSFI1		0xA00	;0x0200
 %define		COSFI2		0xB00	;0x0200
@@ -214,12 +214,11 @@ SECTION .text		ALIGN=16
 %define		PQUANL		0x10
 %define		PQUANC		0x18
 ;
-%define		pdata		0x20
-%define		pdest		0x28
+%define		pimg		0x20
+%define		pdata		0x28
+%define		pimgptr		0x30
+%define		pdest		0x38
 
-;
-%define		rowdu		0x30
-%define		coldu		0x34
 
 ;
 %define		ppxor		0x50
@@ -249,7 +248,7 @@ SECTION .text		ALIGN=16
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; extern long decode645(void *sos, void *dest, int size)
+; extern long decode645(void *img, void *dest, int size)
 decode645:
 %define		symb	cl
 %define		off		r8b
@@ -265,9 +264,33 @@ decode645:
 			;
 			begin	STACK
 			;
-				mov			qword [rbp - VAR + pdata], rdi
+				mov			qword [rbp - VAR + pimg], rdi
+				mov			rax, [rdi]						; @@@ img / img.data / img.ptr
+				mov			qword [rbp - VAR + pdata], rax
+				mov			rax, [rdi + 32]
+				mov			qword [rbp - VAR + pimgptr], rax
 				mov			qword [rbp - VAR + pdest], rsi
 				mov			dword [rbp - VAR + PTEST], edx
+				;
+				;    Quantization coefs
+				xor			rcx, rcx
+				mov			rax, [rdi + 48]
+.lpquantl
+				mov			edx, dword [rax + 4 * rcx]
+				mov 		dword [rbp - WORK + QUANTIL + 4 * rcx], edx
+				add			rcx, 1
+				cmp			rcx, 64
+				jl			.lpquantl
+				;
+				xor			rcx, rcx
+				mov			rax, [rdi + 56]
+.lpquantc
+				mov			edx, dword [rax + 4 * rcx]
+				mov 		dword [rbp - WORK + QUANTIC + 4 * rcx], edx
+				add			rcx, 1
+				cmp			rcx, 64
+				jl			.lpquantc
+
 				;
 				; AC Lumin tree
 				;
@@ -324,7 +347,7 @@ ctree:
 				mov			byte [rbp - VAR + _v0_uc], 1
 				;
 				;
-				mov			data, rdi
+				mov			data, qword [rbp - VAR + pimgptr]
 				mov			rsi, rsi
 				xor			rdx, rdx				; @@@
 				xor			rcx, rcx				; @@@ mag shift
@@ -383,8 +406,8 @@ hdcl:			;
 
 .donehdcl		;
 				; svg
-				mov			byte [rsi], symb
-				add			rsi, 1
+;				mov			byte [rsi], symb
+;				add			rsi, 1
 
 				test		symb, 0x0F				; @@@ ?
 				jz			.value
@@ -465,9 +488,9 @@ hacl:
 				add			iz, dl					; @@@ case F0
 
 				; ### svg
-				mov			byte [rsi], iz
-;				mov			byte [rsi], symb
-				add			rsi, 1
+;				mov			byte [rsi], iz
+;;				mov			byte [rsi], symb
+;				add			rsi, 1
 
 				; value
 				and			symb, 0x0F
@@ -489,7 +512,7 @@ hacl:
 .pos:
 				shr			r15, cl
 .val:
-				imul		r15d, dword [rbp - WORK + QLUMIN + 4 * r12]
+;				imul		r15d, dword [rbp - WORK + QLUMIN + 4 * r12]
 				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
 				mov			r15d, dword [ROWZ + 4 * r12]
 				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
@@ -508,11 +531,46 @@ hacl:
 				; err, a part,
 				feed .doneacl, acl, .doneacl, .doneacl, .herr
 
+.doneacl
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;							  DUMP
+;                 ---------------------------
+%define logs rsi
+;				mov			logs, qword [rbp - VAR + pdest]
+				xor			r15, r15
+				xor			r14, r14
+;.razrsi0:			; 			RAZ RSI
+;				mov         strict qword [rcx + 8 * r14], strict 0
+;				add			r14, 1
+;				cmp			r14, 256
+;				jl			.razrsi0
+;				xor			r14, r14
+
+				;;;;;;
+
+				mov			dword [logs], r13d		; ii
+				add			logs, 4
+
+.llppoo0:
+;				mov			r15d, dword [rbp - WORK + ROWZI + 4 * r14]
+;				mov			dword [logs], r15d
+;				add			logs, 4
+;
+;				add			r14, 1
+;				cmp 		r14, r13
+;				jl			.llppoo0
+
+				mov			dword [logs], -9999		;
+				add			logs, 4
+
+;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
 				;
-.doneacl:		;
-				; iz < 63
-				test		iz, 64
-				jnz			.donel
+				; iz < 64
+				cmp 		iz, 64
+				jge			.donel
 				jmp			hacl.loop
 
 .eobl			; svg
@@ -522,11 +580,11 @@ hacl:
 				;
 .donel:			;
 				; svg
-				mov			byte [rsi], 0
-				mov			byte [rsi+1], r13b
-				mov			byte [rsi+2], 255
-				add			rsi, 3
-
+;				mov			byte [rsi], 0
+;				mov			byte [rsi+1], r13b
+;				mov			byte [rsi+2], 255
+;				add			rsi, 3
+return
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;							  DUMP
 ;                 ---------------------------

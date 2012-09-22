@@ -72,6 +72,8 @@ enum _marker645 {
     , LAST
 };
 
+typedef struct _mjpeg645_img mjpeg645_img;
+
 typedef struct {
     uint16_t        key;
     uint8_t         index;
@@ -80,24 +82,37 @@ typedef struct {
     char            desc[33];
     //
     uint16_t        length;
+
+    //
+    int             (*load_data)(mjpeg645_img *img, uint8_t *data);
+
 } marker645;
 
 
 //
-typedef struct {
+struct _mjpeg645_img {
     // in
-    uint8_t     *data;
-    int         size;
+    uint8_t     *data;          // 0
+    int         size;           // 8
 
     // out
-    int         width;
-    int         height;
+    int         width;          // 12
+    int         height;         // 16
+    int         wxh;            // 20
 
     // decoder work
-    int         flags;
-    uint8_t     *ptr;
-    uint8_t     *eof;
-    int         offset;
+    int         flags;          // 24
+    int         offset;         // 28
+    uint8_t     *ptr;           // 32
+    uint8_t     *eof;           // 40
+
+    // Qanti
+    int         *quantizY;      // 48
+    int         *quantizUV;     // 56
+
+    //
+    int         row_du;         // 64
+    int         col_du;         // 68
 
     // in
     int         log;
@@ -106,18 +121,9 @@ typedef struct {
     marker645   *markers;
     int         lm;
 
-    // Qanti
-    float       *quantizY;
-    float       *quantizUV;
-
-    //
-    int         row_du;
-    int         col_du;
 
 
-
-
-} mjpeg645_img;
+};
 
 /**
  * ASM
@@ -127,7 +133,7 @@ extern long huf2man645(void *dseg, void *dest);
 extern long huf3man645(void *dseg, void *dest);
 extern long huf4man645(void *dseg, void *dest);
 
-extern long decode645(void *sos, void *dest, int size);
+extern long decode645(mjpeg645_img *img, void *dest, int size);
 
 // test
 extern uint8_t *scan645(uint8_t *ptr, int size, int *res);

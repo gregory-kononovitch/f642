@@ -36,6 +36,11 @@ static int _get_marker645(mjpeg645_img *img) {
                 img->markers[i].length = phtobe16p(img->ptr + 2);
                 if (img->log > 3) printf("\t\tkey = %04X found, length = %d\n", key, img->markers[i].length);
             }
+
+            if (img->markers[i].load_data) {
+                img->markers[i].load_data(img, img->ptr);
+            }
+
             return i;
         }
     }
@@ -100,29 +105,46 @@ int load_next_marker645(mjpeg645_img *img) {
 
 
 
-
+static int dqt_load645(mjpeg645_img *img, uint8_t *data) {
+    int i;
+    int *tmp;
+    //
+    if (img->quantizY[0] == 0) {
+        tmp = img->quantizY;
+    } else {
+        tmp = img->quantizUV;
+    }
+    //
+    printf("Load quantization coefs:\n");
+    for(i = 0 ; i < 64 ; i++) {
+        tmp[i] = data[2 + 3 + i];
+        printf(" %u", data[2 + 3 + i]);
+    }
+    printf("\n");
+    return 0;
+}
 
 
 /**
  *
  */
 static marker645 markers645[] = {
-    {.key = 0xFFD8, .index = SOI , .flags = 0 , .code = "SOI",  .desc = "Start of image"}
-  , {.key = 0xFFD9, .index = EOI , .flags = 0 , .code = "EOI",  .desc = "End of image"}
-  , {.key = 0xFFC0, .index = SOF0, .flags = 1 , .code = "SOF0", .desc = "Baseline DCT"}
-  , {.key = 0xFFDA, .index = SOS , .flags = 1 , .code = "SOS",  .desc = "Start of scan"}
-  , {.key = 0xFFDB, .index = DQT , .flags = 1 , .code = "DQT",  .desc = "Quantization table(s)"}
-  , {.key = 0xFFDD, .index = DRI , .flags = 1 , .code = "DRI",  .desc = "Restart interval"}
-  , {.key = 0xFFE0, .index = APP0, .flags = 1 , .code = "APP0", .desc = "Application segment"}
-  , {.key = 0xFFD0, .index = RST0, .flags = 0 , .code = "RST0", .desc = "Restart 0"}
-  , {.key = 0xFFD1, .index = RST1, .flags = 0 , .code = "RST1", .desc = "Restart 1"}
-  , {.key = 0xFFD2, .index = RST2, .flags = 0 , .code = "RST2", .desc = "Restart 2"}
-  , {.key = 0xFFD3, .index = RST3, .flags = 0 , .code = "RST3", .desc = "Restart 3"}
-  , {.key = 0xFFD4, .index = RST4, .flags = 0 , .code = "RST4", .desc = "Restart 4"}
-  , {.key = 0xFFD5, .index = RST5, .flags = 0 , .code = "RST5", .desc = "Restart 5"}
-  , {.key = 0xFFD6, .index = RST6, .flags = 0 , .code = "RST6", .desc = "Restart 6"}
-  , {.key = 0xFFD7, .index = RST7, .flags = 0 , .code = "RST7", .desc = "Restart 7"}
-  , {.key = 0x0000, .index = UNKN, .flags = 0 , .code = "UNKN", .desc = "UNKNOWN MARKER"}
+    {.key = 0xFFD8, .index = SOI , .flags = 0 , .code = "SOI",  .desc = "Start of image", .load_data = NULL}
+  , {.key = 0xFFD9, .index = EOI , .flags = 0 , .code = "EOI",  .desc = "End of image", .load_data = NULL}
+  , {.key = 0xFFC0, .index = SOF0, .flags = 1 , .code = "SOF0", .desc = "Baseline DCT", .load_data = NULL}
+  , {.key = 0xFFDA, .index = SOS , .flags = 1 , .code = "SOS",  .desc = "Start of scan", .load_data = NULL}
+  , {.key = 0xFFDB, .index = DQT , .flags = 1 , .code = "DQT",  .desc = "Quantization table(s)", .load_data = dqt_load645}
+  , {.key = 0xFFDD, .index = DRI , .flags = 1 , .code = "DRI",  .desc = "Restart interval", .load_data = NULL}
+  , {.key = 0xFFE0, .index = APP0, .flags = 1 , .code = "APP0", .desc = "Application segment", .load_data = NULL}
+  , {.key = 0xFFD0, .index = RST0, .flags = 0 , .code = "RST0", .desc = "Restart 0", .load_data = NULL}
+  , {.key = 0xFFD1, .index = RST1, .flags = 0 , .code = "RST1", .desc = "Restart 1", .load_data = NULL}
+  , {.key = 0xFFD2, .index = RST2, .flags = 0 , .code = "RST2", .desc = "Restart 2", .load_data = NULL}
+  , {.key = 0xFFD3, .index = RST3, .flags = 0 , .code = "RST3", .desc = "Restart 3", .load_data = NULL}
+  , {.key = 0xFFD4, .index = RST4, .flags = 0 , .code = "RST4", .desc = "Restart 4", .load_data = NULL}
+  , {.key = 0xFFD5, .index = RST5, .flags = 0 , .code = "RST5", .desc = "Restart 5", .load_data = NULL}
+  , {.key = 0xFFD6, .index = RST6, .flags = 0 , .code = "RST6", .desc = "Restart 6", .load_data = NULL}
+  , {.key = 0xFFD7, .index = RST7, .flags = 0 , .code = "RST7", .desc = "Restart 7", .load_data = NULL}
+  , {.key = 0x0000, .index = UNKN, .flags = 0 , .code = "UNKN", .desc = "UNKNOWN MARKER", .load_data = NULL}
 };
 
 
@@ -149,6 +171,10 @@ mjpeg645_img *alloc_mjpeg645_image(void *data, int size) {
         img->flags |= (1 << 31);
         img->lm   = -1;
     }
+    //
+    img->quantizY  = (int*)calloc(64, sizeof(int));
+    img->quantizUV = (int*)calloc(64, sizeof(int));
+
     //
     img->markers = calloc(LAST, sizeof(marker645));
     memcpy(img->markers, &markers645, LAST * sizeof(marker645));

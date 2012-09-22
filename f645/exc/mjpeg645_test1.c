@@ -123,12 +123,6 @@ int main() {
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
-//    FILE *filp = fopen("hdc-1.dat", "rb");
-//    memset(tmp, 0x62, lenb);
-//    fwrite(tmp, 1, lenb, filp);
-//    fclose(filp);
-//    return 0;
-
     fread(tmp, 1, lenb, filp);
     fclose(filp);
 
@@ -161,16 +155,12 @@ int main() {
         goto err;
     }
     int off2 = src->offset - 2;
-    LOG("Will try to translate data segment from [%d ; %d[", off1, off2);
+    LOG("Will try to decode data segment from [%d ; %d[", off1, off2);
 
     //
-//    uint8_t *add = huf3man645(src->data + off1, hres);
-//    LOG("Huffman: found symbol %d at %ld", hres[0], add - src->data);
-//    add = huf4man645(src->data + off1 + 12, hres);
-//    LOG("Huffman: found symbol %d at %ld", hres[0], add - src->data);
-
+    src->ptr = src->data + off1;
     c1 = ReadTSC();
-    uint8_t *addr = (uint8_t*)decode645(src->data + off1, hres, off2 - off1);
+    uint8_t *addr = (uint8_t*)decode645(src, hres, off2 - off1);
     c2 = ReadTSC();
     LOG("Decode: reached %ld for %ld µ", addr - src->data, c2 - c1);
     LOG("Return %ld ", addr);
@@ -178,8 +168,9 @@ int main() {
     int *part = (int*)hres;
     for(i = 0 ; i < 96 ; i++) {
         printf("%d  ", part[i]);
-        if (i % 16 == 7) printf(" | ");
-        if (i % 16 == 15) printf(" |\n");
+//        if (i % 16 == 7) printf(" | ");
+//        if (i % 16 == 15) printf(" |\n");
+        if (part[i] == -9999) printf("\n");
     }
     printf("\n");
     return 0;

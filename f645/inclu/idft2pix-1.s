@@ -1,5 +1,5 @@
 ;
-; file    : mjpeg2.asm
+; file    : idft2pix-1.s
 ; project : f645 (t508.f640/2)
 ;
 ; Created on: Sep 23, 2012 (fork of mjpeg2.asm)
