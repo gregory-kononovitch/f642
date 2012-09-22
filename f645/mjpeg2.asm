@@ -527,6 +527,36 @@ hacl:
 				mov			byte [rsi+2], 255
 				add			rsi, 3
 
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;							  DUMP
+;                 ---------------------------
+				mov			rcx, qword [rbp - VAR + pdest]
+				xor			r15, r15
+				xor			r14, r14
+.razrsi			; 			RAZ RSI
+				mov         strict qword [rcx + 8 * r14], strict 0
+				add			r14, 1
+				cmp			r14, 256
+				jl			.razrsi
+				xor			r14, r14
+
+				;;;;;;
+
+				mov			dword [rcx], r13d
+				add			rcx, 32
+
+.llppoo
+				mov			r15d, dword [rbp - VAR + ROWZI + 4 * r14]
+				mov			dword [rcx], r15d
+
+
+				add			rcx, 4
+
+				add			r14, 1
+				cmp 		r14, r13
+				jl			.llppoo
+return
+
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;                            DCT Lumin
 ;                    -------------------------
@@ -587,7 +617,7 @@ idctl:
 				mov			ebx, x
 				shl			ebx, 3
 				add			ebx, dword [rbp - VAR + COLZI + 4 * rcx]
-mov rax, rbx
+mov eax, dword [rbp - VAR + COLZI]
 return
 				mov			ebx, dword [COSF + 4 * rbx]
 return

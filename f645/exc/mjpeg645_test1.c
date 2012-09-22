@@ -173,8 +173,16 @@ int main() {
     uint8_t *addr = (uint8_t*)decode645(src->data + off1, hres, off2 - off1);
     c2 = ReadTSC();
     LOG("Decode: reached %ld for %ld µ", addr - src->data, c2 - c1);
-    LOG("Return %ld", addr);
+    LOG("Return %ld ", addr);
 
+    int *part = (int*)hres;
+    for(i = 0 ; i < 96 ; i++) {
+        printf("%d  ", part[i]);
+        if (i % 16 == 7) printf(" | ");
+        if (i % 16 == 15) printf(" |\n");
+    }
+    printf("\n");
+    return 0;
 //    printf("Decode sequence:\n");
 //    int w = 35;
 //    for(j = 0 ; j < 24 ; j++) {
