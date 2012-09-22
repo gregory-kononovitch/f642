@@ -1,17 +1,15 @@
 ;
-; file    : idft2pix-1.s
+; file    : idft2pix-2.s
 ; project : f645 (t508.f640/2)
 ;
-; Created on: Sep 22, 2012 (fork of mjpeg2.asm)
+; Created on: Sep 22, 2012 (fork of idft2pix-1.s)
 ; Author and copyright (C) 2012 : Gregory Kononovitch
 ; License : GNU Library or "Lesser" General Public License version 3.0 (LGPLv3)
 ; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ;
 
-;
-; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-; Left buggy for a simpler version2
-; @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
 
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;                            DCT Lumin

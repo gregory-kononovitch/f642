@@ -105,7 +105,7 @@ static int test() {
     struct v4l2_buffer frame;
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
     f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
-    //f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, 30, 3);
+//    f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, 30, 3);
     f641_prepare_buffers(&v4l2);
 
     //

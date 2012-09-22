@@ -413,8 +413,6 @@ hdcl:			;
 				jz			.value
 				; @@@ value
 				and			symb, 0x0F				; @@@
-				mov			edx, 1		; @@@neg
-				shl			edx, cl		;
 				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl					;

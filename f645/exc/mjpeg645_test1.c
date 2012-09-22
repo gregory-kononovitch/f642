@@ -41,6 +41,43 @@ int asmtest(void *tmp, int lenb) {
     }
 }
 
+    static int rowsIz[] = {0, 0, 1, 2, 1, 0, 0, 1, 2, 3, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 4, 5, 6, 7, 7, 6, 5, 6, 7, 7, };
+    static int colsIz[] = {0, 1, 0, 0, 1, 2, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 5, 6, 7, 7, 6, 7, };
+int exportIdctUvCosCosf() {
+    int iz, i;
+    uint8_t *ptr = calloc(1, 4);
+    float *f = (float*)ptr;
+    uint32_t *fi = (uint32_t*)ptr;
+    double u, v, d;
+
+    *fi = 0x3B4731BE;
+    printf("f = %.15f\n", *f);
+    return 0;
+
+    printf("\t\tdd\t");
+    for(iz = 0 ; iz < 64 ; iz++) {
+        int r = rowsIz[iz];
+        int c = colsIz[iz];
+        for(i = 0 ; i < 64 ; i++) {
+            int x = i % 8;
+            int y = i / 8;
+            // uv
+            if (r == 0) v = 1. / sqrt(2.);
+            else v = 1.;
+            if (c == 0) u = 1. / sqrt(2.);
+            else u = 1.;
+            d = .25 * u * v;
+            //
+            d *= cos(0.0675 * (2.*x + 1.) * c * M_PI);
+            d *= cos(0.0675 * (2.*y + 1.) * r * M_PI);
+            *f = (float)d;
+//            printf("0x%08X%s", *fi, i%8==7?"":",");
+//            if (i % 8 == 7) printf("\n\t\tdd\t");
+            if (i % 8 == 0) printf("0x%08X = %.15f  / %.15f\n", *fi, *f, d);
+        }
+    }
+}
+
 int test_scan645() {
     int i, j, k;
     int lenb = 72025;   // 612311;
@@ -120,6 +157,7 @@ int main() {
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
 //    return test_scan645();
+    return exportIdctUvCosCosf();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
