@@ -30,7 +30,7 @@ idctl:
 				mov			byte [rbp - VAR + _vc1], cl			; cp i4i
 				;
 .lraz
-				mov			strict dword [rbp - VAR + ZZI + 4 * r12], strict dword 0
+				mov			strict dword [rbp - WORK + ZZI + 4 * r12], strict dword 0
 .craz
 				add			r12d, 1
 				cmp			r12d, ecx
@@ -41,14 +41,17 @@ idctl:
 				mov			r12d, ecx					; svg ii4
 
 				; convert & mult uvz
+				xor			ecx, ecx
 .loopcvt
 				shl			ecx, 2
-				cvtdq2ps	xmm0, oword [rbp - VAR + ZZI + 8 * rcx]
-				mulps		xmm0, oword [rbp - VAR + UVZI + 4 * rcx]
-				movaps		oword [rbp - VAR + ZZI + 4 * rcx], xmm0
+				cvtdq2ps	xmm0, oword [rbp - WORK + ZZI + 4 * rcx]
+				mulps		xmm0, oword [rbp - WORK + UVZI + 4 * rcx]
+				movaps		oword [rbp - WORK + ZZI + 4 * rcx], xmm0
 				shr			ecx, 2
-				sub			cl, 1
-				jnz			.loopcvt
+
+				add			cl, 1
+				cmp			ecx, r12d
+				jl			.loopcvt
 
 %define		x		r15d
 %define		y		r14d
@@ -67,27 +70,27 @@ idctl:
 				xor			ecx, ecx
 				;
 .lprepcos
-				; cos(x, c)
+				; cos(x, c)			; @@@@@@@@@@@@@@@@ 8xthe same
 				mov			ebx, x
 				shl			ebx, 3
-				add			ebx, dword [rbp - VAR + COLZI + 4 * rcx]
-mov eax, dword [rbp - VAR + COLZI]
-return
-				mov			ebx, dword [COSF + 4 * rbx]
-return
+				add			ebx, dword [rbp - WORK + COLZI + 4 * rcx]
+				mov			ebx, dword [COSF + 4 * rbx]				; @@@ bcp de 1.
 				mov			dword [rbp - WORK + COSFI1 + 4 * rcx], ebx
+
 
 				; cos(y, r)
 				mov			ebx, y
 				shl			ebx, 3
-				add			ebx, dword [rbp - VAR + ROWZI + 4 * rcx]
+				add			ebx, dword [rbp - WORK + ROWZI + 4 * rcx]
 				mov			ebx, dword [COSF + 4 * rbx]
 				mov			dword [rbp - WORK + COSFI2 + 4 * rcx], ebx
+
 				;
+				add			ecx, 1
 				cmp			ecx, r13d
-				jnz			.lprepcos
+				jl			.lprepcos
 				;
-				mov			ecx, r12d
+				xor			ecx, ecx
 				xorps		xmm0, xmm0
 .lsum
 				shl			ecx, 1
@@ -95,10 +98,13 @@ return
 				mulps		xmm1, oword [rbp - WORK + COSFI1 + 8 * rcx]
 				mulps		xmm1, oword [rbp - WORK + COSFI2 + 8 * rcx]
 				addps		xmm0, xmm1
+
 				;
 				shr			ecx, 1
-				sub			cl, 1
-				jnz			.lsum
+				add			cl, 1
+				cmp			ecx, r12d
+				jl			.lsum
+
 				;
 				xorps		xmm1, xmm1
 				movaps		oword [rbp - WORK + SUMHI], xmm1		; raz
@@ -107,6 +113,7 @@ return
 				addss		xmm0, dword [rbp - WORK + SUMHI + 8]
 				addss		xmm0, dword [rbp - WORK + SUMHI + 12]
 				addss		xmm0, dword [PF128]
+
 				;
 				movss		dword [rbp - WORK + PIXFI + 4 * rdx], xmm0
 				;
@@ -121,8 +128,10 @@ return
 				cmp			y, 8
 				jl			.loopy
 
-return
 
+				xor			rcx, rcx
+				xor			rdx, rdx
+				xor			rax, rax
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 

@@ -590,40 +590,49 @@ hacl:
 ;				add			rsi, 3
 
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-;							  DUMP
+							  DUMP
 ;                 ---------------------------
-				mov			rcx, qword [rbp - VAR + pdest]
+%define logs rsi
+;				mov			logs, qword [rbp - VAR + pdest]
 				xor			r15, r15
 				xor			r14, r14
-.razrsi			; 			RAZ RSI
-				mov         strict qword [rcx + 8 * r14], strict 0
-				add			r14, 1
-				cmp			r14, 256
-				jl			.razrsi
-				xor			r14, r14
+;.razrsi0:			; 			RAZ RSI
+;				mov         strict qword [rcx + 8 * r14], strict 0
+;				add			r14, 1
+;				cmp			r14, 256
+;				jl			.razrsi0
+;				xor			r14, r14
 
 				;;;;;;
 
-				mov			dword [rcx], r13d
-				add			rcx, 32
+				mov			dword [logs], r13d		; ii
+				add			logs, 4
 
-.llppoo
+.llppoo0:
 				mov			r15d, dword [rbp - WORK + ZZI + 4 * r14]
-				mov			dword [rcx], r15d
-
-
-				add			rcx, 4
+				mov			dword [logs], r15d
+				add			logs, 4
 
 				add			r14, 1
 				cmp 		r14, r13
-				jl			.llppoo
-return
+				jl			.llppoo0
+
+				mov			dword [logs], -9999		;
+				add			logs, 4
+
+;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 ;
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;                            DCT Lumin
 ;                    -------------------------
 
 					%include "inclu/idft2pix-1.s"
+
+
+
+;return
 ;
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;
@@ -819,7 +828,7 @@ hacc:
 				sub			byte [rbp - VAR + _ri_us], 1
 				jnz			decmain.loopri
 
-
+return
 coopsample:
 				;
 				bt			flags, 62
