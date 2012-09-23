@@ -8,8 +8,10 @@
 ; There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ;
 
-
-
+; @@@@@@@@@@@@@@@@
+; still some gray blocks (dct?) don't know if it comes from here
+; go to version 3
+; @@@@@@@@@@@@@@@@@@@@@@@
 
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;                            DCT Lumin

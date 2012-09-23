@@ -193,6 +193,10 @@ SECTION .text		ALIGN=16
 %define		QUANTIL		0x700	;0x0200
 %define		QUANTIC		0x800	;0x0200
 
+;%define		P64ZZI		0x900
+;%define		P64ZZI		0x900
+;%define		P64ZZI		0x900
+
 %define		PIXFI		0xD00	;0x0200
 %define		PIXII		0xE00	;0x0200
 
@@ -665,7 +669,7 @@ hacl:
 ;                            DCT Lumin
 ;                    -------------------------
 idctl:
-					%include "inclu/idft2pix-2.s"
+					%include "inclu/idft2pix-3.s"
 
 ;return
 ;

@@ -44,33 +44,42 @@
 				cmp			cx, r14w
 				jl			.cvti
 
-				; Main loop
-				xor			rbx, rbx					; (x, y)
-				shl			r12w, 2						; byte offset
-				;
-.loopxy:
-				mov			r14w, bx
-				shl			r14w, 2
-				xor			rcx, rcx					; (izi)
+				; loop 128
 				movaps		xmm0, oword [PF128]
-				;
+
+				; Main loop
+				xor			rcx, rcx					; (izi)
+				shl			r12w, 2						; byte offset
 .loopzi:
-				; zzi in all			;
+				; zzi in all				;
 				movss		xmm1, dword [rbp - WORK + ZZIF + rcx]
 				pshufd		xmm1, xmm1, 0x00
-				; uvcoscos
+				;
 				mov			edx, dword [rbp - WORK + IZI + rcx]
-				shl			dx, 8			; 64 * 4
-				add			dx, r14w
-				movaps		xmm2, oword [UVCOSCOS + rdx]
-				; mul & add
-				mulps		xmm1, xmm2
-				addps		xmm0, xmm1
+				shl			dx, 8						; 64 * 4 : coscos line
+				xor			rbx, rbx					; (x, y)
+				;
+.loopxy:
+				;
+				; uvcoscos
+				movaps		xmm2, oword [UVCOSCOS + rdx + rbx]
+				; mul
+				mulps		xmm2, xmm1
+				; add
+				addps		xmm2, oword [rbp - WORK + PIXFI + rbx]
+				movaps		oword [rbp - WORK + PIXFI + rbx], xmm2
+				;
+.coopxy:		;
+				add			bx, 16
+				cmp			bx, 256
+				jl			.loopxy
+
 .coopzi:		;
 				add			cx, 4
 				cmp			cx, r12w
 				jl			.loopzi
 				;
+
 				; pixels
 				cvtps2dq	xmm1, xmm0
 				pshufb		xmm1, oword [SHUFFPIX]
@@ -82,18 +91,6 @@
 				jnc			.coopxy
 				add 		r15, qword [rbp - VAR + y8offset]			; @ width / 8
 
-				;
-.coopxy:		;
-;				; #############
-;				movdqu		oword [rsi], xmm1
-;				add			rsi, 16
-;				; ####################
-;				mov			dword [rsi], -9999
-;				add			rsi, 4
-
-				add			bx, 4
-				cmp			bx, 64
-				jl			.loopxy
 
 				; relocate
 				mov			edx, dword [rbp - VAR + width]
@@ -119,6 +116,14 @@
 				xor			rcx, rcx
 				xor			rdx, rdx
 				xor			rax, rax
+
+;				; #############
+;				movdqu		oword [rsi], xmm1
+;				add			rsi, 16
+;				; ####################
+;				mov			dword [rsi], -9999
+;				add			rsi, 4
+
 
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
