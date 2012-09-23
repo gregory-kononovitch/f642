@@ -290,7 +290,7 @@ int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     long c2 = ReadTSC();
     //LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
 
-    return 0;
+    return c2 - c1;
 
  err:
      return -1;

@@ -106,13 +106,14 @@ static int test() {
     struct timeval tv0, tv1, tv2, tv3, tv4;
     struct timeval tvb1, tvb2;
     long broad;
+    long uops = 0;
     struct f641_v4l2_parameters v4l2;
     struct v4l2_buffer frame;
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
     if (format == 0x56595559) {
         f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
     } else if (format == 0x47504A4D) {
-        f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, 5, 10);
+        f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, 24, 10);
     } else {
         // ###
         filp = fopen("y800x448-422-2.dat", "wb");
@@ -161,12 +162,8 @@ static int test() {
         if (format == 0x56595559) {
             yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
         } else if (format == 0x47504A4D) {
-            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
+            uops += mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
 //            mjpeg_decode645(mjpeg, tmp, lenb, gui->pix1);
-            for(i = 0 ; i < 8 ; i++) {
-                printf("%ld ", *((long*)mjpeg->pixels));
-            }
-            printf("\n");
         } else {
             // ###
             if (num_frame >= 100 && num_frame < 101) {
@@ -191,10 +188,12 @@ static int test() {
         //
         num_frame++;
         //
-        if (num_frame % 70 == 0) {
+        int fl = 60;
+        if (num_frame % fl == 0) {
             gettimeofday(&tv4, NULL);
             timersub(&tv4, &tv3, &tv4);
-            LOG("Frame %ld for %.3f Hz for %ld µs", num_frame, 70. / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / 70);
+            LOG("Frame %ld for %.3f Hz for %ld µs and %ld µops", num_frame, 1. * fl / (1. * tv4.tv_sec + 0.000001 * tv4.tv_usec), broad / fl, uops / fl);
+            uops = 0;
             broad = 0;
             gettimeofday(&tv3, NULL);
         }

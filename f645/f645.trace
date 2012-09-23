@@ -225,3 +225,24 @@ Decode sequence:
 |  6|  5|  6|  2|  3|  4|  2|  4|  5|  2|  1|  2|  2|  1|  1| 34|  3|  2| 49|  2|113| 81|  0| - |
 |  6|  6|  5|  2|  2|  4|  2|  4|  5|  3| 19|  2|
 Done
+
+
+
+--- before working on tree acl (static) -----------------------------
+---- nothing in chrom -------------------
+Frame 120 for 24.007 Hz for 27473 µs and 38627012 µops
+Frame 180 for 23.999 Hz for 26850 µs and 37705907 µops
+Frame 240 for 24.006 Hz for 27016 µs and 37954997 µops
+Frame 300 for 24.050 Hz for 27041 µs and 38021770 µops
+Frame 360 for 24.005 Hz for 26855 µs and 37743588 µops
+Frame 420 for 24.001 Hz for 26663 µs and 37448394 µops
+Frame 480 for 24.002 Hz for 26788 µs and 37659721 µops
+Frame 540 for 24.000 Hz for 27263 µs and 38352960 µops
+Frame 600 for 24.001 Hz for 27290 µs and 38343321 µops
+Frame 660 for 24.006 Hz for 27280 µs and 38395062 µops
+Frame 720 for 23.965 Hz for 27112 µs and 38077401 µops
+Frame 780 for 24.033 Hz for 27220 µs and 38236169 µops
+Frame 840 for 24.007 Hz for 27239 µs and 38254025 µops
+Frame 900 for 24.002 Hz for 27454 µs and 38576760 µops
+Frame 960 for 24.002 Hz for 27068 µs and 38001027 µops
+Frame 1020 for 24.030 Hz for 27293 µs and 38339834 µops

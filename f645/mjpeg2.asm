@@ -710,50 +710,11 @@ hdcc:
 				return
 
 .donehdcc		;
-				; svg
-;				mov			byte [rsi], symb
-;				add			rsi, 1
 
 				and			symb, 0x0F
-				mov			dl, cl					; @for neg
-				test		symb, 0x0F				; 0x0F??
-				jz			.value
-				; @@@ value
 				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl					;
-				;
-				sub			cl, 64
-				neg			cl
-				bt			r15, 63
-				jc			.pos
-				; neg
-				shr			r15, cl
-				mov			r14d, 0xFFFFFFFF
-				mov			cl, dl
-				shl			r14d, cl
-				or			r15d, r14d
-				add			r15d, 1
-				jmp			.val
-.pos:			; pos
-				shr			r15, cl
-.val:			; value
-				;
-				add			r15d, dword [rsp - VAR + dcChrom0]			; diff
-				mov			dword [rsp - VAR + dcChrom0], r15d			; save
-				;
-				imul		r15d, dword [rbp - WORK + QUANTIC]
-				mov			dword [rbp - WORK + ZZI], r15d
-				mov			strict dword [rbp - WORK + IZI], dword 0
-
-;				mov			dword [rbp - WORK + ROWZI], 0
-;				mov			dword [rbp - WORK + COLZI], 0
-;				mov			r15d, dword [UVZ]
-;				mov			dword [rbp - WORK + UVZI], r15d
-				;
-				mov			ii, 1
-.value:
-
 
 				;
 				; feed@@@
@@ -807,51 +768,11 @@ hacc:
 				shr			dl, 4
 				add			iz, dl
 
-				; ### svg
-;				mov			byte [rsi], iz
-;				mov			byte [rsi], symb
-;				add			rsi, 1
-
-				; value
+				; feed
 				and			symb, 0x0F
-				mov			dl, symb
-				test		symb, 0xFF
-				jz			.value
-				; @@@ value
 				mov			r15, bits
 				shl			bits, cl			; feed
 				sub			off, cl				;
-				;
-				sub			cl, 64
-				neg			cl
-				bt 			r15, 63
-				jc			.pos
-				; neg
-				shr			r15, cl
-				mov			r14d, 0xFFFFFFFF
-				mov			cl, dl
-				shl			r14d, cl
-				or			r15d, r14d
-				and			r15d, 1
-				jmp			.val
-.pos:			; pos
-				shr			r15, cl
-.val:			; val
-				;
-				imul		r15d, dword [rbp - WORK + QUANTIC + 4 * r12]
-				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
-				mov			dword [rbp - WORK + IZI + 4 * ii], r12d
-
-;				mov			r15d, dword [ROWZ + 4 * r12]
-;				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
-;				mov			r15d, dword [COLZ + 4 * r12]
-;				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
-;				mov			r15d, dword [UVZ + 4 * r12]
-;				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
-
-				;
-				add			ii, 1
-.value:
 
 				; iz
 				add			iz, 1
