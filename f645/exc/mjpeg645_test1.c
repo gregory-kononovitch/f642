@@ -185,19 +185,19 @@ int main() {
             printf("| ");
         } else if (part[i] == -10000) {
             break;
-//        } else if (*((long*)(log + 4*i)) == 0) {
-//            if (*((long*)(log + 4*i + 8)) == 0)
-//                if (*((long*)(log + 4*i + 16)) == 0)
-//                    if (*((long*)(log + 4*i + 24)) == 0)
-//                        if (*((long*)(log + 4*i + 32)) == 0)
-//                            if (*((long*)(log + 4*i + 40)) == 0)
-//                                if (*((long*)(log + 4*i + 48)) == 0)
-//                                    if (*((long*)(log + 4*i + 56)) == 0)
-//                        break;
+        } else if (*((long*)(log + 4*i)) == 0) {
+            if (*((long*)(log + 4*i + 8)) == 0)
+                if (*((long*)(log + 4*i + 16)) == 0)
+                    if (*((long*)(log + 4*i + 24)) == 0)
+                        if (*((long*)(log + 4*i + 32)) == 0)
+                            if (*((long*)(log + 4*i + 40)) == 0)
+                                if (*((long*)(log + 4*i + 48)) == 0)
+                                    if (*((long*)(log + 4*i + 56)) == 0)
+                        break;
         } else {
-            //printf("%d  ", part[i]);
+            printf("%d  ", part[i]);
             //printf("%.2f  ", fart[i]);
-            printf("%08X  ", part[i]);
+            //printf("%08X  ", part[i]);
         }
     }
     printf("\n");

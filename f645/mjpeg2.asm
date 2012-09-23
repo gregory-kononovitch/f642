@@ -47,6 +47,7 @@ FF16			dd	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
 ALIGN 16
 SHUFFZIF	db		0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3
 SHUFFPIX	db		0,0,0,0,4,4,4,4,8,8,8,8,12,12,12,12
+SHUFFBeW	db		0,0,0,0,4,4,4,4,8,8,8,8,12,12,12,12
 F128		db		128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128
 FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
@@ -197,8 +198,8 @@ SECTION .text		ALIGN=16
 ;%define		P64ZZI		0x900
 ;%define		P64ZZI		0x900
 
-%define		PIXFI		0xD00	;0x0200
-%define		PIXII		0xE00	;0x0200
+%define		PIXFI		0xB00	;0x0200
+%define		PIXII		0xC00	;0x0200
 
 
 %define		WORK		4608	;
@@ -230,6 +231,7 @@ SECTION .text		ALIGN=16
 %define		y8x8i		0x5C		; y coord of decoded 8x8
 
 %define		y8offset	0x60		; long 4 * (width - 8)
+%define		y8offset3	0x64		; long 4 * (width - 8)
 
 ;
 %define		_ri0_us		0x70
@@ -287,13 +289,18 @@ decode645:
 				sub			rax, 8
 				shl			rax, 2
 				mov			qword [rbp - VAR + y8offset], rax
+				mov			qword [rbp - VAR + y8offset3], rax
 				mov			eax, dword [rdi + 16]					; height
 				mov			dword [rbp - VAR + height], eax
 				mov			eax, dword [rdi + 72]					; Ri
 				mov			word [rbp - VAR + _ri0_us], ax
 				;
-				mov			strict dword [rbp - VAR + x8x8i], strict dword 0		; xi8x8
-				mov			strict dword [rbp - VAR + y8x8i], strict dword 0		; yi8x8
+;				; idct-2
+;				mov			strict dword [rbp - VAR + x8x8i], strict dword 0		; xi8x8
+;				mov			strict dword [rbp - VAR + y8x8i], strict dword 0		; yi8x8
+				; idct-3
+				mov			strict dword [rbp - VAR + x8x8i], strict dword 4		; xi8x8
+				mov			strict dword [rbp - VAR + y8x8i], strict dword 7		; yi8x8
 				;
 				mov			byte [rbp - VAR + _y0_uc], 2
 				mov			byte [rbp - VAR + _u0_uc], 2
@@ -669,7 +676,7 @@ hacl:
 ;                            DCT Lumin
 ;                    -------------------------
 idctl:
-					%include "inclu/idft2pix-3.s"
+;					%include "inclu/idft2pix-3.s"
 
 ;return
 ;
