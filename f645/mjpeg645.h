@@ -121,7 +121,8 @@ struct _mjpeg645_img {
     marker645   *markers;       //
     int         lm;
 
-
+    //
+    void        *ext1;          //
 
 };
 

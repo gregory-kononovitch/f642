@@ -73,7 +73,7 @@
 ;				movaps		oword [rsp - WORK + PIXII + r14], xmm0		; [0 ; 255] mngmnt
 				pshufb		xmm0, oword [SHUFFPIX]
 				pextrw		rcx, xmm0, 0
-				mov			word [rsp - VAR + ppix + r15], cx
+				mov			word [rsp - VAR + ppix + r15], 0x80 ;cx
 				pextrw		rcx, xmm0, 1
 				mov			word [rsp - VAR + ppix + r15 + 2], cx
 				;

@@ -26,10 +26,12 @@ sources_c+= $(wildcard ${SRC_DIR}/brodge/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/layout/*$(EXTENSION_C))
 sources_c+=../f691/xgui691.c
 sources_c+=../f640/f641/f641_v4l2.c
+sources_c+=../f645/mjpeg645.c
 
 
 # asm files
 sources_a:=$(wildcard ${ASM_DIR}/*$(EXTENSION_A))
+sources_a+=$(wildcard ../f645/*$(EXTENSION_A))
 
 # main.o files
 sources_e:=$(wildcard ${EXC_DIR}/*$(EXTENSION_C))

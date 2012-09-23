@@ -18,6 +18,8 @@
 
 #include "../../f640/f641/f641_v4l2.h"
 
+#include "../../f645/mjpeg645.h"
+
 
 static char escape = 0;
 
@@ -84,6 +86,7 @@ static int test() {
 //    FOG("XrmInitialize done");
 
     //
+    int format = 0x47504A4D;        // 0x56595559
     xgui691 *gui = xgui_create691(800, 448, 1);
     if (!gui) return -1;
     long period = 57143;
@@ -104,9 +107,16 @@ static int test() {
     struct f641_v4l2_parameters v4l2;
     struct v4l2_buffer frame;
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
-    f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
-//    f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, 30, 3);
+    if (format == 0x56595559) {
+        f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
+    } else {
+        f641_setup_v4l2(&v4l2, "/dev/video3", gui->width, gui->height, 0x47504A4D, 5, 10);
+    }
     f641_prepare_buffers(&v4l2);
+
+    //
+    mjpeg645_img *mjpeg = alloc_mjpeg645_image(NULL, 0);
+    mjpeg->pixels = (uint8_t*)gui->pix1;
 
     //
     events691 events;
@@ -138,7 +148,12 @@ static int test() {
         gettimeofday(&tvb1, NULL);
 
         // Convert
-        yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
+        if (format == 0x56595559) {
+            yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
+        } else {
+            mjpeg->size = v4l2.buffers[frame.index].length;
+            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, gui->pix1);
+        }
 
 //        // ###
 //        if (num_frame >= 100 && num_frame < 101) {
@@ -175,6 +190,12 @@ static int test() {
 //    fclose(filp);
     //
     f641_stream_off(&v4l2);
+    //
+    if (format == 0x56595559) {
+
+    } else {
+        free_mjpeg645_image(&mjpeg);
+    }
     //
     xgui_stop691(gui);
     xgui_close_window691(gui);

@@ -78,6 +78,7 @@ int load_next_marker645(mjpeg645_img *img) {
     }
     if (*img->ptr != 0xFF) {
         if ((img->lm >= M645_RST0 && img->lm <= M645_RST7) || img->lm == M645_SOS) {
+            LOG("Skip");
             skip_dsegment645(img);
         } else {
             LOG("Bad alignment, no marker here");
@@ -86,7 +87,7 @@ int load_next_marker645(mjpeg645_img *img) {
     }
     m = _get_marker645(img);
     if (m < 0) {
-        LOG("Unmanaged / Unkonwn marker");
+        LOG("Unmanaged / Unkonwn marker : %02X %02X", *img->ptr, *(img->ptr + 1));
         return -ENODATA;
     }
 
@@ -199,13 +200,13 @@ static marker645 markers645[] = {
 
 
 /**
- * Allocate data if NULL
+ * Allocate memory for data if NULL && size != 0
  */
 mjpeg645_img *alloc_mjpeg645_image(void *data, int size) {
     //
     mjpeg645_img *img = calloc(1, sizeof(mjpeg645_img));
     //
-    if (data) {
+    if (data || !size) {
         img->data = data;
         img->size = size;
         //
@@ -241,4 +242,54 @@ void free_mjpeg645_image(mjpeg645_img **img) {
     if ((*img)->flags & (1 << 31)) free((*img)->data);
     free(*img);
     *img = NULL;
+}
+
+
+/**
+ * test
+ */
+int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, uint8_t *pix) {
+    //
+    img->data = img->ptr = mjpeg;
+    img->eof = img->data + img->size;
+    img->offset = 0;
+    img->pixels = pix;
+    if (!img->ext1) {
+        img->ext1 = calloc(1024, 1024);
+    }
+    // Scan
+    int m;
+    while( (m = load_next_marker645(img)) > -1 ) {
+        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
+                , img->markers[m].key
+                , img->markers[m].code
+                , img->markers[m].desc
+                , img->markers[m].flags
+                , img->offset
+                , img->markers[m].length
+        );
+        if (m == M645_SOS) break;
+    }
+
+    // Data Segment
+    int off1 = img->offset;
+    m = load_next_marker645(img);
+    if (m != M645_RST0) {
+        LOG("Didn't found RST0 after SOS, returning");
+        goto err;
+    }
+    int off2 = img->offset - 2;
+//    LOG("Will try to decode data segment from [%d ; %d[", off1, off2);
+
+    //
+    img->ptr = img->data + off1;
+    long c1 = ReadTSC();
+    uint8_t *addr = (uint8_t*)decode645(img, img->ext1, off2 - off1);
+    long c2 = ReadTSC();
+    LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
+
+    return 0;
+
+ err:
+     return -1;
 }
