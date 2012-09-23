@@ -418,6 +418,7 @@ hdcl:			;
 				jz			.value
 				; @@@ value
 				and			symb, 0x0F				; @@@
+				mov			edx, ecx				; @@@ neg
 				mov			r15, bits
 				shl			bits, cl
 				sub			off, cl					;
@@ -426,18 +427,27 @@ hdcl:			;
 				neg			cl
 				bt			r15, 63
 				jc			.pos
+				; neg
 				shr			r15, cl
-				sub			r15d, edx
+				mov			cl, dl
+				mov			r14d, 0xFFFFFFFF		; @@ neg ?
+				shr			r14d, cl				;
+				shl			r14d, cl				;
+				or			r15d, r14d
+				add			r15d, 1
 				jmp			.val
-.pos:
+.pos:			; pos
 				shr			r15, cl
-.val:
+.val:			;
 				imul		r15d, dword [rbp - WORK + QUANTIL]
 				mov			dword [rbp - WORK + ZZI], r15d
-				mov			dword [rbp - WORK + ROWZI], 0
-				mov			dword [rbp - WORK + COLZI], 0
-				mov			r15d, dword [UVZ]
-				mov			dword [rbp - WORK + UVZI], r15d
+				mov			dword [rbp - WORK + IZI], dword 0
+
+;				mov			dword [rbp - WORK + ROWZI], 0
+;				mov			dword [rbp - WORK + COLZI], 0
+;				mov			r15d, dword [UVZ]
+;				mov			dword [rbp - WORK + UVZI], r15d
+				;
 				mov			ii, 1
 .value:
 
@@ -499,6 +509,7 @@ hacl:
 
 				; value
 				and			symb, 0x0F
+				mov			dl, symb				; @@@ neg
 				test		symb, 0xFF
 				jz			.value
 				; @@@ value
@@ -506,19 +517,21 @@ hacl:
 				shl			bits, cl
 				sub			off, cl
 				;
-				mov			edx, 1		; @@@neg
-				shl			edx, cl		;
 				sub			cl, 64
 				neg			cl
 				bt			r15, 63
 				jc			.pos
-				; neg @@@@@@@@@@@@@
+				; neg @@@@
 				shr			r15, cl
-				sub			r15d, edx
+				mov			r14d, 0xFFFFFFFF
+				mov			cl, dl
+				rol			r14d, cl
+				or			r15d, r14d
+				add			r15d, 1
 				jmp			.val
-.pos:
+.pos:			; pos
 				shr			r15, cl
-.val:
+.val:			; prep
 				imul		r15d, dword [rbp - WORK + QUANTIL + 4 * r12]
 				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
 				mov			r15d, dword [ROWZ + 4 * r12]
