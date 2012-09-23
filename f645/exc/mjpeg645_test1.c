@@ -68,8 +68,8 @@ int exportIdctUvCosCosf() {
             else u = 1.;
             d = .25 * u * v;
             //
-            d *= cos(0.0675 * (2.*x + 1.) * c * M_PI);
-            d *= cos(0.0675 * (2.*y + 1.) * r * M_PI);
+//            d *= cos(0.0675 * (2.*x + 1.) * c * M_PI);
+//            d *= cos(0.0675 * (2.*y + 1.) * r * M_PI);
             *f = (float)d;
 //            printf("0x%08X%s", *fi, i%8==7?"":",");
 //            if (i % 8 == 7) printf("\n\t\tdd\t");
@@ -157,7 +157,6 @@ int main() {
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
 //    return test_scan645();
-    return exportIdctUvCosCosf();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");

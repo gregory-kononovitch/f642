@@ -431,8 +431,7 @@ hdcl:			;
 				shr			r15, cl
 				mov			cl, dl
 				mov			r14d, 0xFFFFFFFF		; @@ neg ?
-				shr			r14d, cl				;
-				shl			r14d, cl				;
+				rol			r14d, cl				;
 				or			r15d, r14d
 				add			r15d, 1
 				jmp			.val
@@ -534,12 +533,16 @@ hacl:
 .val:			; prep
 				imul		r15d, dword [rbp - WORK + QUANTIL + 4 * r12]
 				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
-				mov			r15d, dword [ROWZ + 4 * r12]
-				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
-				mov			r15d, dword [COLZ + 4 * r12]
-				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
-				mov			r15d, dword [UVZ + 4 * r12]
-				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
+				mov			dword [rbp - WORK + IZI + 4 * ii], r12d
+
+
+;				mov			r15d, dword [ROWZ + 4 * r12]
+;				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
+;				mov			r15d, dword [COLZ + 4 * r12]
+;				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
+;				mov			r15d, dword [UVZ + 4 * r12]
+;				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
+				;
 				add			ii, 1
 .value:
 
