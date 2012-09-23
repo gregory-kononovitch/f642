@@ -71,8 +71,19 @@
 				;
 				cvtps2dq	xmm0, xmm0
 ;				movaps		oword [rsp - WORK + PIXII + r14], xmm0		; [0 ; 255] mngmnt
-				pshufp		xmm0, oword [SHUFFPIX]
-				pextrw		cx, xmm0, 0
+				pshufb		xmm0, oword [SHUFFPIX]
+				pextrw		rcx, xmm0, 0
+				mov			word [rsp - VAR + ppix + r15], cx
+				pextrw		rcx, xmm0, 1
+				mov			word [rsp - VAR + ppix + r15 + 2], cx
+				;
+				add			r15d, 4
+				btc			flags, 59
+				jnc			.coopxy
+				add			r15d, dword [rsp - VAR + width]			; widthx8
+				sub			r15d, 8
+
+
 				;
 .coopxy:		;
 				add			bx, 4
