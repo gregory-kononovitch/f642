@@ -524,20 +524,18 @@ hacl:
 				mov			edx, ecx				; duplic symbol with 0..
 
 				; iz
-;				and			r12, 0xFF				; @@@ somewhere, somenone..
 				shr			dl, 4
 				add			iz, dl					; @@@ case F0
-
-				; ### svg
-;				mov			byte [rsi], iz
-;;				mov			byte [rsi], symb
-;				add			rsi, 1
+				cmp 		symb, 0xF0
+				jne			.value
+				add			iz, 1
+				jmp			.novalue
 
 				; value
-				and			symb, 0x0F
+.value			and			symb, 0x0F
 				mov			dl, symb				; @@@ neg
-				test		symb, 0xFF
-				jz			.value
+;				test		symb, 0xFF
+;				jz			.novalue
 				; @@@ value
 				mov			r15, bits
 				shl			bits, cl				; feed
@@ -565,7 +563,7 @@ hacl:
 				;
 				add			ii, 1
 				;
-.value:
+.novalue:
 
 				; iz
 				add			iz, 1			; @@@ check ssss=0 rules
