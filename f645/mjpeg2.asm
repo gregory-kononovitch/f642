@@ -46,7 +46,7 @@ FF16			dd	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
 
 ALIGN 16
 SHUFFZIF	db		0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3
-SHUFFPIX	db		0,4,8,12,128,128,128,128,128,128,128,128,128,128,128,128
+SHUFFPIX	db		0,0,0,0,4,4,4,4,8,8,8,8,12,12,12,12
 F128		db		128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128
 FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
@@ -937,9 +937,9 @@ coopsample:
 
 decoderdone:	;
 				; svg
-				mov			byte [rsi], 255				; ###
-				mov			qword [rsi + 1], bits
-				mov			byte [rsi + 9], 255			; ###
+				mov			dword [rsi], -9999			; ###
+				mov			qword [rsi + 4], bits
+				mov			dword [rsi + 12], -10000		; ###
 				mov			rax, data
 				return
 

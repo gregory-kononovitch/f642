@@ -174,17 +174,24 @@ int main() {
 
     //
     c1 = ReadTSC();
-    int r = mjpeg_decode645(src, tmp, src->ext1);
+    int r = mjpeg_decode645(src, tmp, lenb, src->ext1);
     c2 = ReadTSC();
     LOG("Decode: return %ld for %ld µ", r, c2 - c1);
 
     int *part = (int*)log;
     float *fart = (float*)log;
-    for(i = 0 ; i < 20000 ; i++) {
+    for(i = 0 ; i < 100000 ; i++) {
         if (part[i] == -9999) {
             printf("X\n");
-        } if (part[i] == -9998) {
-            printf(" - ");
+        } else if (part[i] == -9998) {
+            printf("| ");
+        } else if (part[i] == -10000) {
+            break;
+        } else if (*((long*)(log + 4*i)) == 0) {
+            if (*((long*)(log + 4*i + 8)) == 0)
+                if (*((long*)(log + 4*i + 8)) == 0)
+                    if (*((long*)(log + 4*i + 8)) == 0)
+                        break;
         } else {
             printf("%d  ", part[i]);
             //printf("%f  ", fart[i]);

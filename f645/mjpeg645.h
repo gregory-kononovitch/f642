@@ -147,6 +147,8 @@ extern uint8_t *scan645o(uint8_t *ptr, int size, int *res);
 extern mjpeg645_img *alloc_mjpeg645_image(void *data, int size);
 extern void free_mjpeg645_image(mjpeg645_img **img);
 
+extern int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix);
+
 extern int load_next_marker645(mjpeg645_img *img);
 
 

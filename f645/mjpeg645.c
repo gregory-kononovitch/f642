@@ -128,9 +128,9 @@ static int sof0_load645(mjpeg645_img *img, uint8_t *data) {
         LOG("    ¤ %d: sampling horizontal = %d, vertical = %d, quantization table = %d", n, h, v, t);
     }
 
-    // B&W
+    // rgb32
     if (!img->pixels) {
-        img->pixels = calloc(img->wxh, sizeof(uint8_t));
+        img->pixels = calloc(img->wxh, sizeof(uint32_t));
         if (!img->pixels) {
             LOG("Cannot allocate memory for decoding.");
             return -1;
@@ -248,9 +248,10 @@ void free_mjpeg645_image(mjpeg645_img **img) {
 /**
  * test
  */
-int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, uint8_t *pix) {
+int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     //
     img->data = img->ptr = mjpeg;
+    img->size = size;
     img->eof = img->data + img->size;
     img->offset = 0;
     img->pixels = pix;

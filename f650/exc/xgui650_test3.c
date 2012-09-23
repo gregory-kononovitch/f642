@@ -87,6 +87,8 @@ static int test() {
 
     //
     int format = 0x47504A4D;        // 0x56595559
+    FILE *filp = NULL;
+    //
     xgui691 *gui = xgui_create691(800, 448, 1);
     if (!gui) return -1;
     long period = 57143;
@@ -109,8 +111,11 @@ static int test() {
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
     if (format == 0x56595559) {
         f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
-    } else {
+    } else if (format == 0x47504A4D) {
         f641_setup_v4l2(&v4l2, "/dev/video3", gui->width, gui->height, 0x47504A4D, 5, 10);
+    } else {
+        // ###
+        filp = fopen("y800x448-422.dat", "wb");
     }
     f641_prepare_buffers(&v4l2);
 
@@ -126,9 +131,6 @@ static int test() {
 
     //
     f641_stream_on(&v4l2);
-
-//    // ###
-//    FILE *filp = fopen("y800x448-422.dat", "wb");
 
     //
     long num_frame = 0;
@@ -150,15 +152,15 @@ static int test() {
         // Convert
         if (format == 0x56595559) {
             yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
+        } else if (format == 0x47504A4D) {
+            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
         } else {
-            mjpeg->size = v4l2.buffers[frame.index].length;
-            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, gui->pix1);
+            // ###
+            if (num_frame >= 100 && num_frame < 101) {
+                fwrite(gui->pix1, 1, gui->width * gui->height, filp);
+            }
         }
 
-//        // ###
-//        if (num_frame >= 100 && num_frame < 101) {
-//            fwrite(gui->pix1, 1, gui->width * gui->height, filp);
-//        }
 
         // Put
         show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
@@ -185,16 +187,19 @@ static int test() {
         }
         //
     }
-    // ###
-//    fflush(filp);
-//    fclose(filp);
     //
     f641_stream_off(&v4l2);
     //
     if (format == 0x56595559) {
 
-    } else {
+    } else if (format == 0x47504A4D) {
         free_mjpeg645_image(&mjpeg);
+    } else {
+        // ### raw svg
+        if (filp) {
+            fflush(filp);
+            fclose(filp);
+        }
     }
     //
     xgui_stop691(gui);
