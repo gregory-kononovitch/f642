@@ -2,6 +2,7 @@
 EXTENSION_C=.c
 EXTENSION_H=.h
 EXTENSION_A=.asm
+EXTENSION_S=.s
 
 ifeq (yes,$(DEBUG))
 DEBUGFLAGS=-g -DDEBUG
@@ -31,6 +32,8 @@ sources_h:= $(wildcard ${SRC_DIR}/*$(EXTENSION_H))
 sources_a:=$(wildcard ${ASM_DIR}/*$(EXTENSION_A))
 sources_a+=$(wildcard ../f650/asm/*$(EXTENSION_A))
 
+sources_s+=$(wildcard ./inclu/*$(EXTENSION_S))
+
 # main.o files
 sources_e:=$(wildcard ${EXC_DIR}/*$(EXTENSION_C))
 
@@ -47,17 +50,20 @@ objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
 
 all: exec
 
-exec: $(objects) $(objects_ao) $(objects_e)
-	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg.ao mjpeg.asm
-	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg2.ao mjpeg2.asm
+exec: $(objects) $(objects_ao) $(objects_e) asm
+#	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg.ao mjpeg.asm
+#	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg2.ao mjpeg2.asm
 	gcc -o mjpeg645-test1.xo exc/mjpeg645_test1.o $(objects) $(objects_ao) $(LIBS)
 
+asm: $(sources_a) $(sources_s)
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg.ao mjpeg.asm
+	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o mjpeg2.ao mjpeg2.asm
 
 # Build rules
 %.o: %$(EXTENSION_C)
 	gcc -c $(COMPILEFLAGS) $(INCLUDE) -o $@ $<
 
-%.ao: %$(EXTENSION_A)
+%.ao: %$(EXTENSION_A) 				# $(sources_s)
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o $@ $<
 
 clean:

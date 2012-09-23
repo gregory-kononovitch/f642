@@ -45,6 +45,7 @@ FF16			dd	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
 %include "inclu/mjpeg_tables.s"
 
 ALIGN 16
+SHUFFZIF	db		0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3
 F128		db		128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128
 FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
@@ -184,6 +185,10 @@ SECTION .text		ALIGN=16
 %define		VAR			0x200	;0x0200
 
 %define		ZZI			0x300	;0x0200
+%define		IZI			0x400	;0x0200
+%define		ZZIF		0x500	;0x0200
+%define		UVCOSCOSI	0x600	;0x0200
+%define		PSUMI		0x700	;0x0200
 %define		ROWZI		0x400	;0x0200
 %define		COLZI		0x500	;0x0200
 %define		UVZI		0x600	;0x0200
@@ -194,7 +199,7 @@ SECTION .text		ALIGN=16
 %define		COSFI2		0xB00	;0x0200
 %define		SUMHI		0xC00	;0x0200
 %define		PIXFI		0xD00	;0x0200
-%define		VAR2		0xE00	;0x0200
+%define		PIXII		0xE00	;0x0200
 %define		VAR3		0xF00	;0x0200
 %define		VAR4		0x1000	;0x0200
 ;%define		QLUMIN		0x1100	;0x0200
@@ -626,7 +631,7 @@ hacl:
 ;                            DCT Lumin
 ;                    -------------------------
 
-					%include "inclu/idft2pix-1.s"
+					%include "inclu/idft2pix-2.s"
 
 
 
