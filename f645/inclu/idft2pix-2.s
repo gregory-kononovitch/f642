@@ -34,12 +34,12 @@ idctl:
 				movaps		oword [rsp - WORK + ZZIF + rcx], xmm0
 				;
 				add			cx, 16
-				cmp			r14w, cx
+				cmp			cx, r14w
 				jl			.cvti
 
 				; Main loop
 				xor			rbx, rbx					; (x, y)
-				shl			r12w, 2
+				shl			r12w, 2						; byte offset
 				;
 .loopxy:
 				mov			r14w, bx

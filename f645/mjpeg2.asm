@@ -188,20 +188,22 @@ SECTION .text		ALIGN=16
 %define		IZI			0x400	;0x0200
 %define		ZZIF		0x500	;0x0200
 %define		UVCOSCOSI	0x600	;0x0200
-%define		PSUMI		0x700	;0x0200
-%define		ROWZI		0x400	;0x0200
-%define		COLZI		0x500	;0x0200
-%define		UVZI		0x600	;0x0200
+
+;%define		PSUMI		0x700	;0x0200
+;%define		ROWZI		0x400	;0x0200
+;%define		COLZI		0x500	;0x0200
+;%define		UVZI		0x600	;0x0200
+
 %define		QUANTIL		0x700	;0x0200
 %define		QUANTIC		0x800	;0x0200
-%define		CVTI		0x900	;0x0200
-%define		COSFI1		0xA00	;0x0200
-%define		COSFI2		0xB00	;0x0200
-%define		SUMHI		0xC00	;0x0200
+;%define		CVTI		0x900	;0x0200
+;%define		COSFI1		0xA00	;0x0200
+;%define		COSFI2		0xB00	;0x0200
+;%define		SUMHI		0xC00	;0x0200
 %define		PIXFI		0xD00	;0x0200
 %define		PIXII		0xE00	;0x0200
-%define		VAR3		0xF00	;0x0200
-%define		VAR4		0x1000	;0x0200
+;%define		VAR3		0xF00	;0x0200
+;%define		VAR4		0x1000	;0x0200
 ;%define		QLUMIN		0x1100	;0x0200
 ;%define		QCHROM		0x1200	;0x0200
 
@@ -226,7 +228,8 @@ SECTION .text		ALIGN=16
 
 
 ;
-%define		ppxor		0x50
+%define		dcLumin0	0x50
+%define		dcChrom0	0x54
 
 %define		_vc1		0x60
 %define		_vc2		0x61
@@ -370,6 +373,9 @@ decmain:
 				mov			dx, word [rbp - VAR + _ri0_us]
 				mov			word [rbp - VAR + _ri_us], dx
 				;
+				mov			strict dword [rsp - VAR + dcLumin0], strict dword 0
+				mov			strict dword [rsp - VAR + dcChrom0], strict dword 0
+				;
 				; initial FEED64
 				;
 				btr			flags, 63
@@ -438,9 +444,12 @@ hdcl:			;
 .pos:			; pos
 				shr			r15, cl
 .val:			;
+				add			r15d, dword [rsp - VAR + dcLumin0]			; diff
+				mov			dword [rsp - VAR + dcLumin0], r15d			; save
+				;
 				imul		r15d, dword [rbp - WORK + QUANTIL]
 				mov			dword [rbp - WORK + ZZI], r15d
-				mov			dword [rbp - WORK + IZI], dword 0
+				mov			strict dword [rbp - WORK + IZI], strict dword 0
 
 ;				mov			dword [rbp - WORK + ROWZI], 0
 ;				mov			dword [rbp - WORK + COLZI], 0
@@ -531,6 +540,7 @@ hacl:
 .pos:			; pos
 				shr			r15, cl
 .val:			; prep
+				;
 				imul		r15d, dword [rbp - WORK + QUANTIL + 4 * r12]
 				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
 				mov			dword [rbp - WORK + IZI + 4 * ii], r12d
@@ -647,7 +657,7 @@ hacl:
 ;                            DCT Lumin
 ;                    -------------------------
 
-					%include "inclu/idft2pix-2.s"
+;					%include "inclu/idft2pix-2.s"
 
 
 
@@ -674,6 +684,7 @@ hacl:
 
 hdcc:
 .loophdcc
+				;
 				mov			iz, 1			; iz
 				mov			ii, 1			; ii
 
@@ -717,9 +728,14 @@ hdcc:
 .pos:			; pos
 				shr			r15, cl
 .val:			; value
+				;
+				add			r15d, dword [rsp - VAR + dcChrom0]			; diff
+				mov			dword [rsp - VAR + dcChrom0], r15d			; save
+				;
+				imul		r15d, dword [rbp - WORK + QUANTIC]
+				mov			dword [rbp - WORK + ZZI], r15d
+				mov			strict dword [rbp - WORK + IZI], dword 0
 
-;				imul		r15d, dword [rbp - WORK + QUANTIC]
-;				mov			dword [rbp - WORK + ZZI], r15d
 ;				mov			dword [rbp - WORK + ROWZI], 0
 ;				mov			dword [rbp - WORK + COLZI], 0
 ;				mov			r15d, dword [UVZ]
@@ -811,15 +827,18 @@ hacc:
 .pos:			; pos
 				shr			r15, cl
 .val:			; val
+				;
+				imul		r15d, dword [rbp - WORK + QUANTIC + 4 * r12]
+				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
+				mov			dword [rbp - WORK + IZI + 4 * ii], r12d
 
-;				imul		r15d, dword [rbp - WORK + QUANTIC + 4 * r12]
-;				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
 ;				mov			r15d, dword [ROWZ + 4 * r12]
 ;				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
 ;				mov			r15d, dword [COLZ + 4 * r12]
 ;				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
 ;				mov			r15d, dword [UVZ + 4 * r12]
 ;				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
+
 				;
 				add			ii, 1
 .value:
@@ -846,10 +865,10 @@ hacc:
 				;
 .donec:			;
 				; svg
-				mov			byte [rsi], 0
-				mov			byte [rsi+1], r13b
-				mov			byte [rsi+2], 255
-				add			rsi, 3
+;				mov			byte [rsi], 0
+;				mov			byte [rsi+1], r13b
+;				mov			byte [rsi+2], 255
+;				add			rsi, 3
 
 				sub			byte [rbp - VAR + _ui_uc], 1
 				jnz			hdcc.loophdcc
@@ -862,7 +881,7 @@ hacc:
 				sub			byte [rbp - VAR + _ri_us], 1
 				jnz			decmain.loopri
 
-return
+;return
 coopsample:
 				;
 				bt			flags, 62
