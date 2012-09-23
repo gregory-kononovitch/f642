@@ -14,7 +14,7 @@
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;                            DCT Lumin
 ;                    -------------------------
-idctl:
+
 				; ???
 				test		r13b, 0xFF
 				jz			.done

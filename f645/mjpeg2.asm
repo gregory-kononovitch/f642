@@ -656,10 +656,8 @@ hacl:
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;                            DCT Lumin
 ;                    -------------------------
-
-;					%include "inclu/idft2pix-2.s"
-
-
+idctl:
+					%include "inclu/idft2pix-2.s"
 
 ;return
 ;
@@ -864,6 +862,26 @@ hacc:
 				feed .donec, eobacc, .donec, .donec, .herr
 				;
 .donec:			;
+
+
+;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;                            DCT Chrom
+;                    -------------------------
+
+idctc:
+
+					%include "inclu/idft2pix-2.s"
+
+;return
+;
+;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+;
+
+
 				; svg
 ;				mov			byte [rsi], 0
 ;				mov			byte [rsi+1], r13b

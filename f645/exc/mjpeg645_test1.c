@@ -204,7 +204,7 @@ int main() {
 
     int *part = (int*)hres;
     float *fart = (float*)hres;
-    for(i = 0 ; i < 180 ; i++) {
+    for(i = 0 ; i < 360 ; i++) {
         printf("%d  ", part[i]);
         //printf("%f  ", fart[i]);
 //        if (i % 16 == 7) printf(" | ");
