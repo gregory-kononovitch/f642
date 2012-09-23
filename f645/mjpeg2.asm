@@ -641,6 +641,8 @@ hacl:
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 							  DUMP
 ;                 ---------------------------
+;;%define	LOGZI 1
+%ifdef	LOGZI
 %define logs rsi
 ;				mov			logs, qword [rbp - VAR + pdest]
 				xor			r15, r15
@@ -669,6 +671,7 @@ hacl:
 				mov			dword [logs], -9999		;
 				add			logs, 4
 
+%endif
 ;
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 

@@ -23,10 +23,12 @@
 				xor			rbx, rbx
 				mov			r12d, r13d			; cp ii
 				mov			r14d, r13d			; cp ii
-				; corner
+				; image & corner
+				xor			r15, r15
 				mov			r15d, dword [rsp - VAR + y8x8i]
 				imul		r15d, dword [rsp - VAR + width]
 				add			r15d, dword [rsp - VAR + x8x8i]
+				add			r15,  qword [rsp - VAR + ppix]
 
 				; Convert zzi * quanti
 				sub			r14b, 1
@@ -73,16 +75,16 @@
 ;				movaps		oword [rsp - WORK + PIXII + r14], xmm0		; [0 ; 255] mngmnt
 				pshufb		xmm0, oword [SHUFFPIX]
 				pextrw		rcx, xmm0, 0
-				mov			word [rsp - VAR + ppix + r15], 0x80 ;cx
+				mov			word [r15], 0x80 ;cx
 				pextrw		rcx, xmm0, 1
-				mov			word [rsp - VAR + ppix + r15 + 2], cx
+				mov			word [r15 + 2], cx
 				;
-				add			r15d, 4
+				add			r15, 4
 				btc			flags, 59
 				jnc			.coopxy
-				add			r15d, dword [rsp - VAR + width]			; widthx8
-				sub			r15d, 8
-
+				mov 		eax, dword [rsp - VAR + width]			; @ width / 8
+				add			r15, rax
+				sub			r15, 8
 
 				;
 .coopxy:		;
@@ -90,16 +92,25 @@
 				cmp			bx, 64
 				jl			.loopxy
 
-;
-				mov			eax, dword [rbp - VAR + x8x8i]
+				; relocate
 				mov			edx, dword [rbp - VAR + width]
-				add			eax, 8
-				cmp			eax, edx
+;				add			dword [rbp - VAR + x8x8i], strict dword 8			; x
+				cmp			dword [rbp - VAR + x8x8i], edx						; x < width
 				jl			.done
-				mov			dword [rbp - VAR + x8x8i], strict dword 0
-				add			strict dword [rbp - VAR + y8x8i], strict dword 8
+;				mov			dword [rbp - VAR + x8x8i], strict dword 0
+;				add			strict dword [rbp - VAR + y8x8i], strict dword 8
 
-.done
+.done:
+;
+				mov			edx, dword [rbp - VAR + x8x8i]
+				mov			dword [rsi], edx
+				mov			edx, dword [rbp - VAR + y8x8i]
+				mov			dword [rsi+4], edx
+				mov			dword [rsi+8], -9998
+				add			rsi, 12
+;
+
+;
 				xor			rcx, rcx
 				xor			rdx, rdx
 				xor			rax, rax

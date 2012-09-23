@@ -165,54 +165,34 @@ int main() {
 
     //
     mjpeg645_img *src = alloc_mjpeg645_image(tmp, lenb);
-    uint8_t *hres = calloc(1024, 1024);
+    src->pixels = NULL;
+    //
+    uint8_t *log;
+    src->ext1 = log = calloc(1024, 1024);
 
     // Scan
-    LOG("Scan:");
-    dump645(src, 35);
-    int m;
-    while( (m = load_next_marker645(src)) > -1 ) {
-        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
-                , src->markers[m].key
-                , src->markers[m].code
-                , src->markers[m].desc
-                , src->markers[m].flags
-                , src->offset
-                , src->markers[m].length
-        );
-        if (m == M645_SOS) break;
-    }
-
-    // Data Segment
-    int off1 = src->offset;
-    dump645(src, 8);
-    m = load_next_marker645(src);
-    if (m != M645_RST0) {
-        LOG("Didn't found RST0 after SOS, returning");
-        goto err;
-    }
-    int off2 = src->offset - 2;
-    LOG("Will try to decode data segment from [%d ; %d[", off1, off2);
 
     //
-    src->ptr = src->data + off1;
     c1 = ReadTSC();
-    uint8_t *addr = (uint8_t*)decode645(src, hres, off2 - off1);
+    int r = mjpeg_decode645(src, tmp, src->ext1);
     c2 = ReadTSC();
-    LOG("Decode: reached %ld for %ld µ", addr - src->data, c2 - c1);
-    LOG("Return %ld ", addr);
+    LOG("Decode: return %ld for %ld µ", r, c2 - c1);
 
-    int *part = (int*)hres;
-    float *fart = (float*)hres;
-    for(i = 0 ; i < 360 ; i++) {
-        printf("%d  ", part[i]);
-        //printf("%f  ", fart[i]);
-//        if (i % 16 == 7) printf(" | ");
-//        if (i % 16 == 15) printf(" |\n");
-        if (part[i] == -9999) printf("\n");
+    int *part = (int*)log;
+    float *fart = (float*)log;
+    for(i = 0 ; i < 20000 ; i++) {
+        if (part[i] == -9999) {
+            printf("X\n");
+        } if (part[i] == -9998) {
+            printf(" - ");
+        } else {
+            printf("%d  ", part[i]);
+            //printf("%f  ", fart[i]);
+        }
     }
     printf("\n");
     return 0;
+
 //    printf("Decode sequence:\n");
 //    int w = 35;
 //    for(j = 0 ; j < 24 ; j++) {
@@ -228,16 +208,16 @@ int main() {
     int max = 0;
     printf("Decode sequence:\n|");
     for(i = 0 ; i < 70024 ; i++) {
-        if (hres[i] != 0xFF) {
-            printf("%3u|", hres[i]);
+        if (log[i] != 0xFF) {
+            printf("%3u|", log[i]);
         } else {
-            printf(" - |\n|", hres[i]);
-            if (*((long*)(hres + i + 1)) == 0) break;
+            printf(" - |\n|", log[i]);
+            if (*((long*)(log + i + 1)) == 0) break;
         }
-        if (hres[i] == 255 && hres[i-2] == 0) {
+        if (log[i] == 255 && log[i-2] == 0) {
             min++;
-            if (hres[i-1] > max) max = hres[i-1];
-            stats[hres[i-1]]++;
+            if (log[i-1] > max) max = log[i-1];
+            stats[log[i-1]]++;
         }
     }
     printf("\n");
