@@ -19,10 +19,8 @@
 				test		r13b, 0xFF
 				jz			.done
 				;
-				xor			rcx, rcx			; @@@
-				xor			rbx, rbx
 				mov			r12d, r13d			; cp ii
-				mov			r14d, r13d			; cp ii
+
 				; image & corner
 				xor			r15, r15
 				mov			r15d, dword [rbp - VAR + y8x8i]
@@ -32,20 +30,22 @@
 				add			r15,  qword [rbp - VAR + ppix]
 
 				; Convert zzi * quanti
-				sub			r14b, 1
-				and			r14b, 0xFC
-				add			r14b, 4				; 4i >= ni
-				shl			r14w, 2				; int
-.cvti:			;
-				cvtdq2ps	xmm0, oword [rbp - WORK + ZZI + rcx]
-				movaps		oword [rbp - WORK + ZZIF + rcx], xmm0
+				mov			ecx , r13d			; cp ii
+				sub			cl, 1
+				and			cl, 0xFC
+				shl			cx, 2				; int
 				;
-				add			cx, 16
-				cmp			cx, r14w
-				jl			.cvti
+.cvti:			cvtdq2ps	xmm0, oword [rbp - WORK + ZZI + rcx]
+				movaps		oword [rbp - WORK + ZZIF + rcx], xmm0
+				sub			cx, 16
+				jge			.cvti
 
 				; loop 128
+				mov			ebx, 240
 				movaps		xmm0, oword [PF128]
+.loop128		movaps		oword [rsp - WORK + PIXFI + rbx], xmm0
+				sub			bx, 16
+				jge			.loop128
 
 				; Main loop
 				xor			rcx, rcx					; (izi)
@@ -67,10 +67,11 @@
 				mulps		xmm2, xmm1
 				; add
 				addps		xmm2, oword [rbp - WORK + PIXFI + rbx]
+				; save
 				movaps		oword [rbp - WORK + PIXFI + rbx], xmm2
 				;
 .coopxy:		;
-				add			bx, 16
+				add			bx, 16		; @ sub & jnz
 				cmp			bx, 256
 				jl			.loopxy
 
