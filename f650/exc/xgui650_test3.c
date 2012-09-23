@@ -160,8 +160,8 @@ static int test() {
         if (format == 0x56595559) {
             yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
         } else if (format == 0x47504A4D) {
-//            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
-            mjpeg_decode645(mjpeg, tmp, lenb, gui->pix1);
+            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
+//            mjpeg_decode645(mjpeg, tmp, lenb, gui->pix1);
             for(i = 0 ; i < 8 ; i++) {
                 printf("%ld ", *((long*)mjpeg->pixels));
             }

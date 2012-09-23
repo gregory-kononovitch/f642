@@ -90,11 +90,11 @@
 ;;; last/only loop
 .loop0
 				; zzi in all							;
-				movss		xmm1, dword [rbp - WORK + ZZIF + rcx]
+				movss		xmm1, dword [rbp - WORK + ZZIF]
 				pshufd		xmm1, xmm1, 0x00
 
 				;
-				mov			edx, dword [rbp - WORK + IZI + rcx]
+				mov			edx, dword [rbp - WORK + IZI]
 				shl			dx, 8						; 64 * 4 : coscos line
 				mov			ebx, 240					; (x, y)
 				;
@@ -102,12 +102,13 @@
 				;
 				; uvcoscos
 				movaps		xmm2, oword [UVCOSCOS + rdx + rbx]
+
 				; mul
 				mulps		xmm2, xmm1
+
 				; add
 				addps		xmm2, oword [rbp - WORK + PIXFI + rbx]
-;				; + 128
-;				addps		xmm2, oword [PF128]
+
 				; cvt
 				cvtps2dq	xmm2, xmm2					; round
 				; pix
