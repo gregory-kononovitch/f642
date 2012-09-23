@@ -431,7 +431,7 @@ hdcl:			;
 				shr			r15, cl
 				mov			cl, dl
 				mov			r14d, 0xFFFFFFFF		; @@ neg ?
-				rol			r14d, cl				;
+				shl			r14d, cl				;
 				or			r15d, r14d
 				add			r15d, 1
 				jmp			.val
@@ -513,18 +513,18 @@ hacl:
 				jz			.value
 				; @@@ value
 				mov			r15, bits
-				shl			bits, cl
-				sub			off, cl
+				shl			bits, cl				; feed
+				sub			off, cl					;
 				;
 				sub			cl, 64
 				neg			cl
 				bt			r15, 63
 				jc			.pos
-				; neg @@@@
+				; neg @@
 				shr			r15, cl
 				mov			r14d, 0xFFFFFFFF
 				mov			cl, dl
-				rol			r14d, cl
+				shl			r14d, cl
 				or			r15d, r14d
 				add			r15d, 1
 				jmp			.val
@@ -690,12 +690,13 @@ hdcc:
 
 .donehdcc		;
 				; svg
-				mov			byte [rsi], symb
-				add			rsi, 1
+;				mov			byte [rsi], symb
+;				add			rsi, 1
 
+				and			symb, 0x0F
+				mov			dl, cl					; @for neg
 				test		symb, 0x0F				; 0x0F??
 				jz			.value
-				and			symb, 0x0F
 				; @@@ value
 				mov			r15, bits
 				shl			bits, cl
@@ -703,20 +704,27 @@ hdcc:
 				;
 				sub			cl, 64
 				neg			cl
-				bts			r15, 63
+				bt			r15, 63
 				jc			.pos
+				; neg
 				shr			r15, cl
-				neg			r15d
+				mov			r14d, 0xFFFFFFFF
+				mov			cl, dl
+				shl			r14d, cl
+				or			r15d, r14d
+				add			r15d, 1
 				jmp			.val
-.pos:
+.pos:			; pos
 				shr			r15, cl
-.val:
-				imul		r15d, dword [rbp - WORK + QUANTIC]
-				mov			dword [rbp - WORK + ZZI], r15d
-				mov			dword [rbp - WORK + ROWZI], 0
-				mov			dword [rbp - WORK + COLZI], 0
-				mov			r15d, dword [UVZ]
-				mov			dword [rbp - WORK + UVZI], r15d
+.val:			; value
+
+;				imul		r15d, dword [rbp - WORK + QUANTIC]
+;				mov			dword [rbp - WORK + ZZI], r15d
+;				mov			dword [rbp - WORK + ROWZI], 0
+;				mov			dword [rbp - WORK + COLZI], 0
+;				mov			r15d, dword [UVZ]
+;				mov			dword [rbp - WORK + UVZI], r15d
+				;
 				mov			ii, 1
 .value:
 
@@ -774,38 +782,45 @@ hacc:
 				add			iz, dl
 
 				; ### svg
-				mov			byte [rsi], iz
+;				mov			byte [rsi], iz
 ;				mov			byte [rsi], symb
-				add			rsi, 1
+;				add			rsi, 1
 
 				; value
 				and			symb, 0x0F
+				mov			dl, symb
 				test		symb, 0xFF
 				jz			.value
 				; @@@ value
 				mov			r15, bits
-				shl			bits, cl
-				sub			off, cl
+				shl			bits, cl			; feed
+				sub			off, cl				;
 				;
-				mov			dl, cl
 				sub			cl, 64
 				neg			cl
-				bts			r15, 63
+				bt 			r15, 63
 				jc			.pos
+				; neg
 				shr			r15, cl
-				neg			r15d
+				mov			r14d, 0xFFFFFFFF
+				mov			cl, dl
+				shl			r14d, cl
+				or			r15d, r14d
+				and			r15d, 1
 				jmp			.val
-.pos:
+.pos:			; pos
 				shr			r15, cl
-.val:
-				imul		r15d, dword [rbp - WORK + QUANTIC + 4 * r12]
-				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
-				mov			r15d, dword [ROWZ + 4 * r12]
-				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
-				mov			r15d, dword [COLZ + 4 * r12]
-				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
-				mov			r15d, dword [UVZ + 4 * r12]
-				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
+.val:			; val
+
+;				imul		r15d, dword [rbp - WORK + QUANTIC + 4 * r12]
+;				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
+;				mov			r15d, dword [ROWZ + 4 * r12]
+;				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
+;				mov			r15d, dword [COLZ + 4 * r12]
+;				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
+;				mov			r15d, dword [UVZ + 4 * r12]
+;				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
+				;
 				add			ii, 1
 .value:
 
@@ -819,7 +834,7 @@ hacc:
 
 				;
 .doneacc:		;
-				; iz < 63
+				; iz < 64
 				test		iz, 64
 				jnz			.donec
 				jmp			hacc.loop
