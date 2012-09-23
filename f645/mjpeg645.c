@@ -78,7 +78,7 @@ int load_next_marker645(mjpeg645_img *img) {
     }
     if (*img->ptr != 0xFF) {
         if ((img->lm >= M645_RST0 && img->lm <= M645_RST7) || img->lm == M645_SOS) {
-            LOG("Skip");
+            //LOG("Skip");
             skip_dsegment645(img);
         } else {
             LOG("Bad alignment, no marker here");
@@ -115,17 +115,17 @@ static int sof0_load645(mjpeg645_img *img, uint8_t *data) {
         LOG("Image dimensions out of range : width = %d, height = %d, size = %d", img->width, img->height, img->wxh);
         return -1;
     }
-    LOG("Image dimensions : width = %d, height = %d, size = %d", img->width, img->height, img->wxh);
+    //LOG("Image dimensions : width = %d, height = %d, size = %d", img->width, img->height, img->wxh);
     //
     int nbc = *(data + 2 + 2 + 1 + 2 + 2), i;
-    LOG("  ¤ %d components:", nbc);
+    //LOG("  ¤ %d components:", nbc);
     for(i = 0 ; i < nbc ; i++) {
         uint8_t n = *(data + 10 + 3*i);
         uint8_t v = *(data + 10 + 3*i + 1);
         uint8_t h = v >> 4;
         v &= 0x0f;
         uint8_t t = *(data + 10 + 3*i + 2);
-        LOG("    ¤ %d: sampling horizontal = %d, vertical = %d, quantization table = %d", n, h, v, t);
+        //LOG("    ¤ %d: sampling horizontal = %d, vertical = %d, quantization table = %d", n, h, v, t);
     }
 
     // rgb32
@@ -139,7 +139,7 @@ static int sof0_load645(mjpeg645_img *img, uint8_t *data) {
         LOG("Allocated memory for target picture");
         img->flags |= (1 << 30);
     } else {
-        LOG("Don't allocate memory for decoding, already present.")
+        //LOG("Don't allocate memory for decoding, already present.")
     }
     //
     return 0;
@@ -162,19 +162,19 @@ static int dqt_load645(mjpeg645_img *img, uint8_t *data) {
         tmp = img->quantizUV;
     }
     //
-    printf("Load quantization table n°%d :\n", n);
+    //printf("Load quantization table n°%d :\n", n);
     for(i = 0 ; i < 64 ; i++) {
         tmp[i] = data[2 + 3 + i];
-        printf(" %u", data[2 + 3 + i]);
+        //printf(" %u", data[2 + 3 + i]);
     }
-    printf("\n");
+    //printf("\n");
     return 0;
 }
 
 static int dri_load645(mjpeg645_img *img, uint8_t *data) {
     //
     img->ri = phtobe16p(data + 2 + 2);
-    LOG("Restart interval set to %d", img->ri);
+    //LOG("Restart interval set to %d", img->ri);
     return 0;
 }
 /**
@@ -262,14 +262,14 @@ int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     // Scan
     int m;
     while( (m = load_next_marker645(img)) > -1 ) {
-        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
-                , img->markers[m].key
-                , img->markers[m].code
-                , img->markers[m].desc
-                , img->markers[m].flags
-                , img->offset
-                , img->markers[m].length
-        );
+//        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
+//                , img->markers[m].key
+//                , img->markers[m].code
+//                , img->markers[m].desc
+//                , img->markers[m].flags
+//                , img->offset
+//                , img->markers[m].length
+//        );
         if (m == M645_SOS) break;
     }
 
@@ -277,7 +277,7 @@ int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     int off1 = img->offset;
     m = load_next_marker645(img);
     if (m != M645_RST0) {
-        LOG("Didn't found RST0 after SOS, returning");
+        //LOG("Didn't found RST0 after SOS, returning");
         goto err;
     }
     int off2 = img->offset - 2;
@@ -288,7 +288,7 @@ int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     long c1 = ReadTSC();
     uint8_t *addr = (uint8_t*)decode645(img, img->ext1, off2 - off1);
     long c2 = ReadTSC();
-    LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
+    //LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
 
     return 0;
 

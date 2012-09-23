@@ -89,7 +89,7 @@ static int test() {
     int format = 0x47504A4D;        // 0x56595559
     FILE *filp = NULL;
     //
-    xgui691 *gui = xgui_create691(800, 448, 1);
+    xgui691 *gui = xgui_create691(960, 540, 1);
     if (!gui) return -1;
     long period = 57143;
     //
@@ -112,7 +112,7 @@ static int test() {
     if (format == 0x56595559) {
         f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
     } else if (format == 0x47504A4D) {
-        f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x47504A4D, 30, 10);
+        f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, 30, 10);
     } else {
         // ###
         filp = fopen("y800x448-422-2.dat", "wb");
@@ -128,6 +128,7 @@ static int test() {
 
     //
     mjpeg645_img *mjpeg = alloc_mjpeg645_image(NULL, 0);
+    mjpeg->log = 0;
     mjpeg->pixels = (uint8_t*)gui->pix1;
 
     //

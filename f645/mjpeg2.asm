@@ -443,8 +443,9 @@ hdcl:			;
 ;				mov			byte [rsi], symb
 ;				add			rsi, 1
 
+				xor			r15, r15
 				test		symb, 0x0F				; @@@ ?
-				jz			.value
+				jz			.val
 				; @@@ value
 				and			symb, 0x0F				; @@@
 				mov			edx, ecx				; @@@ neg
@@ -474,19 +475,13 @@ hdcl:			;
 				mov			dword [rbp - WORK + ZZI], r15d
 				mov			strict dword [rbp - WORK + IZI], strict dword 0
 
-;				mov			dword [rbp - WORK + ROWZI], 0
-;				mov			dword [rbp - WORK + COLZI], 0
-;				mov			r15d, dword [UVZ]
-;				mov			dword [rbp - WORK + UVZI], r15d
 				;
 				mov			ii, 1
-.value:
-
 
 				;
 				; feed @@@
 				;
-				feed .donedcl, dcl, .donedcl, .donedcl, .herr	; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
+.feedtmp		feed .donedcl, dcl, .donedcl, .donedcl, .herr	; 1: return  ;  2:suffix  ;  3: jmp RDi  ; 4: jmp EOI ; 5: jmp ERR
 				;
 .donedcl:		;
 				;
