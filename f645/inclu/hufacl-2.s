@@ -1,5 +1,5 @@
 ;
-; file    : hufdcl-2.s (cp of hufdcl-1.s)
+; file    : hufacl-2.s (cp of hufdcl-1.s)
 ; project : f645 (t508.f640/2)
 ;
 ; Created on: Sep 23, 2012
@@ -20,110 +20,128 @@
 ;;;;;;;
 				;
 				shl 		bits, 1
-				jc			.c.case1x
+				jc			.al.case1x
 				; 0x
 				sub			off, 2
 				shl			bits, 1
-				jc			.c.case01
+				jc			.al.case01
 				; 00
-				mov			symb, 0
-				jmp			.donehdcc
-.c.case01		; 01
 				mov			symb, 1
-				jmp			.donehdcc
+				jmp			.donehacc
+.al.case01		; 01
+				mov			symb, 2
+				jmp			.donehacc
 				;
 
 				; 1x
-.c.case1x:
-				shl			bits, 1
-				jc			.c.case11x
-				; 10
-				sub			off, 2
-				mov			symb, 2
-				jmp			.donehdcc
+.al.case1x:
+				jno			.al.case11x
+				shl			bits, 2
+				jc			.al.case101x
+				; 100
+				sub			off, 3
+				mov			symb, 3
+				jmp			.donehacc
 
-.c.case11x:
-				jno			.c.case111x
+.al.case101x:
+				jno			.al.case1011
+				; 1010
+				shl			bits, 1
+				sub			off, 4
+				mov			sym, 0
+				jmp			.donehacc
+
+.al.case1011:
+				; 1011
+				shl			bits, 1
+				sub			off, 4
+				mov			sym, 4
+				jmp			.donehacc
+
+; ------------------------------------------------
+
+.al.case11x:
+				jno			.al.case111x
 				; 110
 				shl			bits, 1
 				sub			off, 3
 				mov			symb, 3
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case111x:
+.al.case111x:
 				shl			bits, 2
-				jc			.c.case4x
+				jc			.al.case4x
 				; 1110
 				sub			off, 4
 				mov			symb, 4
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case4x:
+.al.case4x:
 				shl			bits, 1
-				jc			.c.case5x
+				jc			.al.case5x
 				; 11110
 				sub			off, 5
 				mov			symb, 5
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case5x:
-				jno			.c.case6x
+.al.case5x:
+				jno			.al.case6x
 				shl			bits, 1
 				; 111110
 				sub			off, 6
 				mov			symb, 6
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case6x:
+.al.case6x:
 				shl			bits, 2
-				jc			.c.case7x
+				jc			.al.case7x
 				; 1111110
 				sub			off, 7
 				mov			symb, 7
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case7x:
-				jno			.c.case8x
+.al.case7x:
+				jno			.al.case8x
 				shl			bits, 1
 				; 11111110
 				sub			off, 8
 				mov			symb, 8
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case8x:
+.al.case8x:
 				shl			bits, 2
-				jc			.c.case9x
+				jc			.al.case9x
 				; 111111110
 				sub			off, 9
 				mov			symb, 9
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case9x:
-				jno			.c.case10x
+.al.case9x:
+				jno			.al.case10x
 				shl			bits, 1
 				; 111111110
 				sub			off, 10
 				mov			symb, 10
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.case10x:
+.al.case10x:
 				shl			bits, 2
-				jc			.c.caseerr
+				jc			.al.caseerr
 				; 111111110
 				sub			off, 11
 				mov			symb, 11
-				jmp			.donehdcc
+				jmp			.donehacc
 				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-.c.caseerr:
+.al.caseerr:
 				sub			off, 11
 				jmp			.herr
 				;
