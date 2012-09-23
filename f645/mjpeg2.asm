@@ -190,23 +190,11 @@ SECTION .text		ALIGN=16
 %define		ZZIF		0x500	;0x0200
 %define		UVCOSCOSI	0x600	;0x0200
 
-;%define		PSUMI		0x700	;0x0200
-;%define		ROWZI		0x400	;0x0200
-;%define		COLZI		0x500	;0x0200
-;%define		UVZI		0x600	;0x0200
-
 %define		QUANTIL		0x700	;0x0200
 %define		QUANTIC		0x800	;0x0200
-;%define		CVTI		0x900	;0x0200
-;%define		COSFI1		0xA00	;0x0200
-;%define		COSFI2		0xB00	;0x0200
-;%define		SUMHI		0xC00	;0x0200
+
 %define		PIXFI		0xD00	;0x0200
 %define		PIXII		0xE00	;0x0200
-;%define		VAR3		0xF00	;0x0200
-;%define		VAR4		0x1000	;0x0200
-;%define		QLUMIN		0x1100	;0x0200
-;%define		QCHROM		0x1200	;0x0200
 
 
 %define		WORK		4608	;
@@ -237,16 +225,7 @@ SECTION .text		ALIGN=16
 %define		x8x8i		0x58		; x coord of decoded 8x8
 %define		y8x8i		0x5C		; y coord of decoded 8x8
 
-
-;
-%define		_vc1		0x60
-%define		_vc2		0x61
-%define		_vc3		0x62
-%define		_vc4		0x63
-%define		_vs1		0x64
-%define		_vs2		0x66
-%define		_vi1		0x68
-%define		_vi2		0x6C
+%define		y8offset	0x60		; long 4 * (width - 8)
 
 ;
 %define		_ri0_us		0x70
@@ -258,7 +237,17 @@ SECTION .text		ALIGN=16
 %define		_v0_uc		0x78
 %define		_vi_uc		0x79
 
-%define		PTEST		0x80
+;
+%define		_vc1		0x90
+%define		_vc2		0x91
+%define		_vc3		0x92
+%define		_vc4		0x93
+%define		_vs1		0x94
+%define		_vs2		0x96
+%define		_vi1		0x98
+%define		_vi2		0x9C
+
+%define		PTEST		0x100
 
 
 
@@ -291,6 +280,9 @@ decode645:
 				mov			qword [rbp - VAR + ppix], rax
 				mov			eax, dword [rdi + 12]					; width
 				mov			dword [rbp - VAR + width], eax
+				sub			rax, 8
+				shl			rax, 2
+				mov			qword [rbp - VAR + y8offset], rax
 				mov			eax, dword [rdi + 16]					; height
 				mov			dword [rbp - VAR + height], eax
 				mov			eax, dword [rdi + 72]					; Ri
@@ -564,16 +556,9 @@ hacl:
 				imul		r15d, dword [rbp - WORK + QUANTIL + 4 * r12]
 				mov			dword [rbp - WORK + ZZI + 4 * ii], r15d
 				mov			dword [rbp - WORK + IZI + 4 * ii], r12d
-
-
-;				mov			r15d, dword [ROWZ + 4 * r12]
-;				mov			dword [rbp - WORK + ROWZI + 4 * ii], r15d
-;				mov			r15d, dword [COLZ + 4 * r12]
-;				mov			dword [rbp - WORK + COLZI + 4 * ii], r15d
-;				mov			r15d, dword [UVZ + 4 * r12]
-;				mov			dword [rbp - WORK + UVZI + 4 * ii], r15d
 				;
 				add			ii, 1
+				;
 .value:
 
 				; iz

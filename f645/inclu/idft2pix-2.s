@@ -28,6 +28,7 @@
 				mov			r15d, dword [rbp - VAR + y8x8i]
 				imul		r15d, dword [rbp - VAR + width]
 				add			r15d, dword [rbp - VAR + x8x8i]
+				shl			r15d, 2								; uint32_t
 				add			r15,  qword [rbp - VAR + ppix]
 
 				; Convert zzi * quanti
@@ -51,12 +52,12 @@
 				mov			r14w, bx
 				shl			r14w, 2
 				xor			rcx, rcx					; (izi)
-				movaps		xmm0, oword [F128]
+				movaps		xmm0, oword [PF128]
 				;
 .loopzi:
 				; zzi in all			;
 				movss		xmm1, dword [rbp - WORK + ZZIF + rcx]
-				pshufd		xmm1, xmm1, 0x55
+				pshufd		xmm1, xmm1, 0x00
 				; uvcoscos
 				mov			edx, dword [rbp - WORK + IZI + rcx]
 				shl			dx, 8			; 64 * 4
@@ -70,21 +71,26 @@
 				cmp			cx, r12w
 				jl			.loopzi
 				;
-				; pixels :
-				cvtps2dq	xmm0, xmm0
-				pshufb		xmm0, oword [SHUFFPIX]
-				movaps		oword [r15], xmm0
+				; pixels
+				cvtps2dq	xmm1, xmm0
+				pshufb		xmm1, oword [SHUFFPIX]
+				movdqa		oword [r15], xmm1
+
 				;
 				add			r15, 16
 				btc			flags, 59
 				jnc			.coopxy
-				mov 		eax, dword [rbp - VAR + width]			; @ width / 8
-				shl			eax, 2
-				add			r15, rax
-				sub			r15, 32
+				add 		r15, qword [rbp - VAR + y8offset]			; @ width / 8
 
 				;
 .coopxy:		;
+;				; #############
+;				movdqu		oword [rsi], xmm1
+;				add			rsi, 16
+;				; ####################
+;				mov			dword [rsi], -9999
+;				add			rsi, 4
+
 				add			bx, 4
 				cmp			bx, 64
 				jl			.loopxy
@@ -100,6 +106,7 @@
 .done:
 ;
 ;				sub			r15, qword [rbp - VAR + ppix]
+;				shr			r15, 2
 ;				mov			dword [rsi], r15d
 ;				mov			edx, dword [rbp - VAR + x8x8i]
 ;				mov			dword [rsi + 4], edx
@@ -108,7 +115,6 @@
 ;				mov			dword [rsi + 12], -9998
 ;				add			rsi, 16
 ;
-
 ;
 				xor			rcx, rcx
 				xor			rdx, rdx

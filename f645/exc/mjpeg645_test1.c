@@ -156,25 +156,23 @@ int main() {
     long c1, c2;
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
-//    return test_scan645();
-
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
     fread(tmp, 1, lenb, filp);
     fclose(filp);
 
     //
-    mjpeg645_img *src = alloc_mjpeg645_image(tmp, lenb);
-    src->pixels = NULL;
+    mjpeg645_img *mjpeg = alloc_mjpeg645_image(tmp, lenb);
+    mjpeg->pixels = NULL;
     //
     uint8_t *log;
-    src->ext1 = log = calloc(1024, 1024);
+    mjpeg->ext1 = log = calloc(1024, 1024);
 
     // Scan
 
     //
     c1 = ReadTSC();
-    int r = mjpeg_decode645(src, tmp, lenb, src->ext1);
+    int r = mjpeg_decode645(mjpeg, tmp, lenb, NULL);
     c2 = ReadTSC();
     LOG("Decode: return %ld for %ld µ", r, c2 - c1);
 
@@ -187,14 +185,19 @@ int main() {
             printf("| ");
         } else if (part[i] == -10000) {
             break;
-        } else if (*((long*)(log + 4*i)) == 0) {
-            if (*((long*)(log + 4*i + 8)) == 0)
-                if (*((long*)(log + 4*i + 8)) == 0)
-                    if (*((long*)(log + 4*i + 8)) == 0)
-                        break;
+//        } else if (*((long*)(log + 4*i)) == 0) {
+//            if (*((long*)(log + 4*i + 8)) == 0)
+//                if (*((long*)(log + 4*i + 16)) == 0)
+//                    if (*((long*)(log + 4*i + 24)) == 0)
+//                        if (*((long*)(log + 4*i + 32)) == 0)
+//                            if (*((long*)(log + 4*i + 40)) == 0)
+//                                if (*((long*)(log + 4*i + 48)) == 0)
+//                                    if (*((long*)(log + 4*i + 56)) == 0)
+//                        break;
         } else {
-            printf("%d  ", part[i]);
-            //printf("%f  ", fart[i]);
+            //printf("%d  ", part[i]);
+            //printf("%.2f  ", fart[i]);
+            printf("%08X  ", part[i]);
         }
     }
     printf("\n");
@@ -262,13 +265,13 @@ int main() {
 //    uint16_t cod = 55807;
 //    l1 = ReadTSC();
 //    for(i = cofs/50000 ; i >= 0 ; i--) {    // 10 * 50000
-//        //add = (uint8_t*)hu2fman645(src->data, 50000, hres);
+//        //add = (uint8_t*)hu2fman645(mjpeg->data, 50000, hres);
 //        //add = (uint8_t*)hu2fman645(&cod, 1, hres);
 //        add = (uint8_t*)huf4man645(&cod, hres);
 //    }
 //    l2 = ReadTSC();
 //    printf("End of asm tests\n");
-//    LOG("Huffman: stop at %ld for %ld = %ld (%ld M - %.1f ms)", add - src->data, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
+//    LOG("Huffman: stop at %ld for %ld = %ld (%ld M - %.1f ms)", add - mjpeg->data, l2 - l1, (l2 - l1) / ((cofs/50000)*50000), 1.*(l2 - l1) / 1.5e6, (l2 - l1) / 1000000);
 //    //
 //    printf("Asm: %ld\n", add);
 //    for(i = 0 ; i < 32 ; i++) printf("%u ", hres[i]);
@@ -285,6 +288,6 @@ int main() {
     return 0;
 
 err:
-    free_mjpeg645_image(&src);
+    free_mjpeg645_image(&mjpeg);
     return -1;
 }

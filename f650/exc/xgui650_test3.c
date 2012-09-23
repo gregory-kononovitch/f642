@@ -115,9 +115,16 @@ static int test() {
         f641_setup_v4l2(&v4l2, "/dev/video3", gui->width, gui->height, 0x47504A4D, 5, 10);
     } else {
         // ###
-        filp = fopen("y800x448-422.dat", "wb");
+        filp = fopen("y800x448-422-2.dat", "wb");
     }
     f641_prepare_buffers(&v4l2);
+
+    //
+    int lenb = 72025;   // 612311;
+    uint8_t *tmp = malloc(lenb);
+    filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+    fread(tmp, 1, lenb, filp);
+    fclose(filp);
 
     //
     mjpeg645_img *mjpeg = alloc_mjpeg645_image(NULL, 0);
@@ -153,7 +160,12 @@ static int test() {
         if (format == 0x56595559) {
             yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
         } else if (format == 0x47504A4D) {
-            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
+//            mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
+            mjpeg_decode645(mjpeg, tmp, lenb, gui->pix1);
+            for(i = 0 ; i < 8 ; i++) {
+                printf("%ld ", *((long*)mjpeg->pixels));
+            }
+            printf("\n");
         } else {
             // ###
             if (num_frame >= 100 && num_frame < 101) {

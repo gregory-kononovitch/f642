@@ -136,6 +136,7 @@ static int sof0_load645(mjpeg645_img *img, uint8_t *data) {
             return -1;
         }
         //
+        LOG("Allocated memory for target picture");
         img->flags |= (1 << 30);
     } else {
         LOG("Don't allocate memory for decoding, already present.")
