@@ -23,6 +23,10 @@
 				xor			rbx, rbx
 				mov			r12d, r13d			; cp ii
 				mov			r14d, r13d			; cp ii
+				; corner
+				mov			r15d, dword [rsp - VAR + y8x8i]
+				imul		r15d, dword [rsp - VAR + width]
+				add			r15d, dword [rsp - VAR + x8x8i]
 
 				; Convert zzi * quanti
 				sub			r14b, 1
@@ -66,12 +70,23 @@
 				;
 				;
 				cvtps2dq	xmm0, xmm0
-				movaps		oword [rsp - WORK + PIXII + r14], xmm0
+;				movaps		oword [rsp - WORK + PIXII + r14], xmm0		; [0 ; 255] mngmnt
+				pshufp		xmm0, oword [SHUFFPIX]
+				pextrw		cx, xmm0, 0
 				;
 .coopxy:		;
 				add			bx, 4
 				cmp			bx, 64
 				jl			.loopxy
+
+;
+				mov			eax, dword [rbp - VAR + x8x8i]
+				mov			edx, dword [rbp - VAR + width]
+				add			eax, 8
+				cmp			eax, edx
+				jl			.done
+				mov			dword [rbp - VAR + x8x8i], strict dword 0
+				add			strict dword [rbp - VAR + y8x8i], strict dword 8
 
 .done
 				xor			rcx, rcx

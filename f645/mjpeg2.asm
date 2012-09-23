@@ -46,6 +46,7 @@ FF16			dd	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
 
 ALIGN 16
 SHUFFZIF	db		0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3
+SHUFFPIX	db		0,4,8,12,128,128,128,128,128,128,128,128,128,128,128,128
 F128		db		128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128
 FLUSH		db		15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
@@ -221,16 +222,23 @@ SECTION .text		ALIGN=16
 %define		PQUANL		0x10
 %define		PQUANC		0x18
 ;
-%define		pimg		0x20
-%define		pdata		0x28
-%define		pimgptr		0x30
-%define		pdest		0x38
-
+%define		pimg		0x20		; struct
+%define		pdata		0x28		; data
+%define		pimgptr		0x30		; ptr
+%define		pdest		0x38		; logs, tmp
+;
+%define		ppix		0x40		; full decoded img
+%define		width		0x48		; width
+%define		height		0x4C		; height
 
 ;
 %define		dcLumin0	0x50
 %define		dcChrom0	0x54
+%define		x8x8i		0x58		; x coord of decoded 8x8
+%define		y8x8i		0x5C		; y coord of decoded 8x8
 
+
+;
 %define		_vc1		0x60
 %define		_vc2		0x61
 %define		_vc3		0x62
@@ -273,11 +281,28 @@ decode645:
 			begin	STACK
 			;
 				mov			qword [rbp - VAR + pimg], rdi
-				mov			rax, [rdi]						; @@@ img / img.data / img.ptr
+				mov			rax, qword [rdi]							; @@@ img / img.data / img.ptr
 				mov			qword [rbp - VAR + pdata], rax
-				mov			rax, [rdi + 32]
+				mov			rax, qword [rdi + 32]
 				mov			qword [rbp - VAR + pimgptr], rax
 				mov			qword [rbp - VAR + pdest], rsi
+				; decode
+				mov			rax, qword [rdi + 64]					; decoded pixels
+				mov			qword [rbp - VAR + ppix], rax
+				mov			eax, dword [rdi + 12]					; width
+				mov			dword [rbp - VAR + width], eax
+				mov			eax, dword [rdi + 16]					; height
+				mov			dword [rbp - VAR + height], eax
+				mov			eax, dword [rdi + 72]					; Ri
+				mov			word [rbp - VAR + _ri0_us], ax
+				;
+				mov			strict dword [rbp - VAR + x8x8i], strict dword 0		; xi8x8
+				mov			strict dword [rbp - VAR + y8x8i], strict dword 0		; yi8x8
+				;
+				mov			byte [rbp - VAR + _y0_uc], 2
+				mov			byte [rbp - VAR + _u0_uc], 2
+				mov			byte [rbp - VAR + _v0_uc], 1
+				;
 				mov			dword [rbp - VAR + PTEST], edx
 				;
 				;    Quantization coefs
@@ -348,11 +373,6 @@ ctree:
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 				;
-				; Vars
-				mov			word [rbp - VAR + _ri0_us], 10
-				mov			byte [rbp - VAR + _y0_uc], 2
-				mov			byte [rbp - VAR + _u0_uc], 2
-				mov			byte [rbp - VAR + _v0_uc], 1
 				;
 				;
 				mov			data, qword [rbp - VAR + pimgptr]
@@ -874,7 +894,7 @@ hacc:
 
 idctc:
 
-					%include "inclu/idft2pix-2.s"
+;					%include "inclu/idft2pix-2.s"
 
 ;return
 ;

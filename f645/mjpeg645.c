@@ -103,19 +103,64 @@ int load_next_marker645(mjpeg645_img *img) {
     return m;
 }
 
+static int sof0_load645(mjpeg645_img *img, uint8_t *data) {
+    //
+    img->height = phtobe16p(data + 2 + 2 + 1);
+    img->width  = phtobe16p(data + 2 + 2 + 1 + 2);
+    img->wxh    = img->width * img->height;
+
+    //
+    if (img->wxh == 0 || img->wxh > 4000000) {
+        LOG("Image dimensions out of range : width = %d, height = %d, size = %d", img->width, img->height, img->wxh);
+        return -1;
+    }
+    LOG("Image dimensions : width = %d, height = %d, size = %d", img->width, img->height, img->wxh);
+    //
+    int nbc = *(data + 2 + 2 + 1 + 2 + 2), i;
+    LOG("  ¤ %d components:", nbc);
+    for(i = 0 ; i < nbc ; i++) {
+        uint8_t n = *(data + 10 + 3*i);
+        uint8_t v = *(data + 10 + 3*i + 1);
+        uint8_t h = v >> 4;
+        v &= 0x0f;
+        uint8_t t = *(data + 10 + 3*i + 2);
+        LOG("    ¤ %d: sampling horizontal = %d, vertical = %d, quantization table = %d", n, h, v, t);
+    }
+
+    // B&W
+    if (!img->pixels) {
+        img->pixels = calloc(img->wxh, sizeof(uint8_t));
+        if (!img->pixels) {
+            LOG("Cannot allocate memory for decoding.");
+            return -1;
+        }
+        //
+        img->flags |= (1 << 30);
+    } else {
+        LOG("Don't allocate memory for decoding, already present.")
+    }
+    //
+    return 0;
+}
 
 
+/**
+ * @@@
+ * todo: *[4]
+ */
 static int dqt_load645(mjpeg645_img *img, uint8_t *data) {
     int i;
     int *tmp;
     //
-    if (img->quantizY[0] == 0) {
+    uint8_t n = *(data + 2 + 2);
+    n &= 0x0f;
+    if (n == 0) {
         tmp = img->quantizY;
     } else {
         tmp = img->quantizUV;
     }
     //
-    printf("Load quantization coefs:\n");
+    printf("Load quantization table n°%d :\n", n);
     for(i = 0 ; i < 64 ; i++) {
         tmp[i] = data[2 + 3 + i];
         printf(" %u", data[2 + 3 + i]);
@@ -124,17 +169,22 @@ static int dqt_load645(mjpeg645_img *img, uint8_t *data) {
     return 0;
 }
 
-
+static int dri_load645(mjpeg645_img *img, uint8_t *data) {
+    //
+    img->ri = phtobe16p(data + 2 + 2);
+    LOG("Restart interval set to %d", img->ri);
+    return 0;
+}
 /**
  *
  */
 static marker645 markers645[] = {
     {.key = 0xFFD8, .index = SOI , .flags = 0 , .code = "SOI",  .desc = "Start of image", .load_data = NULL}
   , {.key = 0xFFD9, .index = EOI , .flags = 0 , .code = "EOI",  .desc = "End of image", .load_data = NULL}
-  , {.key = 0xFFC0, .index = SOF0, .flags = 1 , .code = "SOF0", .desc = "Baseline DCT", .load_data = NULL}
+  , {.key = 0xFFC0, .index = SOF0, .flags = 1 , .code = "SOF0", .desc = "Baseline DCT", .load_data = sof0_load645}
   , {.key = 0xFFDA, .index = SOS , .flags = 1 , .code = "SOS",  .desc = "Start of scan", .load_data = NULL}
   , {.key = 0xFFDB, .index = DQT , .flags = 1 , .code = "DQT",  .desc = "Quantization table(s)", .load_data = dqt_load645}
-  , {.key = 0xFFDD, .index = DRI , .flags = 1 , .code = "DRI",  .desc = "Restart interval", .load_data = NULL}
+  , {.key = 0xFFDD, .index = DRI , .flags = 1 , .code = "DRI",  .desc = "Restart interval", .load_data = dri_load645}
   , {.key = 0xFFE0, .index = APP0, .flags = 1 , .code = "APP0", .desc = "Application segment", .load_data = NULL}
   , {.key = 0xFFD0, .index = RST0, .flags = 0 , .code = "RST0", .desc = "Restart 0", .load_data = NULL}
   , {.key = 0xFFD1, .index = RST1, .flags = 0 , .code = "RST1", .desc = "Restart 1", .load_data = NULL}
@@ -187,6 +237,7 @@ mjpeg645_img *alloc_mjpeg645_image(void *data, int size) {
 void free_mjpeg645_image(mjpeg645_img **img) {
     if (!*img) return;
     if ((*img)->markers) free((*img)->markers);
+    if ((*img)->flags & (1 << 30)) free((*img)->pixels);
     if ((*img)->flags & (1 << 31)) free((*img)->data);
     free(*img);
     *img = NULL;

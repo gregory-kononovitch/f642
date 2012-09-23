@@ -107,18 +107,18 @@ struct _mjpeg645_img {
     uint8_t     *eof;           // 40
 
     // Qanti
-    int         *quantizY;      // 48
+    int         *quantizY;      // 48           // @@@ *[4]
     int         *quantizUV;     // 56
 
-    //
-    int         row_du;         // 64
-    int         col_du;         // 68
+    // Decode
+    uint8_t     *pixels;        // 64
+    int         ri;             // 72
 
     // in
-    int         log;
+    int         log;            // 76
 
     // out
-    marker645   *markers;
+    marker645   *markers;       //
     int         lm;
 
 
