@@ -30,6 +30,7 @@
 
 #define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
 #define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);
+//#define LOG(s,...)
 
 
 #define phtobe16p(p) (  htobe16(  *((uint16_t*)(p))  )  )

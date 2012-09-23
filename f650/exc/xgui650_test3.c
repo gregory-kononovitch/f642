@@ -112,7 +112,7 @@ static int test() {
     if (format == 0x56595559) {
         f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
     } else if (format == 0x47504A4D) {
-        f641_setup_v4l2(&v4l2, "/dev/video3", gui->width, gui->height, 0x47504A4D, 5, 10);
+        f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x47504A4D, 30, 10);
     } else {
         // ###
         filp = fopen("y800x448-422-2.dat", "wb");
