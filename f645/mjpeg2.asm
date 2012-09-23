@@ -37,7 +37,7 @@ BITS 	64
 global 	decode645:			function
 global 	scan645:			function
 global 	scan645o:			function
-
+global 	test_acl645:		function
 
 SECTION .data		ALIGN=16
 FF16			dd	0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
@@ -499,8 +499,8 @@ hacl:
 				;
 				mov			tree, qword [rbp - VAR + ptreel]
 				;
-				;%include "inclu/hufacl-1.s"
-				%include "inclu/hufacl-3.s"
+				%include "inclu/hufacl-1.s"
+				;%include "inclu/hufacl-3.s"
 
 				logbits 64,a4; ###
 
@@ -1211,3 +1211,33 @@ scan645l:
 				mov			dword [r13+8], r11d
 				mov			dword [r13+12], r12d
 				return
+
+
+
+
+%define		symb	cl
+%define		off		r8d
+%define		bits	r9
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; int test_acl645(uint8_t data, int off, int *res)
+test_acl645:
+			xor		rcx, rcx
+			xor		r8, r8
+			mov		r8, rsi
+			mov		rsi, rdx
+			mov		bits, rdi
+
+
+%include "inclu/hufacl-3.s"
+
+
+.herr:
+			mov		rax, -1
+			ret
+
+.donehacl:
+			mov		dword [rsi], ecx
+			mov		dword [rsi+4], r8d
+			xor		rax, rax
+ret

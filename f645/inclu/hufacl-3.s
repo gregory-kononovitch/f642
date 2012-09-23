@@ -1476,7 +1476,7 @@
 
 
 .al.caseerr:
-				sub			off, 11
+				sub			off, 16
 				jmp			.herr
 				;
 				;

@@ -796,6 +796,7 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
                         , gui->ximg2
                         , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);    // @@@ r
+//                XSync(gui->display, True);
                 pthread_mutex_unlock(&ethread->mutex);
             } else {
                 pthread_mutex_lock(&ethread->mutex);
@@ -803,6 +804,7 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
                         , gui->ximg1
                         , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);
+//                XSync(gui->display, True);
                 pthread_mutex_unlock(&ethread->mutex);
             }
         } else {

@@ -21,14 +21,31 @@
 #include "../../f645/mjpeg645.h"
 
 
+typedef struct test3_ {
+    int pause;
+    pthread_mutex_t mutex;
+    pthread_cond_t  cond;
+} test3;
+
+
 static char escape = 0;
 
 static int notify_key_pressed0(void *ext, unsigned long key, int x, int y, int mask, uint64_t time) {
-    desk654 *desk = (desk654*)ext;
+    test3 *test = (test3*)ext;
 
     switch(key) {
         case XK_Escape:
             escape = 1;
+            pthread_mutex_lock(&test->mutex);
+            test->pause = 0;
+            pthread_cond_broadcast(&test->cond);
+            pthread_mutex_unlock(&test->mutex);
+            break;
+        case XK_space:
+                pthread_mutex_lock(&test->mutex);
+                test->pause = !test->pause;
+                pthread_cond_broadcast(&test->cond);
+                pthread_mutex_unlock(&test->mutex);
             break;
     }
     return 0;
@@ -111,7 +128,7 @@ static int test() {
     struct v4l2_buffer frame;
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
     if (format == 0x56595559) {
-        f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x56595559, 30, 3);
+        f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x56595559, 30, 3);
     } else if (format == 0x47504A4D) {
         f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x47504A4D, 24, 10);
     } else {
@@ -132,11 +149,16 @@ static int test() {
     mjpeg->log = 0;
     mjpeg->pixels = (uint8_t*)gui->pix1;
 
+    // Thread
+    test3 *test = calloc(1, sizeof(test3));
+    pthread_mutex_init(&test->mutex, NULL);
+    pthread_cond_init(&test->cond, NULL);
+
     //
     events691 events;
     memset(&events, 0, sizeof(events691));
     events.notify_key_pressed  = notify_key_pressed0;
-    xgui_listen691(gui, &events, NULL);
+    xgui_listen691(gui, &events, test);
 
     //
     f641_stream_on(&v4l2);
@@ -147,6 +169,12 @@ static int test() {
     gettimeofday(&tv1, NULL);
     gettimeofday(&tv3, NULL);
     while(!escape) {
+        pthread_mutex_lock(&test->mutex);
+        while(test->pause) {
+            pthread_cond_wait(&test->cond, &test->mutex);
+        }
+        pthread_mutex_unlock(&test->mutex);
+
         // DeQueue
         memset(&frame, 0, sizeof(struct v4l2_buffer));
         frame.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;

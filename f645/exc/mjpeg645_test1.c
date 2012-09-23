@@ -150,11 +150,72 @@ int test_scan645() {
     return 0;
 }
 
+
+extern int test_acl645(uint64_t data, int off, int *res);
+
+int testacl2() {
+    int i, j;
+    int lenb = 72025;   // 612311;
+    long c1, c2;
+    uint8_t *tmp = (uint8_t*)calloc(1, lenb);
+    uint64_t *ll = (uint64_t*)tmp;
+    uint64_t lo;
+
+    //
+    FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+    fread(tmp, 1, lenb, filp);
+    fclose(filp);
+    //
+    tmp  += 220;
+    lenb -= 220;
+    int off = lenb << 3;
+    //
+    int *res = calloc(1024, 16);
+    res[1] = off;
+    int r;
+    lo = *ll;
+    while(1) {
+        r = test_acl645(lo, off, res);
+        if (r == 0 && res[1] > 0) {
+            printf("Break at r = %d , offset = %d\n", r, res[1]);
+            break;
+        }
+        printf("Return %d : %d %d %d %d\n", r, res[0], res[1], res[2], res[3]);
+        //
+        int o = off - res[1];
+        off = res[1];
+    }
+
+}
+
+
+
+//int testacl() {
+//
+//    uint64_t code = 0xABFD7FA7F97DAAABL;
+//    int off = 64;
+//    int *res = calloc(1024, 16);
+//    res[1] = 64;
+//    int r;
+//    do {
+//        code <<= (off - res[1]);
+//        off = res[1];
+//        r = test_acl645(code, off, res);
+//        printf("Return %d : %d %d %d %d\n", r, res[0], res[1], res[2], res[3]);
+//    } while(r == 0 && res[1] > 0);
+//
+//    printf("Return %d : %d %d %d %d\n", r, res[0], res[1], res[2], res[3]);
+//    return 0;
+//}
+
+
 int main() {
     int i, j;
     int lenb = 72025;   // 612311;
     long c1, c2;
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
+
+    return testacl2();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
