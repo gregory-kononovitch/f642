@@ -172,9 +172,9 @@ int main() {
 
     //
     c1 = ReadTSC();
-    int r = mjpeg_decode645(mjpeg, tmp, lenb, NULL);
+    long r = mjpeg_decode645(mjpeg, tmp, lenb, NULL);
     c2 = ReadTSC();
-    LOG("Decode: return %ld for %ld µ", r, c2 - c1);
+    LOG("Decode: return %ld (%ld) for %ld µ", r , r - (long)mjpeg->data, c2 - c1);
 
     int *part = (int*)log;
     float *fart = (float*)log;

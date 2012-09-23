@@ -246,3 +246,13 @@ Frame 840 for 24.007 Hz for 27239 µs and 38254025 µops
 Frame 900 for 24.002 Hz for 27454 µs and 38576760 µops
 Frame 960 for 24.002 Hz for 27068 µs and 38001027 µops
 Frame 1020 for 24.030 Hz for 27293 µs and 38339834 µops
+
+-------------- and without idft -----------------------
+Frame 60 for 15.109 Hz for 81682 µs and 14683376 µops
+Frame 120 for 15.017 Hz for 11802 µs and 15193206 µops
+Frame 180 for 15.125 Hz for 12305 µs and 15983823 µops
+Frame 240 for 15.047 Hz for 10576 µs and 13251089 µops
+Frame 300 for 15.022 Hz for 10807 µs and 13661448 µops
+Frame 360 for 15.023 Hz for 10720 µs and 13437531 µops
+Frame 420 for 15.027 Hz for 11112 µs and 14063113 µops
+Frame 480 for 15.021 Hz for 12246 µs and 15877138 µops

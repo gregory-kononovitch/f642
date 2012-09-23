@@ -433,8 +433,9 @@ hdcl:			;
 				;
 				;
 .herr			; svg
-				mov			byte [rsi], 254
-				mov			byte [rsi+1], 255
+				mov			dword [rsi], -9999
+				mov			dword [rsi+4], 355304
+				mov			dword [rsi+8], -10000
 				mov			rax, data
 				return
 
@@ -498,15 +499,17 @@ hacl:
 				;
 				mov			tree, qword [rbp - VAR + ptreel]
 				;
-%include "inclu/hufacl-1.s"
+				;%include "inclu/hufacl-1.s"
+				%include "inclu/hufacl-3.s"
 
 				logbits 64,a4; ###
 
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 .herr:			; svg
-				mov			byte [rsi], 254
-				mov			byte [rsi+1], 255
+				mov			dword [rsi], -9999
+				mov			dword [rsi+4], 355305
+				mov			dword [rsi+8], -10000
 				mov			rax, data
 				return
 
@@ -669,7 +672,7 @@ hacl:
 ;                            DCT Lumin
 ;                    -------------------------
 idctl:
-					%include "inclu/idft2pix-3.s"
+;					%include "inclu/idft2pix-3.s"
 
 ;return
 ;
@@ -704,8 +707,9 @@ hdcc:
 				;
 				;
 .herr			; svg
-				mov			byte [rsi], 254
-				mov			byte [rsi+1], 255
+				mov			dword [rsi], -9999
+				mov			dword [rsi+4], 355306
+				mov			dword [rsi+8], -10000
 				mov			rax, data
 				return
 
@@ -746,8 +750,9 @@ hacc:
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 .herr:			; svg
-				mov			byte [rsi], 254
-				mov			byte [rsi+1], 255
+				mov			dword [rsi], -9999
+				mov			dword [rsi+4], 355307
+				mov			dword [rsi+8], -10000
 				mov			rax, data
 				return
 
