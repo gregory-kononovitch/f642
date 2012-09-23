@@ -19,7 +19,6 @@
 				test		r13b, 0xFF
 				jz			.done
 				;
-				mov			r12d, r13d			; cp ii
 
 				; image & corner
 				xor			r15, r15
@@ -29,12 +28,11 @@
 				shl			r15d, 2								; uint32_t
 				add			r15,  qword [rbp - VAR + ppix]
 
-				; Convert zzi * quanti
+				; Convert ZZiQuanti
 				mov			ecx , r13d			; cp ii
 				sub			cl, 1
 				and			cl, 0xFC
 				shl			cx, 2				; int
-				;
 .cvti:			cvtdq2ps	xmm0, oword [rbp - WORK + ZZI + rcx]
 				movaps		oword [rbp - WORK + ZZIF + rcx], xmm0
 				sub			cx, 16
@@ -48,16 +46,17 @@
 				jge			.loop128
 
 				; Main loop
-				xor			rcx, rcx					; (izi)
-				shl			r12w, 2						; byte offset
+				mov			ecx, r13d					; (izi)
+				sub			cl, 1
+				shl			cl, 2						; byte offset
 .loopzi:
-				; zzi in all				;
+				; zzi in all							;
 				movss		xmm1, dword [rbp - WORK + ZZIF + rcx]
 				pshufd		xmm1, xmm1, 0x00
 				;
 				mov			edx, dword [rbp - WORK + IZI + rcx]
 				shl			dx, 8						; 64 * 4 : coscos line
-				xor			rbx, rbx					; (x, y)
+				mov			ebx, 240					; (x, y)
 				;
 .loopxy:
 				;
@@ -71,20 +70,19 @@
 				movaps		oword [rbp - WORK + PIXFI + rbx], xmm2
 				;
 .coopxy:		;
-				add			bx, 16		; @ sub & jnz
-				cmp			bx, 256
-				jl			.loopxy
+				sub			bx, 16						;
+				jge			.loopxy
 
 .coopzi:		;
-				add			cx, 4
-				cmp			cx, r12w
-				jl			.loopzi
+				sub			cl, 4
+				jg			.loopzi
 				;
 
-				; pixels
-				cvtps2dq	xmm1, xmm0
-				pshufb		xmm1, oword [SHUFFPIX]
-				movdqa		oword [r15], xmm1
+;;; last loop
+
+
+
+
 
 				;
 				add			r15, 16
