@@ -778,7 +778,7 @@ static void *event_loop691(void *prm) {
 /*
  *
  */
-int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
+int xgui_show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
     int r = 0;
     struct timeval tvb1, tvb2;
     xgui691p *gui = (xgui691p*)xgui;

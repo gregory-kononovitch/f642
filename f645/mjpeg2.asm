@@ -856,6 +856,8 @@ decoderdone:	;
 				mov			qword [rsi + 4], bits
 				mov			dword [rsi + 12], -10000		; ###
 				mov			rax, data
+
+				;
 				return
 
 

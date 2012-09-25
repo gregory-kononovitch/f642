@@ -211,100 +211,110 @@ int testacl2() {
 
 int main() {
     int i, j;
-    int lenb = 72025;   // 612311;
     long c1, c2;
-    uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
 //    return testacl2();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+    fseek(filp, 0, SEEK_END);
+    fpos_t p;
+    fgetpos(filp, &p);
+    int lenb = p.__pos;   // 612311;
+    uint8_t *tmp = (uint8_t*)calloc(1, lenb);
+    fseek(filp, 0, SEEK_SET);
     fread(tmp, 1, lenb, filp);
     fclose(filp);
+    printf("Load %d bytes\n", lenb);
 
     //
     mjpeg645_img *mjpeg = alloc_mjpeg645_image(tmp, lenb);
     mjpeg->pixels = NULL;
     //
-    uint8_t *log;
-    mjpeg->ext1 = log = calloc(1024, 1024);
+    uint8_t *log = mjpeg->ext1 = calloc(1024, 1024);
 
     // Scan
 
     //
-    c1 = ReadTSC();
-    long r = mjpeg_decode645(mjpeg, tmp, lenb, NULL);
-    c2 = ReadTSC();
-    LOG("Decode: return %ld (%ld) for %ld µ", r , r - (long)mjpeg->data, c2 - c1);
+    while(1) {
+        mjpeg->ext1 = log;
+        c1 = ReadTSC();
+        long r = mjpeg_decode645(mjpeg, NULL, lenb, NULL);
+        c2 = ReadTSC();
+        LOG("Decode: return %ld (%ld) for %ld µ", r , r - (long)mjpeg->data, c2 - c1);
 
-    int *part = (int*)log;
-    float *fart = (float*)log;
-    for(i = 0 ; i < 100000 ; i++) {
-        if (part[i] == -9999) {
-            printf("X\n");
-        } else if (part[i] == -9998) {
-            printf("| ");
-        } else if (part[i] == -10000) {
-            break;
-        } else if (*((long*)(log + 4*i)) == 0) {
-            if (*((long*)(log + 4*i + 8)) == 0)
-                if (*((long*)(log + 4*i + 16)) == 0)
-                    if (*((long*)(log + 4*i + 24)) == 0)
-                        if (*((long*)(log + 4*i + 32)) == 0)
-                            if (*((long*)(log + 4*i + 40)) == 0)
-                                if (*((long*)(log + 4*i + 48)) == 0)
-                                    if (*((long*)(log + 4*i + 56)) == 0)
-                        break;
-        } else {
-            printf("%d  ", part[i]);
-            //printf("%.2f  ", fart[i]);
-            //printf("%08X  ", part[i]);
+        int *part = (int*)log;
+        float *fart = (float*)log;
+        for(i = 0 ; i < 100000 ; i++) {
+            if (part[i] == -9999) {
+                printf("X\n");
+            } else if (part[i] == -9998) {
+                printf("| ");
+            } else if (part[i] == -10000) {
+                break;
+            } else if (*((long*)(log + 4*i)) == 0) {
+                if (*((long*)(log + 4*i + 8)) == 0)
+                    if (*((long*)(log + 4*i + 16)) == 0)
+                        if (*((long*)(log + 4*i + 24)) == 0)
+                            if (*((long*)(log + 4*i + 32)) == 0)
+                                if (*((long*)(log + 4*i + 40)) == 0)
+                                    if (*((long*)(log + 4*i + 48)) == 0)
+                                        if (*((long*)(log + 4*i + 56)) == 0)
+                            break;
+            } else {
+                printf("%d  ", part[i]);
+                //printf("%.2f  ", fart[i]);
+                //printf("%08X  ", part[i]);
+            }
+        }
+        printf("\n");
+
+        if (mjpeg->size > 10000) {
+            continue;
+        }
+        break;
+
+    //    printf("Decode sequence:\n");
+    //    int w = 35;
+    //    for(j = 0 ; j < 24 ; j++) {
+    //        for(i = 0 ; i < w ; i++) {
+    //            printf("%u ", hres[i + w * j]);
+    //        }
+    //        printf("\n");
+    //    }
+    //    printf("Done\n");
+
+        int stats[64] = {0};
+        int min = 0;
+        int max = 0;
+        printf("Decode sequence:\n|");
+        for(i = 0 ; i < 70024 ; i++) {
+            if (log[i] != 0xFF) {
+                printf("%3u|", log[i]);
+            } else {
+                printf(" - |\n|", log[i]);
+                if (*((long*)(log + i + 1)) == 0) break;
+            }
+            if (log[i] == 255 && log[i-2] == 0) {
+                min++;
+                if (log[i-1] > max) max = log[i-1];
+                stats[log[i-1]]++;
+            }
+        }
+        printf("\n");
+        printf("Done\n");
+
+        printf("Stats for %d blocks, max = %d\n", min, max);
+        max = 0;
+        for(i = 0 ; i < 64 ; i++) {
+            max += stats[i];
+        }
+        min = 0;
+        for(i = 0 ; i < 64 ; i++) {
+            min += stats[i];
+            printf("NB[%d] = %d  ( %.2f  -  %.2f )\n", i, stats[i], 100. * stats[i] / max, 100.*min/max);
         }
     }
-    printf("\n");
-    return 0;
-
-//    printf("Decode sequence:\n");
-//    int w = 35;
-//    for(j = 0 ; j < 24 ; j++) {
-//        for(i = 0 ; i < w ; i++) {
-//            printf("%u ", hres[i + w * j]);
-//        }
-//        printf("\n");
-//    }
-//    printf("Done\n");
-
-    int stats[64] = {0};
-    int min = 0;
-    int max = 0;
-    printf("Decode sequence:\n|");
-    for(i = 0 ; i < 70024 ; i++) {
-        if (log[i] != 0xFF) {
-            printf("%3u|", log[i]);
-        } else {
-            printf(" - |\n|", log[i]);
-            if (*((long*)(log + i + 1)) == 0) break;
-        }
-        if (log[i] == 255 && log[i-2] == 0) {
-            min++;
-            if (log[i-1] > max) max = log[i-1];
-            stats[log[i-1]]++;
-        }
-    }
-    printf("\n");
-    printf("Done\n");
-
-    printf("Stats for %d blocks, max = %d\n", min, max);
-    max = 0;
-    for(i = 0 ; i < 64 ; i++) {
-        max += stats[i];
-    }
-    min = 0;
-    for(i = 0 ; i < 64 ; i++) {
-        min += stats[i];
-        printf("NB[%d] = %d  ( %.2f  -  %.2f )\n", i, stats[i], 100. * stats[i] / max, 100.*min/max);
-    }
-
 
 // --------------------------------------------------------------------------------
 //    // ###

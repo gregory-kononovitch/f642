@@ -96,18 +96,18 @@ typedef struct {
 /*
  *
  */
-xgui691 *xgui_create691(int width, int height, int shm);
-void xgui_free691(xgui691 **gui);
+extern xgui691 *xgui_create691(int width, int height, int shm);
+extern void xgui_free691(xgui691 **gui);
 
-int xgui_open_window691(xgui691 *gui, const char *title);
-int xgui_close_window691(xgui691 *gui);
-
-//
-int xgui_listen691(xgui691 *gui, events691 *events, void* ext);
-int xgui_stop691(xgui691 *gui);
+extern int xgui_open_window691(xgui691 *gui, const char *title);
+extern int xgui_close_window691(xgui691 *gui);
 
 //
-int xgui_show691(xgui691 *gui, int i, int srcx, int srcy, int destx, int desty, int width, int height);
+extern int xgui_listen691(xgui691 *gui, events691 *events, void* ext);
+extern int xgui_stop691(xgui691 *gui);
+
+//
+extern int xgui_show691(xgui691 *gui, int i, int srcx, int srcy, int destx, int desty, int width, int height);
 
 
 #endif /* F691_H_ */

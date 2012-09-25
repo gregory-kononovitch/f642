@@ -251,25 +251,27 @@ void free_mjpeg645_image(mjpeg645_img **img) {
  */
 int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     //
-    img->data = img->ptr = mjpeg;
-    img->size = size;
-    img->eof = img->data + img->size;
-    img->offset = 0;
-    img->pixels = pix;
+    if (mjpeg) {
+        img->data = img->ptr = mjpeg;
+        img->size = size;
+        img->eof = img->data + img->size;
+        img->offset = 0;
+        img->pixels = pix;
+    }
     if (!img->ext1) {
         img->ext1 = calloc(1024, 1024);
     }
     // Scan
     int m;
     while( (m = load_next_marker645(img)) > -1 ) {
-//        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
-//                , img->markers[m].key
-//                , img->markers[m].code
-//                , img->markers[m].desc
-//                , img->markers[m].flags
-//                , img->offset
-//                , img->markers[m].length
-//        );
+        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
+                , img->markers[m].key
+                , img->markers[m].code
+                , img->markers[m].desc
+                , img->markers[m].flags
+                , img->offset
+                , img->markers[m].length
+        );
         if (m == M645_SOS) break;
     }
 
@@ -288,7 +290,15 @@ int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     long c1 = ReadTSC();
     uint8_t *addr = (uint8_t*)decode645(img, img->ext1, off2 - off1);
     long c2 = ReadTSC();
-    //LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
+    LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
+
+    //
+    img->ptr  = addr;
+    img->size = (img->data + img->size) - addr;
+    img->data = addr;
+    img->eof  = img->data + img->size;
+    img->offset = 0;
+
 
     return c2 - c1;
 

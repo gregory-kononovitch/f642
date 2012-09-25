@@ -8,7 +8,7 @@
  * There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-extern "C" {
+//extern "C" {
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <time.h>
@@ -26,11 +26,9 @@ extern "C" {
 
 extern long yuv422togray32(void *gray32, void *yuv422, int widtha16, int height);
 
-}
-
-#include "../../f642/f642_x264.hh"
-
-using namespace t508::f642;
+//}
+//#include "../../f642/f642_x264.hh"
+//using namespace t508::f642;
 
 
 typedef struct test3_ {
