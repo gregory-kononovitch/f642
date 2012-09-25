@@ -264,14 +264,14 @@ int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
     // Scan
     int m;
     while( (m = load_next_marker645(img)) > -1 ) {
-        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
-                , img->markers[m].key
-                , img->markers[m].code
-                , img->markers[m].desc
-                , img->markers[m].flags
-                , img->offset
-                , img->markers[m].length
-        );
+//        LOG("Found marker %04X %s-\"%s\" (%X) at position %d for %u bytes (+2)"
+//                , img->markers[m].key
+//                , img->markers[m].code
+//                , img->markers[m].desc
+//                , img->markers[m].flags
+//                , img->offset
+//                , img->markers[m].length
+//        );
         if (m == M645_SOS) break;
     }
 

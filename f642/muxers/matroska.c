@@ -143,8 +143,8 @@ static int write_headers( hnd_t handle, x264_nal_t *p_nal )
 
     memcpy( avcC+8, sps, sps_size );
 
-    avcC[8+sps_size] = 1; // one pps
-    avcC[9+sps_size] = pps_size >> 8;
+    avcC[8+sps_size]  = 1; // one pps
+    avcC[9+sps_size]  = pps_size >> 8;
     avcC[10+sps_size] = pps_size;
 
     memcpy( avcC+11+sps_size, pps, pps_size );

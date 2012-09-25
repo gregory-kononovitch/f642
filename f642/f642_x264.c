@@ -187,25 +187,25 @@ int f642_addFrame(f642x264 *x264, x264_picture_t *yuv, struct timeval tv) {
     if (yuv) {
         yuv->i_pts = x264->frame++;
         r = x264_encoder_encode(x264->x264, &nal, &i_nal, yuv, &ipb );
-        if (x264->loglevel > 2) fprintf(stderr, "Encode return %d for pts = %ld, dts = %ld / pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts, yuv->i_pts, yuv->i_dts);
+        //if (x264->loglevel > 2) fprintf(stderr, "Encode return %d for pts = %ld, dts = %ld / pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts, yuv->i_pts, yuv->i_dts);
     } else {
         //
         r = x264_encoder_encode(x264->x264, &nal, &i_nal, NULL, &ipb);
-        if (x264->loglevel > 2) fprintf(stderr, "x264_encoder_encode return %d for pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts);
+        //if (x264->loglevel > 2) fprintf(stderr, "x264_encoder_encode return %d for pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts);
     }
     if (r < 0) {
         //x264_picture_clean(&ipb);
-        if (x264->loglevel > 2) fprintf(stderr, "Pb encoding frame %d\n", r);
+        //if (x264->loglevel > 2) fprintf(stderr, "Pb encoding frame %d\n", r);
         return -1;
     } else if (r == 0) {
         //x264_picture_clean(&ipb);
-        if (x264->loglevel > 2) fprintf(stderr, "Encoding frame return 0 : buffered\n");
+        //if (x264->loglevel > 2) fprintf(stderr, "Encoding frame return 0 : buffered\n");
         return 0;
     }
     //
     r = x264->output->write_frame(x264->outh, nal[0].p_payload, r, &ipb);
     //x264_picture_clean(&ipb);
-    if (x264->loglevel > 2) fprintf(stderr, "write_frame return %d\n", r);
+    //if (x264->loglevel > 2) fprintf(stderr, "write_frame return %d\n", r);
     if (r > 0) {
         if (ipb.i_pts > x264->pts) {
             if (x264->pts > x264->pts0) x264->pts0 = x264->pts;

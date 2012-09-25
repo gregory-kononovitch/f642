@@ -113,14 +113,14 @@ void *xgui_th650(void *p) {
 
     printf("Thread x264 started\n");
     while(test->encode) {
-        printf("Wait queue from add frame\n");
+//        printf("Wait queue from add frame\n");
         int i = dequ2ue642(test->queue, &tv);
         if (i < 0) break;
         ;
         f642_addFrame(test->x264, &test->queue->yuv[i], tv);
         ;
         enqu1ue642(test->queue, i);
-        printf("Enqueued from add frame\n");
+//        printf("Enqueued from add frame\n");
     }
 
     return NULL;
@@ -143,7 +143,8 @@ static int test() {
     int width = 800;
     int height = 448;
     int fps = 24;
-    int format = 0;     //0x47504A4D;        // 0x56595559
+    int format = 0x47504A4D;        // 0x56595559
+    int save = 0;
     FILE *filp = NULL;
     //
     xgui691 *gui = xgui_create691(width, height, 1);
@@ -173,7 +174,7 @@ static int test() {
         f641_setup_v4l2(&v4l2, "/dev/video0", gui->width, gui->height, 0x56595559, 30, 3);
         f641_prepare_buffers(&v4l2);
     } else if (format == 0x47504A4D) {
-        f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x47504A4D, fps, 10);
+        f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, fps, 10);
         f641_prepare_buffers(&v4l2);
     } else if (!format) {
         int lenb = 72025;   // 612311;
@@ -192,13 +193,17 @@ static int test() {
     mjpeg->pixels = (uint8_t*)gui->pix1;
 
     // x264
-    printf("1\n");
-    f642x264 *x264 = init642_x264(gui->width, gui->height, fps, 4, 1);
-    x264->loglevel = 3;
-    f642_open(x264, "test.mkv3", 1);
-    printf("2\n");
-    queue642 *queue = queue_open642(x264, 3);
-    printf("3\n");
+    f642x264 *x264 = 0;
+    queue642 *queue = 0;
+    if (save) {
+        printf("1\n");
+        f642x264 *x264 = init642_x264(gui->width, gui->height, fps, 4, 1);
+        x264->loglevel = 3;
+        f642_open(x264, "test.mkv3", 1);
+        printf("2\n");
+        queue642 *queue = queue_open642(x264, 3);
+        printf("3\n");
+    }
 
     // Thread
     test3 *test = (test3*)calloc(1, sizeof(test3));
@@ -216,9 +221,11 @@ static int test() {
     xgui_listen691(gui, &events, test);
 
     //
-    if (format >= 0) {
+    if (save && format >= 0) {
         pthread_attr_init(&test->queue->attr);
         pthread_create(&test->queue->thread, &test->queue->attr, xgui_th650, test);
+    }
+    if (format > 0) {
         f641_stream_on(&v4l2);
     }
 
@@ -248,19 +255,20 @@ static int test() {
         gettimeofday(&tvb1, NULL);
 
         // Convert
+        int f;
         if (format == 0x56595559) {
             yuv422togray32(gui->pix1, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
         } else if (format == 0x47504A4D) {
-            int i = dequ1ue642(test->queue);
-            if (i < 0) continue;
+            if (save) f = dequ1ue642(test->queue);
+            if (save && f < 0) continue;
             uops += mjpeg_decode645(mjpeg, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, (uint8_t*)gui->pix1);
             timersub(&v4l2.buf.timestamp, &tv0, &v4l2.buf.timestamp);
-            enqu2ue642(test->queue, i, v4l2.buf.timestamp);
+            if (save) enqu2ue642(test->queue, f, v4l2.buf.timestamp);
         } else if (!format) {
-            int i = dequ1ue642(test->queue);
-            if (i < 0) continue;
+            if (save) f = dequ1ue642(test->queue);
+            if (save && f < 0) continue;
             uops += mjpeg_decode645(mjpeg, tmp, lenb, (uint8_t*)gui->pix1);
-            enqu2ue642(test->queue, i, tvb1);
+            if (save) enqu2ue642(test->queue, f, tvb1);
         } else {
             // ###
             if (num_frame >= 100 && num_frame < 101) {
@@ -321,10 +329,12 @@ static int test() {
             fclose(filp);
         }
     }
-    queue_close642(&test->queue);
-    LOG("Queue closed");
-    f642_close(test->x264);
-    LOG("X264 closed");
+    if (save) {
+        queue_close642(&test->queue);
+        LOG("Queue closed");
+        f642_close(test->x264);
+        LOG("X264 closed");
+    }
     //
     xgui_stop691(gui);
     xgui_close_window691(gui);
