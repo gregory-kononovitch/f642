@@ -32,10 +32,16 @@ extern long yuv422togray32(void *gray32, void *yuv422, int widtha16, int height)
 
 
 typedef struct test3_ {
-    int pause;
-    int save;
+    int         pause;
+    int         save;
+    int         encode;
     pthread_mutex_t mutex;
     pthread_cond_t  cond;
+
+    // x264
+    f642x264    *x264;
+    struct timeval pts;
+    queue642    *queue;
 } test3;
 
 
@@ -99,7 +105,26 @@ static int notify_scroll0(void *ext, int button, int x, int y, int mask, uint64_
     return 0;
 }
 
+//
+void *xgui_th650(void *p) {
+    int r;
+    struct timeval tv;
+    test3 *test = (test3*)p;
 
+    printf("Thread x264 started\n");
+    while(test->encode) {
+        printf("Wait queue from add frame\n");
+        int i = dequ2ue642(test->queue, &tv);
+        if (i < 0) break;
+        ;
+        f642_addFrame(test->x264, &test->queue->yuv[i], tv);
+        ;
+        enqu1ue642(test->queue, i);
+        printf("Enqueued from add frame\n");
+    }
+
+    return NULL;
+}
 /*
  *
  */
@@ -115,10 +140,13 @@ static int test() {
 //    FOG("XrmInitialize done");
 
     //
+    int width = 800;
+    int height = 448;
+    int fps = 24;
     int format = 0;     //0x47504A4D;        // 0x56595559
     FILE *filp = NULL;
     //
-    xgui691 *gui = xgui_create691(800, 448, 1);
+    xgui691 *gui = xgui_create691(width, height, 1);
     if (!gui) return -1;
     long period = 57143;
     //
@@ -145,7 +173,7 @@ static int test() {
         f641_setup_v4l2(&v4l2, "/dev/video0", gui->width, gui->height, 0x56595559, 30, 3);
         f641_prepare_buffers(&v4l2);
     } else if (format == 0x47504A4D) {
-        f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x47504A4D, 24, 10);
+        f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x47504A4D, fps, 10);
         f641_prepare_buffers(&v4l2);
     } else if (!format) {
         int lenb = 72025;   // 612311;
@@ -156,18 +184,28 @@ static int test() {
         filp = NULL;
     }
     //
-    //filp = fopen("y800x448-422-2.dat", "wb");
+    printf("1\n");
 
-
-    //
-
-    //
+    // mjpeg
     mjpeg645_img *mjpeg = alloc_mjpeg645_image(NULL, 0);
     mjpeg->log = 0;
     mjpeg->pixels = (uint8_t*)gui->pix1;
 
+    // x264
+    printf("1\n");
+    f642x264 *x264 = init642_x264(gui->width, gui->height, fps, 4, 1);
+    x264->loglevel = 3;
+    f642_open(x264, "test.mkv3", 1);
+    printf("2\n");
+    queue642 *queue = queue_open642(x264, 3);
+    printf("3\n");
+
     // Thread
     test3 *test = (test3*)calloc(1, sizeof(test3));
+    test->x264 = x264;
+    test->queue = queue;
+    test->encode = 1;
+    gettimeofday(&test->pts, NULL);
     pthread_mutex_init(&test->mutex, NULL);
     pthread_cond_init(&test->cond, NULL);
 
@@ -178,7 +216,9 @@ static int test() {
     xgui_listen691(gui, &events, test);
 
     //
-    if (format > 0) {
+    if (format >= 0) {
+        pthread_attr_init(&test->queue->attr);
+        pthread_create(&test->queue->thread, &test->queue->attr, xgui_th650, test);
         f641_stream_on(&v4l2);
     }
 
@@ -211,9 +251,16 @@ static int test() {
         if (format == 0x56595559) {
             yuv422togray32(gui->pix1, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
         } else if (format == 0x47504A4D) {
+            int i = dequ1ue642(test->queue);
+            if (i < 0) continue;
             uops += mjpeg_decode645(mjpeg, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, (uint8_t*)gui->pix1);
+            timersub(&v4l2.buf.timestamp, &tv0, &v4l2.buf.timestamp);
+            enqu2ue642(test->queue, i, v4l2.buf.timestamp);
         } else if (!format) {
+            int i = dequ1ue642(test->queue);
+            if (i < 0) continue;
             uops += mjpeg_decode645(mjpeg, tmp, lenb, (uint8_t*)gui->pix1);
+            enqu2ue642(test->queue, i, tvb1);
         } else {
             // ###
             if (num_frame >= 100 && num_frame < 101) {
@@ -225,6 +272,7 @@ static int test() {
         // Put
         xgui_show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
 //        show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
+
 
         //
         gettimeofday(&tvb2, NULL);
@@ -240,6 +288,8 @@ static int test() {
         } else if (!format) {
             usleep(10000);
         }
+
+clean:
         //
         num_frame++;
         //
@@ -270,6 +320,8 @@ static int test() {
             fclose(filp);
         }
     }
+    queue_close642(&test->queue);
+    f642_close(test->x264);
     //
     xgui_stop691(gui);
     xgui_close_window691(gui);

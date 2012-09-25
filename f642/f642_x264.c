@@ -29,7 +29,7 @@ f642x264 *init642_x264(int width, int height, float fps, int preset, int tune) {
     x264->width = width;
     x264->height = height;
     x264->fps = fps;
-    x264->loglevel = 0;
+    x264->loglevel = 1;
     // Parameters
     r = x264_param_default_preset(&x264->param, x264_preset_names[preset], x264_tune_names[tune]);
     if (x264->loglevel) fprintf(stderr, "f-X264 x264_x264->param_default_preset return %d\n", r);
@@ -72,7 +72,7 @@ int f642_open(f642x264 *x264, const char *path, int muxer) {
     x264_nal_t *pp_nal;
     int pi_nal;
 
-    if (x264) return -1;
+    if (x264->x264) return -1;
     //
     x264->x264 = x264_encoder_open(&x264->param);
     x264_encoder_parameters(x264->x264, &x264->param);
@@ -99,6 +99,7 @@ int f642_open(f642x264 *x264, const char *path, int muxer) {
     x264->output->write_headers(x264->outh, pp_nal);
     //
     if (x264->loglevel) fprintf(stderr, "X264 opened : %p\n", x264);
+    fprintf(stderr, "X264 opened : %p\n", x264);
     return 0;
 }
 
@@ -121,6 +122,7 @@ int f642_close(f642x264 *x264) {
     x264->x264 = NULL;
     //
     if (x264->loglevel) fprintf(stderr, "X264 closed\n");
+
     return 0;
 }
 
@@ -216,62 +218,107 @@ int f642_addFrame(f642x264 *x264, x264_picture_t *yuv, struct timeval tv) {
     return r;
 }
 
-queue642 *queue_init642(f642x264 *x264, int nb) {
+queue642 *queue_open642(f642x264 *x264, int nb) {
     int i, r;
+    nb = 3;
     queue642 *q = (queue642*)calloc(1, sizeof(queue642));
-    q->yuv = (x264_picture_t**)calloc(nb, sizeof(x264_picture_t*));
-    q->index = (int*)calloc(nb, sizeof(int));
+    //q->yuv = (x264_picture_t**)calloc(nb, sizeof(x264_picture_t*));
+    q->index1 = (int*)calloc(nb, sizeof(int));
+    q->index2 = (int*)calloc(nb, sizeof(int));
+    q->tvs = (struct timeval*)calloc(nb, sizeof(struct timeval));
+
     q->nb_yuv = nb;
     //
     for(i = 0 ; i < nb ; i++) {
-        q->yuv[i] = (x264_picture_t*)calloc(1, sizeof(sizeof(x264_picture_t)));
-        r = x264_picture_alloc(q->yuv[i], X264_CSP_I422, x264->width, x264->height);
-        q->yuv[i]->opaque = x264;
+        r = x264_picture_alloc(&q->yuv[i], X264_CSP_I422, x264->width, x264->height);
+        q->yuv[i].opaque = x264;
     }
     //
     pthread_mutex_init(&q->mutex, NULL);
     pthread_cond_init(&q->cond, NULL);
     //
-    q->next = q->last = q->full = 0;
+    q->next1 = q->last1 = 0, q->full1 = 1;
+    q->next2 = q->last2 = 0, q->full2 = 0;
+    q->run = 1;
     return q;
 }
 
-void queue_free642(queue642 **queue) {
+void queue_close642(queue642 **queue) {
     int i;
+    pthread_mutex_lock((*queue)->mutex);
+    (*queue)->run = 0;
+    while((*queue)->full2 || (*queue)->last2 != (*queue)->next2) {
+        pthread_cond_wait(&(*queue)->attr, &(*queue)->mutex);
+    }
+    pthread_mutex_unlock((*queue)->mutex);
+    void *ret;
+    pthread_join((*queue)->thread, &ret);
+
     pthread_mutex_destroy(&(*queue)->mutex);
     pthread_cond_destroy(&(*queue)->cond);
     for(i = 0 ; i < (*queue)->nb_yuv ; i++) {
-        x264_picture_clean((*queue)->yuv[i]);
+        x264_picture_clean(&(*queue)->yuv[i]);
     }
-    free((*queue)->index);
-    free((*queue)->yuv);
+    free((*queue)->tvs);
+    free((*queue)->index1);
+    free((*queue)->index2);
+//    free((*queue)->yuv);
     free(*queue);
     queue = NULL;
 }
 
-int dequeue642(queue642 *queue) {
+int dequ1ue642(queue642 *queue) {
     int i;
     pthread_mutex_lock(&queue->mutex);
-    while(queue->full) {
+    while(!queue->full1 && queue->next1 == queue->last1) {
         pthread_cond_wait(&queue->cond, &queue->mutex);
+        if (!queue->run) return -1;
     }
-    i = queue->index[queue->next];
-    queue->next = (queue->next + 1) % queue->nb_yuv;
-    if (queue->next == queue->last) {
-        queue->full = 1;
-    }
+    i = queue->index1[queue->next1];
+    queue->next1 = (queue->next1 + 1) % queue->nb_yuv;
+    queue->full1 = 0;
+    pthread_cond_broadcast(&queue->cond);
     pthread_mutex_unlock(&queue->mutex);
 
     return i;
 }
 
-void enqueue642(queue642 *queue, int i) {
+int dequ2ue642(queue642 *queue, struct timeval *tv) {
+    int i;
     pthread_mutex_lock(&queue->mutex);
-    queue->index[queue->last] = i;
-    queue->last = (queue->last + 1) % queue->nb_yuv;
-//    if(queue->full) {
-        queue->full = 0;
-        pthread_cond_broadcast(&queue->cond);
-//    }
+    while(!queue->full2 && queue->next2 == queue->last2) {
+        pthread_cond_wait(&queue->cond, &queue->mutex);
+//        if (!queue->run) return -1;
+    }
+    i = queue->index1[queue->next2];
+    memcpy(tv, &queue->tvs[queue->next2], sizeof(struct timeval));
+    queue->next2 = (queue->next2 + 1) % queue->nb_yuv;
+    queue->full1 = 0;
+    pthread_cond_broadcast(&queue->cond);
+    pthread_mutex_unlock(&queue->mutex);
+
+    return i;
+}
+
+void enqu1ue642(queue642 *queue, int i) {
+    pthread_mutex_lock(&queue->mutex);
+    queue->index1[queue->last1] = i;
+    queue->last1 = (queue->last1 + 1) % queue->nb_yuv;
+    if (queue->next1 == queue->last1) {
+        queue->full1 = 1;
+    }
+    pthread_cond_broadcast(&queue->cond);
+    pthread_mutex_unlock(&queue->mutex);
+}
+
+void enqu2ue642(queue642 *queue, int i, struct timeval tv) {
+    pthread_mutex_lock(&queue->mutex);
+    queue->index2[queue->last2] = i;
+    memcpy(&queue->tvs[queue->next2], &tv, sizeof(struct timeval));
+    queue->last2 = (queue->last2 + 1) % queue->nb_yuv;
+    if (queue->next2 == queue->last2) {
+        queue->full2 = 1;
+    }
+    pthread_cond_broadcast(&queue->cond);
     pthread_mutex_unlock(&queue->mutex);
 }

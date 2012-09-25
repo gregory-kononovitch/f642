@@ -56,19 +56,30 @@ typedef struct {
 } f642x264;
 
 typedef struct {
-    x264_picture_t  **yuv;
+    x264_picture_t  yuv[3];
     int             nb_yuv;
     //
-    int             *index;
-    int             next;
-    int             last;
-    int             full;
+    int             *index1;
+    int             next1;
+    int             last1;
+    int             full1;
+    //
+    int             *index2;
+    int             next2;
+    int             last2;
+    int             full2;
+    struct timeval  *tvs;
+    //
+    int             run;
+    pthread_t       thread;
+    pthread_attr_t  attr;
     pthread_mutex_t mutex;
     pthread_cond_t  cond;
 
 } queue642;
 
 
+//
 extern f642x264 *init642_x264(int width, int height, float fps, int preset, int tune);
 extern int f642_open(f642x264 *x264, const char *path, int muxer);
 extern int f642_close(f642x264 *x264);
@@ -77,5 +88,15 @@ extern int f642_setQPb(f642x264 *x264, int qpmin, int qpmax, int qpstep);
 extern int f642_setParam(f642x264 *x264, const char *name, const char *value);
 extern int f642_setNbThreads(f642x264 *x264, int nb);
 extern int f642_addFrame(f642x264 *x264, x264_picture_t *yuv, struct timeval tv);
+
+//
+queue642 *queue_open642(f642x264 *x264, int nb);
+void queue_close642(queue642 **queue);
+//
+int dequ1ue642(queue642 *queue);
+int dequ2ue642(queue642 *queue, struct timeval *tv);
+void enqu1ue642(queue642 *queue, int i);
+void enqu2ue642(queue642 *queue, int i, struct timeval tv);
+
 
 #endif /* F642_X264_H_ */
