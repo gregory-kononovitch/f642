@@ -8,7 +8,11 @@
  * There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+extern "C" {
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "../f650.h"
 #include "../f650_fonts.h"
@@ -19,6 +23,14 @@
 #include "../../f640/f641/f641_v4l2.h"
 
 #include "../../f645/mjpeg645.h"
+
+extern long yuv422togray32(void *gray32, void *yuv422, int widtha16, int height);
+
+}
+
+#include "../../f642/f642_x264.hh"
+
+using namespace t508::f642;
 
 
 typedef struct test3_ {
@@ -93,7 +105,6 @@ static int notify_scroll0(void *ext, int button, int x, int y, int mask, uint64_
 /*
  *
  */
-extern long yuv422togray32(void *gray32, void *yuv422, int widtha16, int height);
 
 static int test() {
     int r;
@@ -140,7 +151,7 @@ static int test() {
         f641_prepare_buffers(&v4l2);
     } else if (!format) {
         int lenb = 72025;   // 612311;
-        tmp = malloc(lenb);
+        tmp = (uint8_t*)malloc(lenb);
         filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
         fread(tmp, 1, lenb, filp);
         fclose(filp);
@@ -158,7 +169,7 @@ static int test() {
     mjpeg->pixels = (uint8_t*)gui->pix1;
 
     // Thread
-    test3 *test = calloc(1, sizeof(test3));
+    test3 *test = (test3*)calloc(1, sizeof(test3));
     pthread_mutex_init(&test->mutex, NULL);
     pthread_cond_init(&test->cond, NULL);
 
@@ -200,11 +211,11 @@ static int test() {
 
         // Convert
         if (format == 0x56595559) {
-            yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
+            yuv422togray32(gui->pix1, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
         } else if (format == 0x47504A4D) {
-            uops += mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
+            uops += mjpeg_decode645(mjpeg, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, (uint8_t*)gui->pix1);
         } else if (!format) {
-            uops += mjpeg_decode645(mjpeg, tmp, lenb, gui->pix1);
+            uops += mjpeg_decode645(mjpeg, tmp, lenb, (uint8_t*)gui->pix1);
         } else {
             // ###
             if (num_frame >= 100 && num_frame < 101) {
@@ -214,7 +225,8 @@ static int test() {
 
 
         // Put
-        show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
+        xgui_show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
+//        show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
 
         //
         gettimeofday(&tvb2, NULL);
@@ -269,7 +281,7 @@ static int test() {
 
 
 
-int main() {
+int main(int argc, char *argv[]) {
 
     test();
 

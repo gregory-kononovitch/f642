@@ -1,13 +1,13 @@
 # Options
 EXTENSION_C=.c
-EXTENSION_MC=.mc
+EXTENSION_CC=.cc
 EXTENSION_A=.asm
 
 ifeq (yes,$(DEBUG))
 DEBUGFLAGS=-g -DDEBUG
 endif
 
-COMPILEFLAGS=-g -DDEBUG
+COMPILEFLAGS=-g -DDEBUG -Wwrite-strings -fpermissive
 
 
 # Path
@@ -17,7 +17,7 @@ EXC_DIR=exc
 
 # Librarires
 INCLUDE=
-LIBS=-lm -lpthread -lX11 -lxcb -lXext
+LIBS=-lm -lpthread -lX11 -lxcb -lXext -L/usr/local/lib -lswscale -lx264
 
 #
 # source-files
@@ -35,6 +35,11 @@ sources_a+=$(wildcard ../f645/*$(EXTENSION_A))
 
 # main.o files
 sources_e:=$(wildcard ${EXC_DIR}/*$(EXTENSION_C))
+sources_e+=$(wildcard ${EXC_DIR}/*$(EXTENSION_CC))
+
+#
+# c++ source-files
+sources_cc:= $(wildcard ${SRC_DIR}/*$(EXTENSION_CC))
 
 
 # object files; replace .c extension with .o
@@ -45,6 +50,7 @@ objects_ao:=$(patsubst %$(EXTENSION_A),%.ao,$(sources_a))
 
 # object files; replace .c extension with .o
 objects_e:=$(patsubst %$(EXTENSION_C),%.o,$(sources_e))
+objects_e+=$(patsubst %$(EXTENSION_CC),%.o,$(sources_e))
 
 
 all: exec
@@ -61,6 +67,9 @@ exec: $(objects) $(objects_ao) $(objects_e)
 # Build rules
 %.o: %$(EXTENSION_C)
 	gcc -c $(COMPILEFLAGS) $(INCLUDE) -o $@ $<
+
+%.o: %$(EXTENSION_CC)
+	g++ -c $(COMPILEFLAGS) $(INCLUDE) -o $@ $<
 
 %.ao: %$(EXTENSION_A)
 	yasm -g dwarf2 -f elf64 -a x86 -m amd64 -o $@ $<
