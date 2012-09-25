@@ -230,6 +230,7 @@ static int test() {
     }
 
     //
+    int db = 0;
     long num_frame = 0;
     gettimeofday(&tv0, NULL);
     gettimeofday(&tv1, NULL);
@@ -261,7 +262,7 @@ static int test() {
         } else if (format == 0x47504A4D) {
             if (save) f = dequ1ue642(test->queue);
             if (save && f < 0) continue;
-            uops += mjpeg_decode645(mjpeg, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, (uint8_t*)gui->pix1);
+            uops += mjpeg_decode645(mjpeg, (uint8_t*)v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, db ? (uint8_t*)gui->pix2 : (uint8_t*)gui->pix1);
             timersub(&v4l2.buf.timestamp, &tv0, &v4l2.buf.timestamp);
             if (save) enqu2ue642(test->queue, f, v4l2.buf.timestamp);
         } else if (!format) {
@@ -276,11 +277,14 @@ static int test() {
             }
         }
 
-
         // Put
-        xgui_show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
-//        show691(gui, 0, 0, 0, 0, 0, gui->width, gui->height);
-
+        xgui_show691(gui, db, 0, 0, 0, 0, gui->width, gui->height);
+//        db = 0;
+//        if (db) {
+//            db = 0;
+//        } else {
+//            db = 1;
+//        }
 
         //
         gettimeofday(&tvb2, NULL);

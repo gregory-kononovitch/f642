@@ -243,6 +243,8 @@ SECTION .text		ALIGN=16
 %define		_v0_uc		0x78
 %define		_vi_uc		0x79
 
+%define		nblocks		0x80
+
 ;
 %define		_vc1		0x90
 %define		_vc2		0x91
@@ -294,6 +296,7 @@ decode645:
 				mov			dword [rbp - VAR + height], eax
 				mov			eax, dword [rdi + 72]					; Ri
 				mov			word [rbp - VAR + _ri0_us], ax
+				mov			dword [rbp - VAR + nblocks], strict dword 0
 				;
 ;				; idct-2
 ;				mov			strict dword [rbp - VAR + x8x8i], strict dword 0		; xi8x8
@@ -576,42 +579,7 @@ hacl:
 				; err, a part,
 				feed .doneacl, acl, .doneacl, .doneacl, .herr
 
-.doneacl
-;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-;							  DUMP
-;                 ---------------------------
-;%define logs rsi
-;;				mov			logs, qword [rbp - VAR + pdest]
-;				xor			r15, r15
-;				xor			r14, r14
-;;.razrsi0:			; 			RAZ RSI
-;;				mov         strict qword [rcx + 8 * r14], strict 0
-;;				add			r14, 1
-;;				cmp			r14, 256
-;;				jl			.razrsi0
-;;				xor			r14, r14
-;
-;				;;;;;;
-;
-;				mov			dword [logs], r13d		; ii
-;				add			logs, 4
-;
-;.llppoo0:
-;				mov			r15d, dword [rbp - WORK + ZZI + 4 * r14]
-;				mov			dword [logs], r15d
-;				add			logs, 4
-;
-;				add			r14, 1
-;				cmp 		r14, r13
-;				jl			.llppoo0
-;
-;				mov			dword [logs], -9999		;
-;				add			logs, 4
-;
-;
-;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-
+.doneacl:
 				;
 				; iz < 64
 				cmp 		iz, 64
@@ -674,6 +642,7 @@ hacl:
 idctl:
 					%include "inclu/idft2pix-3.s"
 
+					add dword [rbp - VAR + nblocks], 1
 ;return
 ;
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -852,6 +821,11 @@ coopsample:
 
 decoderdone:	;
 				; svg
+				mov			eax, dword [rbp - VAR + nblocks]
+				mov			dword [rsi], eax
+				add			rsi, 4
+				mov			dword [rsi], -9999			; ###
+				add			rsi, 4
 				mov			dword [rsi], -9999			; ###
 				mov			qword [rsi + 4], bits
 				mov			dword [rsi + 12], -10000		; ###

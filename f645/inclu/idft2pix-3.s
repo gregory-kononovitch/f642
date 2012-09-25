@@ -166,11 +166,10 @@
 				jmp			.pix
 .cmp3_0:		mov 		dword [stkpix + 12], strict dword 0
 
-				;
-				movaps		xmm2, oword [stkpix]
 %endif
 
 .pix			; pix
+				movaps		xmm2, oword [stkpix]
 				pshufb		xmm2, [SHUFFBeW]
 				movaps		oword [r15], xmm2
 
@@ -201,8 +200,9 @@
 				xor			rax, rax
 
 ;				; #############
-;				movdqu		oword [rsi], xmm1
-;				add			rsi, 16
+;				sub			r15,
+;				movdqu		qword [rsi], xmm1
+;				add			rsi, 8
 ;				; ####################
 ;				mov			dword [rsi], -9999
 ;				add			rsi, 4

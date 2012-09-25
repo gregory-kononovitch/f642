@@ -286,11 +286,12 @@ int mjpeg_decode645(mjpeg645_img *img, uint8_t *mjpeg, int size, uint8_t *pix) {
 //    LOG("Will try to decode data segment from [%d ; %d[", off1, off2);
 
     //
+    //memset(pix, 0, 4*img->wxh);
     img->ptr = img->data + off1;
     long c1 = ReadTSC();
     uint8_t *addr = (uint8_t*)decode645(img, img->ext1, off2 - off1);
     long c2 = ReadTSC();
-    LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
+//    LOG("Decode: reached %ld for %ld µ ; %.3f Hz", addr - img->data, c2 - c1, 1.5e9 / (c2 - c1));
 
     //
     img->ptr  = addr;
