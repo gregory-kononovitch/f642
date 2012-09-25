@@ -19,7 +19,7 @@
 #define MKV_MUXER = 1
 #define FLV_MUXER = 2
 
-
+#include "f642_x264.h"
 
 // Encoding
 f642x264 *init642_x264(int width, int height, float fps, int preset, int tune) {
@@ -104,9 +104,10 @@ int f642_open(f642x264 *x264, const char *path, int muxer) {
 
 int f642_close(f642x264 *x264) {
     //
-    int nr = 60;
+    int nr = 100;
+    struct timeval tv;
     while(x264_encoder_delayed_frames(x264->x264) && nr) {
-        if (addFrame(NULL) < 0) break;
+        if (f642_addFrame(x264, NULL, tv) < 0) break;
         nr--;
     }
     // File
@@ -135,7 +136,7 @@ int f642_setQP(f642x264 *x264, int qp) {
     return 1;
 }
 
-int f642_setQP(f642x264 *x264, int qpmin, int qpmax, int qpstep) {
+int f642_setQPb(f642x264 *x264, int qpmin, int qpmax, int qpstep) {
     if (!x264->x264) {
         x264->param.rc.i_qp_min  = qpmin;
         x264->param.rc.i_qp_max  = qpmax;
@@ -182,9 +183,9 @@ int f642_addFrame(f642x264 *x264, x264_picture_t *yuv, struct timeval tv) {
     x264_nal_t *nal;
     int i_nal;
     if (yuv) {
-        yuv.i_pts = x264->frame++;
-        r = x264_encoder_encode(x264->x264, &nal, &i_nal, &yuv, &ipb );
-        if (x264->loglevel > 2) fprintf(stderr, "Encode return %d for pts = %ld, dts = %ld / pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts, yuv.i_pts, yuv.i_dts);
+        yuv->i_pts = x264->frame++;
+        r = x264_encoder_encode(x264->x264, &nal, &i_nal, yuv, &ipb );
+        if (x264->loglevel > 2) fprintf(stderr, "Encode return %d for pts = %ld, dts = %ld / pts = %ld, dts = %ld\n", r, ipb.i_pts, ipb.i_dts, yuv->i_pts, yuv->i_dts);
     } else {
         //
         r = x264_encoder_encode(x264->x264, &nal, &i_nal, NULL, &ipb);
@@ -218,27 +219,59 @@ int f642_addFrame(f642x264 *x264, x264_picture_t *yuv, struct timeval tv) {
 queue642 *queue_init642(f642x264 *x264, int nb) {
     int i, r;
     queue642 *q = (queue642*)calloc(1, sizeof(queue642));
-    q->yuv = calloc(nb, sizeof(x264_picture_t*));
+    q->yuv = (x264_picture_t**)calloc(nb, sizeof(x264_picture_t*));
+    q->index = (int*)calloc(nb, sizeof(int));
     q->nb_yuv = nb;
     //
     for(i = 0 ; i < nb ; i++) {
         q->yuv[i] = (x264_picture_t*)calloc(1, sizeof(sizeof(x264_picture_t)));
         r = x264_picture_alloc(q->yuv[i], X264_CSP_I422, x264->width, x264->height);
+        q->yuv[i]->opaque = x264;
     }
     //
     pthread_mutex_init(&q->mutex, NULL);
     pthread_cond_init(&q->cond, NULL);
+    //
+    q->next = q->last = q->full = 0;
     return q;
 }
 
 void queue_free642(queue642 **queue) {
     int i;
-    pthread_mutex_destroy(&queue->mutex);
-    pthread_cond_destroy(&queue->cond);
+    pthread_mutex_destroy(&(*queue)->mutex);
+    pthread_cond_destroy(&(*queue)->cond);
     for(i = 0 ; i < (*queue)->nb_yuv ; i++) {
         x264_picture_clean((*queue)->yuv[i]);
     }
+    free((*queue)->index);
     free((*queue)->yuv);
     free(*queue);
     queue = NULL;
+}
+
+int dequeue642(queue642 *queue) {
+    int i;
+    pthread_mutex_lock(&queue->mutex);
+    while(queue->full) {
+        pthread_cond_wait(&queue->cond, &queue->mutex);
+    }
+    i = queue->index[queue->next];
+    queue->next = (queue->next + 1) % queue->nb_yuv;
+    if (queue->next == queue->last) {
+        queue->full = 1;
+    }
+    pthread_mutex_unlock(&queue->mutex);
+
+    return i;
+}
+
+void enqueue642(queue642 *queue, int i) {
+    pthread_mutex_lock(&queue->mutex);
+    queue->index[queue->last] = i;
+    queue->last = (queue->last + 1) % queue->nb_yuv;
+//    if(queue->full) {
+        queue->full = 0;
+        pthread_cond_broadcast(&queue->cond);
+//    }
+    pthread_mutex_unlock(&queue->mutex);
 }

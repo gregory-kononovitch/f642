@@ -24,9 +24,11 @@ LIBS=-lm -lpthread -lX11 -lxcb -lXext -L/usr/local/lib -lswscale -lx264
 sources_c:= $(wildcard ${SRC_DIR}/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/brodge/*$(EXTENSION_C))
 sources_c+= $(wildcard ${SRC_DIR}/layout/*$(EXTENSION_C))
-sources_c+=../f691/xgui691.c
-sources_c+=../f640/f641/f641_v4l2.c
-sources_c+=../f645/mjpeg645.c
+sources_c+= ../f691/xgui691.c
+sources_c+= ../f640/f641/f641_v4l2.c
+sources_c+= ../f642/f642_x264.c
+sources_c+= $(wildcard ../f642/muxers/*$(EXTENSION_C))
+sources_c+= ../f645/mjpeg645.c
 
 
 # asm files

@@ -214,15 +214,16 @@ static int mk_close_context( mk_context *c, unsigned *off )
 static void mk_destroy_contexts( mk_writer *w )
 {
     mk_context *next;
+    mk_context *cur;
 
-    for( mk_context *cur = w->freelist; cur; cur = next )
+    for( cur = w->freelist; cur; cur = next )
     {
         next = cur->next;
         free( cur->data );
         free( cur );
     }
 
-    for( mk_context *cur = w->actlist; cur; cur = next )
+    for( cur = w->actlist; cur; cur = next )
     {
         next = cur->next;
         free( cur->data );

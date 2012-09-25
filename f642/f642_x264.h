@@ -59,7 +59,10 @@ typedef struct {
     x264_picture_t  **yuv;
     int             nb_yuv;
     //
-    int             num;
+    int             *index;
+    int             next;
+    int             last;
+    int             full;
     pthread_mutex_t mutex;
     pthread_cond_t  cond;
 
@@ -70,7 +73,7 @@ extern f642x264 *init642_x264(int width, int height, float fps, int preset, int 
 extern int f642_open(f642x264 *x264, const char *path, int muxer);
 extern int f642_close(f642x264 *x264);
 extern int f642_setQP(f642x264 *x264, int qp);
-extern int f642_setQP(f642x264 *x264, int qpmin, int qpmax, int qpstep);
+extern int f642_setQPb(f642x264 *x264, int qpmin, int qpmax, int qpstep);
 extern int f642_setParam(f642x264 *x264, const char *name, const char *value);
 extern int f642_setNbThreads(f642x264 *x264, int nb);
 extern int f642_addFrame(f642x264 *x264, x264_picture_t *yuv, struct timeval tv);

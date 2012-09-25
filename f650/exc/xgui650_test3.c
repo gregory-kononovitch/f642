@@ -21,7 +21,7 @@
 #include "../../f691/f691.h"
 
 #include "../../f640/f641/f641_v4l2.h"
-
+#include "../../f642/f642_x264.h"
 #include "../../f645/mjpeg645.h"
 
 extern long yuv422togray32(void *gray32, void *yuv422, int widtha16, int height);
