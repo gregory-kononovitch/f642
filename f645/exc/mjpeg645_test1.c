@@ -215,7 +215,7 @@ int main() {
     long c1, c2;
     uint8_t *tmp = (uint8_t*)calloc(1, lenb);
 
-    return testacl2();
+//    return testacl2();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");

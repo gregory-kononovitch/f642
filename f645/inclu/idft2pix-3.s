@@ -109,11 +109,73 @@
 				; add
 				addps		xmm2, oword [rbp - WORK + PIXFI + rbx]
 
+;				; [mov]		;
+;				movaps		oword [rbp - WORK + PIXFI + rbx], xmm2
+
 				; cvt
 				cvtps2dq	xmm2, xmm2					; round
-				; pix
+
+
+%define F645_0255
+%ifdef F645_0255
+%define stkpix rbp - WORK + PIXII + rbx
+				;
+				; mov
+				movaps		oword [stkpix], xmm2
+
+				; 0 - 255
+
+				;
+				test		qword [stkpix], 0x1000100
+				jnz			.cmp0
+				test		qword [stkpix + 8], 0x1000100
+				jnz			.cmp2
+
+				; 0-255
+.cmp0			test		dword [stkpix], 256
+				jz			.cmp1
+				test		dword [stkpix], 0x10000000
+				jnz			.cmp0_0
+				mov 		dword [stkpix], strict dword 255
+				jmp			.cmp1
+.cmp0_0:		mov 		dword [stkpix], strict dword 0
+
+.cmp1:			test		dword [stkpix + 4], 256
+				jz			.tst2
+				test		dword [stkpix + 4], 0x10000000
+				jnz			.cmp1_0
+				mov 		dword [stkpix + 4], strict dword 255
+				jmp			.tst2
+.cmp1_0:		mov 		dword [stkpix + 4], strict dword 0
+
+.tst2			test		qword [stkpix + 8], 0x1000100
+				jnz			.index
+.cmp2:			test		dword [stkpix + 8], 256
+				jz			.cmp3
+				test		dword [stkpix + 8], 0x10000000
+				jnz			.cmp2_0
+				mov 		dword [stkpix + 8], strict dword 255
+				jmp			.cmp3
+.cmp2_0:		mov 		dword [stkpix + 8], strict dword 0
+
+.cmp3:			test		dword [stkpix + 12], 256
+				jz			.pix
+				test		dword [stkpix + 12], 0x10000000
+				jnz			.cmp3_0
+				mov 		dword [stkpix + 12], strict dword 255
+				jmp			.pix
+.cmp3_0:		mov 		dword [stkpix + 12], strict dword 0
+
+				;
+				movaps		xmm2, oword [stkpix]
+%endif
+
+.pix			; pix
 				pshufb		xmm2, [SHUFFBeW]
 				movaps		oword [r15], xmm2
+
+
+.index:			; index
 				sub			r15, 16
 				btc			flags, 59
 				jnc			.coopxy0
@@ -134,19 +196,6 @@
 				add			strict dword [rbp - VAR + y8x8i], strict dword 8
 
 .done:
-
-;
-;				sub			r15, qword [rbp - VAR + ppix]
-;				shr			r15, 2
-;				mov			dword [rsi], r15d
-;				mov			edx, dword [rbp - VAR + x8x8i]
-;				mov			dword [rsi + 4], edx
-;				mov			edx, dword [rbp - VAR + y8x8i]
-;				mov			dword [rsi + 8], edx
-;				mov			dword [rsi + 12], -9998
-;				add			rsi, 16
-;
-;
 				xor			rcx, rcx
 				xor			rdx, rdx
 				xor			rax, rax

@@ -23,6 +23,7 @@
 
 typedef struct test3_ {
     int pause;
+    int save;
     pthread_mutex_t mutex;
     pthread_cond_t  cond;
 } test3;
@@ -47,6 +48,8 @@ static int notify_key_pressed0(void *ext, unsigned long key, int x, int y, int m
                 pthread_cond_broadcast(&test->cond);
                 pthread_mutex_unlock(&test->mutex);
             break;
+        case XK_Return:
+            test->save = 1;
     }
     return 0;
 }
@@ -103,7 +106,7 @@ static int test() {
 //    FOG("XrmInitialize done");
 
     //
-    int format = 0x47504A4D;        // 0x56595559
+    int format = 0;     //0x47504A4D;        // 0x56595559
     FILE *filp = NULL;
     //
     xgui691 *gui = xgui_create691(800, 448, 1);
@@ -119,6 +122,8 @@ static int test() {
 
     //
     int i;
+    int lenb = 72025;   // 612311;
+    uint8_t *tmp;
     long l;
     struct timeval tv0, tv1, tv2, tv3, tv4;
     struct timeval tvb1, tvb2;
@@ -128,21 +133,24 @@ static int test() {
     struct v4l2_buffer frame;
     memset(&v4l2, 0, sizeof(struct f641_v4l2_parameters));
     if (format == 0x56595559) {
-        f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x56595559, 30, 3);
+        f641_setup_v4l2(&v4l2, "/dev/video0", gui->width, gui->height, 0x56595559, 30, 3);
+        f641_prepare_buffers(&v4l2);
     } else if (format == 0x47504A4D) {
         f641_setup_v4l2(&v4l2, "/dev/video2", gui->width, gui->height, 0x47504A4D, 24, 10);
-    } else {
-        // ###
-        filp = fopen("y800x448-422-2.dat", "wb");
+        f641_prepare_buffers(&v4l2);
+    } else if (!format) {
+        int lenb = 72025;   // 612311;
+        tmp = malloc(lenb);
+        filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+        fread(tmp, 1, lenb, filp);
+        fclose(filp);
+        filp = NULL;
     }
-    f641_prepare_buffers(&v4l2);
+    //
+    //filp = fopen("y800x448-422-2.dat", "wb");
+
 
     //
-    int lenb = 72025;   // 612311;
-    uint8_t *tmp = malloc(lenb);
-    filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
-    fread(tmp, 1, lenb, filp);
-    fclose(filp);
 
     //
     mjpeg645_img *mjpeg = alloc_mjpeg645_image(NULL, 0);
@@ -161,7 +169,9 @@ static int test() {
     xgui_listen691(gui, &events, test);
 
     //
-    f641_stream_on(&v4l2);
+    if (format > 0) {
+        f641_stream_on(&v4l2);
+    }
 
     //
     long num_frame = 0;
@@ -175,13 +185,15 @@ static int test() {
         }
         pthread_mutex_unlock(&test->mutex);
 
-        // DeQueue
-        memset(&frame, 0, sizeof(struct v4l2_buffer));
-        frame.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        frame.memory = V4L2_MEMORY_MMAP;
-        if(ioctl(v4l2.fd, VIDIOC_DQBUF, &frame) == -1) {
-            FOG("VIDIOC_DQBUF: %s\n", strerror(errno));
-            break;
+        if (format > 0) {
+            // DeQueue
+            memset(&frame, 0, sizeof(struct v4l2_buffer));
+            frame.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            frame.memory = V4L2_MEMORY_MMAP;
+            if(ioctl(v4l2.fd, VIDIOC_DQBUF, &frame) == -1) {
+                FOG("VIDIOC_DQBUF: %s\n", strerror(errno));
+                break;
+            }
         }
 
         gettimeofday(&tvb1, NULL);
@@ -191,7 +203,8 @@ static int test() {
             yuv422togray32(gui->pix1, v4l2.buffers[frame.index].start, v4l2.width, v4l2.height);
         } else if (format == 0x47504A4D) {
             uops += mjpeg_decode645(mjpeg, v4l2.buffers[frame.index].start, v4l2.buffers[frame.index].length, gui->pix1);
-//            mjpeg_decode645(mjpeg, tmp, lenb, gui->pix1);
+        } else if (!format) {
+            uops += mjpeg_decode645(mjpeg, tmp, lenb, gui->pix1);
         } else {
             // ###
             if (num_frame >= 100 && num_frame < 101) {
@@ -208,10 +221,14 @@ static int test() {
         timersub(&tvb2, &tvb1, &tvb2);
         broad += tvb2.tv_usec;
 
-        // EnQueue
-        if(ioctl(v4l2.fd, VIDIOC_QBUF, &frame) == -1) {
-            FOG("VIDIOC_QBUF: %s\n", strerror(errno));
-            break;
+        if (format > 0) {
+            // EnQueue
+            if(ioctl(v4l2.fd, VIDIOC_QBUF, &frame) == -1) {
+                FOG("VIDIOC_QBUF: %s\n", strerror(errno));
+                break;
+            }
+        } else if (!format) {
+            usleep(10000);
         }
         //
         num_frame++;
@@ -228,12 +245,14 @@ static int test() {
         //
     }
     //
-    f641_stream_off(&v4l2);
     //
     if (format == 0x56595559) {
-
+        f641_stream_off(&v4l2);
     } else if (format == 0x47504A4D) {
+        f641_stream_off(&v4l2);
         free_mjpeg645_image(&mjpeg);
+    } else if (!format) {
+
     } else {
         // ### raw svg
         if (filp) {
