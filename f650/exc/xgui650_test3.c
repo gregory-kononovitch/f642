@@ -289,7 +289,6 @@ static int test() {
             usleep(10000);
         }
 
-clean:
         //
         num_frame++;
         //
@@ -304,6 +303,8 @@ clean:
         }
         //
     }
+    LOG("Thread test3 ended");
+    //usleep(1000000);
     //
     //
     if (format == 0x56595559) {
@@ -321,7 +322,9 @@ clean:
         }
     }
     queue_close642(&test->queue);
+    LOG("Queue closed");
     f642_close(test->x264);
+    LOG("X264 closed");
     //
     xgui_stop691(gui);
     xgui_close_window691(gui);

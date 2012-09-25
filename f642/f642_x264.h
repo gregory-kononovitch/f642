@@ -71,6 +71,7 @@ typedef struct {
     struct timeval  *tvs;
     //
     int             run;
+    int             end;
     pthread_t       thread;
     pthread_attr_t  attr;
     pthread_mutex_t mutex;

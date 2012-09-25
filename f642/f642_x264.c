@@ -245,15 +245,41 @@ queue642 *queue_open642(f642x264 *x264, int nb) {
 
 void queue_close642(queue642 **queue) {
     int i;
-    pthread_mutex_lock((*queue)->mutex);
+    printf("Close Queue642:\n");
+    pthread_mutex_lock(&(*queue)->mutex);
     (*queue)->run = 0;
+    pthread_cond_broadcast(&(*queue)->cond);
+    pthread_mutex_unlock(&(*queue)->mutex);
+    //
+    pthread_mutex_lock(&(*queue)->mutex);
     while((*queue)->full2 || (*queue)->last2 != (*queue)->next2) {
-        pthread_cond_wait(&(*queue)->attr, &(*queue)->mutex);
+        printf("full2 = %d, last2 = %d\n", (*queue)->full2, (*queue)->next2 - (*queue)->last2);
+        pthread_cond_wait(&(*queue)->cond, &(*queue)->mutex);
     }
-    pthread_mutex_unlock((*queue)->mutex);
+    (*queue)->end = 1;
+    pthread_cond_broadcast(&(*queue)->cond);
+    pthread_mutex_unlock(&(*queue)->mutex);
+    printf("Queue 2 empty\n");
+    //
+    pthread_mutex_lock(&(*queue)->mutex);
+    while(!(*queue)->full1) {
+        printf("full1 = %d, last1 = %d\n", (*queue)->full1, (*queue)->next1 - (*queue)->last1);
+        pthread_cond_wait(&(*queue)->cond, &(*queue)->mutex);
+    }
+    pthread_cond_broadcast(&(*queue)->cond);
+    pthread_mutex_unlock(&(*queue)->mutex);
+    printf("Queue 1 full\n");
+    //
+    pthread_mutex_lock(&(*queue)->mutex);
+    (*queue)->run = 0;
+    pthread_cond_broadcast(&(*queue)->cond);
+    pthread_mutex_unlock(&(*queue)->mutex);
+
+    //
     void *ret;
     pthread_join((*queue)->thread, &ret);
-
+    printf("Queue joined\n");
+    //
     pthread_mutex_destroy(&(*queue)->mutex);
     pthread_cond_destroy(&(*queue)->cond);
     for(i = 0 ; i < (*queue)->nb_yuv ; i++) {
@@ -262,7 +288,6 @@ void queue_close642(queue642 **queue) {
     free((*queue)->tvs);
     free((*queue)->index1);
     free((*queue)->index2);
-//    free((*queue)->yuv);
     free(*queue);
     queue = NULL;
 }
@@ -272,7 +297,10 @@ int dequ1ue642(queue642 *queue) {
     pthread_mutex_lock(&queue->mutex);
     while(!queue->full1 && queue->next1 == queue->last1) {
         pthread_cond_wait(&queue->cond, &queue->mutex);
-        if (!queue->run) return -1;
+        if (!queue->run) {
+            pthread_mutex_unlock(&queue->mutex);
+            return -1;
+        }
     }
     i = queue->index1[queue->next1];
     queue->next1 = (queue->next1 + 1) % queue->nb_yuv;
@@ -288,7 +316,10 @@ int dequ2ue642(queue642 *queue, struct timeval *tv) {
     pthread_mutex_lock(&queue->mutex);
     while(!queue->full2 && queue->next2 == queue->last2) {
         pthread_cond_wait(&queue->cond, &queue->mutex);
-//        if (!queue->run) return -1;
+        if (queue->end) {
+            pthread_mutex_unlock(&queue->mutex);
+            return -1;
+        }
     }
     i = queue->index1[queue->next2];
     memcpy(tv, &queue->tvs[queue->next2], sizeof(struct timeval));
