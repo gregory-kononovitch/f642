@@ -27,6 +27,13 @@
 #include <byteswap.h>
 #include <math.h>
 
+//#include <libavformat/avformat.h>
+//#include <libavdevice/avdevice.h>
+#include <libavcodec/avcodec.h>
+//#include <libavutil/fifo.h>
+//#include <libavutil/avstring.h>
+#include <libavutil/pixdesc.h>
+#include <libswscale/swscale.h>
 
 #define FOG(s,...) fprintf(stderr, "%s: " s "\n", __func__, ##__VA_ARGS__);
 #define LOG(s,...) fprintf(stderr, s "\n", ##__VA_ARGS__);

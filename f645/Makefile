@@ -18,8 +18,11 @@ ASM_DIR=.
 EXC_DIR=exc
 
 # Librarires
-INCLUDE=
-LIBS=-lm -lpthread -lX11 -lxcb -lXext
+FFINCL=-I/usr/local/include/libavformat -I/usr/local/include/libavdevice -I/usr/local/include/libswscale -I/usr/local/include/libavcodec -I/usr/local/include/libavutil
+FFLIBS=-L/usr/local/lib -lavformat -lavdevice -lswscale -lavutil -lavcodec
+
+INCLUDE=FFINCL
+LIBS=-lm -lpthread -lX11 -lxcb -lXext FFLIBS
 
 #
 # source-files

@@ -184,30 +184,26 @@ SECTION .text		ALIGN=16
 
 ;;;;;;;;;;;;;;;
 ; STACK
-%define		VAR			0x200	;0x0200
+%define		VAR			0x100	;0x0200
 
-%define		ZZI			0x300	;0x0200
-%define		IZI			0x400	;0x0200
-%define		ZZIF		0x500	;0x0200
-%define		UVCOSCOSI	0x600	;0x0200
+%define		ZZI			0x200	;0x0200
+%define		IZI			0x300	;0x0200
+%define		ZZIF		0x400	;0x0200
+%define		UVCOSCOSI	0x500	;0x0200
+%define		PIXFI		0x600	;0x0200
+%define		PIXII		0x700	;0x0200
 
-%define		QUANTIL		0x700	;0x0200
-%define		QUANTIC		0x800	;0x0200
+%define		QUANTIL		0x800	;0x0200
+%define		QUANTIC		0x900	;0x0200
 
-;%define		P64ZZI		0x900
-;%define		P64ZZI		0x900
-;%define		P64ZZI		0x900
-
-%define		PIXFI		0xB00	;0x0200
-%define		PIXII		0xC00	;0x0200
-
-
-%define		WORK		4608	;
+;%define		WORK		4608	;
+%define		WORK		0x1000	;
 
 %define		TREEL		10448
 %define		TREEC		16288
 
-%define		STACK		0X4000
+;%define		STACK		0X4000
+%define		STACK		WORK
 
 ; Local variables (RBP - VAR + )
 %define		ptreel		0x00
@@ -333,42 +329,42 @@ decode645:
 				cmp			rcx, 64
 				jl			.lpquantc
 
-				;
-				; AC Lumin tree
-				;
-				mov			rax, rbp
-				sub			rax, TREEL
-				mov			qword [rbp - VAR + ptreel], rax
-				mov			ecx, dword [NHACL]
-				mov			rdx, HACL
-				;
-				;
+;				;
+;				; AC Lumin tree
+;				;
+;				mov			rax, rbp
+;				sub			rax, TREEL
+;				mov			qword [rbp - VAR + ptreel], rax
+;				mov			ecx, dword [NHACL]
+;				mov			rdx, HACL
+;				;
+;				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
 ;;;; r8 used
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-ltree:
-				%include "inclu/huftbl-1.s"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-				;
-				; AC Chrom tree
-				;
-				mov			rax, rbp
-				sub			rax, TREEC
-				mov			qword [rbp - VAR + ptreec], rax
-				mov			ecx, dword [NHACC]
-				mov			rdx, HACC
-				;
+;ltree:
+;				%include "inclu/huftbl-1.s"
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;				;
+;				; AC Chrom tree
+;				;
+;				mov			rax, rbp
+;				sub			rax, TREEC
+;				mov			qword [rbp - VAR + ptreec], rax
+;				mov			ecx, dword [NHACC]
+;				mov			rdx, HACC
+;				;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; stack tree addr in rax   +   src tree in rdx  +   size in rcx   +   [ return in r9 ]
 ;;;; r8 used
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-ctree:
-				%include "inclu/huftbl-1.s"
-
+;ctree:
+;				%include "inclu/huftbl-1.s"
+;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;
 ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;						Workspace initialization
 ;              ----------------------------------------
