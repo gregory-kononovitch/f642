@@ -190,7 +190,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
 
     while (shm) {
         // ###
-        gui->shm_info.shmid = shmget(IPC_PRIVATE, 4 * width * height, IPC_CREAT | 0777);
+        gui->shm_info.shmid = shmget(IPC_PRIVATE, 5 * width * height, IPC_CREAT | 0777);
         FOG("shmget return %d - %p", gui->shm_info.shmid, gui->shm_info.shmaddr);
         //
         gui->shm_info.shmaddr = (char*)shmat(gui->shm_info.shmid, 0, 0);
@@ -214,7 +214,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
 
         //
         // ###
-        gui->shm_info2.shmid = shmget(IPC_PRIVATE, 4 * width * height, IPC_CREAT | 0777);
+        gui->shm_info2.shmid = shmget(IPC_PRIVATE, 5 * width * height, IPC_CREAT | 0777);
         FOG("shmget2 return %d - %p", gui->shm_info2.shmid, gui->shm_info2.shmaddr);
         //
         gui->shm_info2.shmaddr = (char*)shmat(gui->shm_info2.shmid, 0, 0);

@@ -17,8 +17,8 @@
 ;;;;;;;
 
 		shl 		bits, 1
-		jc		.al.case1x
-		; 0x
+		jc		.al.case111111111111111111111111111111111x
+		; 111111111111111111111111111111110x
 		shl 		bits, 1
 		jc		.al.case01x
 		; 00x
@@ -33,7 +33,7 @@
 		mov			symb, 2
 		jmp			.donehacl
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;
-.al.case1x:
+.al.case111111111111111111111111111111111x:
 		shl 		bits, 1
 		jc		.al.case11x
 		; 10x

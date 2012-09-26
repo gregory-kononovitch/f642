@@ -143,7 +143,7 @@ static int test() {
     int width = 800;
     int height = 448;
     int fps = 24;
-    int format = 0x47504A4D;        // 0x56595559
+    int format = 0;     //0x47504A4D;        // 0x56595559
     int save = 0;
     FILE *filp = NULL;
     //
@@ -280,11 +280,11 @@ static int test() {
         // Put
         xgui_show691(gui, db, 0, 0, 0, 0, gui->width, gui->height);
 //        db = 0;
-//        if (db) {
-//            db = 0;
-//        } else {
-//            db = 1;
-//        }
+        if (db) {
+            db = 0;
+        } else {
+            db = 1;
+        }
 
         //
         gettimeofday(&tvb2, NULL);

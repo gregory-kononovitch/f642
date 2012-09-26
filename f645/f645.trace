@@ -256,3 +256,23 @@ Frame 300 for 15.022 Hz for 10807 µs and 13661448 µops
 Frame 360 for 15.023 Hz for 10720 µs and 13437531 µops
 Frame 420 for 15.027 Hz for 11112 µs and 14063113 µops
 Frame 480 for 15.021 Hz for 12246 µs and 15877138 µops
+
+
+----------- acl static without idft -------------------
+Frame 240 for 49.924 Hz for 9935 µs and 12521408 µops
+Frame 300 for 50.508 Hz for 9706 µs and 12167456 µops
+Frame 360 for 49.964 Hz for 9918 µs and 12557134 µops
+Frame 420 for 50.015 Hz for 9903 µs and 12502259 µops
+Frame 480 for 50.019 Hz for 9892 µs and 12464153 µops
+Frame 540 for 50.082 Hz for 9873 µs and 12458497 µops
+Frame 600 for 49.924 Hz for 9936 µs and 12512483 µops
+Frame 660 for 49.985 Hz for 9909 µs and 12503689 µops
+Frame 720 for 50.011 Hz for 9894 µs and 12530569 µops
+Frame 780 for 49.974 Hz for 9913 µs and 12509183 µops
+Frame 840 for 50.010 Hz for 9905 µs and 12525810 µops
+Frame 900 for 49.622 Hz for 10056 µs and 12723809 µops
+Frame 960 for 49.565 Hz for 10084 µs and 12632386 µops
+Frame 1020 for 50.012 Hz for 9899 µs and 12492706 µops
+Frame 1080 for 49.604 Hz for 10061 µs and 12695676 µops
+Frame 1140 for 49.990 Hz for 9903 µs and 12520577 µops
+Frame 1200 for 49.818 Hz for 9975 µs and 12661947 µops

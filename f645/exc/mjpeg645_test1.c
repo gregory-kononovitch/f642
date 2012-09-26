@@ -150,6 +150,22 @@ int test_scan645() {
     return 0;
 }
 
+static void dump(uint64_t u, int prec, int len) {
+    int i;
+    long l;
+    uint64_t m = 0xffffffffffffffff;
+//    u >>= 64 - prec;
+//    if (prec == 64) {
+//        u &= 0x7FFFFFFFFFFFFFFFL;
+//    }
+    for(i = 0 ; i < len ; i++) {
+        l = u >> (prec - 1 - i);
+        printf("%ld ", l);//(u & (1 << (63 - i))) ? 1 : 0);
+        m >>= 1;
+        //u &= (1 << (prec - i)) - 1;
+        u &= m;
+    }
+}
 
 extern int test_acl645(uint64_t data, int off, int *res);
 
@@ -173,17 +189,28 @@ int testacl2() {
     int *res = calloc(1024, 16);
     res[1] = off;
     int r;
+    long c = 2;
     lo = *ll;
     while(1) {
+        long l = 1 + (int)(log(c) / log(2.) + .000001);
+        lo = c << (64 - l);
+        off = 64;
+
+//        printf("\n    :"); dump(c, 8, 8);
+//        printf("\nTest %ld, len %d\n", lo, l);
         r = test_acl645(lo, off, res);
-        if (r == 0 && res[1] > 0) {
-            printf("Break at r = %d , offset = %d\n", r, res[1]);
-            break;
+        //dump(lo, 64, 16);
+        //printf("Return %2d %3d %d %d %d . %d\n", l, res[0], res[1], res[2], res[3], 64 - res[1]);
+        if (r == 0 && (64 - res[1]) == l) {
+            dump(lo, 64, 16);
+            printf("Return %2d - %3d : %d %d %d\n", l, res[0], res[1], res[2], res[3]);
         }
-        printf("Return %d : %d %d %d %d\n", r, res[0], res[1], res[2], res[3]);
         //
         int o = off - res[1];
         off = res[1];
+        c++;
+        //if (c > 127) break;
+        if (c >= (1<<16)) break;
     }
 
 }
@@ -213,7 +240,7 @@ int main() {
     int i, j;
     long c1, c2;
 
-//    return testacl2();
+    //return testacl2();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
@@ -269,9 +296,9 @@ int main() {
         }
         printf("\n");
 
-        if (mjpeg->size > 10000) {
-            continue;
-        }
+//        if (mjpeg->size > 10000) {
+//            continue;
+//        }
         break;
 
     //    printf("Decode sequence:\n");

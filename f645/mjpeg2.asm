@@ -233,6 +233,9 @@ SECTION .text		ALIGN=16
 %define		y8offset	0x60		; long 4 * (width - 8)
 %define		y8offset3	0x64		; long 4 * (width - 8)
 
+%define		dcLumin1	0x68
+%define		dcChrom1	0x6C
+
 ;
 %define		_ri0_us		0x70
 %define		_ri_us		0x72
@@ -401,6 +404,8 @@ decmain:
 				;
 				mov			strict dword [rsp - VAR + dcLumin0], strict dword 0
 				mov			strict dword [rsp - VAR + dcChrom0], strict dword 0
+				mov			strict dword [rsp - VAR + dcLumin1], strict dword 0
+				mov			strict dword [rsp - VAR + dcChrom1], strict dword 0
 				;
 				; initial FEED64
 				;
@@ -472,10 +477,17 @@ hdcl:			;
 .pos:			; pos
 				shr			r15, cl
 .val:			;
+				test		byte [rsp - VAR + _yi_uc], 0x01
+				jnz			.lu1
 				add			r15d, dword [rsp - VAR + dcLumin0]			; diff
 				mov			dword [rsp - VAR + dcLumin0], r15d			; save
+				jmp			.oth
+.lu1
+				add			r15d, dword [rsp - VAR + dcLumin1]			; diff
+				mov			dword [rsp - VAR + dcLumin1], r15d			; save
+
 				;
-				imul		r15d, dword [rbp - WORK + QUANTIL]
+.oth			imul		r15d, dword [rbp - WORK + QUANTIL]
 				mov			dword [rbp - WORK + ZZI], r15d
 				mov			strict dword [rbp - WORK + IZI], strict dword 0
 
@@ -502,8 +514,8 @@ hacl:
 				;
 				mov			tree, qword [rbp - VAR + ptreel]
 				;
-				%include "inclu/hufacl-1.s"
-				;%include "inclu/hufacl-3.s"
+				;%include "inclu/hufacl-1.s"
+				%include "inclu/hufacl-3.s"
 
 				logbits 64,a4; ###
 
@@ -517,7 +529,7 @@ hacl:
 				return
 
 .donehacl
-				mov			symb, byte [tree]		; symb
+				;mov			symb, byte [tree]		; symb
 
 				;
 				; EOB
@@ -640,7 +652,7 @@ hacl:
 ;                            DCT Lumin
 ;                    -------------------------
 idctl:
-					%include "inclu/idft2pix-3.s"
+					;%include "inclu/idft2pix-3.s"
 
 					add dword [rbp - VAR + nblocks], 1
 ;return
