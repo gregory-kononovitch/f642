@@ -724,7 +724,8 @@ hacc:
 				;
 				mov			tree, qword [rbp - VAR + ptreec]
 				;
-				%include "inclu/hufacc-1.s"
+				;%include "inclu/hufacc-1.s"
+				%include "inclu/hufacc-3.s"
 
 				logbits 64,a4; ###
 
@@ -738,7 +739,7 @@ hacc:
 				return
 
 .donehacc
-				mov			symb, byte [tree]		; symb
+				;mov			symb, byte [tree]		; symb
 
 				;
 				; EOB

@@ -276,3 +276,24 @@ Frame 1020 for 50.012 Hz for 9899 µs and 12492706 µops
 Frame 1080 for 49.604 Hz for 10061 µs and 12695676 µops
 Frame 1140 for 49.990 Hz for 9903 µs and 12520577 µops
 Frame 1200 for 49.818 Hz for 9975 µs and 12661947 µops
+
+---------------- static0 acl + acc
+Frame 120 for 50.007 Hz for 9895 µs and 12145047 µops
+Frame 180 for 50.861 Hz for 9557 µs and 11800608 µops
+Frame 240 for 49.997 Hz for 9901 µs and 12353676 µops
+Frame 300 for 49.999 Hz for 9814 µs and 12182260 µops
+Frame 360 for 49.998 Hz for 9900 µs and 12301675 µops
+Frame 420 for 50.846 Hz for 9566 µs and 11833827 µops
+Frame 480 for 50.004 Hz for 9897 µs and 12350070 µops
+Frame 540 for 50.000 Hz for 9900 µs and 12319500 µops
+Frame 600 for 50.007 Hz for 9897 µs and 12294869 µops
+Frame 660 for 50.424 Hz for 9732 µs and 12023819 µops
+Frame 720 for 49.983 Hz for 9832 µs and 12165925 µops
+Frame 780 for 50.479 Hz for 9711 µs and 12045400 µops
+Frame 840 for 49.550 Hz for 10079 µs and 12463843 µops
+Frame 900 for 50.443 Hz for 9721 µs and 12058503 µops
+Frame 960 for 50.390 Hz for 9745 µs and 12123927 µops
+Frame 1020 for 50.036 Hz for 9885 µs and 12273231 µops
+Frame 1080 for 49.986 Hz for 9910 µs and 12330908 µops
+Frame 1140 for 50.011 Hz for 9904 µs and 12370970 µops
+Frame 1200 for 49.980 Hz for 9913 µs and 12346507 µops
