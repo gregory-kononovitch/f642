@@ -652,7 +652,7 @@ hacl:
 ;                            DCT Lumin
 ;                    -------------------------
 idctl:
-					;%include "inclu/idft2pix-3.s"
+					%include "inclu/idft2pix-3.s"
 
 					add dword [rbp - VAR + nblocks], 1
 ;return

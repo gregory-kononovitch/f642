@@ -16,7 +16,7 @@
 
 ;;;;;;;
 		shl 		bits, 1
-		jc		.ac.case111111111111111111111111111111111x
+		jc		.ac.case1x
 		; 111111111111111111111111111111110x
 		shl 		bits, 1
 		jc		.ac.case01x
@@ -32,20 +32,20 @@
 		mov			symb, 1
 		jmp			.donehacc
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;
-.ac.case111111111111111111111111111111111x:
+.ac.case1x:
 		shl 		bits, 1
 		jc		.ac.case11x
 		; 10x
-		shl 		bits, 1
-		jc		.ac.case101x
+		jo		.ac.case101x
 		; 100x
 		; 100
+		shl 		bits, 1
 		sub			off, 3
 		mov			symb, 2
 		jmp			.donehacc
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .ac.case101x:
-		shl 		bits, 1
+		shl 		bits, 2
 		jc		.ac.case1011x
 		; 1010x
 		; 1010
@@ -59,16 +59,14 @@
 		mov			symb, 17
 		jmp			.donehacc
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 .ac.case11x:
 		shl 		bits, 1
 		jc		.ac.case111x
-		; 110x
-		shl 		bits, 1
-		jc		.ac.case1101x
+		jo		.ac.case1101x
 		; 1100x
-		shl 		bits, 1
+		shl 		bits, 2
 		jc		.ac.case11001x
-		; 11000x
 		; 11000
 		sub			off, 5
 		mov			symb, 4
@@ -80,8 +78,9 @@
 		mov			symb, 5
 		jmp			.donehacc
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 .ac.case1101x:
-		shl 		bits, 1
+		shl 		bits, 2
 		jc		.ac.case11011x
 		; 11010x
 		; 11010
@@ -95,6 +94,8 @@
 		mov			symb, 49
 		jmp			.donehacc
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 .ac.case111x:
 		shl 		bits, 1
 		jc		.ac.case1111x
