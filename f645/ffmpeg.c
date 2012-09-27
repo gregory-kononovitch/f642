@@ -26,6 +26,9 @@ static  int     hacc_sizes645[255];
 // Quantization
 static  float   quantization645[4][64];
 
+//
+static  int     ff[16] = {0x00,0x01,0x03,0x07,0x0F,0x1F,0x03F,0x7F,0xFF,0x1FF,0x3FF,0x7FF,0xFFF,0x1FFF,0x3FFF,0x7FFF,0xFFFF};
+
 
 typedef struct {
     int                 width;
@@ -40,6 +43,8 @@ typedef struct {
     // Mjpeg
     uint8_t             *mjpeg;
     int                 mjpeg_size;
+    int                 mjoff;
+    int                 mjdec;
 
     // Q
     float               quantization[4][64];
@@ -96,6 +101,10 @@ int mjpeg_dct645(mjpeg_codec645 *codec, int quant, uint8_t *plan, int index, int
     int i, ixy;
     uint8_t *ptr = plan + index;
     float src[64];
+    double log2 = 1. / log(2.);
+    //
+    codec->mjoff = codec->mjdec = 0;
+    uint8_t *optr = codec.mjpeg;
     // -128
     for(i = 0 ; i < 64 ; i++) {
         src[i] = -128.f + ptr[i];
@@ -113,15 +122,39 @@ int mjpeg_dct645(mjpeg_codec645 *codec, int quant, uint8_t *plan, int index, int
     }
     // Huffman
     int iz0 = 0;
+    int mag;
+    uint32_t enc = 0;
     for(i = 0 ; i < 64 ; i++) {
         int v = round(codec->dct[i]);
         if (v != 0) {
+            enc = iz0 << 4;
             if (v > 0) {
-
+                mag = 1 + (int)(log2 * log(+v));
+                enc |= mag;
+                enc <<= 4 + mag;
+                enc |= (v & ff[mag]);
             } else {
-
+                v = v - 1;
+                mag = 1 + (int)(log2 * log(-v));
+                enc |= mag;
+                enc <<= 4 + mag;
+                enc |= (v & ff[mag]);
             }
-
+            //
+            uint64_t bits = *((long*)optr);
+            bits <<= 8 + mag;
+            bits |= enc;
+            codec->mjdec += 8 + mag;
+            if (codec->mjdec & 32) {
+                bits <<= 64 - codec->mjdec;
+                *((long*)optr) = bits;
+                optr += 4;
+                codec->mjdec -= 32;
+                bits >>= 32 - codec->mjdec;
+                codec->mjoff += 2;
+            } else {
+                *((long*)optr) = bits;
+            }
         } else {
             iz0++;
         }
