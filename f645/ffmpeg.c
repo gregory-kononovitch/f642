@@ -43,6 +43,7 @@ typedef struct {
     int                 mjoff;
     int                 mjdec;
     int                 rsti;
+    int                 dc0[3];
 
     // Q
     float               quantization[4][64];
@@ -95,7 +96,7 @@ mjpeg_codec645 *mjpeg_codec(int width, int height) {
 }
 
 
-static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int quant, int **hdc, int **hac, uint8_t *plan, int index, int linesize) {
+static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int **hdc, int **hac, uint8_t *plan, int index, int linesize) {
     int i, ixyz;
     uint8_t *ptr = plan + index;
     float src[64];
@@ -125,7 +126,8 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int quant, int **hdc, int **ha
     uint32_t enc;
     uint64_t bits = 0;
     // DC
-    int v = round(codec->dct[0]);
+    int v = round(codec->dct[0]) - codec->dc0[comp];
+    codec->dc0[comp] += v;
     if (v != 0) {
         if (v > 0) {
             mag = 1 + (int)(log2 * log(+v));
@@ -212,17 +214,36 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
     r = sws_scale(codec->swsCtxt, (const uint8_t**)codec->bgra->data, codec->bgra->linesize, 0, codec->height, codec->yuv422p->data, codec->yuv422p->linesize);
     printf("SwScale return %d\n", r);
     // DCT
-    int ib, ibmax = (codec->width * codec->height) >> 6;
+    int ib, ibmax = (codec->width * codec->height) >> 7;    // / 64 / 2
     codec->x0l = codec->y0l = codec->x0c = codec->y0c = 0;
     for(ib = 0 ; ib < ibmax ; ib++) {
-
-
-
         //
+        mjpeg_dcthuf645(codec, 0, 0, hdcl645, hacl645, codec->yuv422p[0], codec->x0l + codec->width * codec->y0l, codec->width);
         codec->x0l += 8;
         if (codec->x0l >= codec->width) {
             codec->x0l  = 0;
             codec->y0l += 8;
+        }
+        //
+        mjpeg_dcthuf645(codec, 0, 0, hdcl645, hacl645, codec->yuv422p->data[0], codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
+        codec->x0l += 8;
+        if (codec->x0l >= codec->width) {
+            codec->x0l  = 0;
+            codec->y0l += 8;
+        }
+        //
+        mjpeg_dcthuf645(codec, 1, 1, hdcc645, hacc645, codec->yuv422p->data[1], codec->x0c + codec->width * codec->y0c, codec->yuv422p->linesize[1]);
+        codec->x0c += 8;
+        if (codec->x0c >= codec->width) {
+            codec->x0c  = 0;
+            codec->y0c += 8;
+        }
+        //
+        mjpeg_dcthuf645(codec, 2, 1, hdcc645, hacc645, codec->yuv422p->data[2], codec->x0c + codec->width * codec->y0c, codec->yuv422p->linesize[2]);
+        codec->x0c += 8;
+        if (codec->x0c >= codec->width) {
+            codec->x0c  = 0;
+            codec->y0c += 8;
         }
     }
 }
