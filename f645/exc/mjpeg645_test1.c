@@ -235,12 +235,13 @@ int testacl2() {
 //    return 0;
 //}
 
-
+extern int ffm_test1();
 int main() {
     int i, j;
     long c1, c2;
 
     //return testacl2();
+    return ffm_test1();
 
     //
     FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
