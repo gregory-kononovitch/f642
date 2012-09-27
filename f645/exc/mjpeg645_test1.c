@@ -243,10 +243,12 @@ int main() {
 
     //return testacl2();
     //return ffm_test1();
-    return enc_ffm_test();
+    //return enc_ffm_test();
+    if (enc_ffm_test() < 0) return 0;
 
     //
-    FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+    //FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
+    FILE *filp = fopen("mjpeg_encode.out", "rb");
     fseek(filp, 0, SEEK_END);
     fpos_t p;
     fgetpos(filp, &p);
@@ -292,8 +294,8 @@ int main() {
                                         if (*((long*)(log + 4*i + 56)) == 0)
                             break;
             } else {
-                printf("%d  ", part[i]);
-                //printf("%.2f  ", fart[i]);
+                //printf("%d  ", part[i]);
+                printf("%.2f  ", fart[i]);
                 //printf("%08X  ", part[i]);
             }
         }

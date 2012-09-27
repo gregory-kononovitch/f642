@@ -37,8 +37,20 @@
 				shl			cx, 2				; int
 .cvti:			cvtdq2ps	xmm0, oword [rbp - WORK + ZZI + rcx]
 				movaps		oword [rbp - WORK + ZZIF + rcx], xmm0
+				; ################
+				movdqu		oword [rsi], xmm0
+				add			rsi, 16
+				; ####################
+				mov			dword [rsi], -9998
+				add			rsi, 4
+				; #####################
 				sub			cx, 16
 				jge			.cvti
+
+				; ####################
+				mov			dword [rsi], -9999
+				add			rsi, 4
+				; #####################
 
 				; loop 128
 				mov			ebx, 240
@@ -108,6 +120,20 @@
 
 				; add
 				addps		xmm2, oword [rbp - WORK + PIXFI + rbx]
+
+				; ################
+				movdqu		oword [rsi], xmm2
+				add			rsi, 16
+				; #############
+				test		ebx, 31
+				jz			.rl
+				; ####################
+				mov			dword [rsi], -9998
+				add			rsi, 4
+				jmp			.nrl
+.rl:			mov			dword [rsi], -9999
+				add			rsi, 4
+.nrl:			; #######################
 
 ;				; [mov]		;
 ;				movaps		oword [rbp - WORK + PIXFI + rbx], xmm2
@@ -184,6 +210,9 @@
 .coopxy0:		;
 				sub			bx, 16						;
 				jge			.loopxy0
+				; ####################
+				mov			dword [rsi], -9999
+				add			rsi, 4
 
 ;
 				; move block
@@ -199,6 +228,7 @@
 				xor			rdx, rdx
 				xor			rax, rax
 
+				return
 ;				; #############
 ;				sub			r15,
 ;				movdqu		qword [rsi], xmm1
