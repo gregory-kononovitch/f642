@@ -15,19 +15,16 @@
 static int      zigzag645[64] = {0};
 static float    zuvcoscos645[64 * 64];      // {iz x (r,c)}
 // Huffman
-static  int     hdcl_codes645[255];
-static  int     hdcl_sizes645[255];
-static  int     hacl_codes645[255];
-static  int     hacl_sizes645[255];
-static  int     hdcc_codes645[255];
-static  int     hdcc_sizes645[255];
-static  int     hacc_codes645[255];
-static  int     hacc_sizes645[255];
+static  int     hdcl645[255][2];
+static  int     hacl645[255][2];
+static  int     hdcc645[255][2];
+static  int     hacc645[255][2];
+
 // Quantization
 static  float   quantization645[4][64];
 
 //
-static  int     ff[16] = {0x00,0x01,0x03,0x07,0x0F,0x1F,0x03F,0x7F,0xFF,0x1FF,0x3FF,0x7FF,0xFFF,0x1FFF,0x3FFF,0x7FFF,0xFFFF};
+static  int     ff[17] = {0x00,0x01,0x03,0x07,0x0F,0x1F,0x03F,0x7F,0xFF,0x1FF,0x3FF,0x7FF,0xFFF,0x1FFF,0x3FFF,0x7FFF,0xFFFF};
 
 
 typedef struct {
@@ -45,6 +42,7 @@ typedef struct {
     int                 mjpeg_size;
     int                 mjoff;
     int                 mjdec;
+    int                 rsti;
 
     // Q
     float               quantization[4][64];
@@ -97,14 +95,14 @@ mjpeg_codec645 *mjpeg_codec(int width, int height) {
 }
 
 
-int mjpeg_dct645(mjpeg_codec645 *codec, int quant, uint8_t *plan, int index, int linesize) {
-    int i, ixy;
+static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int quant, int **hdc, int **hac, uint8_t *plan, int index, int linesize) {
+    int i, ixyz;
     uint8_t *ptr = plan + index;
     float src[64];
     double log2 = 1. / log(2.);
     //
-    codec->mjoff = codec->mjdec = 0;
-    uint8_t *optr = codec.mjpeg;
+    uint8_t *optr = codec->mjpeg + codec->mjoff;
+
     // -128
     for(i = 0 ; i < 64 ; i++) {
         src[i] = -128.f + ptr[i];
@@ -113,53 +111,97 @@ int mjpeg_dct645(mjpeg_codec645 *codec, int quant, uint8_t *plan, int index, int
         }
     }
     // DCT
-    for(ixy = 0 ; ixy < 64 ; ixy++) {
-        codec->dct[ixy] = 0;
+    for(ixyz = 0 ; ixyz < 64 ; ixyz++) {
+        codec->dct[ixyz] = 0;
         for(i = 0 ; i < 64 ; i++) {
-            codec->dct[ixy] += src[i] * zuvcoscos645[(ixy << 6) + i];
+            codec->dct[ixyz] += src[i] * zuvcoscos645[(ixyz << 6) + i];
         }
-        codec->dct[ixy] /= quantization645[quant][ixy];
+        codec->dct[ixyz] /= quantization645[quant][ixyz];
     }
     // Huffman
     int iz0 = 0;
     int mag;
-    uint32_t enc = 0;
-    for(i = 0 ; i < 64 ; i++) {
-        int v = round(codec->dct[i]);
+    uint8_t symb;
+    uint32_t enc;
+    uint64_t bits = 0;
+    // DC
+    int v = round(codec->dct[0]);
+    if (v != 0) {
+        if (v > 0) {
+            mag = 1 + (int)(log2 * log(+v));
+        } else {
+            v = v - 1;
+            mag = 1 + (int)(log2 * log(-v));
+        }
+        symb = mag & 0x0F;
+        iz0  = 0;
+        bits  = hdc[symb][0];
+        bits <<= mag;
+        codec->mjdec += 8 + mag;
+        bits |= (v & ff[mag]);
+    }
+    // Ac
+    for(i = 1 ; i < 64 ; i++) {
+        v = round(codec->dct[i]);
         if (v != 0) {
-            enc = iz0 << 4;
             if (v > 0) {
                 mag = 1 + (int)(log2 * log(+v));
-                enc |= mag;
-                enc <<= 4 + mag;
-                enc |= (v & ff[mag]);
             } else {
                 v = v - 1;
                 mag = 1 + (int)(log2 * log(-v));
-                enc |= mag;
-                enc <<= 4 + mag;
-                enc |= (v & ff[mag]);
             }
+            symb = ((iz0 << 4) | mag) & 0xFF;
+            iz0  = 0;
+            enc  = hac[symb][0];
+            enc <<= mag;
+            enc |= (v & ff[mag]);
+
             //
-            uint64_t bits = *((long*)optr);
-            bits <<= 8 + mag;
+            bits <<= hac[symb][1] + mag;
             bits |= enc;
-            codec->mjdec += 8 + mag;
+            codec->mjdec += hac[symb][1] + mag;
             if (codec->mjdec & 32) {
+                int j;
                 bits <<= 64 - codec->mjdec;
-                *((long*)optr) = bits;
-                optr += 4;
+                for(j = 0 ; j < 4 ; j++) {
+                    uint8_t b = (bits >> (56 - 8*i)) & 0xFF;
+                    if (b != 0xFF) {
+                        *(optr++) = b;
+                        codec->mjoff += 1;
+                    } else {
+                        *(optr++) = 0xFF;
+                        *(optr++) = 0x00;
+                        codec->mjoff += 2;
+                    }
+                }
                 codec->mjdec -= 32;
                 bits >>= 32 - codec->mjdec;
-                codec->mjoff += 2;
-            } else {
-                *((long*)optr) = bits;
             }
         } else {
             iz0++;
         }
     }
-
+    // EOB
+    bits <<= 8;
+    codec->mjdec += 8;     // eob
+    int add = codec->mjdec / 8;
+    add = 8 - (codec->mjdec - 8*add);
+    bits <<= add;       // balign
+    bits |= ff[add];    // 111
+    codec->mjdec += add;
+    add = 1 + codec->mjdec / 8;
+    for(i = 0 ; i < add ; i++) {
+        enc = (bits >> (56 - 8*i)) & 0xFF;
+        if (enc != 0xFF) {
+            *(optr++) = enc;
+            codec->mjoff++;
+        } else {
+            *(optr++) = 0xFF;
+            *(optr++) = 0x00;
+            codec->mjoff += 2;
+        }
+    }
+    codec->mjdec = 0;
 
     return 0;
 }
