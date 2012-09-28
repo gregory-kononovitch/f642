@@ -79,23 +79,21 @@ typedef struct {
 
 
 static void fillCosCos645() {
-    int x, y, r, c;
+    int x, y, r, c, ix, ir;
     double u, v, d;
     float f;
     int ixy = 0, irc;
-    for(y = 0 ; y < 8 ; y++) {
+    for(ix = 0 ; ix < 64 ; ix++) {
+        x = ix % 8;
+        y = ix / 8;
         if (!y) v = 1. / sqrt(2.);
-        for(x = 0 ; x < 8 ; x++) {
-            irc = 0;
-            if (!x) u = 1. / sqrt(2.);
-            for(r = 0 ; r < 8 ; r++) {
-                for(c = 0 ; c < 8 ; c++) {
-                    zuvcoscos645[(ixy << 6) | irc] = (float)(0.25 * u * v * cos((2.*x + 1) * c * M_PI * 0.0625) * cos((2.*y + 1) * r * M_PI * 0.0625));
-                    irc++;
-                }
-            }
-            ixy++;
+        if (!x) u = 1. / sqrt(2.);
+        for(ir = 0 ; ir < 64 ; ir++) {
+            c = ir % 8;
+            r = ir / 8;
+            zuvcoscos645[(ix << 6) | ir] = (float)(0.25 * u * v * cos((2.*x + 1) * c * M_PI * 0.0625) * cos((2.*y + 1) * r * M_PI * 0.0625));
         }
+        ixy++;
     }
 }
 
@@ -155,14 +153,15 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
         for(i = 0 ; i < 64 ; i++) {
             codec->dct[zigzag645[ixyz]] += src[i] * zuvcoscos645[(ixyz << 6) | i];
         }
-        codec->dct[zigzag645[ixyz]] /= quantization645[(quant<< 6) | ixyz];
-        printf("%.1f ", src[0]);
+        //codec->dct[zigzag645[ixyz]] /= quantization645[(quant<< 6) | ixyz];
+        printf("%.0f ", src[ixyz]);
         //printf("%.3f ", codec->dct[zigzag645[ixyz]]);
-        //printf("%.0f ", round(codec->dct[zigzag645[ixyz]]));
+        //printf("%.0f|", round(codec->dct[zigzag645[ixyz]]));
         //printf("%.1f ", quantization645[(quant<< 6) | ixyz]);
         //printf("%.3f ", zuvcoscos645[(ixyz<< 6) | ixyz]);
         if ((ixyz & 0x07) == 0x07) printf("\n");
     }
+    printf("\n");
     // Huffman
     int iz0 = 0;
     int mag;
@@ -276,7 +275,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
 }
 
 int mjpeg_encode645(mjpeg_codec645 *codec) {
-    int r, log = 0;
+    int i, r, log = 1;
     // prep
 //    fillCosCos645();
 
@@ -286,27 +285,43 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
             , *((long*)(codec->yuv422p->data[0] + 64))
             , *((long*)(codec->yuv422p->data[1] + 64))
             , *((long*)(codec->yuv422p->data[2] + 64)));
+    i = 0;
+    int o = 8;
+    for(o = 0 ; o < 32 ; o += 8) {
+        for(r = 0 ; r < 8 ; r++) {
+            for(i = 0 ; i < 8 ; i++) {
+                printf("%d |", codec->yuv422p->data[1][o + i + codec->yuv422p->linesize[0]*r]);
+                //if ((r+1) % 0x07 == 0) i += codec->yuv422p->linesize[0];
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
+    printf("\n");
     // DCT
     int ib, ibmax = (codec->width * codec->height) >> 7;    // / 64 / 2
     codec->x0l = codec->y0l = codec->x0c = codec->y0c = codec->rsti = 0;
-    for(ib = 0 ; ib < ibmax ; ib++) {
+    for(ib = 0 ; ib < 2 ; ib++) {
         //
         mjpeg_dcthuf645(codec, 0, 0, hdcl645, hacl645, codec->yuv422p->data[0], codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
-        codec->x0l += 8;
-        if (codec->x0l >= codec->width) {
-            codec->x0l  = 0;
-            codec->y0l += 8;
-        }
+        if (log) printf("Called dct at index %d (%d)\n", codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
         if (log) printf("%d Encoded lumin block at (%d, %d) : %d bytes\n", ib, codec->x0l, codec->y0l, codec->mjoff);
-        return -1;
-        //
-        mjpeg_dcthuf645(codec, 0, 0, hdcl645, hacl645, codec->yuv422p->data[0], codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
         codec->x0l += 8;
         if (codec->x0l >= codec->width) {
             codec->x0l  = 0;
             codec->y0l += 8;
         }
+        //return -1;
+        //
+        mjpeg_dcthuf645(codec, 0, 0, hdcl645, hacl645, codec->yuv422p->data[0], codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
+        if (log) printf("Called dct at index %d (%d)\n", codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
         if (log) printf("Encoded lumin block : %d bytes\n", codec->mjoff);
+        codec->x0l += 8;
+        if (codec->x0l >= codec->width) {
+            codec->x0l  = 0;
+            codec->y0l += 8;
+        }
+        continue;
         //
         mjpeg_dcthuf645(codec, 1, 1, hdcc645, hacc645, codec->yuv422p->data[1], codec->x0c + codec->width * codec->y0c, codec->yuv422p->linesize[1]);
         if (log) printf("Encoded chrom u block : %d bytes\n", codec->mjoff);
@@ -352,16 +367,22 @@ int enc_ffm_test() {
     // fill rgb
     i = 0;
     uint8_t *ptr = codec->rgb;
+    uint8_t *tmp = codec->rgb;
     for(y = 0 ; y < codec->height ; y++) {
         for(x = 0 ; x < codec->width ; x++) {
             int g = (x >> 3) + (codec->width >> 3) * (y >> 3);
             int c = g & 0x03;
             g = (g << 4) & 0xFF;
-            *(ptr++) = ((c == 0 || c == 1) ? g : 0);
-            *(ptr++) = ((c == 1 || c == 2) ? g : 0);
-            *(ptr++) = ((c == 0 || c == 2) ? g : 0);
+            *(ptr++) = ((c == 0 || c == 1 || c == 3) ? g : 0);
+            *(ptr++) = ((c == 1 || c == 2 || c == 3) ? g : 0);
+            *(ptr++) = ((c == 0 || c == 2 || c == 3) ? g : 0);
             *(ptr++) = 0xFF;
-            i++;
+//            i++;
+//            if (y == 0 && x < 32) {
+//                printf("%d %d %d %d |", g, tmp[0], tmp[1], tmp[2]);
+//                if (((x+1) & 0x0F) == 0x00) printf("\n");
+//            }
+//            tmp += 4;
         }
     }
     printf("RGB image done.\n");
