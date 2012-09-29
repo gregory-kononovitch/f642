@@ -414,7 +414,7 @@ int enc_ffm_test() {
     uint8_t *tmp = codec->rgb;
     for(y = 0 ; y < codec->height ; y++) {
         for(x = 0 ; x < codec->width ; x++) {
-            int g = (x >> 3) + (codec->width >> 3) * (y >> 3);
+            int g = (x >> 5) + (codec->width >> 5) * (y >> 5);
             int c = g & 0x03;
             g = (g << 4) & 0xFF;
             *(ptr++) = ((c == 0 || c == 1 || c == 3) ? g : 0);
@@ -429,11 +429,11 @@ int enc_ffm_test() {
 //            tmp += 4;
         }
     }
-//    FILE *filp = fopen("rgb.out", "wb");
-//    fwrite(codec->rgb, 1, sizeof(int) * codec->width * codec->height, filp);
-//    fflush(filp);
-//    fclose(filp);
-//    printf("RGB image done.\n");
+    FILE *filpr = fopen("rgb.out", "wb");
+    fwrite(codec->rgb, 1, sizeof(int) * codec->width * codec->height, filpr);
+    fflush(filpr);
+    fclose(filpr);
+    printf("RGB image done.\n");
     //
     r = mjpeg_encode645(codec);
     printf("MJPEG encode done.\n");
@@ -524,4 +524,20 @@ int ffm_test1() {
     av_free(picture);
     avcodec_close(decoderCtxt);
     av_free(decoderCtxt);
+}
+
+int ffm_test2() {
+    int r;
+    int width  = 800 ;
+    int height = 448;
+    AVCodec             *codec;
+    AVCodecContext      *decoderCtxt;
+    AVFrame             *picture;
+    AVPacket            pkt;
+    struct SwsContext   *swsCtxt = NULL;
+    AVFrame             *origin;
+    AVFrame             *scaled;
+    //
+    av_register_all();
+    avcodec_register_all();
 }

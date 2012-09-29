@@ -244,7 +244,7 @@ int main() {
     //return testacl2();
     //return ffm_test1();
     //return enc_ffm_test();
-    //if (enc_ffm_test() < 0) return 0;
+    if (enc_ffm_test() < 0) return 0;
 
     //
     //FILE *filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
