@@ -177,7 +177,7 @@ static int test() {
         f641_setup_v4l2(&v4l2, "/dev/video1", gui->width, gui->height, 0x47504A4D, fps, 10);
         f641_prepare_buffers(&v4l2);
     } else if (!format) {
-        int lenb = 174510; //72025;   // 612311;
+        int lenb = 207366; //72025;   // 612311;
         tmp = (uint8_t*)malloc(lenb);
 //        filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
         filp = fopen("../f645/mjpeg_encode.out", "rb");
