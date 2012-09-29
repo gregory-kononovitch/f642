@@ -11,6 +11,8 @@
 
 #include "mjpeg645.h"
 
+static int debug = 0;
+
 //
 static int zigzag645[64] =
 {      0,  1,  5,  6, 14, 15, 27, 28
@@ -138,22 +140,22 @@ static void check_encode(mjpeg_codec645 *codec, int rst) {
     if (!rst && (codec->mjdec & 32)) {
         int j, bol = 0;
         codec->bits <<= 64 - codec->mjdec;
-        printf("\n %016lX :", codec->bits);
+        if (debug) printf("\n %016lX :", codec->bits);
         for(j = 0 ; j < 4 ; j++) {
             uint8_t b = (codec->bits >> (56 - 8*j)) & 0xFF;
             if (b != 0xFF) {
                 *(optr++) = b;
                 codec->mjoff += 1;
-                bin_str(b, 8);
+                if (debug) bin_str(b, 8);
             } else {
                 *(optr++) = 0xFF;
                 *(optr++) = 0x00;
                 codec->mjoff += 2;
-                bin_str(0xFF, 8);
-                bin_str(0x00, 8);
+                if (debug) bin_str(0xFF, 8);
+                if (debug) bin_str(0x00, 8);
             }
         }
-        printf("\n");
+        if (debug) printf("\n");
         codec->bits >>= 64 - codec->mjdec;
         codec->mjdec -= 32;
     } else if (rst) {
@@ -172,13 +174,13 @@ static void check_encode(mjpeg_codec645 *codec, int rst) {
             if (b != 0xFF) {
                 *(optr++) = b;
                 codec->mjoff++;
-                bin_str(b, 8);
+                if (debug) bin_str(b, 8);
             } else {
                 *(optr++) = 0xFF;
                 *(optr++) = 0x00;
                 codec->mjoff += 2;
-                bin_str(0xFF, 8);
-                bin_str(0x00, 8);
+                if (debug) bin_str(0xFF, 8);
+                if (debug) bin_str(0x00, 8);
             }
         }
         codec->bits  = 0;       //
@@ -195,19 +197,19 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     uint8_t *optr = codec->mjpeg + codec->mjoff;
 
     // -128
-    printf("Y 8x8 :\n");
+    if (debug) printf("Y 8x8 :\n");
     for(i = 0 ; i < 64 ; i++) {
         src[i] = -128.f + ptr[i % 8];
-        printf("%.0f |", src[i]);
+        if (debug) printf("%.0f |", src[i]);
         if (((i+1) & 0x07) == 0) {
             ptr += linesize;
-            printf("\n");
+            if (debug) printf("\n");
 //            printf("vnkee : %d : %ld : %d\n", linesize, ptr - plan, ptr[0]);
         }
     }
-    printf("\n");
+    if (debug) printf("\n");
     // DCT
-    printf("ZDCT :\n");
+    if (debug) printf("ZDCT :\n");
     for(ixyz = 0 ; ixyz < 64 ; ixyz++) {
         codec->dct[zigzag645[ixyz]] = 0;
         for(i = 0 ; i < 64 ; i++) {
@@ -220,12 +222,12 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
         codec->dct[zigzag645[ixyz]] /= quantization645[(quant<< 6) | ixyz];
         //printf("%.0f ", src[ixyz]);
 //        printf("%.3f ", codec->dct[zigzag645[ixyz]]);
-        printf("%3.0f |", round(codec->dct[zigzag645[ixyz]]));
+        if (debug) printf("%3.0f |", round(codec->dct[zigzag645[ixyz]]));
         //printf("%.1f ", quantization645[(quant<< 6) | ixyz]);
 //        printf("%.3f ", zuvcoscos645[(ixyz<< 6) | ixyz]);
-        if ((ixyz & 0x07) == 0x07) printf("\n");
+        if (debug) if ((ixyz & 0x07) == 0x07) printf("\n");
     }
-    printf("\n");
+    if (debug) printf("\n");
     // Huffman
     int iz0 = 0;
     int mag;
@@ -246,10 +248,10 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
         codec->bits <<= hdc[256 | symb];
         codec->bits |= hdc[symb];
         codec->bits <<= mag;
-        codec->mjdec += hdc[256 | symb] + mag;
         codec->bits |= (v & ff[mag]);
+        codec->mjdec += hdc[256 | symb] + mag;
         check_encode(codec, 0);
-        printf("(%d %d %d %d)\n", hdc[symb], hdc[256 | symb], mag, v < 0 ? v+1 : v);
+        if (debug) printf("(%d %d %d %d)\n", hdc[symb], hdc[256 | symb], mag, v < 0 ? v+1 : v);
     }
     // Ac
     for(i = 1 ; i < 64 ; i++) {
@@ -264,12 +266,10 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
             }
             symb = ((iz0 << 4) | mag) & 0xFF;
             iz0  = 0;
-            enc  = hac[symb];
-            enc <<= mag;
-            enc |= (v & ff[mag]);
-            //
-            codec->bits <<= hac[256 | symb] + mag;
-            codec->bits |= enc;
+            codec->bits <<= hac[256 | symb];
+            codec->bits |= hac[symb];
+            codec->bits <<= mag;
+            codec->bits |= v & ff[mag];
             codec->mjdec += hac[256 | symb] + mag;
             //
 //            printf("%u ", symb);
@@ -277,7 +277,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
 //            printf("%d | %d %d %016lX|", hac[256 | symb], v, mag, codec->bits);
 ////            if ((i & 0x07) == 0x07) printf("\n");
 
-            printf("(%d %d %d %d)", hac[symb], hac[256 | symb], mag, v < 0 ? v+1 : v);
+            if (debug) printf("(%d %d %d %d)", hac[symb], hac[256 | symb], mag, v < 0 ? v+1 : v);
             check_encode(codec, 0);
         } else {
             if (iz0 < 15) {
@@ -297,7 +297,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     }
     // EOB
     codec->bits <<= hac[256 + 0];
-    codec->bits |= hac[0];
+    codec->bits  |= hac[0];
     codec->mjdec += hac[256 + 0];     // eob
     check_encode(codec, 0);
 
@@ -343,7 +343,7 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
     // DCT
     int ib, ibmax = (codec->width * codec->height) >> 7;    // / 64 / 2
     codec->x0l = codec->y0l = codec->x0c = codec->y0c = codec->rsti = 0;
-    for(ib = 0 ; ib < 1 ; ib++) {
+    for(ib = 0 ; ib < ibmax ; ib++) {
         //
         mjpeg_dcthuf645(codec, 0, 0, hdcl645, hacl645, codec->yuv422p->data[0], codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
         if (log) printf("Called dct at index %d (%d)\n", codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
@@ -385,6 +385,7 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
             codec->rsti = (codec->rsti + 1) & 0x07;
             codec->mjoff += 2;
             codec->dc0[0] = codec->dc0[1] = codec->dc0[2] = 0;
+//            if (ib == 19) break;
         }
     }
     printf("Encoding finished : %d bytes\n", codec->mjoff);

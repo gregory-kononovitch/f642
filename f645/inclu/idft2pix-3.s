@@ -228,7 +228,7 @@
 				xor			rdx, rdx
 				xor			rax, rax
 
-				return
+;				return
 ;				; #############
 ;				sub			r15,
 ;				movdqu		qword [rsi], xmm1
