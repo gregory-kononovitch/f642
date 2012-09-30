@@ -455,7 +455,8 @@ int enc_ffm_test() {
     // prep
     fillCosCos645();
     //
-    mjpeg_codec645 *codec = mjpeg_codec(32, 32);
+//    mjpeg_codec645 *codec = mjpeg_codec(16, 16);
+    mjpeg_codec645 *codec = mjpeg_codec(800, 448);
     // fill rgb
     i = 0;
     uint8_t *ptr = codec->rgb;
@@ -464,7 +465,8 @@ int enc_ffm_test() {
         for(x = 0 ; x < codec->width ; x++) {
             int g = (x >> 3) + (codec->width >> 3) * (y >> 3);
             int c = g & 0x03;
-            g = (g << 4) & 0xFF;
+            //g = (g << 4) & 0xFF;
+            g = 0xFF;
             *(ptr++) = ((c == 0 || c == 1 || c == 3) ? g : 0);
             *(ptr++) = ((c == 1 || c == 2 || c == 3) ? g : 0);
             *(ptr++) = ((c == 0 || c == 2 || c == 3) ? g : 0);
@@ -478,18 +480,21 @@ int enc_ffm_test() {
         }
     }
 
-//    // Brodge
-//    brodge650 *brodge = brodge_init(codec->width, codec->height, 2);
-//    bgra650 bgra;
-//    bgra_link650(&bgra, codec->rgb, codec->width, codec->height);
-//    brodge_anim(brodge);
-//    brodge_exec(brodge, &bgra);
+    // Brodge
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    srand((unsigned int)tv.tv_usec);        // @@@ outside
+    brodge650 *brodge = brodge_init(codec->width, codec->height, 2);
+    bgra650 bgra;
+    bgra_link650(&bgra, codec->rgb, codec->width, codec->height);
+    brodge_anim(brodge);
+    brodge_exec(brodge, &bgra);
 
-
-    //    FILE *filpr = fopen("rgb.out", "wb");
-//    fwrite(codec->rgb, 1, sizeof(int) * codec->width * codec->height, filpr);
-//    fflush(filpr);
-//    fclose(filpr);
+    //
+    FILE *filpr = fopen("rgb.out", "wb");
+    fwrite(codec->rgb, 1, sizeof(int) * codec->width * codec->height, filpr);
+    fflush(filpr);
+    fclose(filpr);
     printf("RGB image done.\n");
     //
     r = mjpeg_encode645(codec);
