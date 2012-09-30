@@ -29,7 +29,7 @@ static int zigzag645[64] =
     , 21, 34, 37, 47, 50, 56, 59, 61
     , 35, 36, 48, 49, 57, 58, 62, 63  };
 
-static float    zuvcoscos645[64 * 64];      // {i x (r,c)}
+static float    uvcoscos645[64 * 64];      // {i x (r,c)}
 // Huffman
 static  int     hdcl645[2 * 256] = {0,2,3,4,5,6,14,30,62,126,254,510,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,3,3,3,3,3,4,5,6,7,8,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static  int     hacl645[2 * 256] = {10,0,1,4,11,26,120,248,1014,65410,65411,-1,-1,-1,-1,-1,-1,12,27,121,502,2038,65412,65413,65414,65415,65416,-1,-1,-1,-1,-1,-1,28,249,1015,4084,65417,65418,65419,65420,65421,65422,-1,-1,-1,-1,-1,-1,58,503,4085,65423,65424,65425,65426,65427,65428,65429,-1,-1,-1,-1,-1,-1,59,1016,65430,65431,65432,65433,65434,65435,65436,65437,-1,-1,-1,-1,-1,-1,122,2039,65438,65439,65440,65441,65442,65443,65444,65445,-1,-1,-1,-1,-1,-1,123,4086,65446,65447,65448,65449,65450,65451,65452,65453,-1,-1,-1,-1,-1,-1,250,4087,65454,65455,65456,65457,65458,65459,65460,65461,-1,-1,-1,-1,-1,-1,504,32704,65462,65463,65464,65465,65466,65467,65468,65469,-1,-1,-1,-1,-1,-1,505,65470,65471,65472,65473,65474,65475,65476,65477,65478,-1,-1,-1,-1,-1,-1,506,65479,65480,65481,65482,65483,65484,65485,65486,65487,-1,-1,-1,-1,-1,-1,1017,65488,65489,65490,65491,65492,65493,65494,65495,65496,-1,-1,-1,-1,-1,-1,1018,65497,65498,65499,65500,65501,65502,65503,65504,65505,-1,-1,-1,-1,-1,-1,2040,65506,65507,65508,65509,65510,65511,65512,65513,65514,-1,-1,-1,-1,-1,-1,65515,65516,65517,65518,65519,65520,65521,65522,65523,65524,-1,-1,-1,-1,-1,2041,65525,65526,65527,65528,65529,65530,65531,65532,65533,65534,-1,-1,-1,-1,-1,4,2,2,3,4,5,7,8,10,16,16,0,0,0,0,0,0,4,5,7,9,11,16,16,16,16,16,0,0,0,0,0,0,5,8,10,12,16,16,16,16,16,16,0,0,0,0,0,0,6,9,12,16,16,16,16,16,16,16,0,0,0,0,0,0,6,10,16,16,16,16,16,16,16,16,0,0,0,0,0,0,7,11,16,16,16,16,16,16,16,16,0,0,0,0,0,0,7,12,16,16,16,16,16,16,16,16,0,0,0,0,0,0,8,12,16,16,16,16,16,16,16,16,0,0,0,0,0,0,9,15,16,16,16,16,16,16,16,16,0,0,0,0,0,0,9,16,16,16,16,16,16,16,16,16,0,0,0,0,0,0,9,16,16,16,16,16,16,16,16,16,0,0,0,0,0,0,10,16,16,16,16,16,16,16,16,16,0,0,0,0,0,0,10,16,16,16,16,16,16,16,16,16,0,0,0,0,0,0,11,16,16,16,16,16,16,16,16,16,0,0,0,0,0,0,16,16,16,16,16,16,16,16,16,16,0,0,0,0,0,11,16,16,16,16,16,16,16,16,16,16,0,0,0,0,0};
@@ -79,6 +79,8 @@ typedef struct {
     int                 y0l;
     int                 x0c;
     int                 y0c;
+    int                 x0c2;
+    int                 y0c2;
 
     //
     float               dct[64];
@@ -93,18 +95,20 @@ static void bin_str(long bits, uint8_t len) {
 }
 
 static void fillCosCos645() {
-    int x, y, r, c, ix, ir;
-    double u, v, d;
+    int u, v, x, y, iuv, ixy;
+    double uc, vc, d;
     float f;
-    for(ix = 0 ; ix < 64 ; ix++) {
-        x = ix % 8;
-        y = ix / 8;
-        if (!y) v = 1. / sqrt(2.);
-        if (!x) u = 1. / sqrt(2.);
-        for(ir = 0 ; ir < 64 ; ir++) {
-            c = ir % 8;
-            r = ir / 8;
-            zuvcoscos645[(ix << 6) | ir] = (float)(0.25 * u * v * cos((2.*x + 1) * c * M_PI * 0.0625) * cos((2.*y + 1) * r * M_PI * 0.0625));
+    for(iuv = 0 ; iuv < 64 ; iuv++) {
+        u = iuv % 8;
+        v = iuv / 8;
+        if (v == 0) vc = 1. / sqrt(2.);
+        else vc = 1.;
+        if (u == 0) uc = 1. / sqrt(2.);
+        else uc = 1.;
+        for(ixy = 0 ; ixy < 64 ; ixy++) {
+            x = ixy % 8;
+            y = ixy / 8;
+            uvcoscos645[(iuv << 6) | ixy] = (float)(0.25 * uc * vc * cos((2.*x + 1) * u * M_PI / 16) * cos((2.*y + 1) * v * M_PI / 16));
         }
     }
 }
@@ -173,7 +177,7 @@ static void check_encode(mjpeg_codec645 *codec, int align) {
         add = 8 - (codec->mjdec - 8 * add);
         if (add == 8) add = 0;
         codec->bits <<= add;       // balign
-        codec->bits |= ff[add];    // 111
+        codec->bits  |= ff[add];    // 111
         codec->mjdec += add;
         //
         add = codec->mjdec / 8;
@@ -206,7 +210,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     // -128
     if (debug) printf("Y 8x8 :\n");
     for(i = 0 ; i < 64 ; i++) {
-        src[i] = -128.f + ptr[i % 8];
+        src[i] = -128.f + ptr[i & 0x07];
         if (debug) printf("%.0f |", src[i]);
         if (((i+1) & 0x07) == 0) {
             ptr += linesize;
@@ -218,20 +222,20 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     // DCT
     if (debug) printf("ZDCT :\n");
     for(ixyz = 0 ; ixyz < 64 ; ixyz++) {
-        codec->dct[zigzag645[ixyz]] = 0;
+        float f = 0;
         for(i = 0 ; i < 64 ; i++) {
-            codec->dct[zigzag645[ixyz]] += src[i] * zuvcoscos645[(ixyz << 6) | i];
+            f += src[i] * uvcoscos645[(ixyz << 6) | i];
 //            if (ixyz == 10) {
-//                printf("%.3f ", zuvcoscos645[(ixyz<< 6) | i]);
+//                printf("%.3f ", uvcoscos645[(ixyz<< 6) | i]);
 //                if ((i & 0x07) == 0x07) printf("\n");
 //            }
         }
-        codec->dct[zigzag645[ixyz]] /= quantization645[(quant<< 6) | ixyz];
+        codec->dct[zigzag645[ixyz]] = f / quantization645[(quant<< 6) | ixyz];
         //printf("%.0f ", src[ixyz]);
 //        printf("%.3f ", codec->dct[zigzag645[ixyz]]);
         if (debug) printf("%3.0f |", round(codec->dct[zigzag645[ixyz]]));
         //printf("%.1f ", quantization645[(quant<< 6) | ixyz]);
-//        printf("%.3f ", zuvcoscos645[(ixyz<< 6) | ixyz]);
+//        printf("%.3f ", uvcoscos645[(ixyz<< 6) | ixyz]);
         if (debug) if ((ixyz & 0x07) == 0x07) printf("\n");
     }
     if (debug) printf("\n");
@@ -241,7 +245,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     uint8_t symb;
     uint32_t enc;
     // DC
-    int v = round(codec->dct[0]) - codec->dc0[comp];
+    int v = (int)(round(codec->dct[0]) - codec->dc0[comp]);
     codec->dc0[comp] = round(codec->dct[0]);
     if (v != 0) {
         if (v > 0) {
@@ -251,16 +255,19 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
             v = v - 1;
         }
         symb = mag & 0x0F;
-        iz0  = 0;
         codec->bits <<= hdc[256 | symb];
-        codec->bits |= hdc[symb];
+        codec->bits  |= hdc[symb];
         codec->bits <<= mag;
-        codec->bits |= (v & ff[mag]);
+        codec->bits  |= (v & ff[mag]);
         codec->mjdec += hdc[256 | symb] + mag;
         check_encode(codec, 0);
         if (debug) printf("(%d %d %d %d)\n", hdc[symb], hdc[256 | symb], mag, v < 0 ? v+1 : v);
     } else {
-        iz0 = 1;
+        codec->bits <<= hdc[256 + 0x00];
+        codec->bits  |= hdc[0x00];
+        codec->mjdec += hdc[256 | 0x00];
+        check_encode(codec, 0);
+        if (debug) printf("(%d %d %d %d)\n", hdc[symb], hdc[256 | symb], mag, v < 0 ? v+1 : v);
     }
     // Ac
     for(i = 1 ; i < 64 ; i++) {
@@ -276,9 +283,9 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
             symb = ((iz0 << 4) | mag) & 0xFF;
             iz0  = 0;
             codec->bits <<= hac[256 | symb];
-            codec->bits |= hac[symb];
+            codec->bits  |= hac[symb];
             codec->bits <<= mag;
-            codec->bits |= v & ff[mag];
+            codec->bits  |= (v & ff[mag]);
             codec->mjdec += hac[256 | symb] + mag;
             //
 //            printf("%u ", symb);
@@ -309,23 +316,26 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
                 codec->bits  |= hac[0xF0];
                 codec->mjdec += hac[256 + 0xF0];
                 check_encode(codec, 0);
-                iz0 = j - i - 1;
-                i = j;
+//                iz0 = j - i - 1;
+//                i = j;
+                iz0 = 0;
             }
         }
     }
-    if (iz0 != 0) {
-        codec->bits <<= hac[256 + 0];
-        codec->bits  |= hac[0];
-        codec->mjdec += hac[256 + 0];     // eob
+    if (iz0 != 0) { // EOB
+        codec->bits <<= hac[256 + 0x00];
+        codec->bits  |= hac[0x00];
+        codec->mjdec += hac[256 + 0x00];     // eob
         check_encode(codec, 0);
         return 0;
     }
+    // last = 63
     return 0;
 }
 
 int mjpeg_encode645(mjpeg_codec645 *codec) {
     int i, r, log = 0;
+    struct timeval tv1, tv2;
     // prep
 //    fillCosCos645();
 
@@ -361,8 +371,11 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
 //    }
 //    printf("\n");
     // DCT
+    gettimeofday(&tv1, NULL);
     int ib, ibmax = (codec->width * codec->height) >> 7;    // / 64 / 2
-    codec->x0l = codec->y0l = codec->x0c = codec->y0c = codec->rsti = 0;
+    codec->x0l = codec->y0l = codec->x0c = codec->y0c = codec->x0c2 = codec->y0c2 = codec->rsti = 0;
+    //codec->mjoff = 220;
+    codec->mjdec = 0;
     for(ib = 0 ; ib < ibmax ; ib++) {
         //
         mjpeg_dcthuf645(codec, 0, 0, hdcl645, hacl645, codec->yuv422p->data[0], codec->x0l + codec->width * codec->y0l, codec->yuv422p->linesize[0]);
@@ -385,19 +398,25 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
         }
 //        continue;
         //
-        mjpeg_dcthuf645(codec, 1, 1, hdcc645, hacc645, codec->yuv422p->data[1], codec->x0c + codec->width * codec->y0c, codec->yuv422p->linesize[1]);
+        mjpeg_dcthuf645(codec, 1, 1, hdcc645, hacc645, codec->yuv422p->data[1], codec->x0c + codec->yuv422p->linesize[1] * codec->y0c, codec->yuv422p->linesize[1]);
         if (log) printf("Encoded chrom u block : %d bytes\n", codec->mjoff);
-        //
-        mjpeg_dcthuf645(codec, 2, 1, hdcc645, hacc645, codec->yuv422p->data[2], codec->x0c + codec->width * codec->y0c, codec->yuv422p->linesize[2]);
         codec->x0c += 8;
-        if (codec->x0c >= codec->width) {
+        if (codec->x0c >= codec->yuv422p->linesize[1]) {
             codec->x0c  = 0;
             codec->y0c += 8;
+        }
+        //
+        mjpeg_dcthuf645(codec, 2, 1, hdcc645, hacc645, codec->yuv422p->data[2], codec->x0c2 + codec->yuv422p->linesize[2] * codec->y0c2, codec->yuv422p->linesize[2]);
+        codec->x0c2 += 8;
+        if (codec->x0c2 >= codec->yuv422p->linesize[2]) {
+            codec->x0c2  = 0;
+            codec->y0c2 += 8;
         }
         if (log) printf("Encoded chrom v block : %d bytes\n", codec->mjoff);
 
         // RST
         if (ib % 10 == 9) {
+            if (log) printf("Restart interval %d : (%d, %d) for %d bytes\n", ib/10, codec->x0l, codec->y0l, codec->mjoff);
             check_encode(codec, 1);
             if (codec->y0l < codec->height) {
                 uint8_t *optr = codec->mjpeg + codec->mjoff;
@@ -410,7 +429,9 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
 //            if (ib == 19) break;
         }
     }
-    printf("Encoding finished : %d bytes\n", codec->mjoff);
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv2);
+    printf("Encoding finished : %d bytes in %.4f s\n", codec->mjoff, 0.000001 * tv2.tv_usec + tv2.tv_sec);
 }
 
 
@@ -586,6 +607,8 @@ int ffm_test2() {
     video_stream->codec->coded_height  = height;
     video_stream->codec->time_base.num = 1;
     video_stream->codec->time_base.den = 24;
+    video_stream->codec->sample_aspect_ratio.num = 1;
+    video_stream->codec->sample_aspect_ratio.den = 1;
 
     // Codec / CodecCtxt
     codec0 = avcodec_find_encoder(CODEC_ID_MJPEG);
@@ -600,6 +623,8 @@ int ffm_test2() {
     video_stream->pts.num = 1;
     video_stream->pts.den = 1;
     video_stream->pts.val = 1;
+    video_stream->sample_aspect_ratio.num = 1;
+    video_stream->sample_aspect_ratio.den = 1;
 
     //
     av_init_packet(&pkt);
@@ -627,27 +652,26 @@ int ffm_test2() {
     //
     // prep
     fillCosCos645();
-    //
+    // Mjpeg
     mjpeg_codec645 *codec = mjpeg_codec(800, 448);
     int frame = 0;
-    //
+    // Brodge
     brodge650 *brodge = brodge_init(width, height, 2);
     bgra650 bgra;
     bgra_link650(&bgra, codec->rgb, width, height);
-    FOG("Bgra linked");
+
     for(frame = 0 ; frame < 1 ; frame++) {
         // fill rgb
         brodge_anim(brodge);
-        FOG("Brodge anim done");
         brodge_exec(brodge, &bgra);
-        FOG("Brodge exec done");
         //
-        codec->rsti  = codec->mjdec = codec->mjoff = 220;
+        memcpy(codec->mjpeg, header, 220);
+        codec->mjoff = 220;
+        codec->rsti = codec->mjdec = 0;
         codec->dc0[0] = codec->dc0[1] = codec->dc0[2] = 0;
-        codec->x0l = codec->x0c = codec->y0l = codec->y0c = 0;
+        codec->x0l = codec->x0c = codec->x0c2 = codec->y0l = codec->y0c = codec->y0c2 = 0;
         r = mjpeg_encode645(codec);
         printf("MJPEG encode done : %d\n", codec->mjoff);
-        memcpy(codec->mjpeg, header, 220);
         *(codec->mjpeg + codec->mjoff)     = 0xFF;
         *(codec->mjpeg + codec->mjoff + 1) = 0xD9;
         codec->mjoff += 2;
