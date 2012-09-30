@@ -790,7 +790,7 @@ hacc:
 
 idctc:
 
-;					%include "inclu/idft2pix-2.s"
+;					%include "inclu/idft3pix-2.s"
 
 ;return
 ;

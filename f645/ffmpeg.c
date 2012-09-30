@@ -239,6 +239,23 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
         if (debug) if ((ixyz & 0x07) == 0x07) printf("\n");
     }
     if (debug) printf("\n");
+
+//    // DCT
+//    int u, w, x, y, iuv, ixy;
+//    for(w = 0 ; w < 8 ; w++) {
+//        for(u = 0 ; u < 8 ; u++) {
+//            double uv = 0.25 * (u ? 1. : 1./sqrt(2.));
+//            uv *= (w ? 1. : 1./sqrt(2.));
+//            double d = 0;
+//            for(y = 0 ; y < 8 ; y++) {
+//                for(x = 0 ; x < 8 ; x++) {
+//                    d += uv * src[x + 8*y] * cos((2*x + 1) * u * M_PI / 16) * cos((2*y + 1) * w * M_PI / 16);
+//                }
+//            }
+//            codec->dct[zigzag645[u+8*w]] = (float) (d / quantization645[(quant<< 6) | zigzag645[u+8*w]]);
+//        }
+//    }
+
     // Huffman
     int iz0 = 0;
     int mag;

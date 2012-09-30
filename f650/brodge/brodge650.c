@@ -68,7 +68,7 @@ brodge650 *brodge_init(int width, int height, int nb_src) {
     //
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    srand((unsigned int)tv.tv_usec);        // @@@ outside
+    //srand((unsigned int)tv.tv_usec);        // @@@ outside
     //
     src = calloc(nb_src, sizeof(void*));
     brodge->sources = src;
