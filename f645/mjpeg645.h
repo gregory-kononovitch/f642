@@ -27,7 +27,7 @@
 #include <byteswap.h>
 #include <math.h>
 
-//#include <libavformat/avformat.h>
+#include <libavformat/avformat.h>
 //#include <libavdevice/avdevice.h>
 #include <libavcodec/avcodec.h>
 //#include <libavutil/fifo.h>

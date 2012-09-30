@@ -17,7 +17,7 @@ SRC_DIR=.
 ASM_DIR=.
 EXC_DIR=exc
 
-# Librarires
+# Libraries
 FFINCL=-I/usr/local/include/libavformat -I/usr/local/include/libavdevice -I/usr/local/include/libswscale -I/usr/local/include/libavcodec -I/usr/local/include/libavutil
 FFLIBS=-L/usr/local/lib -lavformat -lavdevice -lswscale -lavutil -lavcodec
 
@@ -27,6 +27,8 @@ LIBS=-lm -lpthread -lX11 -lxcb -lXext $(FFLIBS)
 #
 # source-files
 sources_c:= $(wildcard ${SRC_DIR}/*$(EXTENSION_C))
+sources_c+= $(wildcard ../f650/*$(EXTENSION_C))
+sources_c+= $(wildcard ../f650/brodge/*$(EXTENSION_C))
 
 # header-files
 sources_h:= $(wildcard ${SRC_DIR}/*$(EXTENSION_H))

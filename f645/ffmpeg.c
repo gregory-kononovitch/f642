@@ -8,6 +8,11 @@
  * There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include "../f650/f650.h"
+#include "../f650/f650_fonts.h"
+#include "../f650/brodge/brodge650.h"
+//#include "../layout/f650_layout.h"
+//#include "../../f691/f691.h"
 
 #include "mjpeg645.h"
 
@@ -122,22 +127,26 @@ mjpeg_codec645 *mjpeg_codec(int width, int height) {
     avcodec_get_frame_defaults(mjpeg->bgra);
     mjpeg->bgra->data[0] = mjpeg->rgb;
     mjpeg->bgra->linesize[0] = sizeof(uint32_t) * width;
-    mjpeg->bgra->width = width;
+    mjpeg->bgra->width  = width;
     mjpeg->bgra->height = height;
     mjpeg->bgra->format = PIX_FMT_BGRA;
     mjpeg->yuv422p = avcodec_alloc_frame();
     avcodec_get_frame_defaults(mjpeg->yuv422p);
     r = avpicture_alloc((AVPicture*)mjpeg->yuv422p, PIX_FMT_YUV422P, width, height);
-    mjpeg->yuv422p->width = width;
+    mjpeg->yuv422p->width  = width;
     mjpeg->yuv422p->height = height;
     mjpeg->yuv422p->format = PIX_FMT_YUV422P;
+
+    for(r = 0 ; r < 3 ; r++) {
+        printf("Linesize[%d] = %d\n", r, mjpeg->yuv422p->linesize[r]);
+    }
 
     return mjpeg;
 }
 
-static void check_encode(mjpeg_codec645 *codec, int rst) {
+static void check_encode(mjpeg_codec645 *codec, int align) {
     uint8_t *optr = codec->mjpeg + codec->mjoff;
-    if (!rst && (codec->mjdec & 32)) {
+    if (!align && (codec->mjdec & 32)) {
         int j, bol = 0;
         codec->bits <<= 64 - codec->mjdec;
         if (debug) printf("\n %016lX :", codec->bits);
@@ -158,7 +167,7 @@ static void check_encode(mjpeg_codec645 *codec, int rst) {
         if (debug) printf("\n");
         codec->bits >>= 64 - codec->mjdec;
         codec->mjdec -= 32;
-    } else if (rst) {
+    } else if (align) {
         uint8_t i, b;
         int add = codec->mjdec / 8;
         add = 8 - (codec->mjdec - 8 * add);
@@ -193,8 +202,6 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     uint8_t *ptr = plan + index;
     float src[64];
     double log2 = 1. / log(2.);
-    //
-    uint8_t *optr = codec->mjpeg + codec->mjoff;
 
     // -128
     if (debug) printf("Y 8x8 :\n");
@@ -235,7 +242,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     uint32_t enc;
     // DC
     int v = round(codec->dct[0]) - codec->dc0[comp];
-    codec->dc0[comp] += v;
+    codec->dc0[comp] = round(codec->dct[0]);
     if (v != 0) {
         if (v > 0) {
             mag = 1 + (int)(log2 * log(+v));
@@ -252,10 +259,12 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
         codec->mjdec += hdc[256 | symb] + mag;
         check_encode(codec, 0);
         if (debug) printf("(%d %d %d %d)\n", hdc[symb], hdc[256 | symb], mag, v < 0 ? v+1 : v);
+    } else {
+        iz0 = 1;
     }
     // Ac
     for(i = 1 ; i < 64 ; i++) {
-        v = round(codec->dct[i]);
+        v = (int)round(codec->dct[i]);
         if (v != 0) {
             //printf("%d ", iz0);
             if (v > 0) {
@@ -285,22 +294,33 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
             } else {
                 int j;
                 for(j = i+1 ; j < 64 ; j++) {
-                    if (round(codec->dct[j])) break;
+                    if (((int)round(codec->dct[j]))) break;
                 }
-                if (j == 64) break;
-                *(optr++) = 0xF0;
-                codec->mjoff += 1;
-                iz0 = 0;
+                if (j == 64) {
+                    // EOB
+                    codec->bits <<= hac[256 + 0x00];
+                    codec->bits  |= hac[0x00];
+                    codec->mjdec += hac[256 + 0x00];     // eob
+                    check_encode(codec, 0);
+                    return 0;
+                }
+                // 0xF0
+                codec->bits <<= hac[256 + 0xF0];
+                codec->bits  |= hac[0xF0];
+                codec->mjdec += hac[256 + 0xF0];
+                check_encode(codec, 0);
+                iz0 = j - i - 1;
+                i = j;
             }
-
         }
     }
-    // EOB
-    codec->bits <<= hac[256 + 0];
-    codec->bits  |= hac[0];
-    codec->mjdec += hac[256 + 0];     // eob
-    check_encode(codec, 0);
-
+    if (iz0 != 0) {
+        codec->bits <<= hac[256 + 0];
+        codec->bits  |= hac[0];
+        codec->mjdec += hac[256 + 0];     // eob
+        check_encode(codec, 0);
+        return 0;
+    }
     return 0;
 }
 
@@ -379,12 +399,14 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
         // RST
         if (ib % 10 == 9) {
             check_encode(codec, 1);
-            uint8_t *optr = codec->mjpeg + codec->mjoff;
-            *(optr++) = 0xFF;
-            *(optr++) = 0xD0 | codec->rsti;
-            codec->rsti = (codec->rsti + 1) & 0x07;
-            codec->mjoff += 2;
-            codec->dc0[0] = codec->dc0[1] = codec->dc0[2] = 0;
+            if (codec->y0l < codec->height) {
+                uint8_t *optr = codec->mjpeg + codec->mjoff;
+                *(optr++) = 0xFF;
+                *(optr++) = 0xD0 | codec->rsti;
+                codec->rsti = (codec->rsti + 1) & 0x07;
+                codec->mjoff += 2;
+                codec->dc0[0] = codec->dc0[1] = codec->dc0[2] = 0;
+            }
 //            if (ib == 19) break;
         }
     }
@@ -527,17 +549,127 @@ int ffm_test1() {
 }
 
 int ffm_test2() {
-    int r;
-    int width  = 800 ;
-    int height = 448;
-    AVCodec             *codec;
-    AVCodecContext      *decoderCtxt;
-    AVFrame             *picture;
-    AVPacket            pkt;
-    struct SwsContext   *swsCtxt = NULL;
-    AVFrame             *origin;
-    AVFrame             *scaled;
+    int r, width = 800, height = 448;
+    AVFormatContext *outputFile;
+    AVCodec *codec0;
+    AVCodecContext *encoder;
+    AVPacket pkt;
     //
     av_register_all();
     avcodec_register_all();
+    // AVFormatCtxt
+    r = avformat_alloc_output_context2(&outputFile, NULL, NULL, "tst.avi");
+    if (r < 0) {
+        printf("PB allocating output ctxt in recording, returning\n");
+        return -1;
+    }
+    outputFile->start_time_realtime = 1500000000;
+
+    // AVIoCtxt
+    r = avio_open(&outputFile->pb, "tst.avi", AVIO_FLAG_WRITE);
+    if (r < 0) {
+        printf("PB opening output ctxt in recording, returning\n");
+        avformat_free_context(outputFile);
+        return -1;
+    }
+
+    // Video stream
+    AVStream *video_stream = av_new_stream(outputFile, 0);
+    if (!video_stream) {
+        printf("PB getting new stream in recording, returning\n");
+        avio_close(outputFile->pb);
+        avformat_free_context(outputFile);
+        return -1;
+    }
+    video_stream->codec->pix_fmt       = PIX_FMT_YUVJ422P;
+    video_stream->codec->coded_width   = width;
+    video_stream->codec->coded_height  = height;
+    video_stream->codec->time_base.num = 1;
+    video_stream->codec->time_base.den = 24;
+
+    // Codec / CodecCtxt
+    codec0 = avcodec_find_encoder(CODEC_ID_MJPEG);
+    r = avcodec_open2(video_stream->codec, codec0, NULL);
+
+    video_stream->time_base.num = 1;
+    video_stream->time_base.den = 24;
+    video_stream->r_frame_rate.num = 24;
+    video_stream->r_frame_rate.den = 1;
+    video_stream->avg_frame_rate.num = 24;
+    video_stream->avg_frame_rate.den = 1;
+    video_stream->pts.num = 1;
+    video_stream->pts.den = 1;
+    video_stream->pts.val = 1;
+
+    //
+    av_init_packet(&pkt);
+    r = av_new_packet(&pkt, 2 * width * height);
+    if (r < 0) {
+        printf("PB getting new packet in recording, returning\n");
+        avcodec_close(video_stream->codec);    // @@@ ?
+        avio_close(outputFile->pb);
+        avformat_free_context(outputFile);
+        return -1;
+    }
+    av_free(pkt.data);
+
+    // Header
+    r = avformat_write_header(outputFile, NULL);
+    if (r < 0) {
+        printf("PB getting writing header in recording, returning\n");
+//        av_free_packet(&pkt);
+        avcodec_close(video_stream->codec);    // @@@ ?
+        avio_close(outputFile->pb);
+        avformat_free_context(outputFile);
+        return -1;
+    }
+
+    //
+    // prep
+    fillCosCos645();
+    //
+    mjpeg_codec645 *codec = mjpeg_codec(800, 448);
+    int frame = 0;
+    //
+    brodge650 *brodge = brodge_init(width, height, 2);
+    bgra650 bgra;
+    bgra_link650(&bgra, codec->rgb, width, height);
+    FOG("Bgra linked");
+    for(frame = 0 ; frame < 1 ; frame++) {
+        // fill rgb
+        brodge_anim(brodge);
+        FOG("Brodge anim done");
+        brodge_exec(brodge, &bgra);
+        FOG("Brodge exec done");
+        //
+        codec->rsti  = codec->mjdec = codec->mjoff = 220;
+        codec->dc0[0] = codec->dc0[1] = codec->dc0[2] = 0;
+        codec->x0l = codec->x0c = codec->y0l = codec->y0c = 0;
+        r = mjpeg_encode645(codec);
+        printf("MJPEG encode done : %d\n", codec->mjoff);
+        memcpy(codec->mjpeg, header, 220);
+        *(codec->mjpeg + codec->mjoff)     = 0xFF;
+        *(codec->mjpeg + codec->mjoff + 1) = 0xD9;
+        codec->mjoff += 2;
+        if (r < 0) return r;
+        //
+        pkt.data     = codec->mjpeg;
+        pkt.size     = codec->mjoff;
+        pkt.pts      = frame;
+        pkt.dts      = pkt.pts;
+        pkt.duration = 1;
+        pkt.pos      = -1;
+        pkt.stream_index = 0;
+        r = av_write_frame(outputFile, &pkt);
+        avio_flush(outputFile->pb);
+
+        FILE *filp = fopen("mjpeg_encode.out", "wb");
+        fwrite(codec->mjpeg, 1, codec->mjoff, filp);
+        fflush(filp);
+        fclose(filp);
+    }
+
+    //
+    avio_close(outputFile->pb);
+    avformat_free_context(outputFile);
 }
