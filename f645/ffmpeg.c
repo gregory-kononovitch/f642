@@ -455,7 +455,7 @@ int enc_ffm_test() {
     // prep
     fillCosCos645();
     //
-    mjpeg_codec645 *codec = mjpeg_codec(800, 448);
+    mjpeg_codec645 *codec = mjpeg_codec(32, 32);
     // fill rgb
     i = 0;
     uint8_t *ptr = codec->rgb;
@@ -477,7 +477,16 @@ int enc_ffm_test() {
 //            tmp += 4;
         }
     }
-//    FILE *filpr = fopen("rgb.out", "wb");
+
+//    // Brodge
+//    brodge650 *brodge = brodge_init(codec->width, codec->height, 2);
+//    bgra650 bgra;
+//    bgra_link650(&bgra, codec->rgb, codec->width, codec->height);
+//    brodge_anim(brodge);
+//    brodge_exec(brodge, &bgra);
+
+
+    //    FILE *filpr = fopen("rgb.out", "wb");
 //    fwrite(codec->rgb, 1, sizeof(int) * codec->width * codec->height, filpr);
 //    fflush(filpr);
 //    fclose(filpr);
