@@ -246,7 +246,8 @@ int main() {
     //return ffm_test1();
     //return enc_ffm_test();
     //if (enc_ffm_test() < 0) return 0;
-    ffm_test2();
+    enc_ffm_test();
+//    ffm_test2();
     return 0;
 
     //

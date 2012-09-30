@@ -201,6 +201,8 @@ static void check_encode(mjpeg_codec645 *codec, int align) {
     }
 }
 
+static float min = +10000;
+static float max = -10000;
 static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc, int *hac, uint8_t *plan, int index, int linesize) {
     int i, ixyz;
     uint8_t *ptr = plan + index;
@@ -240,21 +242,6 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     }
     if (debug) printf("\n");
 
-//    // DCT
-//    int u, w, x, y, iuv, ixy;
-//    for(w = 0 ; w < 8 ; w++) {
-//        for(u = 0 ; u < 8 ; u++) {
-//            double uv = 0.25 * (u ? 1. : 1./sqrt(2.));
-//            uv *= (w ? 1. : 1./sqrt(2.));
-//            double d = 0;
-//            for(y = 0 ; y < 8 ; y++) {
-//                for(x = 0 ; x < 8 ; x++) {
-//                    d += uv * src[x + 8*y] * cos((2*x + 1) * u * M_PI / 16) * cos((2*y + 1) * w * M_PI / 16);
-//                }
-//            }
-//            codec->dct[zigzag645[u+8*w]] = (float) (d / quantization645[(quant<< 6) | zigzag645[u+8*w]]);
-//        }
-//    }
 
     // Huffman
     int iz0 = 0;
@@ -475,7 +462,7 @@ int enc_ffm_test() {
     uint8_t *tmp = codec->rgb;
     for(y = 0 ; y < codec->height ; y++) {
         for(x = 0 ; x < codec->width ; x++) {
-            int g = (x >> 5) + (codec->width >> 5) * (y >> 5);
+            int g = (x >> 3) + (codec->width >> 3) * (y >> 3);
             int c = g & 0x03;
             g = (g << 4) & 0xFF;
             *(ptr++) = ((c == 0 || c == 1 || c == 3) ? g : 0);
@@ -490,10 +477,10 @@ int enc_ffm_test() {
 //            tmp += 4;
         }
     }
-    FILE *filpr = fopen("rgb.out", "wb");
-    fwrite(codec->rgb, 1, sizeof(int) * codec->width * codec->height, filpr);
-    fflush(filpr);
-    fclose(filpr);
+//    FILE *filpr = fopen("rgb.out", "wb");
+//    fwrite(codec->rgb, 1, sizeof(int) * codec->width * codec->height, filpr);
+//    fflush(filpr);
+//    fclose(filpr);
     printf("RGB image done.\n");
     //
     r = mjpeg_encode645(codec);

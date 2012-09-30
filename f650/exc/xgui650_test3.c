@@ -178,9 +178,15 @@ static int test() {
         f641_prepare_buffers(&v4l2);
     } else if (!format) {
         int lenb = 161012; //72025;   // 612311;
-        tmp = (uint8_t*)malloc(lenb);
 //        filp = fopen("/home/greg/t509/u610-equa/mjpeg800x448-8.dat", "rb");
-        filp = fopen("../f645/mjpeg_encode.out", "rb");
+        //filp = fopen("../f645/mjpeg_encode.out", "rb");
+        filp = fopen("../f645/rgb.jpeg", "rb");
+        fseek(filp, 0, SEEK_END);
+        fpos_t p;
+        fgetpos(filp, &p);
+        fseek(filp, 0, SEEK_SET);
+        lenb = p.__pos;
+        tmp = (uint8_t*)malloc(lenb);
         fread(tmp, 1, lenb, filp);
         fclose(filp);
         filp = NULL;
