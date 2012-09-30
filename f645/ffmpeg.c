@@ -65,7 +65,7 @@ typedef struct {
     int                 mjoff;
     int                 mjdec;
     int                 rsti;
-    int                 dc0[3];
+    int                 dc0[4];
 
     // Q
     float               quantization[4][64];
@@ -96,7 +96,7 @@ static void bin_str(long bits, uint8_t len) {
 
 static void fillCosCos645() {
     int u, v, x, y, iuv, ixy;
-    double uc, vc, d;
+    double uc, vc;
     float f;
     for(iuv = 0 ; iuv < 64 ; iuv++) {
         u = iuv % 8;
@@ -230,7 +230,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
 //                if ((i & 0x07) == 0x07) printf("\n");
 //            }
         }
-        codec->dct[zigzag645[ixyz]] = f / quantization645[(quant<< 6) | ixyz];
+        codec->dct[zigzag645[ixyz]] = f / quantization645[(quant<< 6) | zigzag645[ixyz]];
         //printf("%.0f ", src[ixyz]);
 //        printf("%.3f ", codec->dct[zigzag645[ixyz]]);
         if (debug) printf("%3.0f |", round(codec->dct[zigzag645[ixyz]]));
@@ -246,7 +246,7 @@ static int mjpeg_dcthuf645(mjpeg_codec645 *codec, int comp, int quant, int *hdc,
     uint32_t enc;
     // DC
     int v = (int)(round(codec->dct[0]) - codec->dc0[comp]);
-    codec->dc0[comp] = round(codec->dct[0]);
+    codec->dc0[comp] = (int)round(codec->dct[0]);
     if (v != 0) {
         if (v > 0) {
             mag = 1 + (int)(log2 * log(+v));
@@ -374,6 +374,7 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
     gettimeofday(&tv1, NULL);
     int ib, ibmax = (codec->width * codec->height) >> 7;    // / 64 / 2
     codec->x0l = codec->y0l = codec->x0c = codec->y0c = codec->x0c2 = codec->y0c2 = codec->rsti = 0;
+    memset(codec->dc0, 0, sizeof(codec->dc0));
     //codec->mjoff = 220;
     codec->mjdec = 0;
     for(ib = 0 ; ib < ibmax ; ib++) {
@@ -424,7 +425,7 @@ int mjpeg_encode645(mjpeg_codec645 *codec) {
                 *(optr++) = 0xD0 | codec->rsti;
                 codec->rsti = (codec->rsti + 1) & 0x07;
                 codec->mjoff += 2;
-                codec->dc0[0] = codec->dc0[1] = codec->dc0[2] = 0;
+                memset(codec->dc0, 0, sizeof(codec->dc0));
             }
 //            if (ib == 19) break;
         }
@@ -660,7 +661,7 @@ int ffm_test2() {
     bgra650 bgra;
     bgra_link650(&bgra, codec->rgb, width, height);
 
-    for(frame = 0 ; frame < 1 ; frame++) {
+    for(frame = 0 ; frame < 5 ; frame++) {
         // fill rgb
         brodge_anim(brodge);
         brodge_exec(brodge, &bgra);
