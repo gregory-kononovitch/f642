@@ -190,7 +190,7 @@ xgui691 *xgui_create691(int width, int height, int shm) {
 
     while (shm) {
         // ###
-        gui->shm_info.shmid = shmget(IPC_PRIVATE, 2 * 4 * width * height, IPC_CREAT | 0777);
+        gui->shm_info.shmid = shmget(IPC_PRIVATE, 5 * width * height, IPC_CREAT | 0777);
         FOG("shmget return %d - %p", gui->shm_info.shmid, gui->shm_info.shmaddr);
         //
         gui->shm_info.shmaddr = (char*)shmat(gui->shm_info.shmid, 0, 0);
@@ -213,14 +213,43 @@ xgui691 *xgui_create691(int width, int height, int shm) {
         FOG("shmctl return %d", r);
 
         //
+        // ###
+        gui->shm_info2.shmid = shmget(IPC_PRIVATE, 5 * width * height, IPC_CREAT | 0777);
+        FOG("shmget2 return %d - %p", gui->shm_info2.shmid, gui->shm_info2.shmaddr);
+        //
+        gui->shm_info2.shmaddr = (char*)shmat(gui->shm_info2.shmid, 0, 0);
+        FOG("shmat2 return %p", gui->shm_info2.shmaddr);
+        //
+        gui->shm_info2.readOnly = False;
+        st = XShmAttach(gui->display, &gui->shm_info2);
+        FOG("XShmAttach return %d - %p", st, gui->shm_info2.shmaddr);
+        if (st == False || xerror) {
+            LOG("Failed to attach shm memory");
+            shm = 0;
+            gui->shm = 0;
+            shmdt(gui->shm_info2.shmaddr);
+            break;
+        }
+        r = XSync(gui->display, False);
+        FOG("XSync return %d", r);
+        //
+        r = shmctl(gui->shm_info2.shmid, IPC_RMID, 0);
+        FOG("shmctl2 return %d", r);
+
+        //
         gui->ximg1 = XShmCreateImage(gui->display, gui->vinfo.visual
                 , gui->vinfo.depth, ZPixmap, gui->shm_info.shmaddr
                 , &gui->shm_info
                 , gui->width, gui->height
         );
         FOG("XShmCreateImage 1 return img %p, pix %p,  err = %d", gui->ximg1, gui->ximg1->data, xerror);        memcpy(&gui->shm_info2, &gui->shm_info, sizeof(XShmSegmentInfo));
+//        gui->ximg2 = XShmCreateImage(gui->display, gui->vinfo.visual
+//                , gui->vinfo.depth, ZPixmap, gui->shm_info.shmaddr + (4 * width * height)
+//                , &gui->shm_info2
+//                , gui->width, gui->height
+//        );
         gui->ximg2 = XShmCreateImage(gui->display, gui->vinfo.visual
-                , gui->vinfo.depth, ZPixmap, gui->shm_info.shmaddr + (4 * width * height)
+                , gui->vinfo.depth, ZPixmap, gui->shm_info2.shmaddr
                 , &gui->shm_info2
                 , gui->width, gui->height
         );
@@ -778,7 +807,7 @@ static void *event_loop691(void *prm) {
 /*
  *
  */
-int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
+int xgui_show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int width, int height) {
     int r = 0;
     struct timeval tvb1, tvb2;
     xgui691p *gui = (xgui691p*)xgui;
@@ -796,6 +825,7 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
                         , gui->ximg2
                         , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);    // @@@ r
+//                XSync(gui->display, True);
                 pthread_mutex_unlock(&ethread->mutex);
             } else {
                 pthread_mutex_lock(&ethread->mutex);
@@ -803,6 +833,7 @@ int show691(xgui691 *xgui, int i, int srcx, int srcy, int destx, int desty, int 
                         , gui->ximg1
                         , srcx, srcy, destx, desty, width, height, False);
                 r = XFlush(ethread->gui->display);
+//                XSync(gui->display, True);
                 pthread_mutex_unlock(&ethread->mutex);
             }
         } else {

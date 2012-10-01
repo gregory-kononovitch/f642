@@ -836,7 +836,7 @@ int f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int
     return 0;
 }
 
-void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *dev, int width, int height, int palette, int rate, int buffers) {
+void f641_setup_v4l2(struct f641_v4l2_parameters *prm, const char *dev, int width, int height, int palette, int rate, int buffers) {
     int r;
 
     if (!prm) {

@@ -82,7 +82,7 @@ struct f641_v4l2_parameters {
     int32_t controls_value[128];
 };
 
-extern void f641_setup_v4l2(struct f641_v4l2_parameters *prm, char *device, int width, int height, int palette, int rate, int buffers);
+extern void f641_setup_v4l2(struct f641_v4l2_parameters *prm, const char *device, int width, int height, int palette, int rate, int buffers);
 extern int  f641_set_defaults(struct f641_v4l2_parameters *prm, int gain, int sharp, int white, int expo);
 extern int  f641_prepare_buffers(struct f641_v4l2_parameters *prm);
 extern int  f641_stream_on(struct f641_v4l2_parameters *prm);

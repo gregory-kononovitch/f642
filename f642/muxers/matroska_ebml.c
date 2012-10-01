@@ -121,7 +121,7 @@ static int mk_append_context_data( mk_context *c, const void *data, unsigned siz
 
 static int mk_write_id( mk_context *c, unsigned id )
 {
-    unsigned char c_id[4] = { id >> 24, id >> 16, id >> 8, id };
+    unsigned char c_id[4] = { (unsigned char)(id >> 24), (unsigned char)(id >> 16), (unsigned char)(id >> 8), (unsigned char)id };
 
     if( c_id[0] )
         return mk_append_context_data( c, c_id, 4 );
@@ -134,7 +134,7 @@ static int mk_write_id( mk_context *c, unsigned id )
 
 static int mk_write_size( mk_context *c, unsigned size )
 {
-    unsigned char c_size[5] = { 0x08, size >> 24, size >> 16, size >> 8, size };
+    unsigned char c_size[5] = { 0x08, (unsigned char)(size >> 24), (unsigned char)(size >> 16), (unsigned char)(size >> 8), (unsigned char)(size) };
 
     if( size < 0x7f )
     {
@@ -214,15 +214,16 @@ static int mk_close_context( mk_context *c, unsigned *off )
 static void mk_destroy_contexts( mk_writer *w )
 {
     mk_context *next;
+    mk_context *cur;
 
-    for( mk_context *cur = w->freelist; cur; cur = next )
+    for( cur = w->freelist; cur; cur = next )
     {
         next = cur->next;
         free( cur->data );
         free( cur );
     }
 
-    for( mk_context *cur = w->actlist; cur; cur = next )
+    for( cur = w->actlist; cur; cur = next )
     {
         next = cur->next;
         free( cur->data );
@@ -252,7 +253,7 @@ static int mk_write_bin( mk_context *c, unsigned id, const void *data, unsigned 
 
 static int mk_write_uint( mk_context *c, unsigned id, int64_t ui )
 {
-    unsigned char c_ui[8] = { ui >> 56, ui >> 48, ui >> 40, ui >> 32, ui >> 24, ui >> 16, ui >> 8, ui };
+    unsigned char c_ui[8] = { (unsigned char)(ui >> 56), (unsigned char)(ui >> 48), (unsigned char)(ui >> 40), (unsigned char)(ui >> 32), (unsigned char)(ui >> 24), (unsigned char)(ui >> 16), (unsigned char)(ui >> 8), (unsigned char)ui };
     unsigned i = 0;
 
     CHECK( mk_write_id( c, id ) );
